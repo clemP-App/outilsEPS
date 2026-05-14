@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="description" content="Outils EPS pour professeurs : plots, allures, dispenses." />
+    <title>Outils EPS — Accueil</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="app app--home">
+    <header class="site-header">
+      <h1>Outils EPS</h1>
+      <p>Petits outils pratiques pour les cours d’éducation physique et sportive</p>
+    </header>
+
+    <div class="search-wrap">
+      <label for="search-outils">Rechercher un outil</label>
+      <input
+        type="search"
+        id="search-outils"
+        name="q"
+        placeholder="Rechercher par nom, catégorie…"
+        autocomplete="off"
+      />
+    </div>
+
+    <main class="container">
+      <p id="outils-count" aria-live="polite"></p>
+      <p id="tools-empty" class="empty-state" hidden>
+        Aucun outil ne correspond à votre recherche. Essayez un autre mot-clé.
+      </p>
+      <ul id="tools-list" class="tools-list" role="list"></ul>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

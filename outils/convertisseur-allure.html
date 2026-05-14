@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Convertisseur km/h ↔ min/km — Outils EPS</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Convertisseur km/h ↔ min/km</h1>
+      </header>
+
+      <section class="card" aria-labelledby="lbl-vitesse">
+        <h2 id="lbl-vitesse">Vitesse (km/h)</h2>
+        <div class="field-group">
+          <label class="field-label" for="kmh">km/h</label>
+          <input type="number" id="kmh" inputmode="decimal" min="0" step="0.1" placeholder="ex. 12" />
+        </div>
+        <p id="err-kmh" class="msg-error" role="alert" hidden></p>
+      </section>
+
+      <section class="card" aria-labelledby="lbl-allure">
+        <h2 id="lbl-allure">Allure (min/km)</h2>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label" for="pace-min">Minutes</label>
+            <input type="number" id="pace-min" inputmode="numeric" min="0" step="1" placeholder="5" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="pace-sec">Secondes</label>
+            <input type="number" id="pace-sec" inputmode="numeric" min="0" max="59" step="1" placeholder="0" />
+          </div>
+        </div>
+        <p id="err-pace" class="msg-error" role="alert" hidden></p>
+        <p class="hint">
+          Formules : allure (min/km) = 60 ÷ vitesse (km/h) ; vitesse = 60 ÷ allure en minutes décimales
+          (minutes + secondes÷60).
+        </p>
+      </section>
+    </div>
+
+    <script>
+      /**
+       * Synchronisation bidirectionnelle km/h ↔ min/km.
+       * Flag interne pour éviter les boucles lors des mises à jour programmatiques.
+       */
+      (function () {
+        "use strict";
+        var kmhEl = document.getElementById("kmh");
+        var minEl = document.getElementById("pace-min");
+        var secEl = document.getElementById("pace-sec");
+        var errKmh = document.getElementById("err-kmh");
+        var errPace = document.getElementById("err-pace");
+
+        var lock = false;
+
+        function setErr(el, msg) {
+          if (!msg) {
+            el.hidden = true;
+            el.textContent = "";
+          } else {
+            el.hidden = false;
+            el.textContent = msg;
+          }
+        }
+
+        /** Allure totale en minutes décimales à partir des champs */
+        function lireAllureMinutes() {
+          var mi = parseFloat(minEl.value);
+          var se = parseFloat(secEl.value);
+          if (minEl.value === "" && secEl.value === "") return NaN;
+          if (isNaN(mi)) mi = 0;
+          if (isNaN(se)) se = 0;
+          if (se < 0 || se >= 60) return NaN;
+          return mi + se / 60;
+        }
+
+        function ecrireAllureDepuisKmh(v) {
+          if (v <= 0 || !isFinite(v)) return;
+          var totalMin = 60 / v;
+          var whole = Math.floor(totalMin + 1e-9);
+          var frac = totalMin - whole;
+          var secs = Math.round(frac * 60);
+          if (secs === 60) {
+            whole += 1;
+            secs = 0;
+          }
+          lock = true;
+          minEl.value = String(whole);
+          secEl.value = String(secs);
+          lock = false;
+        }
+
+        function ecrireKmhDepuisAllure(totalMin) {
+          if (totalMin <= 0 || !isFinite(totalMin)) return;
+          var v = 60 / totalMin;
+          lock = true;
+          kmhEl.value = String(Math.round(v * 100) / 100);
+          lock = false;
+        }
+
+        function onKmhInput() {
+          if (lock) return;
+          setErr(errKmh, "");
+          setErr(errPace, "");
+          var raw = kmhEl.value.replace(",", ".").trim();
+          if (raw === "") {
+            lock = true;
+            minEl.value = "";
+            secEl.value = "";
+            lock = false;
+            return;
+          }
+          var v = parseFloat(raw);
+          if (isNaN(v) || v <= 0) {
+            setErr(errKmh, "Entrez une vitesse strictement positive.");
+            return;
+          }
+          ecrireAllureDepuisKmh(v);
+        }
+
+        function onPaceInput() {
+          if (lock) return;
+          setErr(errKmh, "");
+          setErr(errPace, "");
+          if (minEl.value === "" && secEl.value === "") {
+            lock = true;
+            kmhEl.value = "";
+            lock = false;
+            return;
+          }
+          var se = parseFloat(secEl.value);
+          if (secEl.value !== "" && (isNaN(se) || se < 0 || se >= 60)) {
+            setErr(errPace, "Les secondes doivent être entre 0 et 59.");
+            return;
+          }
+          var total = lireAllureMinutes();
+          if (!isFinite(total) || total <= 0) {
+            setErr(errPace, "Indiquez une allure valide (total supérieur à 0).");
+            return;
+          }
+          ecrireKmhDepuisAllure(total);
+        }
+
+        kmhEl.addEventListener("input", onKmhInput);
+        minEl.addEventListener("input", onPaceInput);
+        secEl.addEventListener("input", onPaceInput);
+      })();
+    </script>
+  </body>
+</html>
