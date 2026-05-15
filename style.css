@@ -545,14 +545,45 @@ main.container {
 }
 
 .hiit-actions {
-  margin: 0 0 0.75rem;
-  flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
   gap: 0.65rem;
+  margin: 0 0 0.75rem;
 }
 
-.hiit-actions .btn {
-  flex: 1 1 auto;
-  min-width: min(100%, 9rem);
+.hiit-actions__main {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.65rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.hiit-actions__main .btn {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.hiit-actions__reset {
+  width: 100%;
+  flex: none;
+}
+
+@media (min-width: 560px) {
+  .hiit-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+
+  .hiit-actions__main {
+    display: contents;
+  }
+
+  .hiit-actions .btn {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* --- Vitesse de course --- */

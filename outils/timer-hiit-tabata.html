@@ -31,16 +31,18 @@
         <p class="hiit-round" id="hiit-round-label">Série 0 / 0</p>
       </section>
 
-      <div class="field-row hiit-actions" id="hiit-actions">
-        <button type="button" class="btn btn--primary btn--labeled" id="btn-start">
-          <span class="btn__icon" aria-hidden="true">▶</span>
-          <span class="btn__text">Démarrer</span>
-        </button>
-        <button type="button" class="btn btn--ghost btn--labeled" id="btn-pause" hidden>
-          <span class="btn__icon" aria-hidden="true">⏸</span>
-          <span class="btn__text">Pause</span>
-        </button>
-        <button type="button" class="btn btn--ghost btn--labeled" id="btn-reset">
+      <div class="hiit-actions" id="hiit-actions">
+        <div class="hiit-actions__main">
+          <button type="button" class="btn btn--primary btn--labeled" id="btn-start">
+            <span class="btn__icon" aria-hidden="true">▶</span>
+            <span class="btn__text">Démarrer</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-pause" hidden>
+            <span class="btn__icon" aria-hidden="true">⏸</span>
+            <span class="btn__text">Pause</span>
+          </button>
+        </div>
+        <button type="button" class="btn btn--ghost btn--labeled hiit-actions__reset" id="btn-reset">
           <span class="btn__icon" aria-hidden="true">↺</span>
           <span class="btn__text">Réinitialiser</span>
         </button>

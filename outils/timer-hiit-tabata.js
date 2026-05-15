@@ -40,6 +40,7 @@
   var htmlBeepEl = null;
   var htmlBeepUrl = null;
   var audioUnlocked = false;
+  var wakeLockSentinel = null;
   var tickId = null;
   var phaseEndsAt = 0;
   var pausedRemainingMs = 0;
@@ -64,6 +65,49 @@
 
   function vibrateSupported() {
     return typeof navigator !== "undefined" && typeof navigator.vibrate === "function";
+  }
+
+  function wakeLockSupported() {
+    return typeof navigator !== "undefined" && "wakeLock" in navigator;
+  }
+
+  function chronoActifPourVeille() {
+    return session.running && !session.paused && session.phase !== "idle" && session.phase !== "done";
+  }
+
+  function activerWakeLock() {
+    if (!wakeLockSupported() || wakeLockSentinel) return Promise.resolve(false);
+    return navigator.wakeLock
+      .request("screen")
+      .then(function (sentinel) {
+        wakeLockSentinel = sentinel;
+        sentinel.addEventListener("release", function () {
+          if (wakeLockSentinel === sentinel) wakeLockSentinel = null;
+        });
+        return true;
+      })
+      .catch(function () {
+        return false;
+      });
+  }
+
+  function libererWakeLock() {
+    if (!wakeLockSentinel) return;
+    var s = wakeLockSentinel;
+    wakeLockSentinel = null;
+    try {
+      s.release();
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function majWakeLock() {
+    if (chronoActifPourVeille()) {
+      activerWakeLock();
+    } else {
+      libererWakeLock();
+    }
   }
 
   function initVibrationOption() {
@@ -556,6 +600,7 @@
     ouvrirAccordionReglages();
     majEtatReglages();
     arreterTick();
+    majWakeLock();
   }
 
   function afficherUi() {
@@ -632,6 +677,7 @@
     ouvrirAccordionReglages();
     majEtatReglages();
     arreterTick();
+    majWakeLock();
   }
 
   function serieSuivante() {
@@ -726,6 +772,7 @@
     demarrerPhase("countdown", DECOMPTE_DEPART_SEC * 1000);
     majEtatReglages();
     demarrerTick();
+    majWakeLock();
   }
 
   function demarrer() {
@@ -749,6 +796,7 @@
       setCardPhase(session.phase);
       majBoutons();
       majEtatReglages();
+      majWakeLock();
     } else {
       unlockAudio().then(function () {
         session.paused = false;
@@ -757,6 +805,7 @@
         demarrerTick();
         afficherUi();
         majEtatReglages();
+        majWakeLock();
       });
     }
   }
@@ -791,6 +840,10 @@
 
   bindAudioUnlock();
   initIosAudioHint();
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") majWakeLock();
+  });
 
   if (btnStart) btnStart.addEventListener("click", demarrer);
   if (btnPause) btnPause.addEventListener("click", pauseReprendre);
