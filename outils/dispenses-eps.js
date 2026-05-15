@@ -6,8 +6,6 @@
   "use strict";
 
   var PARAM_MASQUER_ID = "dispenses-masquer-terminees";
-  /** Taille max approximative d’une entrée photo (caractères base64) pour limiter les erreurs */
-  var MAX_PHOTO_CHARS = 800000;
 
   var form = document.getElementById("form-dispense");
   var editIdEl = document.getElementById("edit-id");
@@ -18,7 +16,6 @@
   var dureeJoursEl = document.getElementById("duree-jours");
   var dateFinEl = document.getElementById("date-fin");
   var motifEl = document.getElementById("motif");
-  var photoEl = document.getElementById("photo");
   var btnSubmit = document.getElementById("btn-submit");
   var btnResetForm = document.getElementById("btn-reset-form");
   var formMsg = document.getElementById("form-msg");
@@ -41,8 +38,6 @@
 
   /** @type {string|null} id en cours d’édition */
   var editingId = null;
-  /** Photo base64 conservée si on édite sans changer le fichier */
-  var photoDataUrlCourante = null;
 
   function montrerErreur(msg) {
     formMsg.hidden = !msg;
@@ -314,7 +309,6 @@
     editingId = null;
     editIdEl.value = "";
     form.reset();
-    photoDataUrlCourante = null;
     dateFinEl.value = "";
     btnResetForm.hidden = true;
     btnSubmit.setAttribute("aria-label", "Enregistrer la dispense");
@@ -323,29 +317,6 @@
   }
 
   btnResetForm.addEventListener("click", resetForm);
-
-  function lireFichierPhoto(file, cb) {
-    if (!file || !file.type || file.type.indexOf("image/") !== 0) {
-      cb(null, "Choisissez un fichier image.");
-      return;
-    }
-    var reader = new FileReader();
-    reader.onload = function () {
-      var res = reader.result;
-      if (typeof res === "string" && res.length > MAX_PHOTO_CHARS) {
-        cb(
-          null,
-          "Image trop volumineuse pour le stockage local. Choisissez une photo plus petite."
-        );
-        return;
-      }
-      cb(res, null);
-    };
-    reader.onerror = function () {
-      cb(null, "Impossible de lire le fichier.");
-    };
-    reader.readAsDataURL(file);
-  }
 
   form.addEventListener("submit", function (ev) {
     ev.preventDefault();
@@ -376,67 +347,46 @@
       return;
     }
 
-    function finaliser(photoBase64) {
-      var liste = chargerListe();
-      var id = editingId || genererId();
-      var entree = {
-        id: id,
-        nom: nom,
-        prenom: prenom,
-        classe: classe,
-        dateDebut: dateDebutIso,
-        dureeJours: duree,
-        dateFin: dateFin,
-        motif: motif,
-        photoBase64: photoBase64 || null,
-      };
+    var liste = chargerListe();
+    var id = editingId || genererId();
+    var entree = {
+      id: id,
+      nom: nom,
+      prenom: prenom,
+      classe: classe,
+      dateDebut: dateDebutIso,
+      dureeJours: duree,
+      dateFin: dateFin,
+      motif: motif,
+    };
 
-      if (editingId) {
-        var idx = liste.findIndex(function (x) {
-          return x.id === editingId;
-        });
-        if (idx === -1) {
-          montrerErreur("Dispense introuvable.");
-          return;
-        }
-        liste[idx] = entree;
-      } else {
-        liste.push(entree);
-      }
-
-      sauverListe(liste)
-        .then(function () {
-          var etaitModification = !!editingId;
-          resetForm();
-          renderListe();
-          afficherVue("liste");
-          montrerFeedbackGlobal(
-            etaitModification ? "Dispense modifiée." : "Dispense enregistrée.",
-            false
-          );
-        })
-        .catch(function () {
-          montrerErreur(
-            "Stockage plein ou indisponible. Supprimez d’anciennes photos ou dispenses."
-          );
-        });
-      return;
-
-    }
-
-    var file = photoEl.files && photoEl.files[0];
-    if (file) {
-      lireFichierPhoto(file, function (dataUrl, err) {
-        if (err) {
-          montrerErreur(err);
-          return;
-        }
-        photoDataUrlCourante = dataUrl;
-        finaliser(dataUrl);
+    if (editingId) {
+      var idx = liste.findIndex(function (x) {
+        return x.id === editingId;
       });
+      if (idx === -1) {
+        montrerErreur("Dispense introuvable.");
+        return;
+      }
+      liste[idx] = entree;
     } else {
-      finaliser(photoDataUrlCourante);
+      liste.push(entree);
     }
+
+    sauverListe(liste)
+      .then(function () {
+        var etaitModification = !!editingId;
+        resetForm();
+        renderListe();
+        afficherVue("liste");
+        montrerFeedbackGlobal(
+          etaitModification ? "Dispense modifiée." : "Dispense enregistrée.",
+          false
+        );
+      })
+      .catch(function () {
+        montrerErreur("Stockage plein ou indisponible. Supprimez d’anciennes dispenses.");
+      });
   });
 
   function normalise(s) {
@@ -494,8 +444,6 @@
     dateDebutEl.value = isoVersFr(d.dateDebut);
     dureeJoursEl.value = String(d.dureeJours);
     motifEl.value = d.motif || "";
-    photoEl.value = "";
-    photoDataUrlCourante = d.photoBase64 || null;
     majDateFinChamps();
     btnResetForm.hidden = false;
     btnSubmit.setAttribute("aria-label", "Mettre à jour la dispense");
@@ -505,38 +453,6 @@
       cible.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     montrerErreur("");
-  }
-
-  function ouvrirModalImage(src) {
-    var overlay = document.createElement("div");
-    overlay.className = "modal-overlay";
-    overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-modal", "true");
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "btn btn--primary btn--labeled close-full";
-    btn.setAttribute("aria-label", "Fermer");
-    btn.innerHTML =
-      '<span class="btn__icon" aria-hidden="true">✕</span><span class="btn__text">Fermer</span>';
-    var img = document.createElement("img");
-    img.src = src;
-    img.alt = "Dispense agrandie";
-    overlay.appendChild(btn);
-    overlay.appendChild(img);
-    function fermer() {
-      document.body.removeChild(overlay);
-      document.removeEventListener("keydown", onKey);
-    }
-    function onKey(e) {
-      if (e.key === "Escape") fermer();
-    }
-    btn.addEventListener("click", fermer);
-    overlay.addEventListener("click", function (e) {
-      if (e.target === overlay) fermer();
-    });
-    document.addEventListener("keydown", onKey);
-    document.body.appendChild(overlay);
-    btn.focus();
   }
 
   function renderListe() {
@@ -642,17 +558,6 @@
 
       head.appendChild(left);
       head.appendChild(daysWrap);
-
-      if (d.photoBase64) {
-        var thumb = document.createElement("img");
-        thumb.className = "dispense-thumb";
-        thumb.src = d.photoBase64;
-        thumb.alt = "Miniature dispense";
-        thumb.addEventListener("click", function () {
-          ouvrirModalImage(d.photoBase64);
-        });
-        head.appendChild(thumb);
-      }
 
       article.appendChild(head);
 

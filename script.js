@@ -30,7 +30,7 @@
       id: "dispenses-eps",
       titre: "Dispenses EPS",
       description:
-        "Enregistrez et suivez les dispenses, avec filtres, photo et dates de fin calculées.",
+        "Enregistrez et suivez les dispenses, avec filtres et dates de fin calculées.",
       icone: "📋",
       href: "outils/dispenses-eps.html",
       categorie: "Gestion de classe",
