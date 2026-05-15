@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Championnat à poule unique — Outils EPS</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--champ">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Championnat à poule unique</h1>
+      </header>
+
+      <p id="champ-msg" class="msg-error" role="alert" hidden></p>
+
+      <details class="card card--accordion" id="accordion-gestion">
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">Gestion</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p class="hint">
+            Les matchs sont organisés <strong>par journée</strong> : chaque équipe joue au plus une fois par tour, pour
+            un déroulement équilibré sur le terrain. L’ordre des appariements suit l’ordre d’ajout des équipes (méthode
+            du cercle).
+          </p>
+          <div class="champ-add-row field-row">
+            <div class="field-group champ-add-field">
+              <label class="field-label" for="new-team">Nouvelle équipe</label>
+              <input
+                type="text"
+                id="new-team"
+                placeholder="ex. Les Lions"
+                maxlength="80"
+                autocomplete="off"
+              />
+            </div>
+            <button type="button" class="btn btn--primary btn--labeled champ-add-btn" id="btn-add-team">
+              <span class="btn__icon" aria-hidden="true">➕</span>
+              <span class="btn__text">Ajouter</span>
+            </button>
+          </div>
+          <ul id="team-list" class="champ-team-list"></ul>
+
+          <div class="champ-gestion-actions">
+            <p class="champ-gestion-actions__label">Actions</p>
+            <div class="champ-toolbar champ-toolbar--labeled">
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-reset-scores">
+                <span class="btn__icon" aria-hidden="true">↺</span>
+                <span class="btn__text">Réinitialiser les scores</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-export-csv">
+                <span class="btn__icon" aria-hidden="true">📤</span>
+                <span class="btn__text">Exporter le classement (CSV)</span>
+              </button>
+              <button type="button" class="btn btn--danger btn--labeled" id="btn-delete-all">
+                <span class="btn__icon" aria-hidden="true">🗑️</span>
+                <span class="btn__text">Tout supprimer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="card card--accordion" id="accordion-classement" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">Classement</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p class="hint">3 pts victoire, 1 pt match nul, 0 défaite. Tri : pts → différence → marqués → nom.</p>
+          <div class="table-wrap champ-table-wrap">
+            <table class="champ-table" id="standings-table">
+              <thead>
+                <tr>
+                  <th scope="col">Rang</th>
+                  <th scope="col">Équipe</th>
+                  <th scope="col"><abbr title="Matchs joués">MJ</abbr></th>
+                  <th scope="col"><abbr title="Victoires">V</abbr></th>
+                  <th scope="col"><abbr title="Matchs nuls">N</abbr></th>
+                  <th scope="col"><abbr title="Défaites">D</abbr></th>
+                  <th scope="col"><abbr title="Points marqués">Pour</abbr></th>
+                  <th scope="col"><abbr title="Points encaissés">Contre</abbr></th>
+                  <th scope="col"><abbr title="Différence">Diff</abbr></th>
+                  <th scope="col"><abbr title="Points au classement">Pts</abbr></th>
+                </tr>
+              </thead>
+              <tbody id="standings-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="card card--accordion" id="accordion-matchs" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">Matchs</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p class="hint">
+            Saisissez les scores par journée ; le classement se met à jour automatiquement lorsque les deux scores
+            d’un match sont renseignés.
+          </p>
+          <div id="match-list" class="champ-match-list"></div>
+        </div>
+      </details>
+    </div>
+
+    <script src="championnat-poule.js"></script>
+  </body>
+</html>

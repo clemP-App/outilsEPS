@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Timer HIIT / Tabata — Outils EPS</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--hiit">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Timer HIIT / Tabata</h1>
+      </header>
+
+      <section
+        class="card hiit-timer-card hiit-timer-card--idle"
+        id="hiit-timer-card"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <p class="hiit-phase" id="hiit-phase-label">Prêt</p>
+        <div class="hiit-display">
+          <p class="hiit-time" id="hiit-time-display">00:00</p>
+        </div>
+        <p class="hiit-round" id="hiit-round-label">Série 0 / 0</p>
+      </section>
+
+      <div class="field-row hiit-actions" id="hiit-actions">
+        <button type="button" class="btn btn--primary btn--labeled" id="btn-start">
+          <span class="btn__icon" aria-hidden="true">▶</span>
+          <span class="btn__text">Démarrer</span>
+        </button>
+        <button type="button" class="btn btn--ghost btn--labeled" id="btn-pause" hidden>
+          <span class="btn__icon" aria-hidden="true">⏸</span>
+          <span class="btn__text">Pause</span>
+        </button>
+        <button type="button" class="btn btn--ghost btn--labeled" id="btn-reset">
+          <span class="btn__icon" aria-hidden="true">↺</span>
+          <span class="btn__text">Réinitialiser</span>
+        </button>
+      </div>
+
+      <p id="hiit-msg" class="msg-error hiit-msg" role="alert" hidden></p>
+
+      <details class="card card--accordion" id="accordion-hiit-reglages" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">Réglages</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p
+            id="hiit-reglages-locked-msg"
+            class="msg-error hiit-reglages-locked"
+            role="status"
+            hidden
+          ></p>
+          <p class="hint hiit-presets-hint">Raccourcis — un clic pour remplir les champs. Les raccourcis enregistrés (⭐) peuvent être retirés avec ×.</p>
+          <div class="hiit-presets-grid" id="hiit-presets-grid" role="group" aria-label="Raccourcis de réglages">
+          </div>
+
+          <p class="hiit-reglages-manuels-label">Réglage personnalisé</p>
+          <div class="field-row field-row--hiit-durees">
+            <div class="field-group">
+              <label class="field-label" for="travail-sec">Travail (s)</label>
+              <input type="number" id="travail-sec" min="1" max="3600" step="1" value="20" inputmode="numeric" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="pause-sec">Pause (s)</label>
+              <input type="number" id="pause-sec" min="0" max="3600" step="1" value="10" inputmode="numeric" />
+            </div>
+          </div>
+          <div class="field-row field-row--hiit-extra">
+            <div class="field-group">
+              <label class="field-label" for="repetitions">Répétitions</label>
+              <input type="number" id="repetitions" min="1" max="99" step="1" value="8" inputmode="numeric" />
+            </div>
+          </div>
+
+          <button type="button" class="btn btn--ghost btn--labeled hiit-save-preset" id="btn-save-preset" hidden>
+            <span class="btn__icon" aria-hidden="true">⭐</span>
+            <span class="btn__text">Mémoriser ce réglage comme raccourci</span>
+          </button>
+
+          <div class="hiit-options">
+            <label class="hiit-option-label">
+              <input type="checkbox" id="opt-bip" checked />
+              <span>Sons (bips)</span>
+            </label>
+            <label class="hiit-option-label" id="wrap-vibration">
+              <input type="checkbox" id="opt-vibration" checked />
+              <span>Vibration (si l’appareil le permet)</span>
+            </label>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <script src="timer-hiit-tabata.js"></script>
+  </body>
+</html>

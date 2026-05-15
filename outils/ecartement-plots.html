@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Écartement des plots — Outils EPS</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Écartement des plots (demi-fond)</h1>
+      </header>
+
+      <section class="card" aria-labelledby="lbl-duree">
+        <h2 id="lbl-duree">Durée du demi-fond</h2>
+        <p class="hint">
+          Objectif : <strong>1 plot = 1 km/h</strong>. L’écartement entre deux plots correspond à la
+          distance parcourue à <strong>1 km/h</strong> pendant la durée choisie.
+        </p>
+        <div class="field-group">
+          <label class="field-label" for="duree">Choisir la durée</label>
+          <select id="duree" name="duree">
+            <option value="30">30 secondes</option>
+            <option value="45">45 secondes</option>
+            <option value="60">1 minute</option>
+            <option value="90">1 minute 30</option>
+            <option value="180">3 minutes</option>
+          </select>
+        </div>
+
+        <div class="result-box" role="status" aria-live="polite">
+          <strong id="resultat-m">—</strong>
+          <span id="resultat-detail"></span>
+        </div>
+
+        <p class="hint" id="explication"></p>
+      </section>
+    </div>
+
+    <script>
+      /**
+       * distance (m) à 1 km/h = 1 × (durée en h) × 1000
+       * durée en h = secondes / 3600
+       */
+      (function () {
+        "use strict";
+        var select = document.getElementById("duree");
+        var resultM = document.getElementById("resultat-m");
+        var resultDetail = document.getElementById("resultat-detail");
+        var explication = document.getElementById("explication");
+
+        function calculer(secondes) {
+          var metres = (secondes / 3600) * 1000;
+          return metres;
+        }
+
+        function formater(secondes) {
+          if (secondes < 60) return secondes + " s";
+          if (secondes % 60 === 0) return secondes / 60 + " min";
+          var m = Math.floor(secondes / 60);
+          var s = secondes % 60;
+          return m + " min " + s + " s";
+        }
+
+        function maj() {
+          var s = parseInt(select.value, 10);
+          var m = calculer(s);
+          var arrondi = Math.round(m * 100) / 100;
+          resultM.textContent = arrondi + " m";
+          resultDetail.textContent =
+            " entre deux plots pour « " + formater(s) + " » (1 km/h ↔ 1 plot).";
+          explication.textContent =
+            "Formule : distance (m) = 1 km/h × (durée en heures) × 1000. À " +
+            formater(s) +
+            ", un élève à 1 km/h parcourt environ " +
+            arrondi +
+            " m : c’est l’écartement à utiliser entre deux plots successifs.";
+        }
+
+        select.addEventListener("change", maj);
+        maj();
+      })();
+    </script>
+  </body>
+</html>

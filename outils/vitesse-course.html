@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Vitesse de course — Outils EPS</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--vitesse">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Vitesse de course</h1>
+      </header>
+
+      <section class="card" aria-labelledby="lbl-saisie">
+        <h2 id="lbl-saisie">Distance et temps</h2>
+        <p class="hint">
+          Indiquez la <strong>distance parcourue</strong> et le <strong>temps</strong> : la vitesse et
+          l’allure se mettent à jour automatiquement.
+        </p>
+
+        <div class="field-row field-row--vitesse-distance">
+          <div class="field-group field-group--grow">
+            <label class="field-label" for="distance">Distance</label>
+            <input type="number" id="distance" inputmode="decimal" min="0" step="any" placeholder="ex. 1000" autocomplete="off" />
+          </div>
+          <div class="field-group field-group--unite">
+            <label class="field-label" for="unite-distance">Unité</label>
+            <select id="unite-distance">
+              <option value="m" selected>mètres</option>
+              <option value="km">kilomètres</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row field-row--vitesse-temps">
+          <div class="field-group">
+            <label class="field-label" for="temps-min">Temps — minutes</label>
+            <input type="number" id="temps-min" inputmode="numeric" min="0" step="1" placeholder="3" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="temps-sec">Secondes</label>
+            <input type="number" id="temps-sec" inputmode="numeric" min="0" max="59" step="1" placeholder="45" autocomplete="off" />
+          </div>
+        </div>
+        <p id="vitesse-msg" class="msg-error" role="alert" hidden></p>
+      </section>
+      <section class="card" id="section-resultats" aria-labelledby="lbl-resultats" hidden>
+        <h2 id="lbl-resultats">Résultats</h2>
+        <div class="vitesse-resultats">
+          <div class="result-box vitesse-result-box">
+            <span class="vitesse-result-label">Vitesse</span>
+            <strong id="resultat-kmh">—</strong>
+            <span class="vitesse-result-unit">km/h</span>
+          </div>
+          <div class="result-box vitesse-result-box">
+            <span class="vitesse-result-label">Allure</span>
+            <strong id="resultat-allure">—</strong>
+            <span class="vitesse-result-unit">min/km</span>
+          </div>
+          <div class="result-box vitesse-result-box">
+            <span class="vitesse-result-label">Vitesse</span>
+            <strong id="resultat-ms">—</strong>
+            <span class="vitesse-result-unit">m/s</span>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script src="vitesse-course.js"></script>
+  </body>
+</html>

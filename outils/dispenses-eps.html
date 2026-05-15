@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Dispenses EPS — Outils EPS</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Dispenses EPS</h1>
+      </header>
+
+      <div class="dispense-nav" role="tablist" aria-label="Affichage dispenses">
+        <button
+          type="button"
+          class="dispense-nav__btn dispense-nav__btn--active dispense-nav__btn--icon"
+          role="tab"
+          id="tab-liste"
+          aria-selected="true"
+          aria-controls="dispense-panel-liste"
+          tabindex="0"
+        >
+          <span class="btn-icon-emoji" aria-hidden="true">📋</span>
+          <span class="sr-only">Liste des dispenses</span>
+        </button>
+        <button
+          type="button"
+          class="dispense-nav__btn dispense-nav__btn--icon"
+          role="tab"
+          id="tab-form"
+          aria-selected="false"
+          aria-controls="dispense-panel-form"
+          tabindex="-1"
+        >
+          <span class="btn-icon-emoji" aria-hidden="true">➕</span>
+          <span class="sr-only">Ajouter une dispense</span>
+        </button>
+      </div>
+      <p id="dispense-feedback" class="dispense-feedback" role="status" aria-live="polite" hidden></p>
+
+      <div
+        id="dispense-panel-liste"
+        class="dispense-view"
+        role="tabpanel"
+        aria-labelledby="tab-liste"
+      >
+        <section class="card" aria-labelledby="lbl-liste">
+          <h2 id="lbl-liste">Liste des dispenses</h2>
+          <div class="filter-bar field-group">
+            <label class="field-label" for="filtre-liste">Filtrer (nom, prénom, classe)</label>
+            <input type="search" id="filtre-liste" placeholder="Tapez pour filtrer…" autocomplete="off" />
+          </div>
+          <div class="dispense-list-options">
+            <label class="dispense-hide-done-label">
+              <input type="checkbox" id="masquer-terminees" />
+              <span>Masquer les dispenses terminées</span>
+            </label>
+          </div>
+          <div id="liste-dispenses" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <div
+        id="dispense-panel-form"
+        class="dispense-view"
+        role="tabpanel"
+        aria-labelledby="tab-form"
+        hidden
+      >
+        <section class="card" aria-labelledby="form-titre">
+          <h2 id="form-titre">Nouvelle dispense</h2>
+          <p id="form-msg" class="msg-error" role="alert" hidden></p>
+          <p id="form-ok" class="msg-ok" role="status" hidden></p>
+
+          <form id="form-dispense" novalidate>
+            <input type="hidden" id="edit-id" value="" />
+
+            <div class="field-group">
+              <label class="field-label" for="nom">Nom</label>
+              <input type="text" id="nom" name="nom" required autocomplete="family-name" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="prenom">Prénom</label>
+              <input type="text" id="prenom" name="prenom" required autocomplete="given-name" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="classe">Classe</label>
+              <input type="text" id="classe" name="classe" required placeholder="ex. 3e A" />
+            </div>
+          <div class="field-row field-row--dispense-dates">
+              <div class="field-group">
+                <label class="field-label" for="date-debut">Date de début</label>
+                <input
+                  type="text"
+                  id="date-debut"
+                  name="date-debut"
+                  required
+                  inputmode="numeric"
+                  placeholder="jj/mm/aaaa"
+                  maxlength="10"
+                  autocomplete="off"
+                />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="duree-jours">Durée (jours)</label>
+                <input type="number" id="duree-jours" name="duree-jours" min="1" step="1" required />
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="date-fin">Date de fin (calculée)</label>
+              <input
+                type="text"
+                id="date-fin"
+                name="date-fin"
+                readonly
+                class="input-readonly"
+                tabindex="-1"
+                aria-readonly="true"
+                placeholder="—"
+              />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="motif">Motif ou commentaire (facultatif)</label>
+              <textarea id="motif" name="motif" rows="3"></textarea>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="photo">Photo de la dispense (facultatif)</label>
+              <input
+                type="file"
+                id="photo"
+                name="photo"
+                accept="image/*"
+                capture="environment"
+              />
+              <p class="hint">L’image est stockée localement (navigateur). Évitez les très grosses photos.</p>
+            </div>
+
+            <div class="field-row field-row--actions">
+              <button
+                type="submit"
+                class="btn btn--primary btn--icon-only"
+                id="btn-submit"
+                aria-label="Enregistrer la dispense"
+              >
+                <span class="btn-icon-emoji" aria-hidden="true">💾</span>
+              </button>
+              <button
+                type="button"
+                class="btn btn--ghost btn--icon-only"
+                id="btn-reset-form"
+                hidden
+                aria-label="Annuler la modification"
+              >
+                <span class="btn-icon-emoji" aria-hidden="true">↩️</span>
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+
+    <script src="dispenses-eps.js"></script>
+  </body>
+</html>
