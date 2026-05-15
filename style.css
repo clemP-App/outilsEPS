@@ -424,6 +424,37 @@ main.container {
   min-width: 0;
 }
 
+@media (max-width: 559px) {
+  .field-row:not(.field-row--actions):not(.hiit-actions):not(.compo-export-row):not(.compo-actions-row) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .field-row:not(.field-row--actions):not(.hiit-actions):not(.compo-export-row):not(.compo-actions-row) .field-group,
+  .field-row--hiit-durees .field-group,
+  .field-row--hiit-extra .field-group,
+  .field-row--vitesse-distance .field-group--grow,
+  .field-row--vitesse-distance .field-group--unite,
+  .field-row--vitesse-temps .field-group,
+  .field-row--dispense-dates .field-group,
+  .champ-add-row .champ-add-field {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .champ-add-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .champ-add-row .champ-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .hiit-msg {
   margin: 0 0 1rem;
 }
@@ -1698,15 +1729,25 @@ textarea {
 
 .compo-export-row {
   margin-bottom: 1rem;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
   gap: 0.65rem;
 }
 
-@media (max-width: 400px) {
-  .field-row {
-    flex-direction: column;
-  }
+.compo-export-row .btn {
+  flex: 1 1 0;
+  min-width: 0;
+}
 
+.page-outil--compo .field-row:not(.compo-actions-row):not(.compo-export-row) .field-group {
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 400px) {
   .match-row {
     grid-template-columns: minmax(0, 1fr) minmax(2.75rem, 3.5rem) 1rem minmax(2.75rem, 3.5rem) minmax(0, 1fr);
     gap: 0.3rem;
