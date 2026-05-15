@@ -16,8 +16,15 @@ var ToolInfo = (function () {
     circle.setAttribute("cx", "12");
     circle.setAttribute("cy", "12");
     circle.setAttribute("r", "10");
+    circle.setAttribute("fill", "none");
+    circle.setAttribute("stroke", "currentColor");
+    circle.setAttribute("stroke-width", "2");
     var stem = document.createElementNS("http://www.w3.org/2000/svg", "path");
     stem.setAttribute("d", "M12 11v5");
+    stem.setAttribute("fill", "none");
+    stem.setAttribute("stroke", "currentColor");
+    stem.setAttribute("stroke-width", "2");
+    stem.setAttribute("stroke-linecap", "round");
     var dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     dot.setAttribute("cx", "12");
     dot.setAttribute("cy", "7.5");

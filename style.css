@@ -137,11 +137,19 @@ body {
   height: 1.35rem;
   display: block;
   flex-shrink: 0;
+  color: inherit;
 }
 
-.info-icon circle[fill="none"],
+.info-icon circle,
 .info-icon path {
+  fill: none;
   stroke: currentColor;
+  stroke-width: 2;
+}
+
+.info-icon circle[fill="currentColor"] {
+  fill: currentColor;
+  stroke: none;
 }
 
 .site-header__action--info .info-icon {
