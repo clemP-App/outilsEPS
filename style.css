@@ -539,6 +539,11 @@ main.container {
   accent-color: var(--accent);
 }
 
+.hiit-ios-audio-hint {
+  margin: 0.35rem 0 0 1.65rem;
+  font-size: 0.8rem;
+}
+
 .hiit-actions {
   margin: 0 0 0.75rem;
   flex-wrap: wrap;

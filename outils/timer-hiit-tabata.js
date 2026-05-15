@@ -37,6 +37,9 @@
   var btnSavePreset = document.getElementById("btn-save-preset");
 
   var audioCtx = null;
+  var htmlBeepEl = null;
+  var htmlBeepUrl = null;
+  var audioUnlocked = false;
   var tickId = null;
   var phaseEndsAt = 0;
   var pausedRemainingMs = 0;
@@ -71,35 +74,178 @@
     }
   }
 
+  function audioContextClass() {
+    return window.AudioContext || window.webkitAudioContext || null;
+  }
+
+  function estIOS() {
+    return (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    );
+  }
+
+  function initIosAudioHint() {
+    var hint = document.getElementById("hiit-ios-audio-hint");
+    if (hint && estIOS()) hint.hidden = false;
+  }
+
   function unlockAudio() {
-    if (!window.AudioContext && !window.webkitAudioContext) return;
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    var AC = audioContextClass();
+    if (!AC) return Promise.resolve(false);
+    if (!audioCtx) audioCtx = new AC();
+    return audioCtx
+      .resume()
+      .then(function () {
+        try {
+          var buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+          var src = audioCtx.createBufferSource();
+          src.buffer = buf;
+          src.connect(audioCtx.destination);
+          src.start(0);
+        } catch (e) {
+          /* ignore */
+        }
+        audioUnlocked = audioCtx.state === "running";
+        if (audioUnlocked) prepareHtmlBeep();
+        return audioUnlocked;
+      })
+      .catch(function () {
+        audioUnlocked = false;
+        return false;
+      });
+  }
+
+  function playOscBip(freq, durationMs, gain) {
+    if (!audioCtx || audioCtx.state !== "running") return false;
+    try {
+      var osc = audioCtx.createOscillator();
+      var g = audioCtx.createGain();
+      var vol = gain || 0.35;
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      g.gain.value = vol;
+      osc.connect(g);
+      g.connect(audioCtx.destination);
+      var t0 = audioCtx.currentTime;
+      g.gain.setValueAtTime(vol, t0);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + durationMs / 1000);
+      osc.start(t0);
+      osc.stop(t0 + durationMs / 1000 + 0.02);
+      return true;
+    } catch (e) {
+      return false;
     }
-    if (audioCtx.state === "suspended") {
-      audioCtx.resume();
+  }
+
+  function bufferToWav(buffer) {
+    var ch = buffer.getChannelData(0);
+    var len = ch.length;
+    var ab = new ArrayBuffer(44 + len * 2);
+    var v = new DataView(ab);
+    var o = 0;
+    function w16(x) {
+      v.setUint16(o, x, true);
+      o += 2;
+    }
+    function w32(x) {
+      v.setUint32(o, x, true);
+      o += 4;
+    }
+    function ws(s) {
+      var i;
+      for (i = 0; i < s.length; i++) v.setUint8(o++, s.charCodeAt(i));
+    }
+    ws("RIFF");
+    w32(36 + len * 2);
+    ws("WAVEfmt ");
+    w32(16);
+    w16(1);
+    w16(1);
+    w32(buffer.sampleRate);
+    w32(buffer.sampleRate * 2);
+    w16(2);
+    w16(16);
+    ws("data");
+    w32(len * 2);
+    var i;
+    for (i = 0; i < len; i++) {
+      var s = Math.max(-1, Math.min(1, ch[i]));
+      v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      o += 2;
+    }
+    return ab;
+  }
+
+  function prepareHtmlBeep() {
+    if (htmlBeepUrl || !audioContextClass()) return Promise.resolve();
+    try {
+      var sampleRate = 44100;
+      var dur = 0.12;
+      var n = Math.floor(sampleRate * dur);
+      var freq = 880;
+      var data = new Float32Array(n);
+      var i;
+      for (i = 0; i < n; i++) {
+        data[i] = Math.sin((2 * Math.PI * freq * i) / sampleRate) * 0.35;
+      }
+      var offline = new OfflineAudioContext(1, n, sampleRate);
+      var buf = offline.createBuffer(1, n, sampleRate);
+      buf.copyToChannel(data, 0);
+      var src = offline.createBufferSource();
+      src.buffer = buf;
+      src.connect(offline.destination);
+      src.start(0);
+      return offline.startRendering().then(function (rendered) {
+        htmlBeepUrl = URL.createObjectURL(new Blob([bufferToWav(rendered)], { type: "audio/wav" }));
+      });
+    } catch (e) {
+      return Promise.resolve();
+    }
+  }
+
+  /** Secours iOS : lecture via élément audio */
+  function bipHtml() {
+    if (!htmlBeepUrl) {
+      prepareHtmlBeep().then(function () {
+        bipHtml();
+      });
+      return;
+    }
+    try {
+      if (!htmlBeepEl) {
+        htmlBeepEl = new Audio();
+        htmlBeepEl.setAttribute("playsinline", "");
+        htmlBeepEl.preload = "auto";
+      }
+      htmlBeepEl.src = htmlBeepUrl;
+      htmlBeepEl.currentTime = 0;
+      htmlBeepEl.play().catch(function () {
+        /* ignore */
+      });
+    } catch (e) {
+      /* ignore */
     }
   }
 
   function bip(freq, durationMs, gain) {
     if (!optBip || !optBip.checked) return;
-    if (!audioCtx) return;
-    try {
-      var osc = audioCtx.createOscillator();
-      var g = audioCtx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      g.gain.value = gain || 0.35;
-      osc.connect(g);
-      g.connect(audioCtx.destination);
-      var t0 = audioCtx.currentTime;
-      g.gain.setValueAtTime(gain || 0.35, t0);
-      g.gain.exponentialRampToValueAtTime(0.001, t0 + durationMs / 1000);
-      osc.start(t0);
-      osc.stop(t0 + durationMs / 1000 + 0.02);
-    } catch (e) {
-      /* ignore */
+    var AC = audioContextClass();
+    if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+
+    function jouer() {
+      if (playOscBip(freq, durationMs, gain)) return;
+      bipHtml();
     }
+
+    if (audioCtx.state === "running") {
+      jouer();
+      return;
+    }
+    audioCtx.resume().then(jouer).catch(function () {
+      bipHtml();
+    });
   }
 
   function vibrate(pattern) {
@@ -563,14 +709,8 @@
     }
   }
 
-  function demarrer() {
-    montrerMsg("");
-    unlockAudio();
+  function demarrerSession() {
     var cfg = lireConfig();
-    if (cfg.work < 1) {
-      montrerMsg("Le temps de travail doit être d’au moins 1 seconde.");
-      return;
-    }
     session = {
       running: true,
       paused: false,
@@ -588,6 +728,18 @@
     demarrerTick();
   }
 
+  function demarrer() {
+    montrerMsg("");
+    var cfg = lireConfig();
+    if (cfg.work < 1) {
+      montrerMsg("Le temps de travail doit être d’au moins 1 seconde.");
+      return;
+    }
+    unlockAudio().then(function () {
+      demarrerSession();
+    });
+  }
+
   function pauseReprendre() {
     if (!session.running || session.phase === "done") return;
     if (!session.paused) {
@@ -598,12 +750,14 @@
       majBoutons();
       majEtatReglages();
     } else {
-      session.paused = false;
-      phaseEndsAt = Date.now() + pausedRemainingMs;
-      fermerAccordionReglages();
-      demarrerTick();
-      afficherUi();
-      majEtatReglages();
+      unlockAudio().then(function () {
+        session.paused = false;
+        phaseEndsAt = Date.now() + pausedRemainingMs;
+        fermerAccordionReglages();
+        demarrerTick();
+        afficherUi();
+        majEtatReglages();
+      });
     }
   }
 
@@ -619,11 +773,24 @@
     afficherIdle();
   }
 
+  function bindAudioUnlock() {
+    var once = function () {
+      unlockAudio();
+      document.removeEventListener("touchend", once, true);
+      document.removeEventListener("click", once, true);
+    };
+    document.addEventListener("touchend", once, true);
+    document.addEventListener("click", once, true);
+  }
+
   if (accordionReglages) {
     accordionReglages.addEventListener("toggle", function () {
       if (accordionReglages.open) majEtatReglages();
     });
   }
+
+  bindAudioUnlock();
+  initIosAudioHint();
 
   if (btnStart) btnStart.addEventListener("click", demarrer);
   if (btnPause) btnPause.addEventListener("click", pauseReprendre);
