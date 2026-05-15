@@ -1,12 +1,24 @@
 /**
- * Sauvegarde et restauration — export / import JSON (IndexedDB).
+ * Sauvegarde et restauration — export / import JSON, espace utilisé, suppression par outil.
  */
 (function () {
   "use strict";
 
   var msgEl = document.getElementById("sauvegarde-msg");
   var okEl = document.getElementById("sauvegarde-ok");
-  var statsEl = document.getElementById("sauvegarde-stats");
+  var stockageTotalEl = document.getElementById("stockage-total");
+  var stockageListEl = document.getElementById("stockage-outils");
+  var stockageVideEl = document.getElementById("stockage-vide");
+
+  var DELETE_CONFIRM = {
+    classes:
+      "Supprimer toutes les classes et tous les élèves ?\n\nLes autres outils qui s’appuient sur les classes ne pourront plus importer d’élèves tant que vous n’aurez pas recréé des classes.\n\nCette action est irréversible.",
+    dispenses: "Supprimer toutes les dispenses EPS et leurs réglages d’affichage ?\n\nCette action est irréversible.",
+    championnat: "Supprimer le championnat en cours (équipes et matchs) ?\n\nCette action est irréversible.",
+    composition: "Supprimer les données enregistrées de Composition équipes ?\n\nCette action est irréversible.",
+    "compteur-bonus": "Supprimer les réglages du Compteur bonus ?\n\nLes scores en cours ne sont pas conservés ailleurs.",
+    autres: "Supprimer les autres données paramétrées non reconnues ?\n\nCette action est irréversible.",
+  };
 
   function montrerErreur(t) {
     if (!msgEl) return;
@@ -27,33 +39,90 @@
     }
   }
 
-  function renderStats() {
-    if (!statsEl) return;
-    Promise.all([
-      DataManager.getAll("classes"),
-      DataManager.getAll("eleves"),
-      DataManager.getAll("dispenses"),
-      DataManager.getAll("championnats"),
-      DataManager.getAll("parametres"),
-    ])
-      .then(function (arrays) {
-        var labels = ["Classes", "Élèves", "Dispenses", "Championnats", "Paramètres"];
-        statsEl.innerHTML = "";
-        labels.forEach(function (label, i) {
+  function renderStockage() {
+    if (!stockageListEl) return Promise.resolve();
+    return DataManager.getStorageBreakdown()
+      .then(function (breakdown) {
+        if (stockageTotalEl) {
+          stockageTotalEl.textContent = DataManager.formatBytes(breakdown.totalBytes);
+        }
+        stockageListEl.innerHTML = "";
+        var hasData = breakdown.totalBytes > 0;
+        if (stockageVideEl) stockageVideEl.hidden = hasData;
+
+        breakdown.categories.forEach(function (cat) {
           var li = document.createElement("li");
-          li.textContent = label + " : " + arrays[i].length;
-          statsEl.appendChild(li);
+          li.className = "stockage-item" + (cat.empty ? " stockage-item--empty" : "");
+
+          var main = document.createElement("div");
+          main.className = "stockage-item__main";
+
+          var titre = document.createElement("span");
+          titre.className = "stockage-item__titre";
+          titre.textContent = cat.label;
+
+          var meta = document.createElement("span");
+          meta.className = "stockage-item__meta";
+          meta.textContent = DataManager.formatBytes(cat.bytes) + " · " + cat.countLabel;
+
+          main.appendChild(titre);
+          main.appendChild(meta);
+          li.appendChild(main);
+
+          if (!cat.empty) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn btn--ghost btn--small stockage-item__delete";
+            btn.textContent = "Supprimer";
+            btn.setAttribute("data-category", cat.id);
+            btn.setAttribute("aria-label", "Supprimer les données de " + cat.label);
+            li.appendChild(btn);
+          }
+
+          stockageListEl.appendChild(li);
         });
       })
       .catch(function (e) {
-        montrerErreur(e.message || "Impossible de lire les statistiques.");
+        montrerErreur(e.message || "Impossible de lire l’espace utilisé.");
       });
+  }
+
+  function supprimerCategorie(categoryId, label) {
+    var msg = DELETE_CONFIRM[categoryId];
+    if (!msg) {
+      msg =
+        "Supprimer les données de « " +
+        label +
+        " » ?\n\nCette action est irréversible. Pensez à exporter une sauvegarde avant.";
+    }
+    if (!confirm(msg)) return;
+    montrerErreur("");
+    DataManager.clearStorageCategory(categoryId)
+      .then(function () {
+        montrerOk("Données supprimées : " + label + ".");
+        return renderStockage();
+      })
+      .catch(function (e) {
+        montrerErreur(e.message || "Suppression impossible.");
+      });
+  }
+
+  if (stockageListEl) {
+    stockageListEl.addEventListener("click", function (e) {
+      var btn = e.target.closest(".stockage-item__delete");
+      if (!btn) return;
+      var categoryId = btn.getAttribute("data-category");
+      var item = btn.closest(".stockage-item");
+      var labelEl = item && item.querySelector(".stockage-item__titre");
+      var label = labelEl ? labelEl.textContent : categoryId;
+      supprimerCategorie(categoryId, label);
+    });
   }
 
   function init() {
     return DataManager.ready
       .then(function () {
-        renderStats();
+        return renderStockage();
       })
       .catch(function (e) {
         montrerErreur(e.message || "Base de données indisponible.");
@@ -90,7 +159,7 @@
           }
           if (result && result.success) {
             montrerOk("Import réussi. Les données ont été restaurées.");
-            renderStats();
+            renderStockage();
             setTimeout(function () {
               window.location.reload();
             }, 1200);

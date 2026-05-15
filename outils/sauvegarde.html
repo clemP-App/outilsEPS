@@ -39,7 +39,6 @@
           Le fichier <strong>outilsEPS-backup.json</strong> contient vos classes, élèves, dispenses, championnats et
           paramètres. L’import remplace <strong>toutes</strong> les données de l’appareil après confirmation.
         </p>
-        <ul id="sauvegarde-stats" class="sauvegarde-stats" aria-live="polite"></ul>
       </section>
 
       <section class="card" aria-labelledby="lbl-actions">
@@ -54,6 +53,19 @@
             <span class="btn__text">Importer une sauvegarde</span>
           </button>
         </div>
+      </section>
+
+      <section class="card" aria-labelledby="lbl-stockage">
+        <h2 id="lbl-stockage">Espace utilisé</h2>
+        <p class="hint">
+          Estimation du poids des données enregistrées sur cet appareil (IndexedDB). Vous pouvez supprimer les données
+          d’un outil pour libérer de la place.
+        </p>
+        <p class="stockage-total" aria-live="polite">
+          Total : <strong id="stockage-total">—</strong>
+        </p>
+        <ul id="stockage-outils" class="stockage-list" aria-live="polite"></ul>
+        <p id="stockage-vide" class="hint stockage-vide" hidden>Aucune donnée enregistrée pour le moment.</p>
       </section>
     </div>
 
@@ -75,6 +87,7 @@
               "« Exporter » télécharge un fichier sur votre téléphone ou ordinateur.",
               "Conservez ce fichier (cloud, clé USB, mail à vous-même…).",
               "« Importer » remplace les données actuelles par celles du fichier : à utiliser avec prudence.",
+              "La section « Espace utilisé » indique le poids par outil et permet de supprimer des données ciblées.",
             ],
           },
         ],

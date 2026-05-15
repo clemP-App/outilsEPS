@@ -701,6 +701,184 @@ var DataManager = (function () {
     return deleteItem("parametres", id);
   }
 
+  var STORAGE_CATEGORIES = [
+    {
+      id: "classes",
+      label: "Classes & niveau",
+      stores: ["classes", "eleves"],
+    },
+    {
+      id: "dispenses",
+      label: "Dispenses EPS",
+      stores: ["dispenses"],
+      paramIds: ["dispenses-masquer-terminees"],
+    },
+    {
+      id: "championnat",
+      label: "Championnat poule",
+      stores: ["championnats"],
+    },
+    {
+      id: "composition",
+      label: "Composition équipes",
+      paramIds: ["composition-equipes"],
+    },
+    {
+      id: "compteur-bonus",
+      label: "Compteur bonus",
+      paramIds: ["compteur-bonus-settings"],
+    },
+  ];
+
+  function jsonByteSize(data) {
+    try {
+      return new Blob([JSON.stringify(data)]).size;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function formatBytes(bytes) {
+    var n = Math.max(0, bytes || 0);
+    if (n < 1024) return n + " o";
+    if (n < 1024 * 1024) return (n / 1024).toFixed(n < 10240 ? 1 : 0) + " Ko";
+    return (n / (1024 * 1024)).toFixed(2) + " Mo";
+  }
+
+  function countLabelForCategory(cat, storeData) {
+    var parts = [];
+    (cat.stores || []).forEach(function (store) {
+      var n = (storeData[store] || []).length;
+      if (store === "classes") {
+        parts.push(n + " classe" + (n !== 1 ? "s" : ""));
+      } else if (store === "eleves") {
+        parts.push(n + " élève" + (n !== 1 ? "s" : ""));
+      } else if (store === "dispenses") {
+        parts.push(n + " dispense" + (n !== 1 ? "s" : ""));
+      } else if (store === "championnats") {
+        parts.push(n + " championnat" + (n !== 1 ? "s" : ""));
+      }
+    });
+    (cat.paramIds || []).forEach(function (pid) {
+      var found = (storeData.parametres || []).some(function (p) {
+        return p.id === pid;
+      });
+      if (found) parts.push("réglages enregistrés");
+    });
+    return parts.length ? parts.join(", ") : "Aucune donnée";
+  }
+
+  function getStorageBreakdown() {
+    return Promise.all(STORE_NAMES.map(getAll)).then(function (arrays) {
+      var storeData = {};
+      STORE_NAMES.forEach(function (name, i) {
+        storeData[name] = arrays[i];
+      });
+
+      var assignedParamIds = {};
+      STORAGE_CATEGORIES.forEach(function (cat) {
+        (cat.paramIds || []).forEach(function (id) {
+          assignedParamIds[id] = true;
+        });
+      });
+
+      var categories = STORAGE_CATEGORIES.map(function (cat) {
+        var bytes = 0;
+        (cat.stores || []).forEach(function (store) {
+          bytes += jsonByteSize(storeData[store] || []);
+        });
+        (cat.paramIds || []).forEach(function (pid) {
+          var found = (storeData.parametres || []).filter(function (p) {
+            return p.id === pid;
+          });
+          if (found.length) bytes += jsonByteSize(found);
+        });
+        return {
+          id: cat.id,
+          label: cat.label,
+          bytes: bytes,
+          countLabel: countLabelForCategory(cat, storeData),
+          empty: bytes === 0,
+        };
+      });
+
+      var otherParams = (storeData.parametres || []).filter(function (p) {
+        return p && p.id && !assignedParamIds[p.id];
+      });
+      if (otherParams.length) {
+        categories.push({
+          id: "autres",
+          label: "Autres données",
+          bytes: jsonByteSize(otherParams),
+          countLabel: otherParams.length + " entrée" + (otherParams.length !== 1 ? "s" : ""),
+          empty: false,
+        });
+      }
+
+      var totalBytes = categories.reduce(function (sum, c) {
+        return sum + c.bytes;
+      }, 0);
+
+      return { totalBytes: totalBytes, categories: categories };
+    });
+  }
+
+  function clearStorageCategory(categoryId) {
+    var cat = null;
+    var i;
+    for (i = 0; i < STORAGE_CATEGORIES.length; i++) {
+      if (STORAGE_CATEGORIES[i].id === categoryId) {
+        cat = STORAGE_CATEGORIES[i];
+        break;
+      }
+    }
+    if (!cat && categoryId !== "autres") {
+      return Promise.reject(new Error("Catégorie inconnue."));
+    }
+
+    if (categoryId === "autres") {
+      return getAll("parametres").then(function (all) {
+        var assigned = {};
+        STORAGE_CATEGORIES.forEach(function (c) {
+          (c.paramIds || []).forEach(function (id) {
+            assigned[id] = true;
+          });
+        });
+        var ops = all
+          .filter(function (p) {
+            return p && p.id && !assigned[p.id];
+          })
+          .map(function (p) {
+            return deleteParametre(p.id);
+          });
+        return Promise.all(ops);
+      });
+    }
+
+    var ops = [];
+    (cat.stores || []).forEach(function (store) {
+      ops.push(clearStore(store));
+    });
+    if (cat.paramIds && cat.paramIds.length) {
+      ops.push(
+        getAll("parametres").then(function (all) {
+          return Promise.all(
+            cat.paramIds
+              .filter(function (pid) {
+                return all.some(function (p) {
+                  return p.id === pid;
+                });
+              })
+              .map(function (pid) {
+                return deleteParametre(pid);
+              })
+          );
+        })
+      );
+    }
+    return Promise.all(ops);
+  }
+
   var ready = initDB();
 
   return {
@@ -737,5 +915,9 @@ var DataManager = (function () {
     getParametre: getParametre,
     saveParametre: saveParametre,
     deleteParametre: deleteParametre,
+    STORAGE_CATEGORIES: STORAGE_CATEGORIES,
+    formatBytes: formatBytes,
+    getStorageBreakdown: getStorageBreakdown,
+    clearStorageCategory: clearStorageCategory,
   };
 })();
