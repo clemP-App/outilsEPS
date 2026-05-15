@@ -2500,6 +2500,215 @@ body.install-banner-open {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* --- Compteur bonus --- */
+.page-outil--bonus {
+  max-width: min(28rem, 100%);
+}
+
+.page-outil--bonus .page-outil__header--compact {
+  margin-bottom: 0.35rem;
+}
+
+.page-outil--bonus .page-outil__header--compact h1 {
+  font-size: 1.15rem;
+}
+
+.page-outil--bonus .card--accordion-compact {
+  margin-bottom: 0.35rem;
+}
+
+.page-outil--bonus .card--accordion-compact .card--accordion__summary {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.page-outil--bonus .card--accordion-compact .card--accordion__panel {
+  padding-top: 0;
+}
+
+.page-outil--bonus .card--accordion-compact .hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+}
+
+.bonus-reglages-row {
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.bonus-reglages-row .field-group {
+  flex: 1 1 4.5rem;
+  min-width: 0;
+}
+
+.bonus-reglages-row input {
+  padding: 0.4rem 0.5rem;
+}
+
+.bonus-play {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bonus-joueur {
+  padding: 0.65rem 0.75rem 0.75rem;
+  margin: 0;
+}
+
+.bonus-joueur--a {
+  border-top: 3px solid var(--accent);
+}
+
+.bonus-joueur--b {
+  border-top: 3px solid #6366f1;
+}
+
+.bonus-joueur__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.bonus-joueur__titre {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-deep);
+}
+
+.bonus-joueur--b .bonus-joueur__titre {
+  color: #4338ca;
+}
+
+.bonus-score-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  margin: 0;
+}
+
+.bonus-score {
+  margin: 0;
+  font-size: clamp(1.75rem, 8vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.bonus-score-unit {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.bonus-btns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.bonus-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  min-height: 4.75rem;
+  padding: 0.55rem 0.35rem;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+  transition: transform 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.bonus-btn:active {
+  transform: scale(0.96);
+}
+
+.bonus-btn__icon {
+  font-size: 1.85rem;
+  line-height: 1;
+}
+
+.bonus-btn__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+}
+
+.bonus-btn__detail {
+  font-size: clamp(0.72rem, 2.6vw, 0.82rem);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  max-width: 100%;
+  text-align: center;
+}
+
+.bonus-btn--bonus {
+  border-color: rgba(22, 163, 74, 0.45);
+  background: linear-gradient(180deg, #f0fdf4, #fff);
+  color: #15803d;
+}
+
+.bonus-btn--bonus .bonus-btn__detail {
+  color: #15803d;
+}
+
+.bonus-btn--normal {
+  border-color: rgba(13, 148, 136, 0.45);
+  background: linear-gradient(180deg, var(--accent-soft), #fff);
+  color: var(--accent-deep);
+}
+
+.bonus-btn--normal .bonus-btn__detail {
+  color: var(--accent-deep);
+}
+
+.bonus-btn--malus {
+  border-color: rgba(220, 38, 38, 0.4);
+  background: linear-gradient(180deg, #fef2f2, #fff);
+  color: #b91c1c;
+}
+
+.bonus-btn--malus .bonus-btn__detail {
+  color: #b91c1c;
+}
+
+.bonus-undo-btn {
+  align-self: center;
+  padding: 0.45rem 1rem;
+  font-size: 0.9rem;
+  min-height: auto;
+}
+
+@media (max-width: 559px) {
+  .bonus-reglages-row .field-group {
+    flex: 1 1 30%;
+  }
+
+  .page-outil--bonus #btn-reset-partie {
+    margin-top: 0.25rem;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.85rem;
+  }
+}
+
 @media (min-width: 560px) {
   .install-banner__inner {
     max-width: 36rem;

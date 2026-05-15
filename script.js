@@ -54,6 +54,15 @@
       categorie: "Organisation EPS",
     },
     {
+      id: "compteur-bonus",
+      titre: "Compteur bonus",
+      description:
+        "Deux joueurs en direct : bonus, points et malus en un clic, score et pourcentages par type d’action.",
+      icone: "👍",
+      href: "outils/compteur-bonus.html",
+      categorie: "Organisation EPS",
+    },
+    {
       id: "championnat-poule",
       titre: "Championnat à poule unique",
       description:
