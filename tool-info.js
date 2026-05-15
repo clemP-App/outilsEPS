@@ -5,6 +5,31 @@
 var ToolInfo = (function () {
   "use strict";
 
+  /** Icône « i » en SVG (pas de police externe ni CDN). */
+  function creerIconeInfo() {
+    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "info-icon");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("focusable", "false");
+    var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "10");
+    var stem = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    stem.setAttribute("d", "M12 11v5");
+    var dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("cx", "12");
+    dot.setAttribute("cy", "7.5");
+    dot.setAttribute("r", "1");
+    dot.setAttribute("fill", "currentColor");
+    dot.setAttribute("stroke", "none");
+    svg.appendChild(circle);
+    svg.appendChild(stem);
+    svg.appendChild(dot);
+    return svg;
+  }
+
   function creerDialog(cfg) {
     var dialog = document.createElement("dialog");
     dialog.className = "info-dialog card tool-info-dialog";
@@ -79,10 +104,7 @@ var ToolInfo = (function () {
     btn.className = "tool-info-btn";
     btn.setAttribute("aria-label", "Aide sur cet outil");
     btn.title = "Aide";
-    var span = document.createElement("span");
-    span.setAttribute("aria-hidden", "true");
-    span.textContent = "i";
-    btn.appendChild(span);
+    btn.appendChild(creerIconeInfo());
 
     var dialog = creerDialog(cfg);
     document.body.appendChild(dialog);
@@ -93,5 +115,5 @@ var ToolInfo = (function () {
     header.appendChild(btn);
   }
 
-  return { init: init };
+  return { init: init, creerIconeInfo: creerIconeInfo };
 })();
