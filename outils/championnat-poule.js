@@ -1,5 +1,5 @@
 /**
- * Championnat à poule unique — stockage local, poule aller simple.
+ * Championnat à poule unique — IndexedDB (DataManager), poule aller simple.
  *
  * Calendrier : matchs ordonnés par « journées » (méthode du cercle) : chaque équipe
  * joue au plus une fois par journée, répartition équilibrée entre les tours.

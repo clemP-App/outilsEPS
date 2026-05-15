@@ -54,6 +54,15 @@
       categorie: "Organisation EPS",
     },
     {
+      id: "calcul-1rm",
+      titre: "Calcul du 1RM",
+      description:
+        "Estimez votre charge max (1RM) à partir du poids et du nombre de répétitions, formules Epley ou Brzycki.",
+      icone: "🏋️",
+      href: "outils/calcul-1rm.html",
+      categorie: "Musculation",
+    },
+    {
       id: "compteur-bonus",
       titre: "Compteur bonus",
       description:

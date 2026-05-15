@@ -17,6 +17,8 @@
     championnat: "Supprimer le championnat en cours (équipes et matchs) ?\n\nCette action est irréversible.",
     composition: "Supprimer les données enregistrées de Composition équipes ?\n\nCette action est irréversible.",
     "compteur-bonus": "Supprimer les réglages du Compteur bonus ?\n\nLes scores en cours ne sont pas conservés ailleurs.",
+    "timer-hiit":
+      "Supprimer les raccourcis personnalisés du Timer HIIT / Tabata ?\n\nLes raccourcis intégrés (Tabata, etc.) restent disponibles.",
     autres: "Supprimer les autres données paramétrées non reconnues ?\n\nCette action est irréversible.",
   };
 

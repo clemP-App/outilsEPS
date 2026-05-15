@@ -2,7 +2,7 @@
  * Composition d’équipes homogènes — répartition par somme des niveaux (1–5).
  * Effectifs équilibrés : écart d’au plus 1 joueur entre équipes (capacités gloutonnes).
  * Tirage : ordre aléatoire puis affectation gloutonne (parmi les places restantes).
- * PDF : jsPDF (script CDN) — texte vectoriel, fichier téléchargeable ; Web Share si le navigateur l’autorise.
+ * PDF : jsPDF (fichier local) — texte vectoriel, fichier téléchargeable ; Web Share si le navigateur l’autorise.
  * Stockage : IndexedDB (paramètres via DataManager).
  */
 (function () {
@@ -417,7 +417,7 @@
     var JSPDF = window.jspdf && window.jspdf.jsPDF;
     if (!JSPDF) {
       montrerMsg(
-        "Impossible de charger jsPDF (réseau ou script bloqué). Réessayez ou exportez en CSV."
+        "Impossible de charger jsPDF. Réessayez ou exportez en CSV."
       );
       return;
     }

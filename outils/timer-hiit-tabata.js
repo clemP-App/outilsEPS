@@ -4,8 +4,9 @@
 (function () {
   "use strict";
 
-  var PRESETS_KEY = "outils_eps_hiit_presets_v1";
+  var PARAM_PRESETS_ID = "timer-hiit-tabata-presets";
   var DECOMPTE_DEPART_SEC = 3;
+  var presetsPersoCache = [];
 
   var PRESETS_DEFAUT = [
     { id: "tabata", name: "Tabata", work: 20, rest: 10, reps: 8 },
@@ -368,23 +369,48 @@
     return a.work === b.work && a.rest === b.rest && a.reps === b.reps;
   }
 
-  function chargerPresetsPerso() {
-    try {
-      var raw = localStorage.getItem(PRESETS_KEY);
-      if (!raw) return [];
-      var arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : [];
-    } catch (e) {
-      return [];
+  function normaliserPresetsListe(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(function (p) {
+      return p && p.id && typeof p.work === "number";
+    });
+  }
+
+  function chargerPresetsPersoDepuisDb() {
+    if (typeof DataManager === "undefined") {
+      presetsPersoCache = [];
+      return Promise.resolve([]);
     }
+    return DataManager.getParametre(PARAM_PRESETS_ID)
+      .then(function (record) {
+        presetsPersoCache =
+          record && Array.isArray(record.presets) ? normaliserPresetsListe(record.presets) : [];
+        return presetsPersoCache.slice();
+      })
+      .catch(function () {
+        presetsPersoCache = [];
+        return [];
+      });
+  }
+
+  function chargerPresetsPerso() {
+    return presetsPersoCache.slice();
   }
 
   function sauverPresetsPerso(liste) {
-    try {
-      localStorage.setItem(PRESETS_KEY, JSON.stringify(liste));
-    } catch (e) {
-      montrerMsg("Impossible d’enregistrer le raccourci (stockage plein ?).");
+    presetsPersoCache = normaliserPresetsListe(liste);
+    if (typeof DataManager === "undefined") {
+      montrerMsg("Stockage indisponible.");
+      return Promise.resolve(false);
     }
+    return DataManager.saveParametre({ id: PARAM_PRESETS_ID, presets: presetsPersoCache })
+      .then(function () {
+        return true;
+      })
+      .catch(function () {
+        montrerMsg("Impossible d’enregistrer le raccourci (stockage plein ?).");
+        return false;
+      });
   }
 
   function tousLesPresets() {
@@ -408,13 +434,15 @@
     });
     if (reste.length === perso.length) return;
     if (!window.confirm("Retirer ce raccourci des réglages ?")) return;
-    sauverPresetsPerso(reste);
-    renderPresets();
-    majBoutonMemoriser();
-    montrerMsg("Raccourci retiré.");
-    setTimeout(function () {
-      montrerMsg("");
-    }, 2500);
+    sauverPresetsPerso(reste).then(function (ok) {
+      if (!ok) return;
+      renderPresets();
+      majBoutonMemoriser();
+      montrerMsg("Raccourci retiré.");
+      setTimeout(function () {
+        montrerMsg("");
+      }, 2500);
+    });
   }
 
   function appliquerPreset(p) {
@@ -498,13 +526,15 @@
     var perso = chargerPresetsPerso();
     var id = "custom_" + Date.now();
     perso.push({ id: id, name: nom, work: cfg.work, rest: cfg.rest, reps: cfg.reps });
-    sauverPresetsPerso(perso);
-    renderPresets();
-    majBoutonMemoriser();
-    montrerMsg("Raccourci enregistré : " + nom);
-    setTimeout(function () {
-      montrerMsg("");
-    }, 3000);
+    sauverPresetsPerso(perso).then(function (ok) {
+      if (!ok) return;
+      renderPresets();
+      majBoutonMemoriser();
+      montrerMsg("Raccourci enregistré : " + nom);
+      setTimeout(function () {
+        montrerMsg("");
+      }, 3000);
+    });
   }
 
   function formaterTemps(sec) {
@@ -856,7 +886,20 @@
     el.addEventListener("change", majBoutonMemoriser);
   });
 
-  renderPresets();
-  initVibrationOption();
-  afficherIdle();
+  function demarrerUi() {
+    renderPresets();
+    initVibrationOption();
+    afficherIdle();
+  }
+
+  if (typeof DataManager !== "undefined") {
+    DataManager.ready
+      .then(function () {
+        return chargerPresetsPersoDepuisDb();
+      })
+      .then(demarrerUi)
+      .catch(demarrerUi);
+  } else {
+    demarrerUi();
+  }
 })();

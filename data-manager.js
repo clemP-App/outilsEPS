@@ -18,9 +18,13 @@ var DataManager = (function () {
   var LEGACY_CHAMPIONNAT = "outils_eps_championnat_poule_v1";
   var LEGACY_COMPOSITION = "outils_eps_composition_equipes_v1";
   var LEGACY_MASQUER_TERM = "outils_eps_dispenses_masquer_term_v1";
+  var LEGACY_HIIT_PRESETS = "outils_eps_hiit_presets_v1";
+  var PARAM_HIIT_PRESETS_ID = "timer-hiit-tabata-presets";
+  var DB_UNAVAILABLE_MSG = "IndexedDB n'est pas disponible sur cet appareil.";
 
   var db = null;
   var initPromise = null;
+  var dbUnavailable = false;
 
   function genererId(prefix) {
     var p = prefix || "id";
@@ -79,21 +83,52 @@ var DataManager = (function () {
       req.onerror = function () {
         reject(req.error || new Error("Impossible d'ouvrir la base de données."));
       };
-    }).then(function () {
-      return maybeMigrateFromLocalStorage();
-    });
+    })
+      .then(function () {
+        return maybeMigrateFromLocalStorage();
+      })
+      .then(function () {
+        return maybeMigrateHiitPresetsFromLocalStorage();
+      })
+      .then(function () {
+        return db;
+      })
+      .catch(function (err) {
+        dbUnavailable = true;
+        db = null;
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn(
+            "DataManager : " + (err && err.message ? err.message : "initialisation impossible")
+          );
+        }
+        return null;
+      });
 
     return initPromise;
   }
 
+  function requireDb() {
+    if (db) return Promise.resolve(db);
+    return initDB().then(function (database) {
+      if (!database) {
+        return Promise.reject(new Error(DB_UNAVAILABLE_MSG));
+      }
+      return database;
+    });
+  }
+
+  function cloneData(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
   function getAll(storeName) {
-    return initDB().then(function () {
+    return requireDb().then(function () {
       return promisifyRequest(storeTx(storeName, "readonly").getAll());
     });
   }
 
   function getById(storeName, id) {
-    return initDB().then(function () {
+    return requireDb().then(function () {
       return promisifyRequest(storeTx(storeName, "readonly").get(id));
     });
   }
@@ -102,8 +137,8 @@ var DataManager = (function () {
     if (!item || !item.id) {
       return Promise.reject(new Error("Chaque élément doit avoir un champ id."));
     }
-    return initDB().then(function () {
-      return promisifyRequest(storeTx(storeName, "readwrite").add(JSON.parse(JSON.stringify(item))));
+    return requireDb().then(function () {
+      return promisifyRequest(storeTx(storeName, "readwrite").add(cloneData(item)));
     });
   }
 
@@ -111,38 +146,38 @@ var DataManager = (function () {
     if (!item || !item.id) {
       return Promise.reject(new Error("Chaque élément doit avoir un champ id."));
     }
-    return initDB().then(function () {
-      return promisifyRequest(storeTx(storeName, "readwrite").put(JSON.parse(JSON.stringify(item))));
+    return requireDb().then(function () {
+      return promisifyRequest(storeTx(storeName, "readwrite").put(cloneData(item)));
     });
   }
 
   function deleteItem(storeName, id) {
-    return initDB().then(function () {
+    return requireDb().then(function () {
       return promisifyRequest(storeTx(storeName, "readwrite").delete(id));
     });
   }
 
   function clearStore(storeName) {
-    return initDB().then(function () {
+    return requireDb().then(function () {
       return promisifyRequest(storeTx(storeName, "readwrite").clear());
     });
   }
 
   function clearAllData() {
-    return initDB().then(function () {
+    return requireDb().then(function () {
       return Promise.all(STORE_NAMES.map(clearStore));
     });
   }
 
   function bulkPut(storeName, items) {
     if (!items || !items.length) return Promise.resolve();
-    return initDB().then(function () {
+    return requireDb().then(function () {
       return new Promise(function (resolve, reject) {
         var tx = transaction([storeName], "readwrite");
         var store = tx.objectStore(storeName);
         var i;
         for (i = 0; i < items.length; i++) {
-          store.put(JSON.parse(JSON.stringify(items[i])));
+          store.put(cloneData(items[i]));
         }
         tx.oncomplete = function () {
           resolve();
@@ -203,9 +238,35 @@ var DataManager = (function () {
       localStorage.removeItem(LEGACY_CHAMPIONNAT);
       localStorage.removeItem(LEGACY_COMPOSITION);
       localStorage.removeItem(LEGACY_MASQUER_TERM);
+      localStorage.removeItem(LEGACY_HIIT_PRESETS);
     } catch (e) {
       /* ignore */
     }
+  }
+
+  function maybeMigrateHiitPresetsFromLocalStorage() {
+    if (!db) return Promise.resolve(false);
+    return promisifyRequest(storeTx("parametres", "readonly").get(PARAM_HIIT_PRESETS_ID)).then(
+      function (existing) {
+        if (existing && Array.isArray(existing.presets) && existing.presets.length) {
+          return false;
+        }
+        var arr = readLocalStorage(LEGACY_HIIT_PRESETS);
+        if (!arr || !Array.isArray(arr) || !arr.length) {
+          return false;
+        }
+        return promisifyRequest(
+          storeTx("parametres", "readwrite").put({ id: PARAM_HIIT_PRESETS_ID, presets: arr })
+        ).then(function () {
+          try {
+            localStorage.removeItem(LEGACY_HIIT_PRESETS);
+          } catch (e) {
+            /* ignore */
+          }
+          return true;
+        });
+      }
+    );
   }
 
   function splitLegacyApp(app) {
@@ -286,15 +347,46 @@ var DataManager = (function () {
     return payload;
   }
 
+  /**
+   * Import atomique : une transaction multi-stores efface puis réécrit tout le payload.
+   * En cas d’erreur, IndexedDB annule la transaction (données précédentes conservées).
+   */
   function importPayloadToStores(payload) {
-    return clearAllData().then(function () {
-      return Promise.all([
-        bulkPut("classes", payload.classes || []),
-        bulkPut("eleves", payload.eleves || []),
-        bulkPut("dispenses", payload.dispenses || []),
-        bulkPut("championnats", payload.championnats || []),
-        bulkPut("parametres", payload.parametres || []),
-      ]);
+    return requireDb().then(function () {
+      return new Promise(function (resolve, reject) {
+        var tx = transaction(STORE_NAMES, "readwrite");
+        var i;
+        var j;
+        var storeName;
+        var store;
+        var items;
+
+        tx.onerror = function () {
+          reject(tx.error || new Error("Erreur lors de l'import."));
+        };
+        tx.onabort = function () {
+          reject(
+            tx.error ||
+              new Error("Import annulé : les données précédentes ont été conservées.")
+          );
+        };
+        tx.oncomplete = function () {
+          resolve();
+        };
+
+        for (i = 0; i < STORE_NAMES.length; i++) {
+          tx.objectStore(STORE_NAMES[i]).clear();
+        }
+
+        for (i = 0; i < STORE_NAMES.length; i++) {
+          storeName = STORE_NAMES[i];
+          items = payload[storeName] || [];
+          store = tx.objectStore(storeName);
+          for (j = 0; j < items.length; j++) {
+            store.put(cloneData(items[j]));
+          }
+        }
+      });
     });
   }
 
@@ -728,6 +820,11 @@ var DataManager = (function () {
       label: "Compteur bonus",
       paramIds: ["compteur-bonus-settings"],
     },
+    {
+      id: "timer-hiit",
+      label: "Timer HIIT / Tabata",
+      paramIds: [PARAM_HIIT_PRESETS_ID],
+    },
   ];
 
   function jsonByteSize(data) {
@@ -760,10 +857,17 @@ var DataManager = (function () {
       }
     });
     (cat.paramIds || []).forEach(function (pid) {
-      var found = (storeData.parametres || []).some(function (p) {
+      var entries = (storeData.parametres || []).filter(function (p) {
         return p.id === pid;
       });
-      if (found) parts.push("réglages enregistrés");
+      if (!entries.length) return;
+      if (pid === PARAM_HIIT_PRESETS_ID) {
+        var presets = entries[0].presets;
+        var n = Array.isArray(presets) ? presets.length : 0;
+        if (n) parts.push(n + " raccourci" + (n !== 1 ? "s" : ""));
+      } else {
+        parts.push("réglages enregistrés");
+      }
     });
     return parts.length ? parts.join(", ") : "Aucune donnée";
   }
@@ -884,6 +988,7 @@ var DataManager = (function () {
   return {
     DB_NAME: DB_NAME,
     STORE_NAMES: STORE_NAMES,
+    PARAM_HIIT_PRESETS_ID: PARAM_HIIT_PRESETS_ID,
     BACKUP_FILENAME: BACKUP_FILENAME,
     IMPORT_CONFIRM_MSG: IMPORT_CONFIRM_MSG,
     ready: ready,
