@@ -39,6 +39,10 @@
             un déroulement équilibré sur le terrain. L’ordre des appariements suit l’ordre d’ajout des équipes (méthode
             du cercle).
           </p>
+          <button type="button" class="btn btn--ghost btn--labeled champ-import-classe" id="btn-import-classe-champ">
+            <span class="btn__icon" aria-hidden="true">👥</span>
+            <span class="btn__text">Importer une classe</span>
+          </button>
           <div class="champ-add-row field-row">
             <div class="field-group champ-add-field">
               <label class="field-label" for="new-team">Nouvelle équipe</label>
@@ -121,6 +125,8 @@
       </details>
     </div>
 
+    <script src="../data-manager.js"></script>
+    <script src="../class-import.js"></script>
     <script src="championnat-poule.js"></script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>

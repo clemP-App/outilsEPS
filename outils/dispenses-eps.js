@@ -1,20 +1,11 @@
 /**
- * Dispenses EPS — stockage local (localStorage)
- *
- * POUR ÉVOLUER :
- * - Clé de stockage : STORAGE_KEY (incrémentez le suffixe si vous changez la forme des données).
- * - Règle date de fin : dateFin = dateDebut + (dureeJours - 1) jour (période inclusive).
- * - Limite taille : localStorage ~5 Mo selon navigateurs ; les photos base64 peuvent saturer l’espace.
- * - Navigation : onglets « Liste » / « Ajouter » (afficherVue) — au chargement, la liste est visible.
- * - Dates affichées en jj/mm/aaaa ; saisie avec / insérés automatiquement ; stockage interne en ISO.
- * - Liste : jours restants à droite de chaque fiche ; case « Masquer les dispenses terminées » (clé MASQUER_TERM_KEY).
+ * Dispenses EPS — stockage IndexedDB (DataManager).
  */
 
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "outils_eps_dispenses_v1";
-  var MASQUER_TERM_KEY = "outils_eps_dispenses_masquer_term_v1";
+  var PARAM_MASQUER_ID = "dispenses-masquer-terminees";
   /** Taille max approximative d’une entrée photo (caractères base64) pour limiter les erreurs */
   var MAX_PHOTO_CHARS = 800000;
 
@@ -44,6 +35,9 @@
 
   /** 'liste' | 'form' — synchronisé avec les panneaux */
   var vueState = "liste";
+
+  /** Cache en mémoire synchronisé avec IndexedDB */
+  var listeDispenses = [];
 
   /** @type {string|null} id en cours d’édition */
   var editingId = null;
@@ -202,18 +196,15 @@
   }
 
   function chargerListe() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return [];
-      var data = JSON.parse(raw);
-      return Array.isArray(data) ? data : [];
-    } catch (e) {
-      return [];
-    }
+    return listeDispenses.slice();
   }
 
   function sauverListe(arr) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    listeDispenses = Array.isArray(arr) ? arr.slice() : [];
+    if (typeof DataManager === "undefined") {
+      return Promise.reject(new Error("Stockage indisponible."));
+    }
+    return DataManager.saveDispenses(listeDispenses);
   }
 
   function genererId() {
@@ -387,23 +378,24 @@
         liste.push(entree);
       }
 
-      try {
-        sauverListe(liste);
-      } catch (e) {
-        montrerErreur(
-          "Stockage plein ou indisponible. Supprimez d’anciennes photos ou dispenses."
-        );
-        return;
-      }
+      sauverListe(liste)
+        .then(function () {
+          var etaitModification = !!editingId;
+          resetForm();
+          renderListe();
+          afficherVue("liste");
+          montrerFeedbackGlobal(
+            etaitModification ? "Dispense modifiée." : "Dispense enregistrée.",
+            false
+          );
+        })
+        .catch(function () {
+          montrerErreur(
+            "Stockage plein ou indisponible. Supprimez d’anciennes photos ou dispenses."
+          );
+        });
+      return;
 
-      var etaitModification = !!editingId;
-      resetForm();
-      renderListe();
-      afficherVue("liste");
-      montrerFeedbackGlobal(
-        etaitModification ? "Dispense modifiée." : "Dispense enregistrée.",
-        false
-      );
     }
 
     var file = photoEl.files && photoEl.files[0];
@@ -439,19 +431,15 @@
   }
 
   function chargerMasquerTerminees() {
-    try {
-      return localStorage.getItem(MASQUER_TERM_KEY) === "1";
-    } catch (e) {
-      return false;
-    }
+    if (typeof DataManager === "undefined") return Promise.resolve(false);
+    return DataManager.getParametre(PARAM_MASQUER_ID).then(function (p) {
+      return !!(p && p.value);
+    });
   }
 
   function sauverMasquerTerminees(checked) {
-    try {
-      localStorage.setItem(MASQUER_TERM_KEY, checked ? "1" : "0");
-    } catch (e) {
-      /* ignore */
-    }
+    if (typeof DataManager === "undefined") return Promise.resolve();
+    return DataManager.saveParametre({ id: PARAM_MASQUER_ID, value: !!checked });
   }
 
   function supprimer(id) {
@@ -459,10 +447,15 @@
     var liste = chargerListe().filter(function (x) {
       return x.id !== id;
     });
-    sauverListe(liste);
-    if (editingId === id) resetForm();
-    renderListe();
-    montrerFeedbackGlobal("Dispense supprimée.", false);
+    sauverListe(liste)
+      .then(function () {
+        if (editingId === id) resetForm();
+        renderListe();
+        montrerFeedbackGlobal("Dispense supprimée.", false);
+      })
+      .catch(function () {
+        montrerErreur("Impossible de supprimer la dispense.");
+      });
   }
 
   function editer(d) {
@@ -679,10 +672,10 @@
   }
 
   if (masquerTermineesEl) {
-    masquerTermineesEl.checked = chargerMasquerTerminees();
     masquerTermineesEl.addEventListener("change", function () {
-      sauverMasquerTerminees(masquerTermineesEl.checked);
-      renderListe();
+      sauverMasquerTerminees(masquerTermineesEl.checked).then(function () {
+        renderListe();
+      });
     });
   }
 
@@ -712,6 +705,21 @@
     });
   }
 
-  afficherVue("liste");
-  renderListe();
+  DataManager.ready
+    .then(function () {
+      return DataManager.getDispenses();
+    })
+    .then(function (arr) {
+      listeDispenses = arr;
+      return chargerMasquerTerminees();
+    })
+    .then(function (masquer) {
+      if (masquerTermineesEl) masquerTermineesEl.checked = masquer;
+      afficherVue("liste");
+      renderListe();
+    })
+    .catch(function () {
+      afficherVue("liste");
+      renderListe();
+    });
 })();

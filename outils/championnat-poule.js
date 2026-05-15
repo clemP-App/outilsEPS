@@ -9,7 +9,6 @@
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "outils_eps_championnat_poule_v1";
   var SAVE_DELAY_MS = 400;
 
   /**
@@ -46,27 +45,24 @@
   }
 
   function charger() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return { teams: [], matches: [] };
-      var data = JSON.parse(raw);
-      if (!data || !Array.isArray(data.teams)) return { teams: [], matches: [] };
-      return {
-        teams: data.teams,
-        matches: Array.isArray(data.matches) ? data.matches : [],
-      };
-    } catch (e) {
-      return { teams: [], matches: [] };
+    if (typeof DataManager === "undefined") {
+      return Promise.resolve({ teams: [], matches: [] });
     }
+    return DataManager.getChampionnatActif();
   }
 
   function sauverImmediate() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      montrerMsg("");
-    } catch (e) {
-      montrerMsg("Impossible d’enregistrer (stockage plein ?). Libérez de l’espace.");
+    if (typeof DataManager === "undefined") {
+      montrerMsg("Stockage indisponible.");
+      return Promise.resolve();
     }
+    return DataManager.saveChampionnatActif(state)
+      .then(function () {
+        montrerMsg("");
+      })
+      .catch(function () {
+        montrerMsg("Impossible d’enregistrer les données.");
+      });
   }
 
   function sauverDebounced() {
@@ -581,10 +577,52 @@
   btnExport.addEventListener("click", exportCsv);
   btnDeleteAll.addEventListener("click", supprimerTout);
 
-  state = charger();
-  if (!calendrierCoherent()) {
-    reconstruireMatchsDepuisEquipes();
-    sauverImmediate();
+  var btnImportClasse = document.getElementById("btn-import-classe-champ");
+  if (btnImportClasse && typeof ClassImport !== "undefined") {
+    btnImportClasse.addEventListener("click", function () {
+      ClassImport.open({
+        title: "Importer des équipes depuis une classe",
+        hint: "Chaque élève coché devient une équipe (prénom nom).",
+        onConfirm: function (eleves, classe) {
+          var ajout = 0;
+          eleves.forEach(function (e) {
+            var name = [e.prenom, e.nom].filter(Boolean).join(" ").trim();
+            if (!name) return;
+            var existe = state.teams.some(function (t) {
+              return t.name === name;
+            });
+            if (!existe) {
+              state.teams.push({ id: genererId(), name: name });
+              ajout++;
+            }
+          });
+          if (!ajout) {
+            montrerMsg("Aucune nouvelle équipe à ajouter.");
+            return;
+          }
+          reconstruireMatchsDepuisEquipes();
+          sauverImmediate();
+          render();
+          montrerMsg(ajout + " équipe(s) importée(s) depuis « " + classe.nom + " ».");
+        },
+      });
+    });
   }
-  render();
+
+  DataManager.ready
+    .then(charger)
+    .then(function (data) {
+      state = data;
+      if (!calendrierCoherent()) {
+        reconstruireMatchsDepuisEquipes();
+        return sauverImmediate();
+      }
+    })
+    .then(function () {
+      render();
+    })
+    .catch(function () {
+      montrerMsg("Impossible de charger le championnat.");
+      render();
+    });
 })();

@@ -17,6 +17,33 @@
   /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string}>} */
   var OUTILS = [
     {
+      id: "classes",
+      titre: "Classes et groupes",
+      description:
+        "Créer des classes, groupes et listes d'élèves réutilisables dans tous les outils.",
+      icone: "👥",
+      href: "outils/classes.html",
+      categorie: "Organisation EPS",
+    },
+    {
+      id: "tirage-au-sort",
+      titre: "Tirage au sort",
+      description:
+        "Importez une classe ou saisissez une liste, puis tirez un nom au hasard parmi les participants.",
+      icone: "🎲",
+      href: "outils/tirage-au-sort.html",
+      categorie: "Organisation EPS",
+    },
+    {
+      id: "sauvegarde",
+      titre: "Sauvegarde et restauration",
+      description:
+        "Exportez ou importez une sauvegarde JSON complète (classes, dispenses, championnats…) stockée en IndexedDB.",
+      icone: "💾",
+      href: "outils/sauvegarde.html",
+      categorie: "Organisation EPS",
+    },
+    {
       id: "ecartement-plots",
       titre: "Écartement des plots (demi-fond)",
       description:

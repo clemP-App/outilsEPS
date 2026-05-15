@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Sauvegarde et restauration — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--sauvegarde">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Sauvegarde et restauration</h1>
+      </header>
+
+      <p id="sauvegarde-msg" class="msg-error sauvegarde-msg" role="alert" hidden></p>
+      <p id="sauvegarde-ok" class="msg-ok sauvegarde-msg" role="status" hidden></p>
+
+      <section class="card" aria-labelledby="lbl-info">
+        <h2 id="lbl-info">Données locales</h2>
+        <p class="hint sauvegarde-hint">
+          Les données sont stockées localement sur cet appareil avec IndexedDB. Pensez à exporter régulièrement une
+          sauvegarde JSON.
+        </p>
+        <p class="hint">
+          Le fichier <strong>outilsEPS-backup.json</strong> contient vos classes, élèves, dispenses, championnats et
+          paramètres. L’import remplace <strong>toutes</strong> les données de l’appareil après confirmation.
+        </p>
+        <ul id="sauvegarde-stats" class="sauvegarde-stats" aria-live="polite"></ul>
+      </section>
+
+      <section class="card" aria-labelledby="lbl-actions">
+        <h2 id="lbl-actions">Actions</h2>
+        <div class="sauvegarde-actions">
+          <button type="button" class="btn btn--primary btn--labeled" id="btn-export-backup">
+            <span class="btn__icon" aria-hidden="true">💾</span>
+            <span class="btn__text">Exporter la sauvegarde</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-backup">
+            <span class="btn__icon" aria-hidden="true">📂</span>
+            <span class="btn__text">Importer une sauvegarde</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <script src="../data-manager.js"></script>
+    <script src="sauvegarde.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

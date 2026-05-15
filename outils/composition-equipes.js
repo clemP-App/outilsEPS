@@ -3,12 +3,12 @@
  * Effectifs équilibrés : écart d’au plus 1 joueur entre équipes (capacités gloutonnes).
  * Tirage : ordre aléatoire puis affectation gloutonne (parmi les places restantes).
  * PDF : jsPDF (script CDN) — texte vectoriel, fichier téléchargeable ; Web Share si le navigateur l’autorise.
- * Stockage local : clé STORAGE_KEY.
+ * Stockage : IndexedDB (paramètres via DataManager).
  */
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "outils_eps_composition_equipes_v1";
+  var PARAM_ID = "composition-equipes";
   var SAVE_DELAY_MS = 350;
 
   var listeBruteEl = document.getElementById("liste-brute");
@@ -46,13 +46,8 @@
   }
 
   function charger() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch (e) {
-      return null;
-    }
+    if (typeof DataManager === "undefined") return Promise.resolve(null);
+    return DataManager.getParametre(PARAM_ID);
   }
 
   function sauverDebounced() {
@@ -64,18 +59,24 @@
   }
 
   function sauverImmediate() {
-    try {
-      var data = {
-        listeBrute: listeBruteEl ? listeBruteEl.value : "",
-        players: players,
-        nbEquipes: parseInt(nbEquipesEl.value, 10) || 2,
-        assignments: assignments,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      montrerMsg("");
-    } catch (e) {
-      montrerMsg("Impossible d’enregistrer (quota navigateur ?).");
+    if (typeof DataManager === "undefined") {
+      montrerMsg("Stockage indisponible.");
+      return Promise.resolve();
     }
+    var data = {
+      id: PARAM_ID,
+      listeBrute: listeBruteEl ? listeBruteEl.value : "",
+      players: players,
+      nbEquipes: parseInt(nbEquipesEl.value, 10) || 2,
+      assignments: assignments,
+    };
+    return DataManager.saveParametre(data)
+      .then(function () {
+        montrerMsg("");
+      })
+      .catch(function () {
+        montrerMsg("Impossible d’enregistrer les données.");
+      });
   }
 
   function majBoutonTirage() {
@@ -210,6 +211,40 @@
    * Parse une ligne : "Nom" ou "Nom;niveau" (niveau 1–5 optionnel, défaut 3).
    * @returns {{id:string,name:string,level:number}|null}
    */
+  function eleveVersJoueur(e) {
+    var name = [e.prenom, e.nom].filter(Boolean).join(" ").trim() || e.nom || e.prenom || "?";
+    var level = 3;
+    if (e.niveau) {
+      var n = parseInt(String(e.niveau), 10);
+      if (!isNaN(n) && n >= 1 && n <= 5) level = n;
+    }
+    return { id: genererId(), name: name, level: level };
+  }
+
+  function importerDepuisClasse() {
+    if (typeof ClassImport === "undefined") {
+      montrerMsg("Import de classe indisponible.");
+      return;
+    }
+    ClassImport.open({
+      title: "Importer des élèves",
+      hint: "Cochez les élèves à ajouter à la liste des joueurs.",
+      onConfirm: function (eleves, classe) {
+        eleves.forEach(function (e) {
+          players.push(eleveVersJoueur(e));
+        });
+        assignments = null;
+        majNbJoueursAffiche();
+        renderJoueurs();
+        sectionEquipes.hidden = true;
+        equipesContainer.innerHTML = "";
+        majBoutonTirage();
+        sauverImmediate();
+        montrerMsg(eleves.length + " joueur(s) importé(s) depuis « " + classe.nom + " ».");
+      },
+    });
+  }
+
   function parserLigneJoueur(ligne) {
     var def = 3;
     var s = (ligne || "").trim();
@@ -696,6 +731,9 @@
     sectionEquipes.hidden = false;
   }
 
+  var btnImportClasse = document.getElementById("btn-import-classe-compo");
+  if (btnImportClasse) btnImportClasse.addEventListener("click", importerDepuisClasse);
+
   if (btnValider) {
     btnValider.addEventListener("click", function () {
       montrerMsg("");
@@ -780,7 +818,7 @@
   });
 
   function restaurer() {
-    var data = charger();
+    return charger().then(function (data) {
     if (!data) {
       majBoutonTirage();
       return;
@@ -814,6 +852,7 @@
     renderJoueurs();
     if (assignments) renderEquipes();
     else sectionEquipes.hidden = true;
+    });
   }
 
   listeBruteEl.addEventListener("input", sauverDebounced);
@@ -828,5 +867,7 @@
     sauverDebounced();
   });
 
-  restaurer();
+  DataManager.ready.then(restaurer).catch(function () {
+    montrerMsg("Impossible de charger les données.");
+  });
 })();

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Classes et groupes — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--classes">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Classes et groupes</h1>
+      </header>
+
+      <p id="classes-msg" class="msg-error classes-msg" role="alert" hidden></p>
+      <p id="classes-ok" class="msg-ok classes-msg" hidden></p>
+
+      <section class="card classes-layout">
+        <div class="classes-sidebar">
+          <div class="classes-sidebar-head">
+            <h2 class="classes-subtitle">Mes classes</h2>
+            <button type="button" class="btn btn--primary btn--small btn--labeled" id="btn-nouvelle-classe">
+              <span class="btn__icon" aria-hidden="true">＋</span>
+              <span class="btn__text">Nouvelle</span>
+            </button>
+          </div>
+          <ul id="classes-list" class="classes-list" role="list"></ul>
+          <p id="classes-list-empty" class="empty-state" hidden>Aucune classe. Créez-en une pour commencer.</p>
+        </div>
+
+        <div class="classes-detail" id="classes-detail" hidden>
+          <div class="classes-detail-head">
+            <div class="field-group classes-nom-wrap">
+              <label class="field-label" for="classe-nom-edit">Nom de la classe ou du groupe</label>
+              <input type="text" id="classe-nom-edit" maxlength="80" autocomplete="off" />
+            </div>
+            <button type="button" class="btn btn--danger btn--small btn--labeled" id="btn-supprimer-classe">
+              <span class="btn__text">Supprimer la classe</span>
+            </button>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="recherche-eleve">Rechercher un élève</label>
+            <input type="search" id="recherche-eleve" placeholder="Nom, prénom…" autocomplete="off" />
+          </div>
+
+          <div class="field-row classes-actions-row">
+            <button type="button" class="btn btn--primary btn--labeled" id="btn-ajouter-eleve">
+              <span class="btn__icon" aria-hidden="true">＋</span>
+              <span class="btn__text">Ajouter un élève</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-importer-liste">
+              <span class="btn__icon" aria-hidden="true">📋</span>
+              <span class="btn__text">Importer liste</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-exporter-csv">
+              <span class="btn__icon" aria-hidden="true">📤</span>
+              <span class="btn__text">Exporter CSV</span>
+            </button>
+          </div>
+
+          <ul id="eleves-list" class="classes-eleves-list" role="list"></ul>
+          <p id="eleves-list-empty" class="empty-state" hidden>Aucun élève dans cette classe.</p>
+        </div>
+
+        <p id="classes-select-hint" class="empty-state classes-select-hint">
+          Sélectionnez une classe ou créez-en une nouvelle.
+        </p>
+      </section>
+    </div>
+
+    <dialog class="classes-dialog card" id="dialog-eleve">
+      <form id="form-eleve" method="dialog">
+        <h2 class="classes-dialog-title" id="dialog-eleve-title">Élève</h2>
+        <div class="field-group">
+          <label class="field-label" for="eleve-nom">Nom</label>
+          <input type="text" id="eleve-nom" required autocomplete="family-name" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="eleve-prenom">Prénom</label>
+          <input type="text" id="eleve-prenom" required autocomplete="given-name" />
+        </div>
+        <div class="field-row field-row--eleve-opt">
+          <div class="field-group">
+            <label class="field-label" for="eleve-sexe">Sexe (facultatif)</label>
+            <select id="eleve-sexe">
+              <option value="">—</option>
+              <option value="F">F</option>
+              <option value="M">M</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="eleve-niveau">Niveau (facultatif, 1 à 5)</label>
+            <input type="number" id="eleve-niveau" min="1" max="5" step="1" inputmode="numeric" placeholder="3" />
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="eleve-commentaire">Commentaire (facultatif)</label>
+          <textarea id="eleve-commentaire" rows="2"></textarea>
+        </div>
+        <div class="field-row classes-dialog-actions">
+          <button type="submit" class="btn btn--primary btn--labeled">
+            <span class="btn__text">Enregistrer</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-annuler-eleve">
+            <span class="btn__text">Annuler</span>
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="classes-dialog card" id="dialog-import">
+      <form id="form-import" method="dialog">
+        <h2 class="classes-dialog-title">Importer une liste</h2>
+        <p class="hint">
+          Une ligne par élève. Formats : <strong>nom;prénom</strong> ou
+          <strong>nom;prénom;sexe;niveau;commentaire</strong> — le niveau doit être entre <strong>1 et 5</strong> (CSV avec virgule ou point-virgule).
+        </p>
+        <div class="field-group">
+          <label class="field-label" for="import-texte">Liste à coller</label>
+          <textarea id="import-texte" rows="10" spellcheck="false" placeholder="Dupont;Léa;F;4&#10;Martin;Paul"></textarea>
+        </div>
+        <div class="field-row classes-dialog-actions">
+          <button type="submit" class="btn btn--primary btn--labeled">
+            <span class="btn__text">Importer</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-annuler-import">
+            <span class="btn__text">Annuler</span>
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="../data-manager.js"></script>
+    <script src="classes.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

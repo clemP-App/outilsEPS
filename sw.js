@@ -1,13 +1,15 @@
 /**
  * Service worker — cache des pages et assets pour installation PWA.
  */
-var CACHE_NAME = "outils-eps-v1";
+var CACHE_NAME = "outils-eps-v4";
 
 var PRECACHE = [
   "./",
   "./index.html",
   "./style.css",
   "./script.js",
+  "./data-manager.js",
+  "./class-import.js",
   "./pwa-register.js",
   "./manifest.webmanifest",
   "./assets/icon-192.png",
@@ -25,6 +27,12 @@ var PRECACHE = [
   "./outils/championnat-poule.js",
   "./outils/timer-hiit-tabata.html",
   "./outils/timer-hiit-tabata.js",
+  "./outils/classes.html",
+  "./outils/classes.js",
+  "./outils/tirage-au-sort.html",
+  "./outils/tirage-au-sort.js",
+  "./outils/sauvegarde.html",
+  "./outils/sauvegarde.js",
 ];
 
 self.addEventListener("install", function (event) {
