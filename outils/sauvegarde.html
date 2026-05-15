@@ -59,6 +59,27 @@
 
     <script src="../data-manager.js"></script>
     <script src="sauvegarde.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Sauvegardez vos classes et vos données pour ne pas tout perdre.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Toutes vos informations restent sur cet appareil. Un fichier de sauvegarde vous permet de les garder en sécurité ou de les remettre plus tard.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "« Exporter » télécharge un fichier sur votre téléphone ou ordinateur.",
+              "Conservez ce fichier (cloud, clé USB, mail à vous-même…).",
+              "« Importer » remplace les données actuelles par celles du fichier : à utiliser avec prudence.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

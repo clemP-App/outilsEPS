@@ -147,6 +147,28 @@
 
     <script src="../data-manager.js"></script>
     <script src="classes.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro:
+          "Enregistrez vos classes une fois pour ne plus retaper les noms des élèves dans les autres outils.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Vous créez des listes d’élèves (nom, prénom, classe) réutilisables pour le tirage au sort, les équipes, les dispenses, les championnats, etc.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Créez une classe (ex. 6eA) puis ajoutez les élèves un par un ou collez une liste.",
+              "Vous pouvez aussi importer un fichier CSV depuis Pronote ou un tableur.",
+              "Ensuite, dans un autre outil, choisissez « Importer une classe » pour récupérer les noms.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

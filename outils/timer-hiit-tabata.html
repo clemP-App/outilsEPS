@@ -115,6 +115,27 @@
     </div>
 
     <script src="timer-hiit-tabata.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Un chronomètre qui enchaîne automatiquement les temps de travail et de repos.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Idéal pour le Tabata, le HIIT ou tout circuit avec alternance effort / pause. Les bips vous guident sans regarder votre montre en permanence.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Réglez la durée de travail et de pause, ou choisissez un raccourci (Tabata, HIIT…).",
+              "Lancez le chrono : un décompte précède le début, puis les phases s’enchaînent.",
+              "Le téléphone peut rester allumé pendant la séance pour ne pas s’arrêter.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

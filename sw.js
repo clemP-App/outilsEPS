@@ -1,7 +1,7 @@
 /**
  * Service worker — cache des pages et assets pour installation PWA.
  */
-var CACHE_NAME = "outils-eps-v4";
+var CACHE_NAME = "outils-eps-v5";
 
 var PRECACHE = [
   "./",
@@ -10,6 +10,7 @@ var PRECACHE = [
   "./script.js",
   "./data-manager.js",
   "./class-import.js",
+  "./tool-info.js",
   "./pwa-register.js",
   "./manifest.webmanifest",
   "./assets/icon-192.png",

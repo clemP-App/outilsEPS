@@ -163,6 +163,27 @@
         secEl.addEventListener("input", onPaceInput);
       })();
     </script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Passez d’une vitesse à une allure (et l’inverse) en un clin d’œil.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "En course, on parle parfois en km/h (sur tapis ou vélo) et parfois en min/km (sur le terrain). Cet outil fait la conversion pour vous.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Remplissez la vitesse en km/h : l’allure en min/km s’affiche.",
+              "Ou l’inverse : indiquez l’allure, la vitesse apparaît.",
+              "Pratique pour expliquer un rythme aux élèves ou préparer un repère de VMA.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

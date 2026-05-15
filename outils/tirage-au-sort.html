@@ -85,6 +85,27 @@
     <script src="../data-manager.js"></script>
     <script src="../class-import.js"></script>
     <script src="tirage-au-sort.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Tirez un nom au hasard, de façon équitable, en cours ou en préparation.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Fini de chercher « au hasard » avec les doigts : l’outil choisit un élève ou un participant pour vous.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Collez une liste de noms (un par ligne) ou importez des élèves depuis une classe.",
+              "Appuyez sur « Tirer au sort » pour afficher le nom choisi.",
+              "Vous pouvez retirer le tiré de la liste pour ne pas le retirer deux fois de suite.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

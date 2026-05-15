@@ -96,6 +96,27 @@
         maj();
       })();
     </script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Placez vos plots au bon endroit pour un travail de demi-fond en côte.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Vous savez exactement à quelle distance mettre deux plots successifs pour que chaque plot corresponde à 1 km/h de vitesse cible.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Choisissez la durée du demi-fond (temps entre deux plots).",
+              "L’outil affiche l’écartement en mètres à respecter entre les plots.",
+              "Exemple : à 1 km/h, un élève parcourt environ 28 m en 1 min 40 — c’est la distance entre deux plots.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

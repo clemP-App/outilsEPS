@@ -80,6 +80,27 @@
       </section>
     </div>
     <script src="vitesse-course.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Calculez la vitesse ou l’allure d’un élève à partir d’une distance et d’un temps.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Après un test (VMA, course, fractionné…), vous obtenez tout de suite la vitesse en km/h, en m/s et l’allure en min/km.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Indiquez la distance parcourue (en mètres ou en kilomètres).",
+              "Saisissez le temps en minutes et secondes.",
+              "Les résultats se mettent à jour automatiquement.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

@@ -190,6 +190,28 @@
     <script src="../data-manager.js"></script>
     <script src="../class-import.js"></script>
     <script src="dispenses-eps.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Suivez facilement qui est dispensé en EPS et jusqu’à quand.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Vous gardez une liste claire des élèves dispensés, avec les dates de début et de fin, sans carnet papier.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Ajoutez une dispense avec le nom, la classe et la durée en jours.",
+              "La date de fin se calcule toute seule à partir de la date de début.",
+              "Vous pouvez importer un élève depuis une classe déjà enregistrée pour gagner du temps.",
+              "Filtrez la liste ou masquez les dispenses déjà terminées.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

@@ -119,6 +119,28 @@
       referrerpolicy="no-referrer"
     ></script>
     <script src="composition-equipes.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Constituez des équipes équilibrées quand les élèves n’ont pas tous le même niveau.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "L’outil répartit les élèves en plusieurs équipes de force à peu près égale, grâce à un niveau que vous indiquez (de 1 à 5).",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Saisissez la liste des élèves (un par ligne) ou importez une classe.",
+              "Donnez un niveau à chaque élève : 1 = débutant, 5 = très à l’aise.",
+              "Choisissez le nombre d’équipes, puis « Composer » ou « Tirage » pour mélanger.",
+              "Vous pouvez déplacer un élève d’une équipe à l’autre à la main si besoin.",
+            ],
+          },
+        ],
+      });
+    </script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>
