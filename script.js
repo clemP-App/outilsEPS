@@ -15,6 +15,7 @@
   var FAVORIS_KEY = "outils_eps_favoris_v1";
 
   /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string}>} */
+  /** Du plus au moins utilisé au quotidien (hors sauvegarde, accessible via l’en-tête). */
   var OUTILS = [
     {
       id: "classes",
@@ -23,6 +24,24 @@
         "Créer des classes, groupes et listes d'élèves réutilisables dans tous les outils.",
       icone: "👥",
       href: "outils/classes.html",
+      categorie: "Organisation EPS",
+    },
+    {
+      id: "dispenses-eps",
+      titre: "Dispenses EPS",
+      description:
+        "Enregistrez et suivez les dispenses, avec filtres, photo et dates de fin calculées.",
+      icone: "📋",
+      href: "outils/dispenses-eps.html",
+      categorie: "Gestion de classe",
+    },
+    {
+      id: "composition-equipes",
+      titre: "Composition d’équipes homogènes",
+      description:
+        "Liste prénom ou nom (optionnel ;niveau 1–5), équipes équilibrées par niveau et déplacements manuels.",
+      icone: "⚖️",
+      href: "outils/composition-equipes.html",
       categorie: "Organisation EPS",
     },
     {
@@ -35,21 +54,21 @@
       categorie: "Organisation EPS",
     },
     {
-      id: "sauvegarde",
-      titre: "Sauvegarde et restauration",
+      id: "championnat-poule",
+      titre: "Championnat à poule unique",
       description:
-        "Exportez ou importez une sauvegarde JSON complète (classes, dispenses, championnats…) stockée en IndexedDB.",
-      icone: "💾",
-      href: "outils/sauvegarde.html",
+        "Créer un championnat, gérer les équipes, saisir les résultats et afficher le classement.",
+      icone: "🏆",
+      href: "outils/championnat-poule.html",
       categorie: "Organisation EPS",
     },
     {
-      id: "ecartement-plots",
-      titre: "Écartement des plots (demi-fond)",
+      id: "timer-hiit-tabata",
+      titre: "Timer HIIT / Tabata",
       description:
-        "Calcule la distance entre deux plots pour que 1 km/h corresponde à 1 plot selon la durée du demi-fond.",
-      icone: "📐",
-      href: "outils/ecartement-plots.html",
+        "Travail / pause en boucle, raccourcis Tabata et HIIT, bips et décompte au départ.",
+      icone: "⏱️",
+      href: "outils/timer-hiit-tabata.html",
       categorie: "Course à pied",
     },
     {
@@ -71,40 +90,13 @@
       categorie: "Course à pied",
     },
     {
-      id: "timer-hiit-tabata",
-      titre: "Timer HIIT / Tabata",
+      id: "ecartement-plots",
+      titre: "Écartement des plots (demi-fond)",
       description:
-        "Travail / pause en boucle, raccourcis Tabata et HIIT, bips et décompte au départ.",
-      icone: "⏱️",
-      href: "outils/timer-hiit-tabata.html",
+        "Calcule la distance entre deux plots pour que 1 km/h corresponde à 1 plot selon la durée du demi-fond.",
+      icone: "📐",
+      href: "outils/ecartement-plots.html",
       categorie: "Course à pied",
-    },
-    {
-      id: "dispenses-eps",
-      titre: "Dispenses EPS",
-      description:
-        "Enregistrez et suivez les dispenses (local), avec filtres, photo et dates de fin calculées.",
-      icone: "📋",
-      href: "outils/dispenses-eps.html",
-      categorie: "Gestion de classe",
-    },
-    {
-      id: "championnat-poule",
-      titre: "Championnat à poule unique",
-      description:
-        "Créer un championnat, gérer les équipes, saisir les résultats et afficher le classement.",
-      icone: "🏆",
-      href: "outils/championnat-poule.html",
-      categorie: "Organisation EPS",
-    },
-    {
-      id: "composition-equipes",
-      titre: "Composition d’équipes homogènes",
-      description:
-        "Liste prénom ou nom (optionnel ;niveau 1–5), boutons pour ajuster les niveaux, équipes équilibrées et déplacements.",
-      icone: "⚖️",
-      href: "outils/composition-equipes.html",
-      categorie: "Organisation EPS",
     },
   ];
 
@@ -271,5 +263,13 @@
   renderListe(OUTILS);
   if (searchInput) {
     searchInput.addEventListener("input", onSearch);
+  }
+
+  var btnInfo = document.getElementById("btn-info-app");
+  var dialogInfo = document.getElementById("dialog-info-app");
+  if (btnInfo && dialogInfo && dialogInfo.showModal) {
+    btnInfo.addEventListener("click", function () {
+      dialogInfo.showModal();
+    });
   }
 })();

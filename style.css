@@ -89,6 +89,123 @@ body {
   pointer-events: none;
 }
 
+.site-header__inner {
+  position: relative;
+  z-index: 1;
+}
+
+.site-header__actions {
+  position: absolute;
+  top: max(0.65rem, env(safe-area-inset-top));
+  right: max(0.65rem, env(safe-area-inset-right));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.site-header__action {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+  transition: background 0.2s, transform 0.15s;
+  cursor: pointer;
+  font: inherit;
+}
+
+.site-header__action:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.04);
+}
+
+.site-header__action:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.site-header__action--info span {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1;
+}
+
+.site-header__action--backup .btn-icon-emoji {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.info-dialog {
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: min(85dvh, 32rem);
+  overflow: auto;
+  border: none;
+  padding: 0;
+  margin: auto;
+}
+
+.info-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.info-dialog__form {
+  padding: 1.25rem 1.35rem 1.35rem;
+}
+
+.info-dialog__title {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+  color: var(--accent-deep);
+}
+
+.info-dialog__section {
+  margin-bottom: 1rem;
+}
+
+.info-dialog__section h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  color: var(--accent-deep);
+}
+
+.info-dialog__section p {
+  margin: 0 0 0.5rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.info-dialog__list {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.info-dialog__list li + li {
+  margin-top: 0.35rem;
+}
+
+.info-dialog__link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.info-dialog__close {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
 .site-header h1,
 .site-header p {
   position: relative;
@@ -1057,6 +1174,15 @@ textarea {
 }
 
 /* Formulaire dispense : date + durée sur une même ligne, colonnes équilibrées */
+.dispense-import-classe {
+  margin-bottom: 0.5rem;
+}
+
+.dispense-import-hint {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
 .field-row--dispense-dates {
   align-items: flex-end;
 }

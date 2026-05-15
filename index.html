@@ -20,8 +20,29 @@
   </head>
   <body class="app app--home">
     <header class="site-header">
-      <h1>Outils EPS</h1>
-      <p>Petits outils pratiques pour les cours d’éducation physique et sportive</p>
+      <div class="site-header__actions">
+        <button
+          type="button"
+          class="site-header__action site-header__action--info"
+          id="btn-info-app"
+          aria-label="Informations sur l'application"
+          title="Informations"
+        >
+          <span aria-hidden="true">i</span>
+        </button>
+        <a
+          href="outils/sauvegarde.html"
+          class="site-header__action site-header__action--backup"
+          aria-label="Sauvegarde et restauration"
+          title="Sauvegarde et restauration"
+        >
+          <span class="btn-icon-emoji" aria-hidden="true">💾</span>
+        </a>
+      </div>
+      <div class="site-header__inner">
+        <h1>Outils EPS</h1>
+        <p>Petits outils pratiques pour les cours d’éducation physique et sportive</p>
+      </div>
     </header>
 
     <div class="search-wrap">
@@ -42,6 +63,61 @@
       </p>
       <ul id="tools-list" class="tools-list" role="list"></ul>
     </main>
+
+    <dialog class="info-dialog card" id="dialog-info-app" aria-labelledby="info-dialog-title">
+      <form method="dialog" class="info-dialog__form">
+        <h2 id="info-dialog-title" class="info-dialog__title">À propos d’Outils EPS</h2>
+
+        <section class="info-dialog__section">
+          <h3>Application locale</h3>
+          <p>
+            Outils EPS fonctionne <strong>sur votre appareil</strong>, sans compte et sans envoi de données vers un
+            serveur. Les pages et les outils sont enregistrés localement pour un usage hors ligne une fois chargés.
+          </p>
+        </section>
+
+        <section class="info-dialog__section">
+          <h3>Installer sur l’écran d’accueil</h3>
+          <p>
+            Vous pouvez ajouter l’application à l’écran d’accueil pour y accéder comme à une appli :
+          </p>
+          <ul class="info-dialog__list">
+            <li><strong>iPhone (Safari)</strong> : bouton Partager, puis « Sur l’écran d’accueil ».</li>
+            <li><strong>Android (Chrome)</strong> : menu du navigateur, puis « Installer l’application » ou « Ajouter à l’écran d’accueil ».</li>
+            <li><strong>Ordinateur (Chrome / Edge)</strong> : icône d’installation dans la barre d’adresse, si proposée.</li>
+          </ul>
+        </section>
+
+        <section class="info-dialog__section">
+          <h3>Vos données</h3>
+          <p>
+            Classes, dispenses, championnats, etc. sont stockées dans la base locale de l’appareil
+            (<strong>IndexedDB</strong>). Elles ne sont pas synchronisées entre plusieurs appareils.
+          </p>
+          <p>
+            Vous pouvez <strong>perdre ces données</strong> si vous videz les données du site, effacez le cache ou
+            l’historique du navigateur, désinstallez l’application, ou changez d’appareil. Pensez à exporter régulièrement
+            une sauvegarde JSON via le bouton <strong>💾</strong> en haut à droite.
+          </p>
+        </section>
+
+        <section class="info-dialog__section">
+          <h3>Auteur et nouveautés</h3>
+          <p>
+            Tous ces outils sont créés par <strong>clemP</strong>. Suivez les nouveautés sur Instagram&nbsp;:
+            <a
+              href="https://www.instagram.com/clemp_eps2.0/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="info-dialog__link"
+              >@clemp_eps2.0</a
+            >.
+          </p>
+        </section>
+
+        <button type="submit" class="btn btn--primary info-dialog__close">Fermer</button>
+      </form>
+    </dialog>
 
     <script src="data-manager.js"></script>
     <script src="script.js"></script>

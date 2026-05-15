@@ -88,6 +88,18 @@
           <p id="form-msg" class="msg-error" role="alert" hidden></p>
           <p id="form-ok" class="msg-ok" role="status" hidden></p>
 
+          <button
+            type="button"
+            class="btn btn--ghost btn--labeled dispense-import-classe"
+            id="btn-import-eleve-classe"
+          >
+            <span class="btn__icon" aria-hidden="true">👥</span>
+            <span class="btn__text">Importer un élève depuis une classe</span>
+          </button>
+          <p class="hint dispense-import-hint">
+            Remplit automatiquement le nom, le prénom et la classe à partir d’une classe enregistrée.
+          </p>
+
           <form id="form-dispense" novalidate>
             <input type="hidden" id="edit-id" value="" />
 
@@ -176,6 +188,7 @@
     </div>
 
     <script src="../data-manager.js"></script>
+    <script src="../class-import.js"></script>
     <script src="dispenses-eps.js"></script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>

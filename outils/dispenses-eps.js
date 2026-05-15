@@ -79,6 +79,32 @@
    * Affiche uniquement le panneau liste ou formulaire (boutons en tête de page).
    * @param {'liste'|'form'} mode
    */
+  function importerEleveDepuisClasse() {
+    if (typeof ClassImport === "undefined") {
+      montrerErreur("Import de classe indisponible.");
+      return;
+    }
+    ClassImport.open({
+      title: "Importer un élève",
+      hint: "Choisissez une classe puis cochez un seul élève pour remplir le formulaire.",
+      onConfirm: function (eleves, classe) {
+        if (!eleves.length) return;
+        if (eleves.length > 1) {
+          montrerErreur("Cochez un seul élève pour remplir la dispense.");
+          return;
+        }
+        var e = eleves[0];
+        nomEl.value = e.nom || "";
+        prenomEl.value = e.prenom || "";
+        classeEl.value = classe.nom || "";
+        afficherVue("form");
+        montrerErreur("");
+        montrerOk("Élève importé depuis « " + classe.nom + " ».");
+        if (nomEl.focus) nomEl.focus();
+      },
+    });
+  }
+
   function afficherVue(mode) {
     vueState = mode;
     var isListe = mode === "liste";
@@ -664,6 +690,17 @@
       article.appendChild(actions);
 
       listeEl.appendChild(article);
+    });
+  }
+
+  var btnImportEleve = document.getElementById("btn-import-eleve-classe");
+  if (btnImportEleve) {
+    btnImportEleve.addEventListener("click", function () {
+      if (vueState !== "form") {
+        afficherVue("form");
+        if (!editingId) resetForm();
+      }
+      importerEleveDepuisClasse();
     });
   }
 
