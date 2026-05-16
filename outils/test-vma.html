@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Test VMA — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--vma">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Test VMA</h1>
+      </header>
+
+      <section class="vma-tabs" aria-label="Choix du test VMA">
+        <button type="button" class="vma-tab is-active" data-test="gacon">45-15 Gacon</button>
+        <button type="button" class="vma-tab" data-test="navette">Navette Luc Léger</button>
+        <button type="button" class="vma-tab" data-test="progressif">Progressif Luc Léger</button>
+        <button type="button" class="vma-tab" data-test="vameval">VAMEVAL</button>
+        <button type="button" class="vma-tab" data-test="demi-cooper">Demi-Cooper</button>
+      </section>
+
+      <details class="card card--accordion vma-explication" id="vma-explication" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="vma-explication-titre">45-15 Gacon</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p class="hint" id="vma-explication-texte"></p>
+          <ul class="vma-info-list" id="vma-explication-points"></ul>
+          <div id="vma-reglages-chrono">
+            <h3 class="vma-reglages-title">Réglages</h3>
+            <div class="field-row vma-reglages-row">
+              <div class="field-group">
+                <label class="field-label" for="vma-vitesse-depart">Vitesse de départ (km/h)</label>
+                <input
+                  type="number"
+                  id="vma-vitesse-depart"
+                  inputmode="decimal"
+                  min="5"
+                  max="30"
+                  step="0.5"
+                  value="8"
+                />
+              </div>
+            </div>
+            <p class="hint" id="vma-reglages-hint"></p>
+          </div>
+
+          <div id="vma-reglages-demi-cooper" hidden>
+            <h3 class="vma-reglages-title">Calcul de correspondance</h3>
+            <div class="field-row vma-reglages-row">
+              <div class="field-group">
+                <label class="field-label" for="vma-distance-demi-cooper">Distance parcourue en 6 min (m)</label>
+                <input
+                  type="number"
+                  id="vma-distance-demi-cooper"
+                  inputmode="decimal"
+                  min="0"
+                  step="any"
+                  placeholder="ex. 1500"
+                />
+              </div>
+            </div>
+            <div class="vma-demi-result" id="vma-demi-cooper-resultat" aria-live="polite">
+              <span class="vma-demi-result__label">VMA estimée</span>
+              <strong class="vma-demi-result__value">—</strong>
+              <span class="vma-demi-result__hint">Saisissez une distance pour obtenir la VMA correspondante.</span>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <section class="card vma-chrono-card" id="vma-chrono-section" aria-labelledby="lbl-vma-chrono">
+        <h2 id="lbl-vma-chrono">Chronomètre</h2>
+        <p class="vma-phase" id="vma-phase">Prêt</p>
+        <span class="vma-time-label" id="vma-time-label">Temps restant</span>
+        <p class="vma-time" id="vma-time" aria-live="polite">00:45</p>
+        <div class="vma-plot-timer" id="vma-plot-timer" hidden>
+          <span class="vma-time-label">Prochain plot</span>
+          <strong id="vma-plot-time">00:00</strong>
+        </div>
+
+        <div class="vma-actions">
+          <button type="button" class="btn btn--primary btn--labeled" id="vma-start">
+            <span class="btn__icon" aria-hidden="true">▶</span>
+            <span class="btn__text">Démarrer</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="vma-reset">
+            <span class="btn__icon" aria-hidden="true">↺</span>
+            <span class="btn__text">Remise à zéro</span>
+          </button>
+        </div>
+        <p id="vma-msg" class="msg-error" role="alert" hidden></p>
+      </section>
+
+      <section class="card" id="vma-infos-section" aria-labelledby="lbl-vma-infos">
+        <h2 id="lbl-vma-infos">Infos utiles</h2>
+        <div class="vma-stats">
+          <div class="vma-stat">
+            <span class="vma-stat__label">Palier</span>
+            <strong id="vma-palier">1</strong>
+          </div>
+          <div class="vma-stat">
+            <span class="vma-stat__label">Vitesse</span>
+            <strong><span id="vma-vitesse">8</span> km/h</strong>
+          </div>
+          <div class="vma-stat">
+            <span class="vma-stat__label" id="vma-distance-label">Distance plot</span>
+            <strong id="vma-distance">100 m</strong>
+          </div>
+          <div class="vma-stat">
+            <span class="vma-stat__label" id="vma-consigne-label">À faire</span>
+            <strong id="vma-consigne">Courir jusqu’au plot 1</strong>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="test-vma.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Lancez un test VMA avec bips, paliers et indications de vitesse/plots.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Vous choisissez le protocole (Gacon 45-15, Luc Léger navette, progressif, VAMEVAL ou demi-Cooper), puis le chrono indique chaque période et les informations utiles.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Choisissez le test en haut de l’écran.",
+              "Réglez la vitesse de départ dans l’accordéon explicatif.",
+              "Démarrez : l’écran reste allumé, les paliers sont annoncés à la voix et les 3 dernières secondes sont signalées par des bips.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

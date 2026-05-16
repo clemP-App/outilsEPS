@@ -90,6 +90,15 @@
       categorie: "Course à pied",
     },
     {
+      id: "test-vma",
+      titre: "Test VMA",
+      description:
+        "Chronomètre avec bips, voix, paliers et repères plots pour Gacon, Luc Léger, VAMEVAL et demi-Cooper.",
+      icone: "📣",
+      href: "outils/test-vma.html",
+      categorie: "Course à pied",
+    },
+    {
       id: "convertisseur-allure",
       titre: "Convertisseur km/h ↔ min/km",
       description:
