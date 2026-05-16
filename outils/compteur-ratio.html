@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Compteur ratio — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--ratio">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Compteur ratio</h1>
+      </header>
+
+      <p class="hint ratio-intro">
+        Comptez les réussites (+) et les échecs (−) pour observer deux équipes en même temps.
+      </p>
+
+      <button type="button" class="btn btn--danger btn--labeled ratio-reset" id="ratio-reset">
+        <span class="btn__icon" aria-hidden="true">↺</span>
+        <span class="btn__text">Remettre les statistiques à zéro</span>
+      </button>
+
+      <section class="ratio-grid" aria-label="Compteurs ratio">
+        <article class="card ratio-card" data-ratio-card="a">
+          <div class="ratio-card__top">
+            <input
+              type="text"
+              class="ratio-name-input"
+              id="ratio-name-a"
+              value="Équipe A"
+              aria-label="Nom de l'équipe A"
+            />
+            <input type="color" class="ratio-color-input" id="ratio-color-a" value="#0d9488" aria-label="Couleur de l'équipe A" />
+          </div>
+          <div class="ratio-result">
+            <span class="ratio-result__label">Ratio réussite</span>
+            <strong id="ratio-a">0%</strong>
+          </div>
+          <div class="ratio-stats">
+            <p><span>Réussites</span><strong id="ratio-plus-a">0</strong></p>
+            <p><span>Échecs</span><strong id="ratio-minus-a">0</strong></p>
+            <p><span>Total</span><strong id="ratio-total-a">0</strong></p>
+          </div>
+          <div class="ratio-buttons">
+            <button type="button" class="ratio-btn ratio-btn--plus" data-eleve="a" data-action="plus" aria-label="Ajouter une réussite à l'équipe A">
+              +
+            </button>
+            <button type="button" class="ratio-btn ratio-btn--minus" data-eleve="a" data-action="minus" aria-label="Ajouter un échec à l'équipe A">
+              −
+            </button>
+          </div>
+        </article>
+
+        <article class="card ratio-card" data-ratio-card="b">
+          <div class="ratio-card__top">
+            <input
+              type="text"
+              class="ratio-name-input"
+              id="ratio-name-b"
+              value="Équipe B"
+              aria-label="Nom de l'équipe B"
+            />
+            <input type="color" class="ratio-color-input" id="ratio-color-b" value="#6366f1" aria-label="Couleur de l'équipe B" />
+          </div>
+          <div class="ratio-result">
+            <span class="ratio-result__label">Ratio réussite</span>
+            <strong id="ratio-b">0%</strong>
+          </div>
+          <div class="ratio-stats">
+            <p><span>Réussites</span><strong id="ratio-plus-b">0</strong></p>
+            <p><span>Échecs</span><strong id="ratio-minus-b">0</strong></p>
+            <p><span>Total</span><strong id="ratio-total-b">0</strong></p>
+          </div>
+          <div class="ratio-buttons">
+            <button type="button" class="ratio-btn ratio-btn--plus" data-eleve="b" data-action="plus" aria-label="Ajouter une réussite à l'équipe B">
+              +
+            </button>
+            <button type="button" class="ratio-btn ratio-btn--minus" data-eleve="b" data-action="minus" aria-label="Ajouter un échec à l'équipe B">
+              −
+            </button>
+          </div>
+        </article>
+      </section>
+
+    </div>
+
+    <script src="compteur-ratio.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Comptez rapidement les réussites et les échecs de deux équipes, avec le ratio de réussite.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Pendant une situation d’apprentissage, vous pouvez observer deux équipes en même temps et suivre leur taux de réussite.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Renommez les équipes si besoin et choisissez une couleur.",
+              "Appuyez sur + pour une réussite, sur − pour un échec.",
+              "Le total de tentatives et le pourcentage de réussite se mettent à jour automatiquement.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

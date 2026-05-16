@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Maxi timer — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--maxi-timer">
+      <header class="page-outil__header maxi-timer-header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Maxi timer</h1>
+      </header>
+
+      <section class="card maxi-timer-card" aria-live="polite" aria-atomic="true">
+        <div class="maxi-mode" role="group" aria-label="Type de chronomètre">
+          <button type="button" class="maxi-mode__btn is-active" data-mode="down">Descendant</button>
+          <button type="button" class="maxi-mode__btn" data-mode="up">Croissant</button>
+        </div>
+
+        <div class="maxi-settings" id="maxi-settings">
+          <div class="field-row maxi-settings__row">
+            <div class="field-group">
+              <label class="field-label" for="maxi-min">Minutes</label>
+              <input type="number" id="maxi-min" min="0" max="999" step="1" inputmode="numeric" value="5" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="maxi-sec">Secondes</label>
+              <input type="number" id="maxi-sec" min="0" max="59" step="1" inputmode="numeric" value="0" />
+            </div>
+          </div>
+        </div>
+
+        <p class="maxi-label" id="maxi-label">Prêt</p>
+        <p class="maxi-time" id="maxi-time">05:00</p>
+
+        <div class="maxi-actions">
+          <button type="button" class="btn btn--primary btn--labeled" id="maxi-main">
+            <span class="btn__icon" aria-hidden="true">▶</span>
+            <span class="btn__text">Démarrer</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="maxi-reset">
+            <span class="btn__icon" aria-hidden="true">↺</span>
+            <span class="btn__text">Remise à zéro</span>
+          </button>
+        </div>
+        <p id="maxi-msg" class="msg-error" role="alert" hidden></p>
+      </section>
+    </div>
+
+    <script src="maxi-timer.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Un grand chronomètre lisible de loin, pour afficher le temps à toute la classe.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Maxi timer occupe toute la place disponible : pratique au vidéoprojecteur, sur tablette ou sur un téléphone posé devant un groupe.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Choisissez un chrono descendant ou croissant.",
+              "En mode descendant, réglez la durée puis démarrez.",
+              "Les 3 dernières secondes bipent, puis un bip plus long signale l’arrivée à zéro.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

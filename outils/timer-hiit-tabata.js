@@ -33,7 +33,6 @@
   var msgEl = document.getElementById("hiit-msg");
   var reglagesLockedMsg = document.getElementById("hiit-reglages-locked-msg");
   var btnStart = document.getElementById("btn-start");
-  var btnPause = document.getElementById("btn-pause");
   var btnReset = document.getElementById("btn-reset");
   var btnSavePreset = document.getElementById("btn-save-preset");
 
@@ -553,14 +552,17 @@
   }
 
   function majBoutons() {
-    if (!btnStart || !btnPause) return;
-    var actif = session.running && !session.paused && session.phase !== "idle" && session.phase !== "done";
-    btnStart.hidden = actif;
-    btnPause.hidden = !session.running || session.phase === "idle" || session.phase === "done";
-    var txt = btnPause.querySelector(".btn__text");
-    var ic = btnPause.querySelector(".btn__icon");
-    if (txt) txt.textContent = session.paused ? "Reprendre" : "Pause";
-    if (ic) ic.textContent = session.paused ? "▶" : "⏸";
+    if (!btnStart) return;
+    var txt = btnStart.querySelector(".btn__text");
+    var ic = btnStart.querySelector(".btn__icon");
+    var label = "Démarrer";
+    var icon = "▶";
+    if (session.running && session.phase !== "idle" && session.phase !== "done") {
+      label = session.paused ? "Reprendre" : "Pause";
+      icon = session.paused ? "▶" : "⏸";
+    }
+    if (txt) txt.textContent = label;
+    if (ic) ic.textContent = icon;
   }
 
   function fermerAccordionReglages() {
@@ -840,6 +842,14 @@
     }
   }
 
+  function actionPrincipale() {
+    if (session.running && session.phase !== "idle" && session.phase !== "done") {
+      pauseReprendre();
+      return;
+    }
+    demarrer();
+  }
+
   function reinitialiser() {
     arreterTick();
     if (vibrateSupported()) {
@@ -875,8 +885,7 @@
     if (document.visibilityState === "visible") majWakeLock();
   });
 
-  if (btnStart) btnStart.addEventListener("click", demarrer);
-  if (btnPause) btnPause.addEventListener("click", pauseReprendre);
+  if (btnStart) btnStart.addEventListener("click", actionPrincipale);
   if (btnReset) btnReset.addEventListener("click", reinitialiser);
   if (btnSavePreset) btnSavePreset.addEventListener("click", memoriserReglage);
 

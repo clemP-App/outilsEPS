@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Outils EPS" />
-    <title>Dispenses EPS — Outils EPS</title>
+    <title>Dispenses / Inaptitudes — Outils EPS</title>
     <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
@@ -23,7 +23,7 @@
         <a class="tool-back" href="../index.html"
           ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
         >
-        <h1>Dispenses EPS</h1>
+        <h1>Dispenses / Inaptitudes</h1>
       </header>
 
       <div class="dispense-nav" role="tablist" aria-label="Affichage dispenses">
@@ -37,7 +37,7 @@
           tabindex="0"
         >
           <span class="btn-icon-emoji" aria-hidden="true">📋</span>
-          <span class="sr-only">Liste des dispenses</span>
+          <span class="sr-only">Liste des dispenses / inaptitudes</span>
         </button>
         <button
           type="button"
@@ -49,7 +49,7 @@
           tabindex="-1"
         >
           <span class="btn-icon-emoji" aria-hidden="true">➕</span>
-          <span class="sr-only">Ajouter une dispense</span>
+          <span class="sr-only">Ajouter une dispense / inaptitude</span>
         </button>
       </div>
       <p id="dispense-feedback" class="dispense-feedback" role="status" aria-live="polite" hidden></p>
@@ -61,7 +61,7 @@
         aria-labelledby="tab-liste"
       >
         <section class="card" aria-labelledby="lbl-liste">
-          <h2 id="lbl-liste">Liste des dispenses</h2>
+          <h2 id="lbl-liste">Liste des dispenses / inaptitudes</h2>
           <div class="filter-bar field-group">
             <label class="field-label" for="filtre-liste">Filtrer (nom, prénom, classe)</label>
             <input type="search" id="filtre-liste" placeholder="Tapez pour filtrer…" autocomplete="off" />
@@ -69,7 +69,7 @@
           <div class="dispense-list-options">
             <label class="dispense-hide-done-label">
               <input type="checkbox" id="masquer-terminees" />
-              <span>Masquer les dispenses terminées</span>
+              <span>Masquer les dispenses / inaptitudes terminées</span>
             </label>
           </div>
           <div id="liste-dispenses" aria-live="polite"></div>
@@ -84,7 +84,7 @@
         hidden
       >
         <section class="card" aria-labelledby="form-titre">
-          <h2 id="form-titre">Nouvelle dispense</h2>
+          <h2 id="form-titre">Nouvelle dispense / inaptitude</h2>
           <p id="form-msg" class="msg-error" role="alert" hidden></p>
           <p id="form-ok" class="msg-ok" role="status" hidden></p>
 
@@ -156,7 +156,7 @@
                 type="submit"
                 class="btn btn--primary btn--icon-only"
                 id="btn-submit"
-                aria-label="Enregistrer la dispense"
+                aria-label="Enregistrer la dispense / inaptitude"
               >
                 <span class="btn-icon-emoji" aria-hidden="true">💾</span>
               </button>
@@ -181,20 +181,20 @@
     <script src="../tool-info.js"></script>
     <script>
       ToolInfo.init({
-        intro: "Suivez facilement qui est dispensé en EPS et jusqu’à quand.",
+        intro: "Suivez facilement les dispenses et inaptitudes en EPS.",
         sections: [
           {
             title: "L’intérêt principal",
             text:
-              "Vous gardez une liste claire des élèves dispensés, avec les dates de début et de fin, sans carnet papier.",
+              "Vous gardez une liste claire des élèves dispensés ou inaptes, avec les dates de début et de fin, sans carnet papier.",
           },
           {
             title: "Comment s’en servir",
             list: [
-              "Ajoutez une dispense avec le nom, la classe et la durée en jours.",
+              "Ajoutez une dispense ou une inaptitude avec le nom, la classe et la durée en jours.",
               "La date de fin se calcule toute seule à partir de la date de début.",
               "Vous pouvez importer un élève depuis une classe déjà enregistrée pour gagner du temps.",
-              "Filtrez la liste ou masquez les dispenses déjà terminées.",
+              "Filtrez la liste ou masquez les dispenses / inaptitudes déjà terminées.",
             ],
           },
         ],

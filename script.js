@@ -5,7 +5,7 @@
  * 1. Créez la page HTML dans outils/nom-de-votre-outil.html
  * 2. Ajoutez un objet dans le tableau OUTILS ci-dessous avec :
  *    - id : identifiant unique (chaîne)
- *    - titre, description, icone (emoji ou caractère), href, categorie
+ *    - titre, description, icone (emoji ou caractère), href, categorie, publicCible
  * 3. C’est tout : la liste et la recherche s’adaptent automatiquement.
  */
 
@@ -13,8 +13,10 @@
   "use strict";
 
   var FAVORIS_KEY = "outils_eps_favoris_v1";
+  var MAX_OUTILS_PAR_SECTION = 5;
+  var sectionsOuvertes = { prof: false, eleve: false };
 
-  /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string}>} */
+  /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string,publicCible:'prof'|'eleve'}>} */
   /** Du plus au moins utilisé au quotidien (hors sauvegarde, accessible via l’en-tête). */
   var OUTILS = [
     {
@@ -25,15 +27,17 @@
       icone: "👥",
       href: "outils/classes.html",
       categorie: "Organisation EPS",
+      publicCible: "prof",
     },
     {
       id: "dispenses-eps",
-      titre: "Dispenses EPS",
+      titre: "Dispenses / Inaptitudes",
       description:
         "Enregistrez et suivez les dispenses, avec filtres et dates de fin calculées.",
       icone: "📋",
       href: "outils/dispenses-eps.html",
       categorie: "Gestion de classe",
+      publicCible: "prof",
     },
     {
       id: "composition-equipes",
@@ -43,33 +47,7 @@
       icone: "⚖️",
       href: "outils/composition-equipes.html",
       categorie: "Organisation EPS",
-    },
-    {
-      id: "tirage-au-sort",
-      titre: "Tirage au sort",
-      description:
-        "Importez une classe ou saisissez une liste, puis tirez un nom au hasard parmi les participants.",
-      icone: "🎲",
-      href: "outils/tirage-au-sort.html",
-      categorie: "Organisation EPS",
-    },
-    {
-      id: "calcul-1rm",
-      titre: "Calcul du 1RM",
-      description:
-        "Estimez votre charge max (1RM) à partir du poids et du nombre de répétitions, formules Epley ou Brzycki.",
-      icone: "🏋️",
-      href: "outils/calcul-1rm.html",
-      categorie: "Musculation",
-    },
-    {
-      id: "compteur-bonus",
-      titre: "Compteur bonus",
-      description:
-        "Deux joueurs en direct : bonus, points et malus en un clic, score et pourcentages par type d’action.",
-      icone: "👍",
-      href: "outils/compteur-bonus.html",
-      categorie: "Organisation EPS",
+      publicCible: "prof",
     },
     {
       id: "championnat-poule",
@@ -79,6 +57,7 @@
       icone: "🏆",
       href: "outils/championnat-poule.html",
       categorie: "Organisation EPS",
+      publicCible: "prof",
     },
     {
       id: "timer-hiit-tabata",
@@ -88,6 +67,27 @@
       icone: "⏱️",
       href: "outils/timer-hiit-tabata.html",
       categorie: "Course à pied",
+      publicCible: "prof",
+    },
+    {
+      id: "maxi-timer",
+      titre: "Maxi timer",
+      description:
+        "Grand chrono descendant ou croissant, lisible de loin, avec bips de fin.",
+      icone: "⏲️",
+      href: "outils/maxi-timer.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "tirage-au-sort",
+      titre: "Tirage au sort",
+      description:
+        "Importez une classe ou saisissez une liste, puis tirez un nom au hasard parmi les participants.",
+      icone: "🎲",
+      href: "outils/tirage-au-sort.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
     },
     {
       id: "test-vma",
@@ -97,6 +97,47 @@
       icone: "📣",
       href: "outils/test-vma.html",
       categorie: "Course à pied",
+      publicCible: "prof",
+    },
+    {
+      id: "table-marque",
+      titre: "Table de marque",
+      description:
+        "Deux scores, timer de match, noms et couleurs d’équipes personnalisables.",
+      icone: "🏀",
+      href: "outils/table-marque.html",
+      categorie: "Sports collectifs",
+      publicCible: "eleve",
+    },
+    {
+      id: "compteur-bonus",
+      titre: "Compteur bonus",
+      description:
+        "Deux joueurs en direct : bonus, points et malus en un clic, score et pourcentages par type d’action.",
+      icone: "👍",
+      href: "outils/compteur-bonus.html",
+      categorie: "Organisation EPS",
+      publicCible: "eleve",
+    },
+    {
+      id: "calcul-1rm",
+      titre: "Calcul du 1RM",
+      description:
+        "Estimez votre charge max (1RM) à partir du poids et du nombre de répétitions, formules Epley ou Brzycki.",
+      icone: "🏋️",
+      href: "outils/calcul-1rm.html",
+      categorie: "Musculation",
+      publicCible: "eleve",
+    },
+    {
+      id: "compteur-ratio",
+      titre: "Compteur ratio",
+      description:
+        "Deux compteurs réussite/échec avec total de tentatives et ratio de réussite.",
+      icone: "📊",
+      href: "outils/compteur-ratio.html",
+      categorie: "Observation",
+      publicCible: "eleve",
     },
     {
       id: "convertisseur-allure",
@@ -106,6 +147,7 @@
       icone: "⏱️",
       href: "outils/convertisseur-allure.html",
       categorie: "Course à pied",
+      publicCible: "eleve",
     },
     {
       id: "vitesse-course",
@@ -115,6 +157,7 @@
       icone: "🏃",
       href: "outils/vitesse-course.html",
       categorie: "Course à pied",
+      publicCible: "eleve",
     },
     {
       id: "ecartement-plots",
@@ -124,6 +167,7 @@
       icone: "📐",
       href: "outils/ecartement-plots.html",
       categorie: "Course à pied",
+      publicCible: "prof",
     },
   ];
 
@@ -144,7 +188,8 @@
     var q = normalise(query).trim();
     if (!q) return OUTILS.slice();
     return OUTILS.filter(function (o) {
-      var hay = normalise([o.titre, o.description, o.categorie, o.id].join(" "));
+      var publicLabel = o.publicCible === "eleve" ? "élève eleve" : "prof professeur enseignant";
+      var hay = normalise([o.titre, o.description, o.categorie, o.id, publicLabel].join(" "));
       return hay.indexOf(q) !== -1;
     });
   }
@@ -195,6 +240,111 @@
     sauverFavoris(set);
   }
 
+  function publicLabel(publicCible) {
+    return publicCible === "eleve" ? "Outils pour les élèves" : "Outils pour le prof";
+  }
+
+  function publicDescription(publicCible) {
+    return publicCible === "eleve"
+      ? "À utiliser directement par les élèves ou en autonomie."
+      : "Pour organiser, gérer ou piloter la séance.";
+  }
+
+  function creerEnteteSection(publicCible, count) {
+    var li = document.createElement("li");
+    li.className = "tools-list__section";
+    li.setAttribute("role", "presentation");
+
+    var title = document.createElement("h2");
+    title.className = "tools-list__section-title";
+    title.textContent = publicLabel(publicCible);
+
+    var meta = document.createElement("p");
+    meta.className = "tools-list__section-desc";
+    meta.textContent = publicDescription(publicCible) + " · " + count + " outil" + (count > 1 ? "s" : "");
+
+    li.appendChild(title);
+    li.appendChild(meta);
+    return li;
+  }
+
+  function creerBoutonVoirPlus(publicCible, restants) {
+    var li = document.createElement("li");
+    li.className = "tools-list__more";
+    li.setAttribute("role", "presentation");
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn--ghost tools-list__more-btn";
+    btn.textContent = "Voir plus (" + restants + ")";
+    btn.addEventListener("click", function () {
+      sectionsOuvertes[publicCible] = true;
+      renderListe(filtreOutils(searchInput ? searchInput.value : ""));
+    });
+
+    li.appendChild(btn);
+    return li;
+  }
+
+  function creerItemOutil(o, favoris) {
+    var isFav = favoris.has(o.id);
+    var li = document.createElement("li");
+    li.className = "tool-list__item" + (isFav ? " tool-list__item--fav" : "");
+    li.setAttribute("role", "listitem");
+
+    var link = document.createElement("a");
+    link.className = "tool-list__link";
+    link.href = o.href;
+    link.setAttribute("data-tool-id", o.id);
+
+    var icon = document.createElement("span");
+    icon.className = "tool-list__icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = o.icone;
+
+    var main = document.createElement("span");
+    main.className = "tool-list__main";
+
+    var title = document.createElement("span");
+    title.className = "tool-list__title";
+    title.textContent = o.titre;
+
+    var meta = document.createElement("span");
+    meta.className = "tool-list__meta";
+    meta.textContent = o.categorie + " — " + o.description;
+
+    main.appendChild(title);
+    main.appendChild(meta);
+    link.appendChild(icon);
+    link.appendChild(main);
+
+    var btnFav = document.createElement("button");
+    btnFav.type = "button";
+    btnFav.className = "tool-list__fav" + (isFav ? " tool-list__fav--on" : "");
+    btnFav.setAttribute("aria-pressed", isFav ? "true" : "false");
+    btnFav.setAttribute(
+      "aria-label",
+      isFav ? "Retirer des favoris : " + o.titre : "Mettre en favori : " + o.titre
+    );
+    btnFav.setAttribute("data-fav-id", o.id);
+    var spanIcon = document.createElement("span");
+    spanIcon.className = "tool-list__fav-icon";
+    spanIcon.setAttribute("aria-hidden", "true");
+    spanIcon.textContent = isFav ? "★" : "☆";
+    btnFav.appendChild(spanIcon);
+
+    btnFav.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      basculerFavori(o.id);
+      renderListe(filtreOutils(searchInput ? searchInput.value : ""));
+    });
+
+    li.appendChild(link);
+    li.appendChild(btnFav);
+    return li;
+  }
+
   function renderListe(liste) {
     if (!listEl || !emptyEl) return;
     listEl.innerHTML = "";
@@ -210,65 +360,23 @@
     listEl.hidden = false;
 
     var favoris = chargerFavoris();
-    var sorted = trierAvecFavoris(liste, favoris);
-
-    sorted.forEach(function (o) {
-      var isFav = favoris.has(o.id);
-      var li = document.createElement("li");
-      li.className = "tool-list__item" + (isFav ? " tool-list__item--fav" : "");
-      li.setAttribute("role", "listitem");
-
-      var link = document.createElement("a");
-      link.className = "tool-list__link";
-      link.href = o.href;
-      link.setAttribute("data-tool-id", o.id);
-
-      var icon = document.createElement("span");
-      icon.className = "tool-list__icon";
-      icon.setAttribute("aria-hidden", "true");
-      icon.textContent = o.icone;
-
-      var main = document.createElement("span");
-      main.className = "tool-list__main";
-
-      var title = document.createElement("span");
-      title.className = "tool-list__title";
-      title.textContent = o.titre;
-
-      var meta = document.createElement("span");
-      meta.className = "tool-list__meta";
-      meta.textContent = o.categorie + " — " + o.description;
-
-      main.appendChild(title);
-      main.appendChild(meta);
-      link.appendChild(icon);
-      link.appendChild(main);
-
-      var btnFav = document.createElement("button");
-      btnFav.type = "button";
-      btnFav.className = "tool-list__fav" + (isFav ? " tool-list__fav--on" : "");
-      btnFav.setAttribute("aria-pressed", isFav ? "true" : "false");
-      btnFav.setAttribute(
-        "aria-label",
-        isFav ? "Retirer des favoris : " + o.titre : "Mettre en favori : " + o.titre
-      );
-      btnFav.setAttribute("data-fav-id", o.id);
-      var spanIcon = document.createElement("span");
-      spanIcon.className = "tool-list__fav-icon";
-      spanIcon.setAttribute("aria-hidden", "true");
-      spanIcon.textContent = isFav ? "★" : "☆";
-      btnFav.appendChild(spanIcon);
-
-      btnFav.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        basculerFavori(o.id);
-        renderListe(filtreOutils(searchInput ? searchInput.value : ""));
+    ["prof", "eleve"].forEach(function (publicCible) {
+      var groupe = liste.filter(function (o) {
+        return o.publicCible === publicCible;
       });
+      if (!groupe.length) return;
 
-      li.appendChild(link);
-      li.appendChild(btnFav);
-      listEl.appendChild(li);
+      var sorted = trierAvecFavoris(groupe, favoris);
+      listEl.appendChild(creerEnteteSection(publicCible, sorted.length));
+      var isSearch = !!(searchInput && normalise(searchInput.value).trim());
+      var ouvert = sectionsOuvertes[publicCible] || isSearch;
+      var visibles = ouvert ? sorted : sorted.slice(0, MAX_OUTILS_PAR_SECTION);
+      visibles.forEach(function (o) {
+        listEl.appendChild(creerItemOutil(o, favoris));
+      });
+      if (!ouvert && sorted.length > MAX_OUTILS_PAR_SECTION) {
+        listEl.appendChild(creerBoutonVoirPlus(publicCible, sorted.length - MAX_OUTILS_PAR_SECTION));
+      }
     });
 
     if (countEl) {

@@ -1,5 +1,5 @@
 /**
- * Dispenses EPS — stockage IndexedDB (DataManager).
+ * Dispenses / Inaptitudes — stockage IndexedDB (DataManager).
  */
 
 (function () {
@@ -85,7 +85,7 @@
       onConfirm: function (eleves, classe) {
         if (!eleves.length) return;
         if (eleves.length > 1) {
-          montrerErreur("Cochez un seul élève pour remplir la dispense.");
+          montrerErreur("Cochez un seul élève pour remplir la dispense / inaptitude.");
           return;
         }
         var e = eleves[0];
@@ -311,8 +311,8 @@
     form.reset();
     dateFinEl.value = "";
     btnResetForm.hidden = true;
-    btnSubmit.setAttribute("aria-label", "Enregistrer la dispense");
-    formTitre.textContent = "Nouvelle dispense";
+    btnSubmit.setAttribute("aria-label", "Enregistrer la dispense / inaptitude");
+    formTitre.textContent = "Nouvelle dispense / inaptitude";
     montrerErreur("");
   }
 
@@ -365,7 +365,7 @@
         return x.id === editingId;
       });
       if (idx === -1) {
-        montrerErreur("Dispense introuvable.");
+        montrerErreur("Dispense / inaptitude introuvable.");
         return;
       }
       liste[idx] = entree;
@@ -380,7 +380,7 @@
         renderListe();
         afficherVue("liste");
         montrerFeedbackGlobal(
-          etaitModification ? "Dispense modifiée." : "Dispense enregistrée.",
+          etaitModification ? "Dispense / inaptitude modifiée." : "Dispense / inaptitude enregistrée.",
           false
         );
       })
@@ -419,7 +419,7 @@
   }
 
   function supprimer(id) {
-    if (!confirm("Supprimer cette dispense ?")) return;
+    if (!confirm("Supprimer cette dispense / inaptitude ?")) return;
     var liste = chargerListe().filter(function (x) {
       return x.id !== id;
     });
@@ -430,7 +430,7 @@
         montrerFeedbackGlobal("Dispense supprimée.", false);
       })
       .catch(function () {
-        montrerErreur("Impossible de supprimer la dispense.");
+        montrerErreur("Impossible de supprimer la dispense / inaptitude.");
       });
   }
 
@@ -447,7 +447,7 @@
     majDateFinChamps();
     btnResetForm.hidden = false;
     btnSubmit.setAttribute("aria-label", "Mettre à jour la dispense");
-    formTitre.textContent = "Modifier la dispense";
+    formTitre.textContent = "Modifier la dispense / inaptitude";
     var cible = panelForm || form;
     if (cible && cible.scrollIntoView) {
       cible.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -474,14 +474,14 @@
       var p = document.createElement("p");
       p.className = "empty-state";
       if (brute.length === 0) {
-        p.textContent = "Aucune dispense enregistrée pour le moment.";
+        p.textContent = "Aucune dispense / inaptitude enregistrée pour le moment.";
       } else if (apresTexte.length === 0) {
-        p.textContent = "Aucune dispense ne correspond au filtre.";
+        p.textContent = "Aucune dispense / inaptitude ne correspond au filtre.";
       } else if (masquerTermineesEl && masquerTermineesEl.checked && apresTexte.length > 0) {
         p.textContent =
-          "Toutes les dispenses correspondantes sont terminées. Décochez « Masquer les dispenses terminées » pour les afficher.";
+          "Toutes les dispenses / inaptitudes correspondantes sont terminées. Décochez « Masquer les dispenses / inaptitudes terminées » pour les afficher.";
       } else {
-        p.textContent = "Aucune dispense à afficher.";
+        p.textContent = "Aucune dispense / inaptitude à afficher.";
       }
       listeEl.appendChild(p);
       return;
@@ -574,7 +574,7 @@
       var bEdit = document.createElement("button");
       bEdit.type = "button";
       bEdit.className = "btn btn--ghost btn--small btn--icon-only";
-      bEdit.setAttribute("aria-label", "Modifier la dispense de " + d.prenom + " " + d.nom);
+      bEdit.setAttribute("aria-label", "Modifier la dispense / inaptitude de " + d.prenom + " " + d.nom);
       bEdit.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">✏️</span>';
 
       bEdit.addEventListener("click", function () {
@@ -584,7 +584,7 @@
       var bDel = document.createElement("button");
       bDel.type = "button";
       bDel.className = "btn btn--danger btn--small btn--icon-only";
-      bDel.setAttribute("aria-label", "Supprimer la dispense de " + d.prenom + " " + d.nom);
+      bDel.setAttribute("aria-label", "Supprimer la dispense / inaptitude de " + d.prenom + " " + d.nom);
       bDel.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">🗑️</span>';
       bDel.addEventListener("click", function () {
         supprimer(d.id);
@@ -665,3 +665,4 @@
       renderListe();
     });
 })();
+
