@@ -6,6 +6,7 @@ var ClassImport = (function () {
 
   var overlayEl = null;
   var onConfirmCb = null;
+  var currentOpts = {};
   var D = "d" + "iv";
 
   function creerOverlay() {
@@ -150,17 +151,32 @@ var ClassImport = (function () {
       empty.hidden = true;
       list.hidden = false;
       eleves.forEach(function (e) {
-      var label = document.createElement("label");
-      label.className = "class-import-item";
-      var cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = true;
-      cb.value = e.id;
-      var span = document.createElement("span");
-      span.textContent = formatEleve(e);
-      label.appendChild(cb);
-      label.appendChild(span);
-      list.appendChild(label);
+        if (currentOpts.clickToImport) {
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "class-import-item class-import-item--button";
+          btn.textContent = formatEleve(e);
+          btn.addEventListener("click", function () {
+            DataManager.getClasseById(id).then(function (classe) {
+              if (onConfirmCb && classe) onConfirmCb([e], classe);
+              fermer();
+            });
+          });
+          list.appendChild(btn);
+          return;
+        }
+
+        var label = document.createElement("label");
+        label.className = "class-import-item";
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = currentOpts.defaultChecked !== false;
+        cb.value = e.id;
+        var span = document.createElement("span");
+        span.textContent = formatEleve(e);
+        label.appendChild(cb);
+        label.appendChild(span);
+        list.appendChild(label);
       });
     });
   }
@@ -220,6 +236,7 @@ var ClassImport = (function () {
     }
 
     creerOverlay();
+    currentOpts = opts;
     onConfirmCb = opts.onConfirm;
 
     var titleEl = overlayEl.querySelector("#class-import-title");
@@ -231,6 +248,12 @@ var ClassImport = (function () {
     var empty = overlayEl.querySelector("#class-import-empty");
     var list = overlayEl.querySelector("#class-import-list");
     var okBtn = overlayEl.querySelector("#class-import-ok");
+    var toolbar = overlayEl.querySelector(".class-import-toolbar");
+    var actions = overlayEl.querySelector(".class-import-actions");
+    var clickToImport = !!opts.clickToImport;
+    if (toolbar) toolbar.hidden = clickToImport;
+    if (okBtn) okBtn.hidden = clickToImport;
+    if (actions) actions.classList.toggle("class-import-actions--single", clickToImport);
 
     DataManager.ready
       .then(function () {

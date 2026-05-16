@@ -13,7 +13,8 @@
   var DELETE_CONFIRM = {
     classes:
       "Supprimer toutes les classes et tous les élèves ?\n\nLes autres outils qui s’appuient sur les classes ne pourront plus importer d’élèves tant que vous n’aurez pas recréé des classes.\n\nCette action est irréversible.",
-    dispenses: "Supprimer toutes les dispenses EPS et leurs réglages d’affichage ?\n\nCette action est irréversible.",
+    dispenses: "Supprimer toutes les dispenses / inaptitudes et leurs réglages d’affichage ?\n\nCette action est irréversible.",
+    "oublis-materiel": "Supprimer tous les oublis de matériel enregistrés ?\n\nCette action est irréversible.",
     championnat: "Supprimer le championnat en cours (équipes et matchs) ?\n\nCette action est irréversible.",
     composition: "Supprimer les données enregistrées de Composition équipes ?\n\nCette action est irréversible.",
     "compteur-bonus": "Supprimer les réglages du Compteur bonus ?\n\nLes scores en cours ne sont pas conservés ailleurs.",

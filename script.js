@@ -40,6 +40,16 @@
       publicCible: "prof",
     },
     {
+      id: "oubli-materiel",
+      titre: "Oubli de matériel",
+      description:
+        "Notez les oublis d’affaires et retrouvez automatiquement l’oubli n°1, n°2, etc. par élève.",
+      icone: "👟",
+      href: "outils/oubli-materiel.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
       id: "composition-equipes",
       titre: "Composition d’équipes homogènes",
       description:

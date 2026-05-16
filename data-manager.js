@@ -6,12 +6,12 @@ var DataManager = (function () {
   "use strict";
 
   var DB_NAME = "outilsEPSDB";
-  var DB_VERSION = 1;
+  var DB_VERSION = 2;
   var APP_NAME = "OutilsEPS";
   var BACKUP_VERSION = "1.0";
   var BACKUP_FILENAME = "outilsEPS-backup.json";
 
-  var STORE_NAMES = ["classes", "eleves", "dispenses", "championnats", "parametres"];
+  var STORE_NAMES = ["classes", "eleves", "dispenses", "oublisMateriel", "championnats", "parametres"];
 
   var APP_KEY = "outils_eps_app_v1";
   var LEGACY_DISPENSES = "outils_eps_dispenses_v1";
@@ -273,6 +273,7 @@ var DataManager = (function () {
     var classes = [];
     var eleves = [];
     var dispenses = Array.isArray(app.dispenses) ? app.dispenses : [];
+    var oublisMateriel = Array.isArray(app.oublisMateriel) ? app.oublisMateriel : [];
     var championnats = Array.isArray(app.championnats) ? app.championnats : [];
     var parametres = [];
 
@@ -299,7 +300,7 @@ var DataManager = (function () {
       });
     });
 
-    return { classes: classes, eleves: eleves, dispenses: dispenses, championnats: championnats, parametres: parametres };
+    return { classes: classes, eleves: eleves, dispenses: dispenses, oublisMateriel: oublisMateriel, championnats: championnats, parametres: parametres };
   }
 
   function migrateLegacyPayload(sources) {
@@ -307,6 +308,7 @@ var DataManager = (function () {
       classes: [],
       eleves: [],
       dispenses: [],
+      oublisMateriel: [],
       championnats: [],
       parametres: [],
     };
@@ -318,6 +320,7 @@ var DataManager = (function () {
         payload.classes = split.classes;
         payload.eleves = split.eleves;
         payload.dispenses = split.dispenses;
+        payload.oublisMateriel = split.oublisMateriel;
         payload.championnats = split.championnats;
         payload.parametres = split.parametres;
       } else if (s.type === "dispenses") {
@@ -444,6 +447,7 @@ var DataManager = (function () {
       payload.classes.length +
       payload.eleves.length +
       payload.dispenses.length +
+      payload.oublisMateriel.length +
       payload.championnats.length +
       payload.parametres.length;
     if (total === 0) {
@@ -489,6 +493,7 @@ var DataManager = (function () {
       classes: classes,
       eleves: eleves,
       dispenses: data.dispenses || [],
+      oublisMateriel: data.oublisMateriel || [],
       championnats: data.championnats || [],
       parametres: Array.isArray(parametres) ? parametres : [],
     };
@@ -499,6 +504,7 @@ var DataManager = (function () {
       getAll("classes"),
       getAll("eleves"),
       getAll("dispenses"),
+      getAll("oublisMateriel"),
       getAll("championnats"),
       getAll("parametres"),
     ]).then(function (arrays) {
@@ -511,8 +517,9 @@ var DataManager = (function () {
         classes: arrays[0],
         eleves: arrays[1],
         dispenses: arrays[2],
-        championnats: arrays[3],
-        parametres: arrays[4],
+        oublisMateriel: arrays[3],
+        championnats: arrays[4],
+        parametres: arrays[5],
       };
     });
   }
@@ -751,6 +758,18 @@ var DataManager = (function () {
     });
   }
 
+  function getOublisMateriel() {
+    return getAll("oublisMateriel");
+  }
+
+  function saveOublisMateriel(liste) {
+    return clearStore("oublisMateriel").then(function () {
+      var items = Array.isArray(liste) ? liste : [];
+      if (!items.length) return;
+      return bulkPut("oublisMateriel", items);
+    });
+  }
+
   function getChampionnatActif() {
     return getAll("championnats").then(function (list) {
       if (!list.length) return { teams: [], matches: [] };
@@ -801,9 +820,14 @@ var DataManager = (function () {
     },
     {
       id: "dispenses",
-      label: "Dispenses EPS",
+      label: "Dispenses / Inaptitudes",
       stores: ["dispenses"],
       paramIds: ["dispenses-masquer-terminees"],
+    },
+    {
+      id: "oublis-materiel",
+      label: "Oubli de matériel",
+      stores: ["oublisMateriel"],
     },
     {
       id: "championnat",
@@ -852,6 +876,8 @@ var DataManager = (function () {
         parts.push(n + " élève" + (n !== 1 ? "s" : ""));
       } else if (store === "dispenses") {
         parts.push(n + " dispense" + (n !== 1 ? "s" : ""));
+      } else if (store === "oublisMateriel") {
+        parts.push(n + " oubli" + (n !== 1 ? "s" : ""));
       } else if (store === "championnats") {
         parts.push(n + " championnat" + (n !== 1 ? "s" : ""));
       }
@@ -1015,6 +1041,8 @@ var DataManager = (function () {
     getElevesFromClasse: getElevesFromClasse,
     getDispenses: getDispenses,
     saveDispenses: saveDispenses,
+    getOublisMateriel: getOublisMateriel,
+    saveOublisMateriel: saveOublisMateriel,
     getChampionnatActif: getChampionnatActif,
     saveChampionnatActif: saveChampionnatActif,
     getParametre: getParametre,

@@ -81,7 +81,8 @@
     }
     ClassImport.open({
       title: "Importer un élève",
-      hint: "Choisissez une classe puis cochez un seul élève pour remplir le formulaire.",
+      hint: "Choisissez une classe puis cliquez sur un élève pour remplir le formulaire.",
+      clickToImport: true,
       onConfirm: function (eleves, classe) {
         if (!eleves.length) return;
         if (eleves.length > 1) {
@@ -559,15 +560,6 @@
       head.appendChild(left);
       head.appendChild(daysWrap);
 
-      article.appendChild(head);
-
-      if (d.motif) {
-        var m = document.createElement("p");
-        m.style.margin = "0.5rem 0 0";
-        m.textContent = d.motif;
-        article.appendChild(m);
-      }
-
       var actions = document.createElement("div");
       actions.className = "dispense-actions";
 
@@ -592,7 +584,15 @@
 
       actions.appendChild(bEdit);
       actions.appendChild(bDel);
-      article.appendChild(actions);
+      head.appendChild(actions);
+      article.appendChild(head);
+
+      if (d.motif) {
+        var m = document.createElement("p");
+        m.className = "dispense-note";
+        m.textContent = d.motif;
+        article.appendChild(m);
+      }
 
       listeEl.appendChild(article);
     });
