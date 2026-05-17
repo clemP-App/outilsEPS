@@ -1,7 +1,7 @@
 /**
  * Service worker — cache des pages et assets pour installation PWA.
  */
-var CACHE_NAME = "outils-eps-v16";
+var CACHE_NAME = "outils-eps-v19";
 
 var PRECACHE = [
   "./",
@@ -31,6 +31,8 @@ var PRECACHE = [
   "./outils/championnat-poule.js",
   "./outils/table-marque.html",
   "./outils/table-marque.js",
+  "./outils/compteur-ptb.html",
+  "./outils/compteur-ptb.js",
   "./outils/timer-hiit-tabata.html",
   "./outils/timer-hiit-tabata.js",
   "./outils/maxi-timer.html",

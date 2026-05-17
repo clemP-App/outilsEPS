@@ -13,8 +13,13 @@
   "use strict";
 
   var FAVORIS_KEY = "outils_eps_favoris_v1";
+  var VIEW_KEY = "outils_eps_view_v1";
+  var PROF_VIEW_KEY = "outils_eps_prof_view_v1";
   var MAX_OUTILS_PAR_SECTION = 5;
+  var MAX_ICONES_GRAND_ECRAN = 8;
+  var MAX_ICONES_AUTRE_ECRAN = 6;
   var sectionsOuvertes = { prof: false, eleve: false };
+  var viewMode = chargerModeOutils();
 
   /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string,publicCible:'prof'|'eleve'}>} */
   /** Du plus au moins utilisé au quotidien (hors sauvegarde, accessible via l’en-tête). */
@@ -116,6 +121,16 @@
         "Deux scores, timer de match, noms et couleurs d’équipes personnalisables.",
       icone: "🏀",
       href: "outils/table-marque.html",
+      categorie: "Sports collectifs",
+      publicCible: "eleve",
+    },
+    {
+      id: "compteur-ptb",
+      titre: "Compteur PTB",
+      description:
+        "Observer pertes, tirs et buts pour deux équipes, avec statistiques comparatives en direct.",
+      icone: "🧮",
+      href: "outils/compteur-ptb.html",
       categorie: "Sports collectifs",
       publicCible: "eleve",
     },
@@ -228,6 +243,32 @@
     }
   }
 
+  function chargerModeOutils() {
+    try {
+      var saved = localStorage.getItem(VIEW_KEY) || localStorage.getItem(PROF_VIEW_KEY);
+      return saved === "icons" ? "icons" : "cards";
+    } catch (e) {
+      return "cards";
+    }
+  }
+
+  function sauverModeOutils(mode) {
+    viewMode = mode === "icons" ? "icons" : "cards";
+    try {
+      localStorage.setItem(VIEW_KEY, viewMode);
+    } catch (e) {
+      /* quota ou mode privé strict */
+    }
+  }
+
+  function limiteVisibleParSection() {
+    if (viewMode !== "icons") return MAX_OUTILS_PAR_SECTION;
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 900px)").matches) {
+      return MAX_ICONES_GRAND_ECRAN;
+    }
+    return MAX_ICONES_AUTRE_ECRAN;
+  }
+
   /**
    * Favoris d’abord, en conservant l’ordre d’origine dans chaque groupe.
    * @param {typeof OUTILS} liste
@@ -265,17 +306,49 @@
     li.className = "tools-list__section";
     li.setAttribute("role", "presentation");
 
+    var top = document.createElement("div");
+    top.className = "tools-list__section-top";
+
     var title = document.createElement("h2");
     title.className = "tools-list__section-title";
     title.textContent = publicLabel(publicCible);
+    top.appendChild(title);
+
+    top.appendChild(creerSelecteurVueOutils(publicCible));
 
     var meta = document.createElement("p");
     meta.className = "tools-list__section-desc";
     meta.textContent = publicDescription(publicCible) + " · " + count + " outil" + (count > 1 ? "s" : "");
 
-    li.appendChild(title);
+    li.appendChild(top);
     li.appendChild(meta);
     return li;
+  }
+
+  function creerSelecteurVueOutils(publicCible) {
+    var wrap = document.createElement("div");
+    wrap.className = "tools-view-toggle";
+    wrap.setAttribute("aria-label", "Affichage " + publicLabel(publicCible).toLowerCase());
+
+    [
+      { mode: "cards", label: "Cartes", icon: "▤" },
+      { mode: "icons", label: "Icônes", icon: "▦" },
+    ].forEach(function (opt) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tools-view-toggle__btn" + (viewMode === opt.mode ? " is-active" : "");
+      btn.setAttribute("aria-label", "Afficher " + publicLabel(publicCible).toLowerCase() + " en mode " + opt.label.toLowerCase());
+      btn.setAttribute("aria-pressed", viewMode === opt.mode ? "true" : "false");
+      btn.textContent = opt.icon;
+      btn.addEventListener("click", function () {
+        if (viewMode === opt.mode) return;
+        sauverModeOutils(opt.mode);
+        renderListe(filtreOutils(searchInput ? searchInput.value : ""));
+      });
+      wrap.appendChild(btn);
+    });
+
+    return wrap;
   }
 
   function creerBoutonVoirPlus(publicCible, restants) {
@@ -300,6 +373,7 @@
     var isFav = favoris.has(o.id);
     var li = document.createElement("li");
     li.className = "tool-list__item" + (isFav ? " tool-list__item--fav" : "");
+    li.setAttribute("data-public", o.publicCible);
     li.setAttribute("role", "listitem");
 
     var link = document.createElement("a");
@@ -358,6 +432,7 @@
   function renderListe(liste) {
     if (!listEl || !emptyEl) return;
     listEl.innerHTML = "";
+    listEl.classList.toggle("tools-list--icons", viewMode === "icons");
 
     if (liste.length === 0) {
       emptyEl.hidden = false;
@@ -380,12 +455,13 @@
       listEl.appendChild(creerEnteteSection(publicCible, sorted.length));
       var isSearch = !!(searchInput && normalise(searchInput.value).trim());
       var ouvert = sectionsOuvertes[publicCible] || isSearch;
-      var visibles = ouvert ? sorted : sorted.slice(0, MAX_OUTILS_PAR_SECTION);
+      var limite = limiteVisibleParSection();
+      var visibles = ouvert ? sorted : sorted.slice(0, limite);
       visibles.forEach(function (o) {
         listEl.appendChild(creerItemOutil(o, favoris));
       });
-      if (!ouvert && sorted.length > MAX_OUTILS_PAR_SECTION) {
-        listEl.appendChild(creerBoutonVoirPlus(publicCible, sorted.length - MAX_OUTILS_PAR_SECTION));
+      if (!ouvert && sorted.length > limite) {
+        listEl.appendChild(creerBoutonVoirPlus(publicCible, sorted.length - limite));
       }
     });
 
@@ -408,6 +484,11 @@
   renderListe(OUTILS);
   if (searchInput) {
     searchInput.addEventListener("input", onSearch);
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", function () {
+      if (viewMode === "icons") renderListe(filtreOutils(searchInput ? searchInput.value : ""));
+    });
   }
 
   var btnInfo = document.getElementById("btn-info-app");

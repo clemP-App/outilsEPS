@@ -1,0 +1,541 @@
+/**
+ * Compteur PTB — Perte / Tir / But pour sports collectifs.
+ * Stockage local volontairement autonome via localStorage.
+ */
+(function () {
+  "use strict";
+
+  var TEAM_IDS = ["a", "b"];
+
+  var els = {};
+  var state = createInitialState();
+  var timerId = null;
+  var wakeLockSentinel = null;
+  var audioCtx = null;
+
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function bindEls() {
+    [
+      "ptb-mode",
+      "ptb-min",
+      "ptb-sec",
+      "ptb-duration-field",
+      "ptb-initial-possession",
+      "ptb-name-a",
+      "ptb-name-b",
+      "ptb-color-a",
+      "ptb-color-b",
+      "ptb-start-match",
+      "ptb-fullscreen",
+      "ptb-match",
+      "ptb-possession-band",
+      "ptb-possession-label",
+      "ptb-timer-box",
+      "ptb-timer-label",
+      "ptb-time",
+      "ptb-timer-main",
+      "ptb-reset-timer",
+      "ptb-change-possession",
+      "ptb-undo",
+      "ptb-finish",
+      "ptb-finish-msg",
+      "ptb-score-a",
+      "ptb-score-b",
+      "ptb-panel-name-a",
+      "ptb-panel-name-b",
+      "ptb-live-stats",
+      "ptb-compare",
+      "ptb-reset-match",
+    ].forEach(function (id) {
+      els[id] = $(id);
+    });
+  }
+
+  function createInitialState() {
+    return {
+      mode: "none",
+      durationMs: 8 * 60 * 1000,
+      startedAtIso: null,
+      endedAtIso: null,
+      running: false,
+      paused: false,
+      finished: false,
+      elapsedMs: 0,
+      remainingMs: 8 * 60 * 1000,
+      lastTick: 0,
+      possession: "a",
+      teams: {
+        a: { name: "Équipe A", color: "#2563eb", losses: 0, shots: 0, goals: 0, possessionMs: 0 },
+        b: { name: "Équipe B", color: "#dc2626", losses: 0, shots: 0, goals: 0, possessionMs: 0 },
+      },
+      history: [],
+    };
+  }
+
+  function parseDurationMs() {
+    var min = parseInt(els["ptb-min"].value, 10);
+    var sec = parseInt(els["ptb-sec"].value, 10);
+    if (isNaN(min) || min < 0) min = 0;
+    if (isNaN(sec) || sec < 0) sec = 0;
+    if (sec > 59) sec = 59;
+    return (min * 60 + sec) * 1000;
+  }
+
+  function readConfig() {
+    state.mode = ["up", "down"].indexOf(els["ptb-mode"].value) !== -1 ? els["ptb-mode"].value : "none";
+    state.durationMs = parseDurationMs();
+    if (!state.running && !state.paused) state.remainingMs = state.durationMs;
+    state.teams.a.name = els["ptb-name-a"].value.trim() || "Équipe A";
+    state.teams.b.name = els["ptb-name-b"].value.trim() || "Équipe B";
+    state.teams.a.color = els["ptb-color-a"].value || "#2563eb";
+    state.teams.b.color = els["ptb-color-b"].value || "#dc2626";
+    if (!state.running && !state.paused && !state.history.length) {
+      state.possession = els["ptb-initial-possession"].value === "b" ? "b" : "a";
+    }
+  }
+
+  function syncInitialPossessionLabels() {
+    var selected = els["ptb-initial-possession"].value || "a";
+    els["ptb-initial-possession"].innerHTML = "";
+    TEAM_IDS.forEach(function (id) {
+      var option = document.createElement("option");
+      option.value = id;
+      option.textContent = state.teams[id].name;
+      els["ptb-initial-possession"].appendChild(option);
+    });
+    els["ptb-initial-possession"].value = selected;
+  }
+
+  function formatTime(ms) {
+    var total = Math.max(0, Math.floor(ms / 1000));
+    var h = Math.floor(total / 3600);
+    var m = Math.floor((total % 3600) / 60);
+    var s = total % 60;
+    var mm = (m < 10 ? "0" : "") + m;
+    var ss = (s < 10 ? "0" : "") + s;
+    if (h > 0) return h + ":" + mm + ":" + ss;
+    return mm + ":" + ss;
+  }
+
+  function displayedTimeMs() {
+    return state.mode === "down" ? state.remainingMs : state.elapsedMs;
+  }
+
+  function setButtonLabel(btn, label, icon) {
+    if (!btn) return;
+    var text = btn.querySelector(".btn__text");
+    var ic = btn.querySelector(".btn__icon");
+    if (text) text.textContent = label;
+    if (ic) ic.textContent = icon;
+  }
+
+  function teamStats(team) {
+    var possessions = team.losses + team.shots;
+    return {
+      possessions: possessions,
+      losses: team.losses,
+      shots: team.shots,
+      goals: team.goals,
+      efficiency: team.shots ? Math.round((team.goals / team.shots) * 100) : 0,
+      shotsPerPossession: possessions ? team.shots / possessions : 0,
+      lossesPerPossession: possessions ? team.losses / possessions : 0,
+      lossRate: possessions ? Math.round((team.losses / possessions) * 100) : 0,
+      score: team.goals,
+      possessionMs: team.possessionMs || 0,
+    };
+  }
+
+  function pct(value) {
+    return value + "%";
+  }
+
+  function decimal(value) {
+    return value.toFixed(2).replace(".", ",");
+  }
+
+  function pctRatio(value) {
+    return Math.round(value * 100) + "%";
+  }
+
+  function render() {
+    var posTeam = state.teams[state.possession];
+    var hasTimer = state.mode !== "none";
+    syncInitialPossessionLabels();
+    els["ptb-possession-label"].textContent = "Possession : " + posTeam.name;
+    els["ptb-possession-band"].style.setProperty("--ptb-possession-color", posTeam.color);
+    els["ptb-timer-box"].hidden = !hasTimer;
+    els["ptb-timer-main"].hidden = !hasTimer;
+    els["ptb-reset-timer"].hidden = !hasTimer;
+    var chronoGroup = document.querySelector(".ptb-control-group--chrono");
+    if (chronoGroup) chronoGroup.hidden = !hasTimer;
+    els["ptb-time"].textContent = hasTimer ? formatTime(displayedTimeMs()) : "—";
+    els["ptb-timer-label"].textContent = !hasTimer
+      ? "Sans chrono"
+      : state.finished
+        ? "Fin du match"
+        : state.paused
+          ? "En pause"
+          : state.running
+            ? state.mode === "down"
+              ? "Temps restant"
+              : "Temps écoulé"
+            : "Prêt";
+    setButtonLabel(
+      els["ptb-timer-main"],
+      state.paused ? "Reprendre" : state.running ? "Pause" : "Démarrer",
+      state.running && !state.paused ? "⏸" : "▶"
+    );
+    els["ptb-finish-msg"].hidden = !state.finished;
+
+    TEAM_IDS.forEach(function (id) {
+      var team = state.teams[id];
+      var panel = document.querySelector('.ptb-team-panel[data-team="' + id + '"]');
+      if (panel) {
+        panel.style.setProperty("--ptb-team-color", team.color);
+        panel.classList.toggle("is-possession", state.possession === id);
+        panel.hidden = state.possession !== id;
+      }
+      els["ptb-panel-name-" + id].textContent = team.name;
+      els["ptb-score-" + id].textContent = String(team.goals);
+    });
+
+    renderStats();
+  }
+
+  function renderStats() {
+    var a = teamStats(state.teams.a);
+    var b = teamStats(state.teams.b);
+    var rows = [
+      { label: "Score", a: a.score, b: b.score, format: String, best: "high" },
+      { label: "Possessions estimées", a: a.possessions, b: b.possessions, format: String, best: "high" },
+    ];
+    if (state.mode !== "none") {
+      var totalPossessionMs = Math.max(1, a.possessionMs + b.possessionMs);
+      rows.push({
+        label: "Temps de possession",
+        a: { ms: a.possessionMs, pct: Math.round((a.possessionMs / totalPossessionMs) * 100) },
+        b: { ms: b.possessionMs, pct: Math.round((b.possessionMs / totalPossessionMs) * 100) },
+        format: formatPossessionTime,
+        best: "high",
+        compareValue: function (value) {
+          return value.ms;
+        },
+      });
+    }
+    rows = rows.concat([
+      { label: "Pertes", a: a.losses, b: b.losses, format: String, best: "low" },
+      { label: "Tirs", a: a.shots, b: b.shots, format: String, best: "high" },
+      { label: "Buts", a: a.goals, b: b.goals, format: String, best: "high" },
+      { label: "Efficacité au tir", a: a.efficiency, b: b.efficiency, format: pct, best: "high" },
+      { label: "Tirs / possession", a: a.shotsPerPossession, b: b.shotsPerPossession, format: pctRatio, best: "high" },
+      { label: "Pertes / possession", a: a.lossesPerPossession, b: b.lossesPerPossession, format: pctRatio, best: "low" },
+    ]);
+
+    els["ptb-live-stats"].innerHTML =
+      '<div class="ptb-stats-table" style="--ptb-color-a:' +
+      state.teams.a.color +
+      ";--ptb-color-b:" +
+      state.teams.b.color +
+      '">' +
+      '<div class="ptb-stats-head"><span></span><strong>' +
+      escapeHtml(state.teams.a.name) +
+      "</strong><strong>" +
+      escapeHtml(state.teams.b.name) +
+      "</strong></div>" +
+      rows
+        .map(function (row) {
+          return statsRow(row);
+        })
+        .join("") +
+      "</div>";
+    els["ptb-compare"].innerHTML = "";
+  }
+
+  function statsRow(row) {
+    var aCompare = row.compareValue ? row.compareValue(row.a) : row.a;
+    var bCompare = row.compareValue ? row.compareValue(row.b) : row.b;
+    var best = bestTeam(aCompare, bCompare, row.best);
+    return (
+      '<div class="ptb-stats-row">' +
+      "<span>" +
+      row.label +
+      "</span>" +
+      '<strong class="' +
+      (best === "a" ? "is-best" : "") +
+      '">' +
+      row.format(row.a) +
+      "</strong>" +
+      '<strong class="' +
+      (best === "b" ? "is-best" : "") +
+      '">' +
+      row.format(row.b) +
+      "</strong>" +
+      "</div>"
+    );
+  }
+
+  function formatPossessionTime(value) {
+    return '<span class="ptb-stat-stack"><b>' + formatTime(value.ms) + '</b><small>' + value.pct + "%</small></span>";
+  }
+
+  function bestTeam(aValue, bValue, mode) {
+    if (aValue === bValue) return "";
+    if (mode === "low") return aValue < bValue ? "a" : "b";
+    return aValue > bValue ? "a" : "b";
+  }
+
+  function addAction(teamId, action) {
+    if (state.finished) return;
+    var team = state.teams[teamId];
+    if (!team) return;
+    var beforePossession = state.possession;
+    if (action === "loss") team.losses++;
+    if (action === "shot") team.shots++;
+    if (action === "goal") {
+      team.shots++;
+      team.goals++;
+    }
+    state.history.push({
+      team: teamId,
+      action: action,
+      atMs: state.elapsedMs,
+      beforePossession: beforePossession,
+      afterPossession: otherTeam(teamId),
+    });
+    state.possession = otherTeam(teamId);
+    render();
+  }
+
+  function undoLast() {
+    var last = state.history.pop();
+    if (!last) return;
+    var team = state.teams[last.team];
+    if (last.action === "loss") team.losses = Math.max(0, team.losses - 1);
+    if (last.action === "shot") team.shots = Math.max(0, team.shots - 1);
+    if (last.action === "goal") {
+      team.shots = Math.max(0, team.shots - 1);
+      team.goals = Math.max(0, team.goals - 1);
+    }
+    state.possession = last.beforePossession || state.possession;
+    render();
+  }
+
+  function otherTeam(id) {
+    return id === "a" ? "b" : "a";
+  }
+
+  function startMatch() {
+    readConfig();
+    state.startedAtIso = state.startedAtIso || new Date().toISOString();
+    state.finished = false;
+    render();
+    var config = $("ptb-config");
+    if (config) config.open = false;
+    els["ptb-match"].scrollIntoView({ behavior: "smooth", block: "start" });
+    startTimer();
+  }
+
+  function startTimer() {
+    if (state.finished) return;
+    if (state.mode === "none") return;
+    if (state.mode === "down" && state.durationMs <= 0) {
+      alert("Réglez une durée supérieure à zéro.");
+      return;
+    }
+    state.running = true;
+    state.paused = false;
+    state.lastTick = Date.now();
+    startTick();
+    majWakeLock();
+    render();
+  }
+
+  function pauseTimer() {
+    if (!state.running) return;
+    state.paused = true;
+    state.running = false;
+    stopTick();
+    majWakeLock();
+    render();
+  }
+
+  function resetTimer() {
+    if ((state.elapsedMs > 0 || state.history.length) && !confirm("Réinitialiser le chronomètre ? Les statistiques restent conservées.")) {
+      return;
+    }
+    stopTick();
+    state.running = false;
+    state.paused = false;
+    state.elapsedMs = 0;
+    state.remainingMs = state.durationMs;
+    state.teams.a.possessionMs = 0;
+    state.teams.b.possessionMs = 0;
+    majWakeLock();
+    render();
+  }
+
+  function timerMain() {
+    if (state.running) pauseTimer();
+    else startTimer();
+  }
+
+  function startTick() {
+    stopTick();
+    timerId = setInterval(tick, 250);
+  }
+
+  function stopTick() {
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+  }
+
+  function tick() {
+    if (!state.running) return;
+    var now = Date.now();
+    var delta = now - state.lastTick;
+    state.lastTick = now;
+    state.elapsedMs += delta;
+    state.teams[state.possession].possessionMs += delta;
+    if (state.mode === "down") {
+      state.remainingMs = Math.max(0, state.remainingMs - delta);
+      if (state.remainingMs <= 0) {
+        finishMatch(true);
+        return;
+      }
+    }
+    render();
+  }
+
+  function finishMatch(fromTimer) {
+    if (!fromTimer && !confirm("Terminer le match ?")) return;
+    state.running = false;
+    state.paused = false;
+    state.finished = true;
+    state.endedAtIso = new Date().toISOString();
+    stopTick();
+    majWakeLock();
+    if (fromTimer) beep();
+    render();
+    $("ptb-stats").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function resetMatch() {
+    if (!confirm("Réinitialiser tout le match ? Les données non enregistrées seront perdues.")) return;
+    state = createInitialState();
+    readConfig();
+    stopTick();
+    majWakeLock();
+    render();
+  }
+
+  function beep() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {
+      /* audio indisponible */
+    }
+  }
+
+  function activerWakeLock() {
+    if (!("wakeLock" in navigator) || wakeLockSentinel) return;
+    navigator.wakeLock
+      .request("screen")
+      .then(function (sentinel) {
+        wakeLockSentinel = sentinel;
+        sentinel.addEventListener("release", function () {
+          if (wakeLockSentinel === sentinel) wakeLockSentinel = null;
+        });
+      })
+      .catch(function () {});
+  }
+
+  function libererWakeLock() {
+    if (!wakeLockSentinel) return;
+    var sentinel = wakeLockSentinel;
+    wakeLockSentinel = null;
+    try {
+      sentinel.release();
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function majWakeLock() {
+    if (state.running) activerWakeLock();
+    else libererWakeLock();
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function requestFullscreen() {
+    var el = document.documentElement;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else if (el.requestFullscreen) {
+      el.requestFullscreen();
+    }
+  }
+
+  function bindEvents() {
+    els["ptb-mode"].addEventListener("change", function () {
+      els["ptb-duration-field"].hidden = els["ptb-mode"].value !== "down";
+      readConfig();
+      render();
+    });
+    ["ptb-name-a", "ptb-name-b", "ptb-color-a", "ptb-color-b", "ptb-min", "ptb-sec", "ptb-initial-possession"].forEach(function (id) {
+      els[id].addEventListener("input", function () {
+        readConfig();
+        render();
+      });
+      els[id].addEventListener("change", function () {
+        readConfig();
+        render();
+      });
+    });
+    els["ptb-start-match"].addEventListener("click", startMatch);
+    els["ptb-fullscreen"].addEventListener("click", requestFullscreen);
+    els["ptb-timer-main"].addEventListener("click", timerMain);
+    els["ptb-reset-timer"].addEventListener("click", resetTimer);
+    els["ptb-change-possession"].addEventListener("click", function () {
+      state.possession = otherTeam(state.possession);
+      render();
+    });
+    els["ptb-undo"].addEventListener("click", undoLast);
+    els["ptb-finish"].addEventListener("click", function () {
+      finishMatch(false);
+    });
+    els["ptb-reset-match"].addEventListener("click", resetMatch);
+    document.querySelectorAll(".ptb-action").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        addAction(btn.getAttribute("data-team"), btn.getAttribute("data-action"));
+      });
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") majWakeLock();
+    });
+  }
+
+  bindEls();
+  bindEvents();
+  els["ptb-duration-field"].hidden = true;
+  readConfig();
+  render();
+})();

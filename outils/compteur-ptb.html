@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Compteur PTB — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--ptb">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Compteur PTB</h1>
+      </header>
+
+      <p class="hint ptb-subtitle">Observer les pertes, tirs et buts en sports collectifs</p>
+
+      <details class="card card--accordion ptb-config" id="ptb-config" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="ptb-config-title">Configuration du match</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p class="hint">
+            Un outil simple et tactile pour observer deux équipes en simultané, suivre les pertes de balle, les tirs et les buts, puis obtenir immédiatement des statistiques utiles pour faire progresser les élèves.
+          </p>
+
+        <div class="field-row ptb-config-grid">
+          <div class="field-group">
+            <label class="field-label" for="ptb-mode">Mode chronomètre</label>
+            <select id="ptb-mode">
+              <option value="none">Sans chrono</option>
+              <option value="up">Chronomètre classique</option>
+              <option value="down">Compte à rebours</option>
+            </select>
+          </div>
+          <div class="field-group ptb-duration-field" id="ptb-duration-field">
+            <label class="field-label" for="ptb-min">Durée</label>
+            <div class="ptb-duration">
+              <input type="number" id="ptb-min" min="0" max="999" step="1" inputmode="numeric" value="8" aria-label="Minutes" />
+              <span>min</span>
+              <input type="number" id="ptb-sec" min="0" max="59" step="1" inputmode="numeric" value="0" aria-label="Secondes" />
+              <span>s</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="ptb-initial-possession">Possession au départ</label>
+            <select id="ptb-initial-possession">
+              <option value="a">Équipe A</option>
+              <option value="b">Équipe B</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ptb-teams-config">
+          <div class="ptb-team-config">
+            <label class="field-label" for="ptb-name-a">Équipe A</label>
+            <input type="text" id="ptb-name-a" value="Équipe A" />
+            <label class="table-color-label">
+              <span>Couleur</span>
+              <input type="color" id="ptb-color-a" value="#2563eb" />
+            </label>
+          </div>
+          <div class="ptb-team-config">
+            <label class="field-label" for="ptb-name-b">Équipe B</label>
+            <input type="text" id="ptb-name-b" value="Équipe B" />
+            <label class="table-color-label">
+              <span>Couleur</span>
+              <input type="color" id="ptb-color-b" value="#dc2626" />
+            </label>
+          </div>
+        </div>
+
+        <div class="ptb-config-actions">
+          <button type="button" class="btn btn--primary btn--labeled" id="ptb-start-match">
+            <span class="btn__icon" aria-hidden="true">▶</span>
+            <span class="btn__text">Démarrer le match</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="ptb-fullscreen">
+            <span class="btn__icon" aria-hidden="true">⛶</span>
+            <span class="btn__text">Plein écran</span>
+          </button>
+        </div>
+        </div>
+      </details>
+
+      <section class="card ptb-match" id="ptb-match" aria-labelledby="ptb-match-title">
+        <div class="ptb-match-top" id="ptb-possession-band">
+          <div>
+            <h2 id="ptb-match-title">Observation du match</h2>
+            <p id="ptb-possession-label">Possession : Équipe A</p>
+          </div>
+          <div class="ptb-timer-side">
+            <div class="ptb-timer" id="ptb-timer-box">
+              <span id="ptb-timer-label">Prêt</span>
+              <strong id="ptb-time">00:00</strong>
+            </div>
+            <div class="ptb-control-group ptb-control-group--chrono">
+              <span class="ptb-control-group__label">Chrono</span>
+              <button type="button" class="btn btn--primary btn--labeled" id="ptb-timer-main">
+                <span class="btn__icon" aria-hidden="true">▶</span>
+                <span class="btn__text">Démarrer</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="ptb-reset-timer">
+                <span class="btn__icon" aria-hidden="true">↺</span>
+                <span class="btn__text">Réinitialiser</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ptb-controls">
+          <div class="ptb-control-group ptb-control-group--match">
+            <span class="ptb-control-group__label">Match</span>
+            <button type="button" class="btn btn--danger btn--labeled" id="ptb-finish">
+              <span class="btn__icon" aria-hidden="true">■</span>
+              <span class="btn__text">Terminer</span>
+            </button>
+            <button type="button" class="btn btn--danger btn--labeled" id="ptb-reset-match">
+              <span class="btn__icon" aria-hidden="true">🗑</span>
+              <span class="btn__text">Réinitialiser le match</span>
+            </button>
+          </div>
+          <div class="ptb-control-group ptb-control-group--observation">
+            <span class="ptb-control-group__label">Observation</span>
+            <button type="button" class="btn btn--ghost btn--labeled" id="ptb-change-possession">
+              <span class="btn__icon" aria-hidden="true">🔁</span>
+              <span class="btn__text">Changer possession</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="ptb-undo">
+              <span class="btn__icon" aria-hidden="true">↩</span>
+              <span class="btn__text">Annuler la dernière action</span>
+            </button>
+          </div>
+        </div>
+
+        <p class="msg-ok ptb-finish-msg" id="ptb-finish-msg" hidden>Fin du match</p>
+
+        <div class="ptb-observation" aria-label="Saisie des actions">
+          <article class="ptb-team-panel" data-team="a">
+            <h3 id="ptb-panel-name-a">Équipe A</h3>
+            <p class="ptb-team-score"><span id="ptb-score-a">0</span> but(s)</p>
+            <div class="ptb-action-grid">
+              <button type="button" class="ptb-action ptb-action--loss" data-team="a" data-action="loss">Perte</button>
+              <button type="button" class="ptb-action ptb-action--shot" data-team="a" data-action="shot">Tir</button>
+              <button type="button" class="ptb-action ptb-action--goal" data-team="a" data-action="goal">But</button>
+            </div>
+          </article>
+          <article class="ptb-team-panel" data-team="b">
+            <h3 id="ptb-panel-name-b">Équipe B</h3>
+            <p class="ptb-team-score"><span id="ptb-score-b">0</span> but(s)</p>
+            <div class="ptb-action-grid">
+              <button type="button" class="ptb-action ptb-action--loss" data-team="b" data-action="loss">Perte</button>
+              <button type="button" class="ptb-action ptb-action--shot" data-team="b" data-action="shot">Tir</button>
+              <button type="button" class="ptb-action ptb-action--goal" data-team="b" data-action="goal">But</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <details class="card card--accordion ptb-stats-card" id="ptb-stats" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">Statistiques</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <div class="ptb-stats-grid" id="ptb-live-stats"></div>
+          <div class="ptb-compare" id="ptb-compare"></div>
+        </div>
+      </details>
+    </div>
+
+    <script src="compteur-ptb.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Observer les pertes, tirs et buts en sports collectifs.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Le Compteur PTB donne des statistiques immédiates pour comprendre comment une équipe utilise ses possessions.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Configurez les équipes et le chrono.",
+              "Pendant le match, appuyez sur Perte, Tir ou But à chaque action observée.",
+              "Utilisez les statistiques pour construire un retour pédagogique.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>
