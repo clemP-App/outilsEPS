@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Zone d’impact — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--bad-impact">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Zone d’impact</h1>
+      </header>
+
+      <p class="hint bad-impact-intro">
+        Clique sur la zone où arrive l’objet ou la touche pour visualiser les espaces les plus utilisés.
+      </p>
+
+      <section class="card bad-impact-card" aria-labelledby="bad-impact-title">
+        <div class="bad-impact-card__top">
+          <div>
+            <h2 id="bad-impact-title">Surface d’impact</h2>
+            <p class="hint" id="bad-impact-surface-hint">
+              Demi-terrain adverse : le filet est en bas, la zone avant commence au filet.
+            </p>
+          </div>
+          <div class="bad-impact-actions">
+            <button type="button" class="btn btn--ghost btn--labeled" id="bad-impact-undo" disabled>
+              <span class="btn__icon" aria-hidden="true">↩</span>
+              <span class="btn__text">Annuler</span>
+            </button>
+            <button type="button" class="btn btn--danger btn--labeled" id="bad-impact-reset" disabled>
+              <span class="btn__icon" aria-hidden="true">↺</span>
+              <span class="btn__text">Remise à zéro</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bad-impact-settings" aria-label="Découpage du terrain">
+          <div class="field-group">
+            <label class="field-label" for="bad-impact-activity">Activité</label>
+            <select id="bad-impact-activity">
+              <option value="badminton" selected>Badminton</option>
+              <option value="tennis-table">Tennis de table</option>
+              <option value="volleyball">Volley-ball</option>
+              <option value="boxe-francaise">Boxe française</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="bad-impact-cols">Zones latérales</label>
+            <select id="bad-impact-cols">
+              <option value="1">1 zone</option>
+              <option value="2">2 zones</option>
+              <option value="3" selected>3 zones</option>
+            </select>
+          </div>
+          <div class="field-group" id="bad-impact-rows-group">
+            <label class="field-label" for="bad-impact-rows">Zones en profondeur</label>
+            <select id="bad-impact-rows">
+              <option value="1">1 zone</option>
+              <option value="2">2 zones</option>
+              <option value="3" selected>3 zones</option>
+            </select>
+          </div>
+        </div>
+
+        <div
+          class="bad-impact-court"
+          id="bad-impact-court"
+          role="button"
+          tabindex="0"
+          aria-label="Surface d'impact cliquable"
+        >
+          <div class="bad-impact-court__zone-grid" id="bad-impact-zone-grid" aria-hidden="true"></div>
+          <div class="bad-impact-body-shape" aria-hidden="true">
+            <span class="bad-impact-body-shape__head"></span>
+            <span class="bad-impact-body-shape__trunk"></span>
+            <span class="bad-impact-body-shape__legs"></span>
+          </div>
+          <span class="bad-impact-line bad-impact-line--net" aria-hidden="true"></span>
+          <span class="bad-impact-line bad-impact-line--service-top" aria-hidden="true"></span>
+          <span class="bad-impact-line bad-impact-line--service-bottom" aria-hidden="true"></span>
+          <span class="bad-impact-line bad-impact-line--center" aria-hidden="true"></span>
+          <span class="bad-impact-line bad-impact-line--left-corridor" aria-hidden="true"></span>
+          <span class="bad-impact-line bad-impact-line--right-corridor" aria-hidden="true"></span>
+          <div class="bad-impact-markers" id="bad-impact-markers" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <section class="card bad-impact-stats-card" aria-labelledby="bad-impact-stats-title">
+        <h2 id="bad-impact-stats-title">Répartition</h2>
+        <div class="bad-impact-summary" aria-live="polite">
+          <p><span>Impacts</span><strong id="bad-impact-total">0</strong></p>
+          <p><span>Zones touchées</span><strong id="bad-impact-coverage">0 / 9</strong></p>
+          <p><span>Zone principale</span><strong id="bad-impact-main-zone">—</strong></p>
+        </div>
+        <div class="bad-impact-zone-stats" id="bad-impact-zone-stats"></div>
+      </section>
+    </div>
+
+    <script src="impact-badminton.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Repérer les zones utilisées dans une activité à partir des impacts observés.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "L’outil aide à voir si un joueur varie ses cibles ou s’il utilise majoritairement les mêmes zones.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Choisissez l’activité et le découpage des zones quand il est disponible.",
+              "L’observateur clique sur la surface à chaque impact observé.",
+              "La partie Répartition indique les zones les plus utilisées et les zones oubliées.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

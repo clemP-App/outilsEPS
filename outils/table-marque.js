@@ -27,6 +27,8 @@
   var endsAt = 0;
   var pausedRemainingMs = 0;
   var wakeLockSentinel = null;
+  var lastWarnSec = -1;
+  var audioCtx = null;
 
   function montrerMsg(t) {
     if (!msgEl) return;
@@ -60,6 +62,38 @@
     var ic = btnTimer.querySelector(".btn__icon");
     if (txt) txt.textContent = label;
     if (ic) ic.textContent = icon;
+  }
+
+  function audioContextClass() {
+    return window.AudioContext || window.webkitAudioContext || null;
+  }
+
+  function unlockAudio() {
+    var AC = audioContextClass();
+    if (!AC) return Promise.resolve(false);
+    if (!audioCtx) audioCtx = new AC();
+    return audioCtx.resume().catch(function () {
+      return false;
+    });
+  }
+
+  function beep(kind) {
+    var AC = audioContextClass();
+    if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    var now = audioCtx.currentTime;
+    var duration = kind === "final" ? 0.65 : kind === "start" ? 0.3 : 0.2;
+    osc.frequency.value = kind === "final" ? 920 : kind === "start" ? 520 : 700;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + duration + 0.03);
   }
 
   function activerWakeLock() {
@@ -120,8 +154,14 @@
   function tick() {
     if (!running || paused) return;
     var leftMs = Math.max(0, endsAt - Date.now());
+    var secLeft = Math.ceil(leftMs / 1000);
     render();
+    if (secLeft <= 3 && secLeft > 0 && secLeft !== lastWarnSec) {
+      lastWarnSec = secLeft;
+      beep("warn");
+    }
     if (leftMs <= 0) {
+      beep("final");
       running = false;
       paused = false;
       stopTick();
@@ -148,14 +188,18 @@
       montrerMsg("Réglez une durée supérieure à zéro.");
       return;
     }
-    running = true;
-    paused = false;
-    endsAt = Date.now() + duree;
-    pausedRemainingMs = duree;
-    if (reglagesEl) reglagesEl.open = false;
-    render();
-    startTick();
-    majWakeLock();
+    unlockAudio().then(function () {
+      running = true;
+      paused = false;
+      endsAt = Date.now() + duree;
+      pausedRemainingMs = duree;
+      lastWarnSec = -1;
+      if (reglagesEl) reglagesEl.open = false;
+      render();
+      beep("start");
+      startTick();
+      majWakeLock();
+    });
   }
 
   function pauseReprendreTimer() {
@@ -167,6 +211,7 @@
     } else {
       paused = false;
       endsAt = Date.now() + pausedRemainingMs;
+      lastWarnSec = -1;
       startTick();
     }
     render();
@@ -194,6 +239,7 @@
     running = false;
     paused = false;
     pausedRemainingMs = 0;
+    lastWarnSec = -1;
     stopTick();
     montrerMsg("");
     render();

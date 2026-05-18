@@ -199,6 +199,26 @@
     osc.stop(now + (longBeep ? 0.5 : 0.2));
   }
 
+  function beepDepart() {
+    var AC = audioContextClass();
+    if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume();
+    }
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    var now = audioCtx.currentTime;
+    osc.frequency.value = 520;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.35);
+  }
+
   function annoncerPalier() {
     if (!("speechSynthesis" in window)) return;
     if (lastAnnouncedPalier === state.palier && state.phase !== "idle") return;
@@ -658,6 +678,7 @@
         levelEndsAt = 0;
       }
       if (btnStart) setStartButton("Pause", "⏸");
+      beepDepart();
       annoncerPalier();
       demarrerPhase(dureePhaseCourante());
       majWakeLock();

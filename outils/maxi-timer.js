@@ -194,6 +194,7 @@
       pausedRemainingMs = duration;
       lastWarnSec = -1;
       majAffichage();
+      beep(false);
       startTick();
       majWakeLock();
     });

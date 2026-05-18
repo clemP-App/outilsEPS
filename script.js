@@ -165,6 +165,16 @@
       publicCible: "eleve",
     },
     {
+      id: "impact-badminton",
+      titre: "Zones d’impact badminton",
+      description:
+        "Cliquez les points d’impact du volant sur un terrain pour visualiser les zones les plus jouées.",
+      icone: "🏸",
+      href: "outils/impact-badminton.html",
+      categorie: "Sports de raquette",
+      publicCible: "eleve",
+    },
+    {
       id: "convertisseur-allure",
       titre: "Convertisseur km/h ↔ min/km",
       description:
@@ -518,4 +528,86 @@
       dialogInfo.showModal();
     });
   }
+
+  var btnShare = document.getElementById("btn-share-app");
+  var dialogShare = document.getElementById("dialog-share-app");
+  var shareLink = document.getElementById("share-link");
+  var shareQr = document.getElementById("share-qr-code");
+  var btnCopyShare = document.getElementById("btn-copy-share-link");
+  var btnNativeShare = document.getElementById("btn-native-share");
+  var shareMsg = document.getElementById("share-msg");
+
+  function shareUrl() {
+    var url = new URL(window.location.href);
+    url.hash = "";
+    url.search = "";
+    if (url.pathname.endsWith("/index.html")) {
+      url.pathname = url.pathname.slice(0, -10);
+    }
+    return url.href;
+  }
+
+  function setShareMsg(text) {
+    if (!shareMsg) return;
+    shareMsg.hidden = !text;
+    shareMsg.textContent = text || "";
+  }
+
+  function prepareShareDialog() {
+    var url = shareUrl();
+    if (shareLink) shareLink.value = url;
+    if (shareQr) {
+      shareQr.src =
+        "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" +
+        encodeURIComponent(url);
+    }
+    if (btnNativeShare) btnNativeShare.hidden = !navigator.share;
+    setShareMsg("");
+  }
+
+  function nativeShare() {
+    var data = {
+      title: "Outils EPS",
+      text: "Outils EPS : petits outils pratiques pour les cours d’EPS.",
+      url: shareUrl(),
+    };
+    if (!navigator.share) return Promise.reject(new Error("Partage natif indisponible"));
+    return navigator.share(data);
+  }
+
+  function copyShareLink() {
+    var url = shareUrl();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () {
+        setShareMsg("Lien copié.");
+      });
+      return;
+    }
+    if (!shareLink) return;
+    shareLink.focus();
+    shareLink.select();
+    try {
+      document.execCommand("copy");
+      setShareMsg("Lien copié.");
+    } catch (e) {
+      setShareMsg("Copie impossible : sélectionnez le lien.");
+    }
+  }
+
+  if (btnShare) {
+    btnShare.addEventListener("click", function () {
+      prepareShareDialog();
+      if (dialogShare && dialogShare.showModal) {
+        dialogShare.showModal();
+      } else {
+        nativeShare().catch(copyShareLink);
+      }
+    });
+  }
+  if (btnNativeShare) {
+    btnNativeShare.addEventListener("click", function () {
+      nativeShare().catch(function () {});
+    });
+  }
+  if (btnCopyShare) btnCopyShare.addEventListener("click", copyShareLink);
 })();

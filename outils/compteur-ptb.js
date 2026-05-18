@@ -12,6 +12,7 @@
   var timerId = null;
   var wakeLockSentinel = null;
   var audioCtx = null;
+  var lastWarnSec = -1;
 
   function $(id) {
     return document.getElementById(id);
@@ -28,8 +29,6 @@
       "ptb-name-b",
       "ptb-color-a",
       "ptb-color-b",
-      "ptb-start-match",
-      "ptb-fullscreen",
       "ptb-match",
       "ptb-possession-band",
       "ptb-possession-label",
@@ -168,7 +167,7 @@
     els["ptb-possession-band"].style.setProperty("--ptb-possession-color", posTeam.color);
     els["ptb-timer-box"].hidden = !hasTimer;
     els["ptb-timer-main"].hidden = !hasTimer;
-    els["ptb-reset-timer"].hidden = !hasTimer;
+    els["ptb-reset-timer"].hidden = !hasTimer || !state.paused;
     var chronoGroup = document.querySelector(".ptb-control-group--chrono");
     if (chronoGroup) chronoGroup.hidden = !hasTimer;
     els["ptb-time"].textContent = hasTimer ? formatTime(displayedTimeMs()) : "—";
@@ -345,9 +344,12 @@
       alert("Réglez une durée supérieure à zéro.");
       return;
     }
+    var wasPaused = state.paused;
     state.running = true;
     state.paused = false;
     state.lastTick = Date.now();
+    lastWarnSec = -1;
+    if (!wasPaused) beep("start");
     startTick();
     majWakeLock();
     render();
@@ -373,6 +375,7 @@
     state.remainingMs = state.durationMs;
     state.teams.a.possessionMs = 0;
     state.teams.b.possessionMs = 0;
+    lastWarnSec = -1;
     majWakeLock();
     render();
   }
@@ -401,6 +404,11 @@
     state.teams[state.possession].possessionMs += delta;
     if (state.mode === "down") {
       state.remainingMs = Math.max(0, state.remainingMs - delta);
+      var secLeft = Math.ceil(state.remainingMs / 1000);
+      if (secLeft <= 3 && secLeft > 0 && secLeft !== lastWarnSec) {
+        lastWarnSec = secLeft;
+        beep("warn");
+      }
       if (state.remainingMs <= 0) {
         finishMatch(true);
         return;
@@ -417,7 +425,7 @@
     state.endedAtIso = new Date().toISOString();
     stopTick();
     majWakeLock();
-    if (fromTimer) beep();
+    if (fromTimer) beep("final");
     render();
     $("ptb-stats").scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -427,22 +435,25 @@
     state = createInitialState();
     readConfig();
     stopTick();
+    lastWarnSec = -1;
     majWakeLock();
     render();
   }
 
-  function beep() {
+  function beep(kind) {
     try {
       audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
       var osc = audioCtx.createOscillator();
       var gain = audioCtx.createGain();
-      osc.frequency.value = 880;
+      var duration = kind === "final" ? 0.6 : kind === "start" ? 0.3 : 0.2;
+      osc.frequency.value = kind === "final" ? 920 : kind === "start" ? 520 : 700;
       gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
       osc.connect(gain).connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.5);
+      osc.stop(audioCtx.currentTime + duration + 0.03);
     } catch (e) {
       /* audio indisponible */
     }
@@ -485,15 +496,6 @@
       .replace(/"/g, "&quot;");
   }
 
-  function requestFullscreen() {
-    var el = document.documentElement;
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else if (el.requestFullscreen) {
-      el.requestFullscreen();
-    }
-  }
-
   function bindEvents() {
     els["ptb-mode"].addEventListener("change", function () {
       els["ptb-duration-field"].hidden = els["ptb-mode"].value !== "down";
@@ -510,8 +512,6 @@
         render();
       });
     });
-    els["ptb-start-match"].addEventListener("click", startMatch);
-    els["ptb-fullscreen"].addEventListener("click", requestFullscreen);
     els["ptb-timer-main"].addEventListener("click", timerMain);
     els["ptb-reset-timer"].addEventListener("click", resetTimer);
     els["ptb-change-possession"].addEventListener("click", function () {

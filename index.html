@@ -20,40 +20,40 @@
   </head>
   <body class="app app--home">
     <header class="site-header">
-      <a
-        href="https://fr.tipeee.com/clemp/"
-        class="site-header__support"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Soutenir clemP sur Tipeee"
-        title="Soutenir sur Tipeee"
-      >
-        <span class="btn-icon-emoji" aria-hidden="true">☕</span>
-        <span class="site-header__support-text">Soutenir</span>
-      </a>
-      <div class="site-header__actions">
+      <nav class="site-header__toolbar" aria-label="Actions principales">
+        <a
+          href="https://fr.tipeee.com/clemp/"
+          class="site-header__toolbar-btn"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="btn-icon-emoji" aria-hidden="true">☕</span>
+          <span>Soutenir</span>
+        </a>
         <button
           type="button"
-          class="site-header__action site-header__action--info"
+          class="site-header__toolbar-btn"
           id="btn-info-app"
-          aria-label="Informations sur l'application"
-          title="Informations"
         >
           <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" />
             <path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
           </svg>
+          <span>Info</span>
         </button>
         <a
           href="outils/sauvegarde.html"
-          class="site-header__action site-header__action--backup"
-          aria-label="Sauvegarde et restauration"
-          title="Sauvegarde et restauration"
+          class="site-header__toolbar-btn"
         >
           <span class="btn-icon-emoji" aria-hidden="true">💾</span>
+          <span>Sauvegarde</span>
         </a>
-      </div>
+        <button type="button" class="site-header__toolbar-btn" id="btn-share-app">
+          <span class="btn-icon-emoji" aria-hidden="true">🔗</span>
+          <span>Partager</span>
+        </button>
+      </nav>
       <div class="site-header__inner">
         <h1>Outils EPS</h1>
         <p>Petits outils pratiques pour les cours d’éducation physique et sportive</p>
@@ -142,6 +142,26 @@
         </section>
 
         <button type="submit" class="btn btn--primary info-dialog__close">Fermer</button>
+      </form>
+    </dialog>
+
+    <dialog class="share-dialog card" id="dialog-share-app" aria-labelledby="share-dialog-title">
+      <form method="dialog" class="share-dialog__form">
+        <h2 id="share-dialog-title" class="share-dialog__title">Partager Outils EPS</h2>
+        <p class="share-dialog__hint">
+          Envoyez le lien ou affichez ce QR code pour ouvrir l’application sur un autre appareil.
+        </p>
+        <div class="share-dialog__qr-wrap">
+          <img id="share-qr-code" class="share-dialog__qr" alt="QR code de partage" />
+        </div>
+        <label class="field-label" for="share-link">Lien de partage</label>
+        <input id="share-link" class="share-dialog__link" type="url" readonly />
+        <p class="msg-ok share-dialog__msg" id="share-msg" hidden aria-live="polite"></p>
+        <div class="share-dialog__actions">
+          <button type="button" class="btn btn--ghost" id="btn-copy-share-link">Copier le lien</button>
+          <button type="button" class="btn btn--primary" id="btn-native-share">Partager</button>
+          <button type="submit" class="btn btn--ghost">Fermer</button>
+        </div>
       </form>
     </dialog>
 
