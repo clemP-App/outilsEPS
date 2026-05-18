@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Vitesse aux plots — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--vitesse-plots">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Vitesse aux plots</h1>
+      </header>
+
+      <details class="card card--accordion vitesse-plots-reglages" id="vitesse-plots-reglages" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="lbl-vitesse-plots-reglages">Réglages</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p class="hint">
+            Saisis la vitesse objectif et la distance entre deux plots. L’observateur clique à chaque passage de plot.
+          </p>
+
+          <div class="field-row field-row--vitesse-plots">
+            <div class="field-group">
+              <label class="field-label" for="vitesse-objectif">Vitesse objectif (km/h)</label>
+              <input type="number" id="vitesse-objectif" inputmode="decimal" min="0" step="0.1" placeholder="ex. 12" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="distance-plot">Distance entre plots (m)</label>
+              <input type="number" id="distance-plot" inputmode="decimal" min="0" step="0.1" placeholder="ex. 50" autocomplete="off" />
+            </div>
+          </div>
+
+          <div class="field-row field-row--vitesse-plots">
+            <div class="field-group">
+              <label class="field-label" for="mode-chrono">Mode</label>
+              <select id="mode-chrono">
+                <option value="chrono" selected>Chrono</option>
+                <option value="minuteur">Minuteur</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row field-row--vitesse-plots" id="reglage-minuteur" hidden>
+            <div class="field-group">
+              <label class="field-label" for="minuteur-min">Minuteur — minutes</label>
+              <input type="number" id="minuteur-min" inputmode="numeric" min="0" step="1" placeholder="6" autocomplete="off" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="minuteur-sec">Secondes</label>
+              <input type="number" id="minuteur-sec" inputmode="numeric" min="0" max="59" step="1" placeholder="0" autocomplete="off" />
+            </div>
+          </div>
+
+          <p class="vitesse-plots-target">
+            Temps objectif par plot :
+            <strong id="temps-objectif-plot">—</strong>
+          </p>
+        </div>
+      </details>
+
+      <section class="card vitesse-plots-live-card" aria-labelledby="lbl-vitesse-plots-live">
+        <h2 id="lbl-vitesse-plots-live">Observation</h2>
+        <div class="vitesse-plots-actions">
+          <button class="btn btn--primary btn--labeled" type="button" id="btn-demarrer">
+            <span class="btn__icon" aria-hidden="true">▶</span>
+            <span class="btn__text">Démarrer</span>
+          </button>
+          <button class="btn btn--ghost btn--labeled" type="button" id="btn-reset" hidden>
+            <span class="btn__icon" aria-hidden="true">↺</span>
+            <span class="btn__text">Réinitialiser</span>
+          </button>
+        </div>
+        <p id="vitesse-plots-msg" class="msg-error" role="alert" hidden></p>
+
+        <span class="vitesse-plots-chrono-label">Chrono</span>
+        <strong class="vitesse-plots-chrono" id="chrono">00:00.0</strong>
+
+        <button class="vitesse-plots-pass-btn" type="button" id="btn-passage" disabled>
+          Passage au plot
+        </button>
+        <button class="btn btn--ghost btn--labeled vitesse-plots-undo" type="button" id="btn-annuler" disabled>
+          <span class="btn__icon" aria-hidden="true">↶</span>
+          <span class="btn__text">Annuler le dernier clic</span>
+        </button>
+
+        <div class="vitesse-plots-results">
+          <div class="result-box vitesse-result-box">
+            <span class="vitesse-result-label">Dernier plot</span>
+            <strong id="resultat-dernier">—</strong>
+            <span class="vitesse-result-unit">km/h</span>
+          </div>
+          <div class="result-box vitesse-result-box">
+            <span class="vitesse-result-label">Distance totale</span>
+            <strong id="resultat-distance">0</strong>
+            <span class="vitesse-result-unit">m</span>
+          </div>
+          <div class="result-box vitesse-result-box">
+            <span class="vitesse-result-label">Vitesse moyenne</span>
+            <strong id="resultat-moyenne">—</strong>
+            <span class="vitesse-result-unit">km/h</span>
+          </div>
+        </div>
+
+        <p class="vitesse-plots-ecart" id="resultat-ecart" hidden></p>
+      </section>
+
+      <section class="card vitesse-plots-history-card" id="section-historique" aria-labelledby="lbl-vitesse-plots-historique" hidden>
+        <h2 id="lbl-vitesse-plots-historique">Passages</h2>
+        <div class="vitesse-plots-table-wrap">
+          <table class="vitesse-plots-table">
+            <thead>
+              <tr>
+                <th scope="col">Plot</th>
+                <th scope="col">Temps</th>
+                <th scope="col">Intervalle</th>
+                <th scope="col">Vitesse</th>
+                <th scope="col">Moyenne</th>
+              </tr>
+            </thead>
+            <tbody id="historique-passages"></tbody>
+          </table>
+        </div>
+        <div class="vitesse-plots-graph" aria-labelledby="lbl-vitesse-plots-graph">
+          <h3 id="lbl-vitesse-plots-graph">Évolution de la vitesse</h3>
+          <canvas id="vitesse-graph" width="640" height="260"></canvas>
+          <p class="hint">La ligne verte représente la vitesse objectif.</p>
+        </div>
+      </section>
+    </div>
+
+    <script src="vitesse-plots.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Chronométrez un coureur plot après plot pour connaître sa vitesse réelle.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "L’observateur voit la vitesse du dernier intervalle, la distance parcourue et la vitesse moyenne depuis le départ.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Saisissez la vitesse objectif et la distance entre deux plots.",
+              "Choisissez Chrono ou Minuteur, puis cliquez sur Démarrer au départ du coureur.",
+              "Cliquez sur Passage au plot à chaque fois que le coureur atteint un nouveau plot.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

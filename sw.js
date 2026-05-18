@@ -1,7 +1,7 @@
 /**
  * Service worker — cache des pages et assets pour installation PWA.
  */
-var CACHE_NAME = "outils-eps-v19";
+var CACHE_NAME = "outils-eps-v27";
 
 var PRECACHE = [
   "./",
@@ -19,6 +19,10 @@ var PRECACHE = [
   "./assets/apple-touch-icon.png",
   "./outils/ecartement-plots.html",
   "./outils/convertisseur-allure.html",
+  "./outils/distance-vma.html",
+  "./outils/distance-vma.js",
+  "./outils/vitesse-plots.html",
+  "./outils/vitesse-plots.js",
   "./outils/vitesse-course.html",
   "./outils/vitesse-course.js",
   "./outils/composition-equipes.html",

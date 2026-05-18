@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Distance VMA — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--distance-vma">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Distance VMA</h1>
+      </header>
+
+      <section class="card" aria-labelledby="lbl-distance-vma-saisie">
+        <h2 id="lbl-distance-vma-saisie">Objectif de course</h2>
+        <p class="hint">
+          Indique la durée, ta VMA et le pourcentage demandé : la distance objectif s’affiche tout de suite.
+        </p>
+
+        <div class="field-row field-row--distance-vma">
+          <div class="field-group">
+            <label class="field-label" for="duree-min">Durée — minutes</label>
+            <input type="number" id="duree-min" inputmode="numeric" min="0" step="1" placeholder="6" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="duree-sec">Secondes</label>
+            <input type="number" id="duree-sec" inputmode="numeric" min="0" max="59" step="1" placeholder="0" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="distance-vma-presets" aria-label="Durées rapides">
+          <button class="distance-vma-chip" type="button" data-min="1" data-sec="30">1 min 30</button>
+          <button class="distance-vma-chip" type="button" data-min="3" data-sec="0">3 min</button>
+          <button class="distance-vma-chip" type="button" data-min="6" data-sec="0">6 min</button>
+          <button class="distance-vma-chip" type="button" data-min="8" data-sec="0">8 min</button>
+          <button class="distance-vma-chip" type="button" data-min="10" data-sec="0">10 min</button>
+          <button class="distance-vma-chip" type="button" data-min="12" data-sec="0">12 min</button>
+          <button class="distance-vma-chip" type="button" data-min="15" data-sec="0">15 min</button>
+        </div>
+
+        <div class="field-row field-row--distance-vma">
+          <div class="field-group">
+            <label class="field-label" for="vma">VMA</label>
+            <input type="number" id="vma" inputmode="decimal" min="0" step="0.1" placeholder="ex. 14" autocomplete="off" />
+          </div>
+        </div>
+        <div class="field-row field-row--distance-vma">
+          <div class="field-group">
+            <label class="field-label" for="pourcentage-vma">% de VMA</label>
+            <input type="number" id="pourcentage-vma" inputmode="decimal" min="0" max="200" step="1" placeholder="ex. 85" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="distance-vma-presets" aria-label="Pourcentages rapides">
+          <button class="distance-vma-chip" type="button" data-percent="75">75%</button>
+          <button class="distance-vma-chip" type="button" data-percent="80">80%</button>
+          <button class="distance-vma-chip" type="button" data-percent="85">85%</button>
+          <button class="distance-vma-chip" type="button" data-percent="90">90%</button>
+          <button class="distance-vma-chip" type="button" data-percent="95">95%</button>
+          <button class="distance-vma-chip" type="button" data-percent="100">100%</button>
+        </div>
+
+        <p id="distance-vma-msg" class="msg-error" role="alert" hidden></p>
+      </section>
+
+      <section class="card distance-vma-result-card" id="section-resultats" aria-labelledby="lbl-distance-vma-resultats" hidden>
+        <h2 id="lbl-distance-vma-resultats">Résultat</h2>
+        <div class="distance-vma-result-main">
+          <span class="distance-vma-result-label">Distance objectif</span>
+          <strong id="resultat-distance">—</strong>
+          <span class="distance-vma-result-unit">m</span>
+        </div>
+
+        <div class="vitesse-resultats distance-vma-details">
+          <div class="result-box vitesse-result-box">
+            <span class="vitesse-result-label">Vitesse cible</span>
+            <strong id="resultat-vitesse">—</strong>
+            <span class="vitesse-result-unit">km/h</span>
+          </div>
+          <div class="result-box vitesse-result-box">
+            <span class="vitesse-result-label">Allure</span>
+            <strong id="resultat-allure">—</strong>
+            <span class="vitesse-result-unit">min/km</span>
+          </div>
+        </div>
+
+        <div class="distance-vma-reperes" aria-labelledby="lbl-distance-vma-reperes">
+          <h3 id="lbl-distance-vma-reperes">Tableau de repères</h3>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">25 m</th>
+                <th scope="col">50 m</th>
+                <th scope="col">100 m</th>
+                <th scope="col">200 m</th>
+                <th scope="col">400 m</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td id="repere-25">—</td>
+                <td id="repere-50">—</td>
+                <td id="repere-100">—</td>
+                <td id="repere-200">—</td>
+                <td id="repere-400">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script src="distance-vma.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Calculez rapidement la distance à viser selon une durée, une VMA et un pourcentage de VMA.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "L’élève obtient une distance objectif claire pour savoir combien de mètres il doit parcourir sur le temps demandé.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Choisissez une durée avec les boutons rapides ou saisissez minutes et secondes.",
+              "Entrez la VMA de l’élève puis le pourcentage demandé.",
+              "La distance objectif, la vitesse cible et l’allure se mettent à jour automatiquement.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

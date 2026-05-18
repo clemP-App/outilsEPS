@@ -145,13 +145,13 @@
       publicCible: "eleve",
     },
     {
-      id: "calcul-1rm",
-      titre: "Calcul du 1RM",
+      id: "vitesse-plots",
+      titre: "Vitesse aux plots",
       description:
-        "Estimez votre charge max (1RM) à partir du poids et du nombre de répétitions, formules Epley ou Brzycki.",
-      icone: "🏋️",
-      href: "outils/calcul-1rm.html",
-      categorie: "Musculation",
+        "Chronométrez les passages aux plots pour connaître la vitesse du dernier intervalle et la moyenne.",
+      icone: "📍",
+      href: "outils/vitesse-plots.html",
+      categorie: "Course à pied",
       publicCible: "eleve",
     },
     {
@@ -172,6 +172,26 @@
       icone: "⏱️",
       href: "outils/convertisseur-allure.html",
       categorie: "Course à pied",
+      publicCible: "eleve",
+    },
+    {
+      id: "distance-vma",
+      titre: "Distance VMA",
+      description:
+        "Calculez la distance objectif selon la durée de course, la VMA et le pourcentage demandé.",
+      icone: "🎯",
+      href: "outils/distance-vma.html",
+      categorie: "Course à pied",
+      publicCible: "eleve",
+    },
+    {
+      id: "calcul-1rm",
+      titre: "Calcul du 1RM",
+      description:
+        "Estimez votre charge max (1RM) à partir du poids et du nombre de répétitions, formules Epley ou Brzycki.",
+      icone: "🏋️",
+      href: "outils/calcul-1rm.html",
+      categorie: "Musculation",
       publicCible: "eleve",
     },
     {
