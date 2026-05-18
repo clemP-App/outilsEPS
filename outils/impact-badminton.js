@@ -1,5 +1,5 @@
 /**
- * Zones d'impact badminton — carte cliquable des impacts de volant.
+ * Zone d'impact — carte cliquable multi-activités.
  */
 (function () {
   "use strict";
@@ -13,10 +13,57 @@
   var mainZoneEl = document.getElementById("bad-impact-main-zone");
   var undoBtn = document.getElementById("bad-impact-undo");
   var resetBtn = document.getElementById("bad-impact-reset");
+  var activityEl = document.getElementById("bad-impact-activity");
   var colsEl = document.getElementById("bad-impact-cols");
   var rowsEl = document.getElementById("bad-impact-rows");
+  var colsGroupEl = document.getElementById("bad-impact-cols-group");
+  var rowsGroupEl = document.getElementById("bad-impact-rows-group");
+  var surfaceHintEl = document.getElementById("bad-impact-surface-hint");
 
   var impacts = [];
+  var ACTIVITIES = {
+    badminton: {
+      className: "is-badminton",
+      label: "demi-terrain",
+      hint: "Badminton : demi-terrain adverse, filet en bas. La zone avant commence au filet.",
+      rows: ["Fond", "Milieu", "Avant"],
+      cols: ["gauche", "centre", "droite"],
+      fixedRows: false,
+      fixedCols: false,
+    },
+    "tennis-table": {
+      className: "is-table-tennis",
+      label: "demi-table",
+      hint: "Tennis de table : demi-table adverse, filet en bas.",
+      rows: ["Long", "Intermédiaire", "Court"],
+      cols: ["gauche", "centre", "droite"],
+      fixedRows: false,
+      fixedCols: false,
+    },
+    volleyball: {
+      className: "is-volleyball",
+      label: "terrain adverse",
+      hint: "Volley-ball : terrain adverse, filet en bas. Cliquez la zone visée ou touchée.",
+      rows: ["Fond", "Centre", "Avant"],
+      cols: ["gauche", "centre", "droite"],
+      fixedRows: false,
+      fixedCols: false,
+    },
+    "boxe-francaise": {
+      className: "is-boxe",
+      label: "corps",
+      hint: "Boxe française : cliquez la zone touchée sur le corps.",
+      rows: ["Tête", "Tronc", "Jambes"],
+      cols: ["zone"],
+      fixedRows: true,
+      fixedCols: true,
+    },
+  };
+
+  function currentActivity() {
+    var id = activityEl && ACTIVITIES[activityEl.value] ? activityEl.value : "badminton";
+    return ACTIVITIES[id];
+  }
 
   function clampGridValue(value) {
     var n = parseInt(value, 10);
@@ -25,22 +72,27 @@
   }
 
   function gridConfig() {
+    var activity = currentActivity();
     return {
-      cols: clampGridValue(colsEl ? colsEl.value : 3),
-      rows: clampGridValue(rowsEl ? rowsEl.value : 3),
+      cols: activity.fixedCols ? 1 : clampGridValue(colsEl ? colsEl.value : 3),
+      rows: activity.fixedRows ? 3 : clampGridValue(rowsEl ? rowsEl.value : 3),
     };
   }
 
   function rowName(row, totalRows) {
+    var activity = currentActivity();
+    if (activity.fixedRows) return activity.rows[row] || "Zone";
     if (totalRows === 1) return "Toute profondeur";
     if (totalRows === 2) return row === 0 ? "Fond" : "Avant";
-    return ["Fond", "Milieu", "Avant"][row];
+    return activity.rows[row] || "Zone";
   }
 
   function colName(col, totalCols) {
+    var activity = currentActivity();
+    if (activity.fixedCols) return "";
     if (totalCols === 1) return "toute largeur";
     if (totalCols === 2) return col === 0 ? "gauche" : "droite";
-    return ["gauche", "centre", "droite"][col];
+    return activity.cols[col] || "zone";
   }
 
   function zoneIndexFromPoint(xPct, yPct) {
@@ -54,7 +106,9 @@
     var cfg = gridConfig();
     var row = Math.floor(index / cfg.cols);
     var col = index % cfg.cols;
-    if (cfg.rows === 1 && cfg.cols === 1) return "Tout le demi-terrain";
+    var activity = currentActivity();
+    if (activity.fixedCols) return rowName(row, cfg.rows);
+    if (cfg.rows === 1 && cfg.cols === 1) return "Toute la surface";
     if (cfg.rows === 1) return "Toute profondeur " + colName(col, cfg.cols);
     if (cfg.cols === 1) return rowName(row, cfg.rows);
     return rowName(row, cfg.rows) + " " + colName(col, cfg.cols);
@@ -145,10 +199,18 @@
 
   function renderZoneGrid() {
     var cfg = gridConfig();
+    var activity = currentActivity();
     if (courtEl) {
       courtEl.style.setProperty("--bad-cols", String(cfg.cols));
       courtEl.style.setProperty("--bad-rows", String(cfg.rows));
+      courtEl.className = "bad-impact-court " + activity.className;
+      courtEl.setAttribute("aria-label", "Surface d'impact cliquable : " + activity.label);
     }
+    if (surfaceHintEl) surfaceHintEl.textContent = activity.hint;
+    if (colsEl) colsEl.disabled = !!activity.fixedCols;
+    if (rowsEl) rowsEl.disabled = !!activity.fixedRows;
+    if (colsGroupEl) colsGroupEl.hidden = !!activity.fixedCols;
+    if (rowsGroupEl) rowsGroupEl.hidden = !!activity.fixedRows;
     if (!zoneGridEl) return;
     zoneGridEl.innerHTML = "";
     zoneGridEl.style.setProperty("--bad-cols", String(cfg.cols));
@@ -183,6 +245,7 @@
 
   if (undoBtn) undoBtn.addEventListener("click", undo);
   if (resetBtn) resetBtn.addEventListener("click", reset);
+  if (activityEl) activityEl.addEventListener("change", render);
   if (colsEl) colsEl.addEventListener("change", render);
   if (rowsEl) rowsEl.addEventListener("change", render);
 

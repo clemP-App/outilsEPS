@@ -2319,7 +2319,7 @@ main.container {
 
 .bad-impact-settings {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
   gap: 0.65rem;
   margin: 0 0 0.85rem;
   padding: 0.75rem;
@@ -2346,6 +2346,33 @@ main.container {
   user-select: none;
 }
 
+.bad-impact-court.is-table-tennis {
+  width: min(100%, 24rem);
+  aspect-ratio: 5 / 4;
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.14), rgba(37, 99, 235, 0.24)),
+    #1d4ed8;
+}
+
+.bad-impact-court.is-volleyball {
+  width: min(100%, 26rem);
+  aspect-ratio: 9 / 9;
+  background:
+    linear-gradient(180deg, rgba(249, 115, 22, 0.2), rgba(245, 158, 11, 0.18)),
+    #d97706;
+}
+
+.bad-impact-court.is-boxe {
+  width: min(100%, 20rem);
+  aspect-ratio: 4 / 6;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(15, 23, 42, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(244, 63, 94, 0.08), rgba(14, 165, 233, 0.08)),
+    #f8fafc;
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.12);
+}
+
 .bad-impact-court:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 4px;
@@ -2361,6 +2388,12 @@ main.container {
   z-index: 1;
 }
 
+.bad-impact-court.is-boxe .bad-impact-court__zone-grid {
+  inset: 2% 18% 3%;
+  border-radius: 999px 999px 28px 28px;
+  overflow: hidden;
+}
+
 .bad-impact-court__zone-grid span {
   display: flex;
   align-items: center;
@@ -2373,6 +2406,54 @@ main.container {
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.bad-impact-court.is-boxe .bad-impact-court__zone-grid span {
+  border-color: rgba(15, 23, 42, 0.22);
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.bad-impact-body-shape {
+  display: none;
+}
+
+.bad-impact-court.is-boxe .bad-impact-body-shape {
+  display: block;
+  position: absolute;
+  inset: 5% 19% 4%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bad-impact-body-shape__head,
+.bad-impact-body-shape__trunk,
+.bad-impact-body-shape__legs {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(13, 148, 136, 0.18);
+  border: 3px solid rgba(15, 23, 42, 0.32);
+}
+
+.bad-impact-body-shape__head {
+  top: 0;
+  width: 38%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.bad-impact-body-shape__trunk {
+  top: 30%;
+  width: 66%;
+  height: 34%;
+  border-radius: 34px 34px 24px 24px;
+}
+
+.bad-impact-body-shape__legs {
+  bottom: 0;
+  width: 58%;
+  height: 35%;
+  border-radius: 18px 18px 30px 30px;
 }
 
 .bad-impact-line {
@@ -2445,6 +2526,37 @@ main.container {
   right: 9%;
 }
 
+.bad-impact-court.is-table-tennis .bad-impact-line--service-top {
+  top: 50%;
+}
+
+.bad-impact-court.is-table-tennis .bad-impact-line--service-bottom {
+  display: none;
+}
+
+.bad-impact-court.is-table-tennis .bad-impact-line--center {
+  top: 0;
+  bottom: 0;
+}
+
+.bad-impact-court.is-volleyball .bad-impact-line--service-top {
+  top: 33.333%;
+}
+
+.bad-impact-court.is-volleyball .bad-impact-line--service-bottom {
+  top: 66.666%;
+}
+
+.bad-impact-court.is-volleyball .bad-impact-line--center {
+  top: 0;
+  bottom: 0;
+}
+
+.bad-impact-court.is-boxe .bad-impact-line,
+.bad-impact-court.is-boxe .bad-impact-line--net::after {
+  display: none;
+}
+
 .bad-impact-markers {
   position: absolute;
   inset: 0;
@@ -2466,6 +2578,10 @@ main.container {
   font-size: 0.72rem;
   font-weight: 900;
   box-shadow: 0 6px 14px rgba(15, 23, 42, 0.24);
+}
+
+.bad-impact-court.is-boxe .bad-impact-marker {
+  background: #dc2626;
 }
 
 .bad-impact-summary {

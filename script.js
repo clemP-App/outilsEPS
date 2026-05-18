@@ -165,13 +165,13 @@
       publicCible: "eleve",
     },
     {
-      id: "impact-badminton",
-      titre: "Zones d’impact badminton",
+      id: "zone-impact",
+      titre: "Zone d’impact",
       description:
-        "Cliquez les points d’impact du volant sur un terrain pour visualiser les zones les plus jouées.",
-      icone: "🏸",
+        "Cliquez les zones visées ou touchées selon l’activité : badminton, tennis de table, volley ou boxe.",
+      icone: "🗺️",
       href: "outils/impact-badminton.html",
-      categorie: "Sports de raquette",
+      categorie: "Observation",
       publicCible: "eleve",
     },
     {
