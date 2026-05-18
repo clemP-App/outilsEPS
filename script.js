@@ -75,6 +75,16 @@
       publicCible: "prof",
     },
     {
+      id: "tournoi-elimination",
+      titre: "Tournoi éliminatoire",
+      description:
+        "Créer un tableau type tennis : quarts, demies, finale, avec progression automatique des gagnants.",
+      icone: "🎾",
+      href: "outils/tournoi-elimination.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
       id: "timer-hiit-tabata",
       titre: "Timer HIIT / Tabata",
       description:
@@ -169,7 +179,7 @@
       titre: "Zone d’impact",
       description:
         "Cliquez les zones visées ou touchées selon l’activité : badminton, tennis de table, volley ou boxe.",
-      icone: "🗺️",
+      icone: "⭕",
       href: "outils/impact-badminton.html",
       categorie: "Observation",
       publicCible: "eleve",
@@ -216,7 +226,7 @@
     },
     {
       id: "ecartement-plots",
-      titre: "Écartement des plots (demi-fond)",
+      titre: "Écartement des plots",
       description:
         "Calcule la distance entre deux plots pour que 1 km/h corresponde à 1 plot selon la durée du demi-fond.",
       icone: "📐",
