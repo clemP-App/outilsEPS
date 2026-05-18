@@ -128,6 +128,7 @@
     var rect = courtEl.getBoundingClientRect();
     var x = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
     var y = Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100));
+    if (currentActivity().fixedCols && (x < 18 || x > 82)) return;
     impacts.push({
       x: x,
       y: y,
