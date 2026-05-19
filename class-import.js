@@ -133,7 +133,7 @@ var ClassImport = (function () {
     var empty = overlayEl.querySelector("#class-import-empty");
     if (!sel || !list) return;
 
-    list.innerHTML = "";
+    OutilsDom.clear(list);
     var id = sel.value;
     if (!id) {
       list.hidden = true;
@@ -260,7 +260,7 @@ var ClassImport = (function () {
         return DataManager.getClasses();
       })
       .then(function (classes) {
-        sel.innerHTML = "";
+        OutilsDom.clear(sel);
         if (!classes.length) {
           empty.hidden = false;
           empty.textContent =

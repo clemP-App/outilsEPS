@@ -252,69 +252,11 @@
   }
 
   function computeStandings() {
-    var map = {};
-    state.teams.forEach(function (t) {
-      map[t.id] = {
-        teamId: t.id,
-        name: t.name,
-        mj: 0,
-        v: 0,
-        n: 0,
-        d: 0,
-        pour: 0,
-        contre: 0,
-        pts: 0,
-      };
-    });
-    state.matches.forEach(function (m) {
-      var hs = m.homeScore;
-      var as = m.awayScore;
-      if (hs === null || as === null || typeof hs === "undefined" || typeof as === "undefined") {
-        return;
-      }
-      var H = map[m.homeId];
-      var A = map[m.awayId];
-      if (!H || !A) return;
-      H.mj++;
-      A.mj++;
-      H.pour += hs;
-      H.contre += as;
-      A.pour += as;
-      A.contre += hs;
-      if (hs > as) {
-        H.v++;
-        H.pts += 3;
-        A.d++;
-      } else if (hs < as) {
-        A.v++;
-        A.pts += 3;
-        H.d++;
-      } else {
-        H.n++;
-        A.n++;
-        H.pts++;
-        A.pts++;
-      }
-    });
-    var arr = state.teams.map(function (t) {
-      var r = map[t.id];
-      r.diff = r.pour - r.contre;
-      return r;
-    });
-    arr.sort(function (a, b) {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      if (b.diff !== a.diff) return b.diff - a.diff;
-      if (b.pour !== a.pour) return b.pour - a.pour;
-      return a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
-    });
-    for (var i = 0; i < arr.length; i++) {
-      arr[i].rang = i + 1;
-    }
-    return arr;
+    return ChampionnatStandings.computeStandingsFromData(state.teams, state.matches);
   }
 
   function renderTeams() {
-    teamListEl.innerHTML = "";
+    OutilsDom.clear(teamListEl);
     if (state.teams.length === 0) {
       var li0 = document.createElement("li");
       li0.className = "champ-team-empty";
@@ -337,7 +279,7 @@
       bEdit.type = "button";
       bEdit.className = "btn btn--ghost btn--icon-only btn--small";
       bEdit.setAttribute("aria-label", "Renommer " + t.name);
-      bEdit.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">✏️</span>';
+      OutilsDom.setIconButton(bEdit, "✏️", "Renommer " + t.name);
       bEdit.addEventListener("click", function () {
         var nv = window.prompt("Nouveau nom :", t.name);
         if (nv !== null) renommerEquipe(t.id, nv);
@@ -347,7 +289,7 @@
       bDel.type = "button";
       bDel.className = "btn btn--danger btn--icon-only btn--small";
       bDel.setAttribute("aria-label", "Supprimer " + t.name);
-      bDel.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">🗑️</span>';
+      OutilsDom.setIconButton(bDel, "🗑️", "Supprimer " + t.name);
       bDel.addEventListener("click", function () {
         supprimerEquipe(t.id);
       });
@@ -361,7 +303,7 @@
   }
 
   function renderMatches() {
-    matchListEl.innerHTML = "";
+    OutilsDom.clear(matchListEl);
     if (state.teams.length < 2) {
       var p = document.createElement("p");
       p.className = "hint";
@@ -457,7 +399,7 @@
 
   function renderStandings() {
     var rows = computeStandings();
-    standingsBody.innerHTML = "";
+    OutilsDom.clear(standingsBody);
     if (rows.length === 0) {
       var tr0 = document.createElement("tr");
       var td0 = document.createElement("td");

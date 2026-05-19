@@ -237,7 +237,7 @@
         majNbJoueursAffiche();
         renderJoueurs();
         sectionEquipes.hidden = true;
-        equipesContainer.innerHTML = "";
+        OutilsDom.clear(equipesContainer);
         majBoutonTirage();
         sauverImmediate();
         montrerMsg(eleves.length + " joueur(s) importé(s) depuis « " + classe.nom + " ».");
@@ -491,7 +491,7 @@
   }
 
   function renderJoueurs() {
-    joueursContainer.innerHTML = "";
+    OutilsDom.clear(joueursContainer);
     if (players.length === 0) {
       joueursContainer.hidden = true;
       majNbJoueursAffiche();
@@ -518,14 +518,14 @@
       btnEdit.className = "btn btn--ghost compo-joueur-icon-btn";
       btnEdit.setAttribute("aria-label", "Renommer " + p.name);
       btnEdit.setAttribute("data-action", "rename");
-      btnEdit.innerHTML = '<span class="btn__icon" aria-hidden="true">✏️</span>';
+      OutilsDom.setIconButton(btnEdit, "✏️", "Renommer " + p.name, "btn__icon");
 
       var btnDel = document.createElement("button");
       btnDel.type = "button";
       btnDel.className = "btn btn--ghost compo-joueur-icon-btn compo-joueur-icon-btn--danger";
       btnDel.setAttribute("aria-label", "Retirer " + p.name + " de la liste");
       btnDel.setAttribute("data-action", "delete");
-      btnDel.innerHTML = '<span class="btn__icon" aria-hidden="true">🗑️</span>';
+      OutilsDom.setIconButton(btnDel, "🗑️", "Retirer " + p.name + " de la liste", "btn__icon");
 
       actions.appendChild(btnEdit);
       actions.appendChild(btnDel);
@@ -597,7 +597,7 @@
         if (assignments) renderEquipes();
         else {
           sectionEquipes.hidden = true;
-          equipesContainer.innerHTML = "";
+          OutilsDom.clear(equipesContainer);
         }
         return;
       }
@@ -623,7 +623,7 @@
   });
 
   function renderEquipes() {
-    equipesContainer.innerHTML = "";
+    OutilsDom.clear(equipesContainer);
     if (!assignments || players.length === 0) {
       sectionEquipes.hidden = true;
       return;
@@ -767,7 +767,7 @@
       assignments = null;
       majBoutonTirage();
       sectionEquipes.hidden = true;
-      equipesContainer.innerHTML = "";
+      OutilsDom.clear(equipesContainer);
       sauverImmediate();
       renderJoueurs();
     });
@@ -790,7 +790,7 @@
       assignments = null;
       majBoutonTirage();
       sectionEquipes.hidden = true;
-      equipesContainer.innerHTML = "";
+      OutilsDom.clear(equipesContainer);
       renderJoueurs();
       sauverImmediate();
     });
@@ -862,7 +862,7 @@
       assignments = null;
       majBoutonTirage();
       sectionEquipes.hidden = true;
-      equipesContainer.innerHTML = "";
+      OutilsDom.clear(equipesContainer);
     }
     sauverDebounced();
   });

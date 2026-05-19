@@ -481,7 +481,7 @@
 
   function renderListe(liste) {
     if (!listEl || !emptyEl) return;
-    listEl.innerHTML = "";
+    OutilsDom.clear(listEl);
     listEl.classList.toggle("tools-list--icons", viewMode === "icons");
 
     if (liste.length === 0) {

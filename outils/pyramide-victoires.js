@@ -251,7 +251,7 @@
 
   function renderJoueurs() {
     if (!joueursListEl) return;
-    joueursListEl.innerHTML = "";
+    OutilsDom.clear(joueursListEl);
     majNbJoueurs();
     if (!tournoi.players.length) {
       var vide = document.createElement("li");
@@ -289,7 +289,7 @@
 
   function renderClassement() {
     if (!classementEl) return;
-    classementEl.innerHTML = "";
+    OutilsDom.clear(classementEl);
     var liste = classementJoueurs();
     if (!liste.length) {
       var vide = document.createElement("li");
@@ -319,9 +319,9 @@
 
   function renderBoard() {
     if (!boardEl) return;
-    boardEl.innerHTML = "";
+    OutilsDom.clear(boardEl);
     if (!tournoi.players.length) {
-      boardEl.innerHTML = '<p class="empty-state">Aucun joueur.</p>';
+      boardEl.appendChild(OutilsDom.emptyState("Aucun joueur."));
       return;
     }
     var parPalier = joueursParPalier();
@@ -373,8 +373,8 @@
 
   function renderMatchForm() {
     if (!gagnantEl || !perdantEl) return;
-    gagnantEl.innerHTML = "";
-    perdantEl.innerHTML = "";
+    OutilsDom.clear(gagnantEl);
+    OutilsDom.clear(perdantEl);
     matchSubmitEl.disabled = true;
     perdantEl.disabled = true;
 
@@ -418,7 +418,7 @@
 
   function majPerdants() {
     if (!gagnantEl || !perdantEl) return;
-    perdantEl.innerHTML = "";
+    OutilsDom.clear(perdantEl);
     var winnerId = gagnantEl.value;
     if (!winnerId) {
       perdantEl.disabled = true;
@@ -457,7 +457,7 @@
 
   function renderHistorique() {
     if (!historiqueEl) return;
-    historiqueEl.innerHTML = "";
+    OutilsDom.clear(historiqueEl);
     if (!tournoi.matches.length) {
       var vide = document.createElement("li");
       vide.className = "pyramide-empty";

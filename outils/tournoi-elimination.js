@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tournoi éliminatoire — tableau type tennis.
  */
 (function () {
@@ -584,7 +584,7 @@
     if (seedingCountEl) {
       seedingCountEl.textContent = noms.length <= 1 ? noms.length + " joueur" : noms.length + " joueurs";
     }
-    seedingListEl.innerHTML = "";
+    OutilsDom.clear(seedingListEl);
     if (!noms.length) {
       var empty = document.createElement("p");
       empty.className = "tournoi-seeding-empty";
@@ -648,7 +648,7 @@
 
   function renderMatchsAJouer() {
     if (!matchsListEl) return;
-    matchsListEl.innerHTML = "";
+    OutilsDom.clear(matchsListEl);
     var matchs = matchsAJouer();
     if (!matchs.length) {
       var empty = document.createElement("li");
@@ -778,13 +778,14 @@
 
   function render() {
     if (!bracketEl) return;
-    bracketEl.innerHTML = "";
+    OutilsDom.clear(bracketEl);
     montrerMsg("");
     renderMatchsAJouer();
 
     if (!state.rounds.length && !(state.tables && state.tables.length)) {
-      bracketEl.innerHTML =
-        '<p class="empty-state">Ajoutez les participants puis générez le tournoi.</p>';
+      bracketEl.appendChild(
+        OutilsDom.emptyState("Ajoutez les participants puis générez le tournoi.")
+      );
       return;
     }
 
@@ -842,7 +843,7 @@
     if (!bracketEl || (!state.rounds.length && !(state.tables && state.tables.length))) return;
     var svg = ensureConnectorSvg();
     if (!svg || !bracketWrapEl) return;
-    svg.innerHTML = "";
+    OutilsDom.clear(svg);
     var wrapRect = bracketWrapEl.getBoundingClientRect();
     var width = bracketEl.scrollWidth;
     var height = bracketEl.scrollHeight;

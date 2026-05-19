@@ -96,16 +96,29 @@
     }
   }
 
+  function clearNode(node) {
+    if (typeof OutilsDom !== "undefined" && OutilsDom.clear) {
+      OutilsDom.clear(node);
+      return;
+    }
+    while (node && node.firstChild) node.removeChild(node.firstChild);
+  }
+
   function syncInitialPossessionLabels() {
-    var selected = els["ptb-initial-possession"].value || "a";
-    els["ptb-initial-possession"].innerHTML = "";
+    var select = els["ptb-initial-possession"];
+    var selected = select.value || "a";
+    clearNode(select);
     TEAM_IDS.forEach(function (id) {
-      var option = document.createElement("option");
-      option.value = id;
-      option.textContent = state.teams[id].name;
-      els["ptb-initial-possession"].appendChild(option);
+      if (typeof OutilsDom !== "undefined" && OutilsDom.option) {
+        OutilsDom.option(select, id, state.teams[id].name);
+      } else {
+        var option = document.createElement("option");
+        option.value = id;
+        option.textContent = state.teams[id].name;
+        select.appendChild(option);
+      }
     });
-    els["ptb-initial-possession"].value = selected;
+    select.value = selected;
   }
 
   function formatTime(ms) {
@@ -233,51 +246,67 @@
       { label: "Pertes / possession", a: a.lossesPerPossession, b: b.lossesPerPossession, format: pctRatio, best: "low" },
     ]);
 
-    els["ptb-live-stats"].innerHTML =
-      '<div class="ptb-stats-table" style="--ptb-color-a:' +
-      state.teams.a.color +
-      ";--ptb-color-b:" +
-      state.teams.b.color +
-      '">' +
-      '<div class="ptb-stats-head"><span></span><strong>' +
-      escapeHtml(state.teams.a.name) +
-      "</strong><strong>" +
-      escapeHtml(state.teams.b.name) +
-      "</strong></div>" +
-      rows
-        .map(function (row) {
-          return statsRow(row);
-        })
-        .join("") +
-      "</div>";
-    els["ptb-compare"].innerHTML = "";
+    var statsRoot = els["ptb-live-stats"];
+    clearNode(statsRoot);
+    var table = document.createElement("div");
+    table.className = "ptb-stats-table";
+    table.style.setProperty("--ptb-color-a", state.teams.a.color);
+    table.style.setProperty("--ptb-color-b", state.teams.b.color);
+    var head = document.createElement("div");
+    head.className = "ptb-stats-head";
+    head.appendChild(document.createElement("span"));
+    var headA = document.createElement("strong");
+    headA.textContent = state.teams.a.name;
+    var headB = document.createElement("strong");
+    headB.textContent = state.teams.b.name;
+    head.appendChild(headA);
+    head.appendChild(headB);
+    table.appendChild(head);
+    rows.forEach(function (row) {
+      appendStatsRow(table, row);
+    });
+    statsRoot.appendChild(table);
+    clearNode(els["ptb-compare"]);
   }
 
-  function statsRow(row) {
+  function appendStatsRow(parent, row) {
     var aCompare = row.compareValue ? row.compareValue(row.a) : row.a;
     var bCompare = row.compareValue ? row.compareValue(row.b) : row.b;
     var best = bestTeam(aCompare, bCompare, row.best);
-    return (
-      '<div class="ptb-stats-row">' +
-      "<span>" +
-      row.label +
-      "</span>" +
-      '<strong class="' +
-      (best === "a" ? "is-best" : "") +
-      '">' +
-      row.format(row.a) +
-      "</strong>" +
-      '<strong class="' +
-      (best === "b" ? "is-best" : "") +
-      '">' +
-      row.format(row.b) +
-      "</strong>" +
-      "</div>"
-    );
+    var rowEl = document.createElement("div");
+    rowEl.className = "ptb-stats-row";
+    var label = document.createElement("span");
+    label.textContent = row.label;
+    var strongA = document.createElement("strong");
+    if (best === "a") strongA.className = "is-best";
+    appendStatValue(strongA, row.format, row.a);
+    var strongB = document.createElement("strong");
+    if (best === "b") strongB.className = "is-best";
+    appendStatValue(strongB, row.format, row.b);
+    rowEl.appendChild(label);
+    rowEl.appendChild(strongA);
+    rowEl.appendChild(strongB);
+    parent.appendChild(rowEl);
+  }
+
+  function appendStatValue(strong, format, value) {
+    if (format === formatPossessionTime) {
+      strong.appendChild(formatPossessionTime(value));
+    } else {
+      strong.textContent = format(value);
+    }
   }
 
   function formatPossessionTime(value) {
-    return '<span class="ptb-stat-stack"><b>' + formatTime(value.ms) + '</b><small>' + value.pct + "%</small></span>";
+    var span = document.createElement("span");
+    span.className = "ptb-stat-stack";
+    var bold = document.createElement("b");
+    bold.textContent = formatTime(value.ms);
+    var small = document.createElement("small");
+    small.textContent = value.pct + "%";
+    span.appendChild(bold);
+    span.appendChild(small);
+    return span;
   }
 
   function bestTeam(aValue, bValue, mode) {
@@ -486,14 +515,6 @@
   function majWakeLock() {
     if (state.running) activerWakeLock();
     else libererWakeLock();
-  }
-
-  function escapeHtml(value) {
-    return String(value == null ? "" : value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
   }
 
   function bindEvents() {
