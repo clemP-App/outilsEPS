@@ -2453,7 +2453,28 @@ main.container {
   bottom: 0;
   width: 58%;
   height: 35%;
-  border-radius: 18px 18px 30px 30px;
+  background: transparent;
+  border: 0;
+}
+
+.bad-impact-body-shape__legs::before,
+.bad-impact-body-shape__legs::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 43%;
+  background: rgba(13, 148, 136, 0.18);
+  border: 3px solid rgba(15, 23, 42, 0.32);
+  border-radius: 16px 16px 28px 28px;
+}
+
+.bad-impact-body-shape__legs::before {
+  left: 0;
+}
+
+.bad-impact-body-shape__legs::after {
+  right: 0;
 }
 
 .bad-impact-line {
@@ -2527,7 +2548,7 @@ main.container {
 }
 
 .bad-impact-court.is-table-tennis .bad-impact-line--service-top {
-  top: 50%;
+  display: none;
 }
 
 .bad-impact-court.is-table-tennis .bad-impact-line--service-bottom {
@@ -2539,17 +2560,26 @@ main.container {
   bottom: 0;
 }
 
-.bad-impact-court.is-volleyball .bad-impact-line--service-top {
-  top: 33.333%;
+.bad-impact-court.is-table-tennis .bad-impact-line--left-corridor,
+.bad-impact-court.is-table-tennis .bad-impact-line--right-corridor {
+  display: none;
 }
 
-.bad-impact-court.is-volleyball .bad-impact-line--service-bottom {
+.bad-impact-court.is-volleyball .bad-impact-line--service-top {
   top: 66.666%;
 }
 
+.bad-impact-court.is-volleyball .bad-impact-line--service-bottom {
+  display: none;
+}
+
 .bad-impact-court.is-volleyball .bad-impact-line--center {
-  top: 0;
-  bottom: 0;
+  display: none;
+}
+
+.bad-impact-court.is-volleyball .bad-impact-line--left-corridor,
+.bad-impact-court.is-volleyball .bad-impact-line--right-corridor {
+  display: none;
 }
 
 .bad-impact-court.is-boxe .bad-impact-line,

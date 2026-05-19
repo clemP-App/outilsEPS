@@ -30,6 +30,7 @@
       cols: ["gauche", "centre", "droite"],
       fixedRows: false,
       fixedCols: false,
+      maxCols: 3,
     },
     "tennis-table": {
       className: "is-table-tennis",
@@ -39,6 +40,7 @@
       cols: ["gauche", "centre", "droite"],
       fixedRows: false,
       fixedCols: false,
+      maxCols: 3,
     },
     volleyball: {
       className: "is-volleyball",
@@ -48,15 +50,19 @@
       cols: ["gauche", "centre", "droite"],
       fixedRows: false,
       fixedCols: false,
+      maxCols: 3,
     },
     "boxe-francaise": {
       className: "is-boxe",
       label: "corps",
       hint: "Boxe française : cliquez la zone touchée sur le corps.",
       rows: ["Tête", "Tronc", "Jambes"],
-      cols: ["zone"],
+      cols: ["gauche", "droite"],
       fixedRows: true,
-      fixedCols: true,
+      fixedCols: false,
+      maxCols: 2,
+      hitXMin: 18,
+      hitXMax: 82,
     },
   };
 
@@ -73,8 +79,9 @@
 
   function gridConfig() {
     var activity = currentActivity();
+    var maxCols = activity.maxCols || 3;
     return {
-      cols: activity.fixedCols ? 1 : clampGridValue(colsEl ? colsEl.value : 3),
+      cols: activity.fixedCols ? 1 : Math.min(maxCols, clampGridValue(colsEl ? colsEl.value : 3)),
       rows: activity.fixedRows ? 3 : clampGridValue(rowsEl ? rowsEl.value : 3),
     };
   }
@@ -128,7 +135,8 @@
     var rect = courtEl.getBoundingClientRect();
     var x = Math.min(100, Math.max(0, ((event.clientX - rect.left) / rect.width) * 100));
     var y = Math.min(100, Math.max(0, ((event.clientY - rect.top) / rect.height) * 100));
-    if (currentActivity().fixedCols && (x < 18 || x > 82)) return;
+    var activity = currentActivity();
+    if (activity.hitXMin != null && (x < activity.hitXMin || x > activity.hitXMax)) return;
     impacts.push({
       x: x,
       y: y,
@@ -201,6 +209,12 @@
   function renderZoneGrid() {
     var cfg = gridConfig();
     var activity = currentActivity();
+    if (colsEl) {
+      Array.prototype.forEach.call(colsEl.options, function (option) {
+        option.disabled = parseInt(option.value, 10) > (activity.maxCols || 3);
+      });
+      if (parseInt(colsEl.value, 10) > (activity.maxCols || 3)) colsEl.value = String(activity.maxCols || 3);
+    }
     if (courtEl) {
       courtEl.style.setProperty("--bad-cols", String(cfg.cols));
       courtEl.style.setProperty("--bad-rows", String(cfg.rows));
