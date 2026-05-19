@@ -4688,6 +4688,13 @@ textarea {
   justify-content: flex-start;
 }
 
+.page-outil--pyramide .card--accordion__panel > .pyramide-import-classe {
+  width: 100%;
+  margin-top: 0.85rem;
+  margin-bottom: 0.75rem;
+  justify-content: flex-start;
+}
+
 .classes-eleves-list {
   list-style: none;
   margin: 0;
@@ -5423,5 +5430,205 @@ body.install-banner-open {
     grid-column: 3;
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+/* --- Pyramide de victoires --- */
+.page-outil--pyramide {
+  max-width: min(48rem, 100%);
+}
+
+.pyramide-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pyramide-actions-row .btn {
+  flex: 1 1 auto;
+}
+
+.pyramide-nb-joueurs {
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: rgba(13, 148, 136, 0.14);
+  border: 1px solid rgba(13, 148, 136, 0.28);
+  font-size: 1rem;
+  font-weight: 850;
+  color: var(--accent-deep);
+  text-align: center;
+}
+
+.pyramide-joueurs-list,
+.pyramide-historique {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.page-outil--pyramide #pyramide-historique-panel .card--accordion__panel {
+  padding-top: 0.25rem;
+}
+
+.page-outil--pyramide #pyramide-historique-panel .pyramide-historique {
+  margin-top: 0.35rem;
+}
+
+.pyramide-joueur-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(13, 148, 136, 0.12);
+}
+
+.pyramide-joueur-item__meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pyramide-classement {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pyramide-classement__item {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.pyramide-classement__rang {
+  font-weight: 900;
+  color: var(--accent-deep);
+  text-align: center;
+}
+
+.pyramide-classement__nom {
+  font-weight: 750;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.pyramide-classement__v {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pyramide-board__cols {
+  display: none;
+  gap: 0.65rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+}
+
+.pyramide-board__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pyramide-col {
+  flex: 0 0 min(9.5rem, 42vw);
+  min-width: 7rem;
+  padding: 0.55rem;
+  border-radius: var(--radius-sm);
+  background: rgba(13, 148, 136, 0.06);
+  border: 1px solid rgba(13, 148, 136, 0.16);
+}
+
+.pyramide-col__title {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--accent-deep);
+  text-align: center;
+}
+
+.pyramide-col__list,
+.pyramide-stack-bloc {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.pyramide-col__list li,
+.pyramide-stack-bloc li {
+  padding: 0.4rem 0.45rem;
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.pyramide-stack-sep {
+  margin: 0.5rem 0 0.15rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent-deep);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.pyramide-match-form .field-group {
+  margin-bottom: 0.65rem;
+}
+
+.pyramide-historique__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.pyramide-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+@media (min-width: 720px) {
+  .pyramide-board__cols {
+    display: flex;
+  }
+
+  .pyramide-board__stack {
+    display: none;
   }
 }

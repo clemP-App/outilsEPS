@@ -85,6 +85,16 @@
       publicCible: "prof",
     },
     {
+      id: "pyramide-victoires",
+      titre: "Pyramide de victoires",
+      description:
+        "Tournoi par paliers : une victoire fait monter, une défaite ne fait pas descendre. Classement et matchs entre joueurs du même palier.",
+      icone: "📶",
+      href: "outils/pyramide-victoires.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
       id: "timer-hiit-tabata",
       titre: "Timer HIIT / Tabata",
       description:

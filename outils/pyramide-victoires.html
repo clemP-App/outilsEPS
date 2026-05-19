@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Pyramide de victoires — Outils EPS</title>
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--pyramide">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Pyramide de victoires</h1>
+      </header>
+
+      <p id="pyramide-msg" class="msg-error" role="alert" hidden></p>
+
+      <details class="card card--accordion" id="pyramide-joueurs-panel" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="lbl-joueurs">Joueurs</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <button
+            type="button"
+            class="btn btn--ghost btn--labeled pyramide-import-classe"
+            id="btn-import-classe-pyramide"
+          >
+            <span class="btn__icon" aria-hidden="true">👥</span>
+            <span class="btn__text">Importer une classe</span>
+          </button>
+          <p class="hint">
+            Une ligne = un joueur (prénom, nom ou les deux). <strong>Valider la liste</strong> ajoute les noms aux
+            joueurs déjà présents (le champ est ensuite vidé). Tous commencent au palier de départ : une victoire fait
+            monter, une défaite ne fait pas redescendre. Vous pouvez aussi importer des élèves depuis une classe
+            enregistrée.
+          </p>
+          <div class="field-group">
+            <label class="field-label" for="pyramide-liste-brute">Liste (un joueur par ligne)</label>
+            <textarea
+              id="pyramide-liste-brute"
+              rows="8"
+              placeholder="Martin&#10;Léa Dupont&#10;Paul&#10;…"
+              spellcheck="false"
+            ></textarea>
+          </div>
+          <div class="field-row pyramide-actions-row">
+            <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste-pyramide">
+              <span class="btn__icon" aria-hidden="true">✓</span>
+              <span class="btn__text">Valider la liste</span>
+            </button>
+            <button type="button" class="btn btn--danger btn--labeled" id="btn-vider-joueurs-pyramide">
+              <span class="btn__icon" aria-hidden="true">🗑️</span>
+              <span class="btn__text">Vider la liste des joueurs</span>
+            </button>
+          </div>
+          <p id="pyramide-nb-joueurs" class="pyramide-nb-joueurs" aria-live="polite">0 joueur</p>
+          <ul class="pyramide-joueurs-list" id="pyramide-joueurs-list" aria-live="polite"></ul>
+        </div>
+      </details>
+
+      <section class="card" aria-labelledby="pyramide-match-title">
+        <h2 id="pyramide-match-title">Enregistrer un résultat</h2>
+        <p class="hint">Choisissez le gagnant puis le perdant (même nombre de victoires). Pas de score.</p>
+        <form id="pyramide-match-form" class="pyramide-match-form">
+          <div class="field-group">
+            <label class="field-label" for="pyramide-gagnant">Gagnant</label>
+            <select id="pyramide-gagnant" required></select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="pyramide-perdant">Perdant</label>
+            <select id="pyramide-perdant" required disabled>
+              <option value="">— Choisir le gagnant d’abord —</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn--primary btn--labeled" id="pyramide-match-submit" disabled>
+            <span class="btn__icon" aria-hidden="true">✓</span>
+            <span class="btn__text">Valider le match</span>
+          </button>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="pyramide-colonnes-title">
+        <h2 id="pyramide-colonnes-title">Répartition par palier</h2>
+        <div class="pyramide-board" id="pyramide-board" aria-live="polite"></div>
+      </section>
+
+      <section class="card" aria-labelledby="pyramide-classement-title">
+        <h2 id="pyramide-classement-title">Classement</h2>
+        <p class="hint">Plus de victoires = mieux classé. À égalité, priorité au premier arrivé sur ce palier.</p>
+        <ol class="pyramide-classement" id="pyramide-classement"></ol>
+      </section>
+
+      <details class="card card--accordion" id="pyramide-historique-panel">
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="pyramide-historique-title">Historique des matchs</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <ul class="pyramide-historique" id="pyramide-historique"></ul>
+        </div>
+      </details>
+    </div>
+
+    <script src="../data-manager.js"></script>
+    <script src="../class-import.js"></script>
+    <script src="pyramide-victoires.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro:
+          "Organisez un tournoi où chaque victoire fait monter d’un palier, sans redescendre en cas de défaite.",
+        sections: [
+          {
+            title: "Principe",
+            text:
+              "Les joueurs du même palier s’affrontent. Le gagnant monte ; le perdant reste. S’il ne reste qu’un joueur sur le palier le plus bas, il reçoit automatiquement une victoire pour monter.",
+          },
+          {
+            title: "Utilisation",
+            list: [
+              "Ajoutez les joueurs (liste ou import de classe).",
+              "Enregistrez chaque résultat : gagnant puis perdant.",
+              "Consultez le classement et supprimez un match si besoin (retour au palier d’avant).",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

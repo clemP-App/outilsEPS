@@ -6,12 +6,13 @@ var DataManager = (function () {
   "use strict";
 
   var DB_NAME = "outilsEPSDB";
-  var DB_VERSION = 2;
+  var DB_VERSION = 3;
   var APP_NAME = "OutilsEPS";
   var BACKUP_VERSION = "1.0";
   var BACKUP_FILENAME = "outilsEPS-backup.json";
+  var PYRAMIDE_VICTOIRES_ID = "pyramide-victoires";
 
-  var STORE_NAMES = ["classes", "eleves", "dispenses", "oublisMateriel", "championnats", "parametres"];
+  var STORE_NAMES = ["classes", "eleves", "dispenses", "oublisMateriel", "championnats", "tournoisElimination", "parametres"];
 
   var APP_KEY = "outils_eps_app_v1";
   var LEGACY_DISPENSES = "outils_eps_dispenses_v1";
@@ -449,6 +450,7 @@ var DataManager = (function () {
       payload.dispenses.length +
       payload.oublisMateriel.length +
       payload.championnats.length +
+      payload.tournoisElimination.length +
       payload.parametres.length;
     if (total === 0) {
       return "Aucune donnée à importer dans ce fichier.";
@@ -495,6 +497,7 @@ var DataManager = (function () {
       dispenses: data.dispenses || [],
       oublisMateriel: data.oublisMateriel || [],
       championnats: data.championnats || [],
+      tournoisElimination: data.tournoisElimination || [],
       parametres: Array.isArray(parametres) ? parametres : [],
     };
   }
@@ -506,6 +509,7 @@ var DataManager = (function () {
       getAll("dispenses"),
       getAll("oublisMateriel"),
       getAll("championnats"),
+      getAll("tournoisElimination"),
       getAll("parametres"),
     ]).then(function (arrays) {
       return {
@@ -519,7 +523,8 @@ var DataManager = (function () {
         dispenses: arrays[2],
         oublisMateriel: arrays[3],
         championnats: arrays[4],
-        parametres: arrays[5],
+        tournoisElimination: arrays[5],
+        parametres: arrays[6],
       };
     });
   }
@@ -812,6 +817,30 @@ var DataManager = (function () {
     return deleteItem("parametres", id);
   }
 
+  function getPyramideVictoires() {
+    return getById("tournoisElimination", PYRAMIDE_VICTOIRES_ID).then(function (r) {
+      if (!r) return { players: [], matches: [] };
+      return {
+        players: Array.isArray(r.players) ? r.players.slice() : [],
+        matches: Array.isArray(r.matches) ? r.matches.slice() : [],
+      };
+    });
+  }
+
+  function savePyramideVictoires(state) {
+    var bloc = {
+      id: PYRAMIDE_VICTOIRES_ID,
+      nom: "Pyramide de victoires",
+      players: state.players || [],
+      matches: state.matches || [],
+      updatedAt: new Date().toISOString(),
+    };
+    return getById("tournoisElimination", PYRAMIDE_VICTOIRES_ID).then(function (existing) {
+      if (existing) return updateItem("tournoisElimination", bloc);
+      return addItem("tournoisElimination", bloc);
+    });
+  }
+
   var STORAGE_CATEGORIES = [
     {
       id: "classes",
@@ -833,6 +862,11 @@ var DataManager = (function () {
       id: "championnat",
       label: "Championnat poule",
       stores: ["championnats"],
+    },
+    {
+      id: "pyramide-victoires",
+      label: "Pyramide de victoires",
+      stores: ["tournoisElimination"],
     },
     {
       id: "composition",
@@ -880,6 +914,8 @@ var DataManager = (function () {
         parts.push(n + " oubli" + (n !== 1 ? "s" : ""));
       } else if (store === "championnats") {
         parts.push(n + " championnat" + (n !== 1 ? "s" : ""));
+      } else if (store === "tournoisElimination") {
+        parts.push(n + " tournoi" + (n !== 1 ? "s" : ""));
       }
     });
     (cat.paramIds || []).forEach(function (pid) {
@@ -1045,6 +1081,9 @@ var DataManager = (function () {
     saveOublisMateriel: saveOublisMateriel,
     getChampionnatActif: getChampionnatActif,
     saveChampionnatActif: saveChampionnatActif,
+    getPyramideVictoires: getPyramideVictoires,
+    savePyramideVictoires: savePyramideVictoires,
+    PYRAMIDE_VICTOIRES_ID: PYRAMIDE_VICTOIRES_ID,
     getParametre: getParametre,
     saveParametre: saveParametre,
     deleteParametre: deleteParametre,
