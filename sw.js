@@ -1,73 +1,85 @@
 /**
- * Service worker — cache des pages et assets pour installation PWA.
+ * Service worker — cache PWA (precache tolérant, navigation network-first).
  */
-var CACHE_NAME = "outils-eps-v38";
+/* global importScripts, caches, fetch, self */
+importScripts("./precache-manifest.js");
 
-var PRECACHE = [
-  "./",
-  "./index.html",
-  "./style.css",
-  "./script.js",
-  "./data-manager.js",
-  "./class-import.js",
-  "./tool-info.js",
-  "./pwa-register.js",
-  "./pwa-install-banner.js",
-  "./manifest.webmanifest",
-  "./assets/icon-192.png",
-  "./assets/icon-512.png",
-  "./assets/apple-touch-icon.png",
-  "./outils/ecartement-plots.html",
-  "./outils/convertisseur-allure.html",
-  "./outils/distance-vma.html",
-  "./outils/distance-vma.js",
-  "./outils/vitesse-plots.html",
-  "./outils/vitesse-plots.js",
-  "./outils/vitesse-course.html",
-  "./outils/vitesse-course.js",
-  "./outils/composition-equipes.html",
-  "./outils/composition-equipes.js",
-  "./outils/dispenses-eps.html",
-  "./outils/dispenses-eps.js",
-  "./outils/oubli-materiel.html",
-  "./outils/oubli-materiel.js",
-  "./outils/championnat-poule.html",
-  "./outils/championnat-poule.js",
-  "./outils/tournoi-elimination.html",
-  "./outils/tournoi-elimination.js",
-  "./outils/pyramide-victoires.html",
-  "./outils/pyramide-victoires.js",
-  "./outils/table-marque.html",
-  "./outils/table-marque.js",
-  "./outils/compteur-ptb.html",
-  "./outils/compteur-ptb.js",
-  "./outils/timer-hiit-tabata.html",
-  "./outils/timer-hiit-tabata.js",
-  "./outils/maxi-timer.html",
-  "./outils/maxi-timer.js",
-  "./outils/test-vma.html",
-  "./outils/test-vma.js",
-  "./outils/classes.html",
-  "./outils/classes.js",
-  "./outils/tirage-au-sort.html",
-  "./outils/tirage-au-sort.js",
-  "./outils/calcul-1rm.html",
-  "./outils/calcul-1rm.js",
-  "./outils/compteur-bonus.html",
-  "./outils/compteur-bonus.js",
-  "./outils/compteur-ratio.html",
-  "./outils/compteur-ratio.js",
-  "./outils/impact-badminton.html",
-  "./outils/impact-badminton.js",
-  "./outils/sauvegarde.html",
-  "./outils/sauvegarde.js",
-  "./vendor/jspdf.umd.min.js",
-];
+var CACHE_NAME = CACHE_BUNDLE_NAME;
+var DEV = self.location && self.location.hostname === "localhost";
+
+function logWarn() {
+  if (DEV && typeof console !== "undefined" && console.warn) {
+    console.warn.apply(console, arguments);
+  }
+}
+
+function precacheTolerant(cache, urls) {
+  return Promise.all(
+    urls.map(function (url) {
+      return cache.add(url).catch(function (err) {
+        logWarn("[SW] Precache ignoré:", url, err && err.message ? err.message : err);
+      });
+    })
+  );
+}
+
+function isNavigationRequest(request) {
+  if (request.mode === "navigate") return true;
+  var accept = request.headers.get("Accept") || "";
+  return request.method === "GET" && accept.indexOf("text/html") !== -1;
+}
+
+function isStaticAsset(url) {
+  if (url.pathname.indexOf("/vendor/") !== -1) return true;
+  if (url.pathname.indexOf("/assets/") !== -1) return true;
+  return /\.(css|js|png|jpe?g|webp|svg|woff2?|webmanifest)$/i.test(url.pathname);
+}
+
+function putInCache(request, response) {
+  if (!response || response.status !== 200 || response.type !== "basic") return;
+  caches.open(CACHE_NAME).then(function (cache) {
+    cache.put(request, response.clone());
+  });
+}
+
+function networkFirstNavigation(request) {
+  return fetch(request)
+    .then(function (response) {
+      putInCache(request, response);
+      return response;
+    })
+    .catch(function () {
+      return caches.match(request).then(function (cached) {
+        if (cached) return cached;
+        return caches.match("./index.html").then(function (indexCached) {
+          return indexCached || caches.match("index.html");
+        });
+      });
+    });
+}
+
+function staleWhileRevalidate(request) {
+  return caches.open(CACHE_NAME).then(function (cache) {
+    return cache.match(request).then(function (cached) {
+      var networkPromise = fetch(request)
+        .then(function (response) {
+          if (response && response.status === 200 && response.type === "basic") {
+            cache.put(request, response.clone());
+          }
+          return response;
+        })
+        .catch(function () {
+          return cached;
+        });
+      return cached || networkPromise;
+    });
+  });
+}
 
 self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function (cache) {
-      return cache.addAll(PRECACHE);
+      return precacheTolerant(cache, PRECACHE);
     })
   );
   self.skipWaiting();
@@ -96,29 +108,25 @@ self.addEventListener("fetch", function (event) {
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  if (isNavigationRequest(event.request)) {
+    event.respondWith(networkFirstNavigation(event.request));
+    return;
+  }
+
+  if (isStaticAsset(url)) {
+    event.respondWith(staleWhileRevalidate(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then(function (cached) {
-      var network = fetch(event.request)
-        .then(function (response) {
-          if (response && response.status === 200 && response.type === "basic") {
-            var copy = response.clone();
-            caches.open(CACHE_NAME).then(function (cache) {
-              cache.put(event.request, copy);
-            });
-          }
+      return (
+        cached ||
+        fetch(event.request).then(function (response) {
+          putInCache(event.request, response);
           return response;
         })
-        .catch(function () {
-          return cached;
-        });
-
-      if (event.request.mode === "navigate") {
-        return network.catch(function () {
-          return cached || caches.match("./index.html");
-        });
-      }
-
-      return cached || network;
+      );
     })
   );
 });
