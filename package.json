@@ -1,0 +1,10 @@
+{
+  "name": "outilseps",
+  "private": true,
+  "description": "Outils EPS — PWA vanilla",
+  "scripts": {
+    "check:js": "node scripts/check-js.js",
+    "precache": "node scripts/generate-precache.js",
+    "test": "node --test tests/championnat-standings.test.js tests/precache-manifest.test.js"
+  }
+}

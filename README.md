@@ -38,6 +38,12 @@ OutilsEPS/
 ├── data-manager.js         # IndexedDB, export/import JSON
 ├── class-import.js         # Import d’élèves depuis une classe
 ├── sw.js                   # Service worker (cache PWA)
+├── app-version.js          # Version PWA (cache Service Worker)
+├── precache-manifest.js    # Liste precache (générée)
+├── dom-utils.js            # Helpers DOM partagés
+├── scripts/
+│   ├── generate-precache.js
+│   └── check-js.js
 ├── vendor/                 # Bibliothèques locales (ex. jsPDF)
 ├── assets/                 # Icônes PWA
 └── outils/                 # Une page HTML (+ JS) par outil
@@ -48,7 +54,25 @@ OutilsEPS/
 1. Créez une nouvelle page dans `outils/`.
 2. Ajoutez un objet dans le tableau `OUTILS` de `script.js`.
 3. Liez `../style.css` et un lien « Retour à l’accueil » vers `../index.html`.
-4. Si l’outil enregistre des données, utilisez `DataManager` et ajoutez la page + scripts à `sw.js` (liste `PRECACHE`).
+4. Si l’outil enregistre des données, utilisez `DataManager`, incrémentez `APP_VERSION` dans `app-version.js`, puis régénérez le precache (voir ci-dessous).
+
+### Cache PWA (Service Worker)
+
+1. Incrémentez `APP_VERSION` dans `app-version.js` à chaque release qui doit invalider le cache navigateur.
+2. Régénérez la liste precache :
+
+```bash
+node scripts/generate-precache.js
+```
+
+Le fichier `precache-manifest.js` est recréé automatiquement ; `sw.js` l’importe via `importScripts`. Les dossiers `scripts/`, `tests/`, `.git` et `node_modules` sont ignorés.
+
+**Vérifications locales :**
+
+```bash
+npm run check:js
+npm test
+```
 
 ### Dispenses EPS — rappels
 
