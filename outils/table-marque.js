@@ -20,6 +20,7 @@
   var btnResetScores = document.getElementById("table-reset-scores");
   var reglagesEl = document.getElementById("table-reglages");
 
+  var TOOL_ID = "table-marque";
   var scores = { left: 0, right: 0 };
   var running = false;
   var paused = false;
@@ -126,6 +127,46 @@
   function majWakeLock() {
     if (running && !paused) activerWakeLock();
     else libererWakeLock();
+  }
+
+  function nomsEquipes() {
+    return {
+      left: (nameLeftEl && nameLeftEl.value.trim()) || "Équipe A",
+      right: (nameRightEl && nameRightEl.value.trim()) || "Équipe B",
+    };
+  }
+
+  function persisterNoms() {
+    if (typeof EleveLabels === "undefined") return;
+    var n = nomsEquipes();
+    EleveLabels.saveToolLabels(TOOL_ID, { nameLeft: n.left, nameRight: n.right });
+  }
+
+  function chargerNoms() {
+    if (typeof EleveLabels === "undefined") return;
+    var saved = EleveLabels.getToolLabels(TOOL_ID);
+    if (saved.nameLeft && nameLeftEl) nameLeftEl.value = saved.nameLeft;
+    if (saved.nameRight && nameRightEl) nameRightEl.value = saved.nameRight;
+  }
+
+  function buildExportPayload() {
+    var n = nomsEquipes();
+    var duree = lireDureeMs();
+    var leftMs = running ? Math.max(0, endsAt - Date.now()) : duree;
+    var displayMs = paused ? pausedRemainingMs : leftMs;
+    return {
+      teams: {
+        left: { name: n.left, score: scores.left, color: couleurPour("left") },
+        right: { name: n.right, score: scores.right, color: couleurPour("right") },
+      },
+      timer: {
+        durationMs: duree,
+        durationLabel: formatTime(duree),
+        displayLabel: formatTime(displayMs),
+        running: running,
+        paused: paused,
+      },
+    };
   }
 
   function render() {
@@ -271,6 +312,12 @@
     el.addEventListener("change", render);
   });
 
+  [nameLeftEl, nameRightEl].forEach(function (el) {
+    if (!el) return;
+    el.addEventListener("input", persisterNoms);
+    el.addEventListener("change", persisterNoms);
+  });
+
   [minEl, secEl].forEach(function (el) {
     if (!el) return;
     el.addEventListener("input", function () {
@@ -289,5 +336,19 @@
     if (document.visibilityState === "visible") majWakeLock();
   });
 
+  chargerNoms();
   render();
+
+  if (typeof EleveQrShare !== "undefined") {
+    EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
+      toolId: TOOL_ID,
+      getPayload: buildExportPayload,
+      validateBeforeShare: function () {
+        if (!scores.left && !scores.right) {
+          return "Saisissez au moins un point avant de partager.";
+        }
+        return null;
+      },
+    });
+  }
 })();

@@ -4,6 +4,8 @@
 (function () {
   "use strict";
 
+  var TOOL_ID = "zone-impact";
+  var labelEl = document.getElementById("bad-impact-label");
   var courtEl = document.getElementById("bad-impact-court");
   var zoneGridEl = document.getElementById("bad-impact-zone-grid");
   var markersEl = document.getElementById("bad-impact-markers");
@@ -264,5 +266,58 @@
   if (colsEl) colsEl.addEventListener("change", render);
   if (rowsEl) rowsEl.addEventListener("change", render);
 
+  function persisterLabel() {
+    if (typeof EleveLabels === "undefined" || !labelEl) return;
+    EleveLabels.saveToolLabels(TOOL_ID, { label: labelEl.value.trim() });
+  }
+
+  function chargerLabel() {
+    if (typeof EleveLabels === "undefined" || !labelEl) return;
+    var saved = EleveLabels.getToolLabels(TOOL_ID);
+    if (saved.label) labelEl.value = saved.label;
+  }
+
+  function buildExportPayload() {
+    var cfg = gridConfig();
+    var counts = countsByZone();
+    var total = impacts.length;
+    var touched = counts.filter(function (c) {
+      return c > 0;
+    }).length;
+    var max = Math.max.apply(Math, counts.concat([0]));
+    var mainIndex = counts.indexOf(max);
+    var activity = currentActivity();
+    return {
+      label: labelEl ? labelEl.value.trim() : "",
+      activity: activityEl ? activityEl.value : "badminton",
+      activityLabel: activity.label,
+      total: total,
+      coverage: touched + " / " + counts.length,
+      mainZone: total ? zoneLabel(mainIndex) : null,
+      zones: counts.map(function (count, index) {
+        var pct = total ? Math.round((count / total) * 100) : 0;
+        return { label: zoneLabel(index), count: count, percent: pct };
+      }),
+      grid: { cols: cfg.cols, rows: cfg.rows },
+    };
+  }
+
+  if (labelEl) {
+    labelEl.addEventListener("input", persisterLabel);
+    labelEl.addEventListener("change", persisterLabel);
+  }
+
+  chargerLabel();
   render();
+
+  if (typeof EleveQrShare !== "undefined") {
+    EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
+      toolId: TOOL_ID,
+      getPayload: buildExportPayload,
+      validateBeforeShare: function () {
+        if (!impacts.length) return "Enregistrez au moins un impact avant de partager.";
+        return null;
+      },
+    });
+  }
 })();

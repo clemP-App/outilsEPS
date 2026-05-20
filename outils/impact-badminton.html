@@ -51,6 +51,10 @@
 
         <div class="bad-impact-settings" aria-label="Découpage du terrain">
           <div class="field-group">
+            <label class="field-label" for="bad-impact-label">Élève / binôme / équipe (optionnel)</label>
+            <input type="text" id="bad-impact-label" maxlength="80" autocomplete="off" placeholder="ex. Équipe 2" />
+          </div>
+          <div class="field-group">
             <label class="field-label" for="bad-impact-activity">Activité</label>
             <select id="bad-impact-activity">
               <option value="badminton" selected>Badminton</option>
@@ -109,8 +113,15 @@
         </div>
         <div class="bad-impact-zone-stats" id="bad-impact-zone-stats"></div>
       </section>
+
+      <div class="card eleve-share-bar" id="eleve-share-bar"></div>
     </div>
 
+    <script src="../vendor/lz-string.min.js"></script>
+    <script src="../shared/qr-exchange-core.js"></script>
+    <script src="../shared/eleve-labels.js"></script>
+    <script src="../vendor/qrcode.min.js"></script>
+    <script src="../shared/qr-share-ui.js"></script>
     <script src="impact-badminton.js"></script>
     <script src="../tool-info.js"></script>
     <script>

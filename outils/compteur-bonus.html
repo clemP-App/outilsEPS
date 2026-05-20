@@ -57,7 +57,8 @@
       <div class="bonus-play" aria-live="polite">
         <section class="card bonus-joueur bonus-joueur--a" aria-labelledby="lbl-joueur-a">
           <div class="bonus-joueur__head">
-            <h2 id="lbl-joueur-a" class="bonus-joueur__titre">Joueur A</h2>
+            <label class="field-label" for="bonus-name-a">Joueur A</label>
+            <input type="text" id="bonus-name-a" class="bonus-joueur__titre-input" maxlength="60" value="Joueur A" aria-labelledby="lbl-joueur-a" />
             <p class="bonus-score-wrap">
               <span class="bonus-score" id="score-a">0</span>
               <span class="bonus-score-unit">pts</span>
@@ -94,7 +95,8 @@
 
         <section class="card bonus-joueur bonus-joueur--b" aria-labelledby="lbl-joueur-b">
           <div class="bonus-joueur__head">
-            <h2 id="lbl-joueur-b" class="bonus-joueur__titre">Joueur B</h2>
+            <label class="field-label" for="bonus-name-b">Joueur B</label>
+            <input type="text" id="bonus-name-b" class="bonus-joueur__titre-input" maxlength="60" value="Joueur B" aria-labelledby="lbl-joueur-b" />
             <p class="bonus-score-wrap">
               <span class="bonus-score" id="score-b">0</span>
               <span class="bonus-score-unit">pts</span>
@@ -119,8 +121,15 @@
           </div>
         </section>
       </div>
+
+      <div class="card eleve-share-bar" id="eleve-share-bar"></div>
     </div>
 
+    <script src="../vendor/lz-string.min.js"></script>
+    <script src="../shared/qr-exchange-core.js"></script>
+    <script src="../shared/eleve-labels.js"></script>
+    <script src="../vendor/qrcode.min.js"></script>
+    <script src="../shared/qr-share-ui.js"></script>
     <script src="../data-manager.js"></script>
     <script src="compteur-bonus.js"></script>
     <script src="../tool-info.js"></script>

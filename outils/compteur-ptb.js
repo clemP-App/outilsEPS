@@ -5,6 +5,7 @@
 (function () {
   "use strict";
 
+  var TOOL_ID = "compteur-ptb";
   var TEAM_IDS = ["a", "b"];
 
   var els = {};
@@ -83,6 +84,27 @@
     return (min * 60 + sec) * 1000;
   }
 
+  function persisterNoms() {
+    if (typeof EleveLabels === "undefined") return;
+    EleveLabels.saveToolLabels(TOOL_ID, {
+      nameA: state.teams.a.name,
+      nameB: state.teams.b.name,
+    });
+  }
+
+  function chargerNoms() {
+    if (typeof EleveLabels === "undefined") return;
+    var saved = EleveLabels.getToolLabels(TOOL_ID);
+    if (saved.nameA) {
+      state.teams.a.name = saved.nameA;
+      if (els["ptb-name-a"]) els["ptb-name-a"].value = saved.nameA;
+    }
+    if (saved.nameB) {
+      state.teams.b.name = saved.nameB;
+      if (els["ptb-name-b"]) els["ptb-name-b"].value = saved.nameB;
+    }
+  }
+
   function readConfig() {
     state.mode = ["up", "down"].indexOf(els["ptb-mode"].value) !== -1 ? els["ptb-mode"].value : "none";
     state.durationMs = parseDurationMs();
@@ -94,6 +116,37 @@
     if (!state.running && !state.paused && !state.history.length) {
       state.possession = els["ptb-initial-possession"].value === "b" ? "b" : "a";
     }
+    persisterNoms();
+  }
+
+  function buildExportPayload() {
+    readConfig();
+    var totalPossMs = Math.max(1, state.teams.a.possessionMs + state.teams.b.possessionMs);
+    function pack(id) {
+      var t = state.teams[id];
+      var st = teamStats(t);
+      return {
+        name: t.name,
+        color: t.color,
+        goals: t.goals,
+        shots: t.shots,
+        losses: t.losses,
+        efficiency: st.efficiency,
+        shotsPerPossession: Math.round(st.shotsPerPossession * 100),
+        lossesPerPossession: Math.round(st.lossesPerPossession * 100),
+        possessionLabel:
+          state.mode !== "none"
+            ? formatTime(t.possessionMs) + " (" + Math.round((t.possessionMs / totalPossMs) * 100) + "%)"
+            : null,
+      };
+    }
+    return {
+      mode: state.mode,
+      finished: state.finished,
+      startedAtIso: state.startedAtIso,
+      endedAtIso: state.endedAtIso,
+      teams: { a: pack("a"), b: pack("b") },
+    };
   }
 
   function clearNode(node) {
@@ -557,6 +610,20 @@
   bindEls();
   bindEvents();
   els["ptb-duration-field"].hidden = true;
+  chargerNoms();
   readConfig();
   render();
+
+  if (typeof EleveQrShare !== "undefined") {
+    EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
+      toolId: TOOL_ID,
+      getPayload: buildExportPayload,
+      validateBeforeShare: function () {
+        if (!state.history.length && !state.finished) {
+          return "Enregistrez au moins une action ou terminez le match avant de partager.";
+        }
+        return null;
+      },
+    });
+  }
 })();

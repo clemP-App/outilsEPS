@@ -35,6 +35,11 @@
             Saisis la vitesse objectif et la distance entre deux plots. L’observateur clique à chaque passage de plot.
           </p>
 
+          <div class="field-group">
+            <label class="field-label" for="vitesse-plots-label">Élève / groupe (optionnel)</label>
+            <input type="text" id="vitesse-plots-label" maxlength="80" autocomplete="off" placeholder="ex. Binôme 3" />
+          </div>
+
           <div class="field-row field-row--vitesse-plots">
             <div class="field-group">
               <label class="field-label" for="vitesse-objectif">Vitesse objectif (km/h)</label>
@@ -142,8 +147,15 @@
           <p class="hint">La ligne verte représente la vitesse objectif.</p>
         </div>
       </section>
+
+      <div class="card eleve-share-bar" id="eleve-share-bar"></div>
     </div>
 
+    <script src="../vendor/lz-string.min.js"></script>
+    <script src="../shared/qr-exchange-core.js"></script>
+    <script src="../shared/eleve-labels.js"></script>
+    <script src="../vendor/qrcode.min.js"></script>
+    <script src="../shared/qr-share-ui.js"></script>
     <script src="vitesse-plots.js"></script>
     <script src="../tool-info.js"></script>
     <script>

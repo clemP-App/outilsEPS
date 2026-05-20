@@ -4,8 +4,11 @@
 (function () {
   "use strict";
 
+  var TOOL_ID = "compteur-bonus";
   var PARAM_ID = "compteur-bonus-settings";
 
+  var nameAEl = document.getElementById("bonus-name-a");
+  var nameBEl = document.getElementById("bonus-name-b");
   var ptsBonusEl = document.getElementById("pts-bonus");
   var ptsNormalEl = document.getElementById("pts-normal");
   var ptsMalusEl = document.getElementById("pts-malus");
@@ -57,6 +60,48 @@
       saveTimer = null;
       sauverReglages();
     }, 400);
+  }
+
+  function nomJoueur(joueur) {
+    var el = joueur === "A" ? nameAEl : nameBEl;
+    var def = joueur === "A" ? "Joueur A" : "Joueur B";
+    return (el && el.value.trim()) || def;
+  }
+
+  function persisterNoms() {
+    if (typeof EleveLabels === "undefined") return;
+    EleveLabels.saveToolLabels(TOOL_ID, {
+      nameA: nomJoueur("A"),
+      nameB: nomJoueur("B"),
+    });
+  }
+
+  function chargerNoms() {
+    if (typeof EleveLabels === "undefined") return;
+    var saved = EleveLabels.getToolLabels(TOOL_ID);
+    if (saved.nameA && nameAEl) nameAEl.value = saved.nameA;
+    if (saved.nameB && nameBEl) nameBEl.value = saved.nameB;
+  }
+
+  function buildExportPayload() {
+    lireReglagesDepuisChamps();
+    function pack(joueur) {
+      var c = compterClics(joueur);
+      return {
+        name: nomJoueur(joueur),
+        score: scoreJoueur(joueur),
+        counts: { bonus: c.bonus, normal: c.normal, malus: c.malus },
+        points: pointsParType(joueur),
+      };
+    }
+    return {
+      players: { A: pack("A"), B: pack("B") },
+      settings: {
+        ptsBonus: settings.ptsBonus,
+        ptsNormal: settings.ptsNormal,
+        ptsMalus: settings.ptsMalus,
+      },
+    };
   }
 
   function compterClics(joueur) {
@@ -160,6 +205,12 @@
     });
   });
 
+  [nameAEl, nameBEl].forEach(function (el) {
+    if (!el) return;
+    el.addEventListener("input", persisterNoms);
+    el.addEventListener("change", persisterNoms);
+  });
+
   function init() {
     var p = Promise.resolve();
     if (typeof DataManager !== "undefined") {
@@ -174,9 +225,21 @@
         if (typeof saved.ptsMalus === "number") settings.ptsMalus = saved.ptsMalus;
       }
       appliquerReglagesAuxChamps();
+      chargerNoms();
       render();
     });
   }
 
   init();
+
+  if (typeof EleveQrShare !== "undefined") {
+    EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
+      toolId: TOOL_ID,
+      getPayload: buildExportPayload,
+      validateBeforeShare: function () {
+        if (!history.length) return "Enregistrez au moins une action avant de partager.";
+        return null;
+      },
+    });
+  }
 })();

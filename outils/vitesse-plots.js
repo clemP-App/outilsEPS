@@ -4,6 +4,8 @@
 (function () {
   "use strict";
 
+  var TOOL_ID = "vitesse-plots";
+  var labelEl = document.getElementById("vitesse-plots-label");
   var reglagesEl = document.getElementById("vitesse-plots-reglages");
   var vitesseObjectifEl = document.getElementById("vitesse-objectif");
   var distancePlotEl = document.getElementById("distance-plot");
@@ -458,8 +460,60 @@
   });
   if (modeEl) modeEl.addEventListener("change", majMode);
 
+  function persisterLabel() {
+    if (typeof EleveLabels === "undefined" || !labelEl) return;
+    EleveLabels.saveToolLabels(TOOL_ID, { label: labelEl.value.trim() });
+  }
+
+  function chargerLabel() {
+    if (typeof EleveLabels === "undefined" || !labelEl) return;
+    var saved = EleveLabels.getToolLabels(TOOL_ID);
+    if (saved.label) labelEl.value = saved.label;
+  }
+
+  function buildExportPayload() {
+    var reg = lireReglages();
+    var dernier = passages[passages.length - 1];
+    return {
+      label: labelEl ? labelEl.value.trim() : "",
+      vitesseMoyenne: dernier ? dernier.vitesseMoyenne : null,
+      vitesseDernier: dernier ? dernier.vitesseDernier : null,
+      config: {
+        vitesseObjectif: reg.vitesseObjectif,
+        distancePlot: reg.distancePlot,
+        mode: modeChrono(),
+      },
+      passages: passages.map(function (p) {
+        return {
+          numero: p.numero,
+          vitesseDernier: p.vitesseDernier,
+          vitesseMoyenne: p.vitesseMoyenne,
+          intervalLabel: formaterDuree(p.intervalleMs),
+          tempsTotalLabel: formaterDuree(p.tempsTotalMs),
+        };
+      }),
+    };
+  }
+
+  if (labelEl) {
+    labelEl.addEventListener("input", persisterLabel);
+    labelEl.addEventListener("change", persisterLabel);
+  }
+
+  chargerLabel();
   majTempsObjectif();
   majMode();
   majBoutons();
   dessinerGraphique();
+
+  if (typeof EleveQrShare !== "undefined") {
+    EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
+      toolId: TOOL_ID,
+      getPayload: buildExportPayload,
+      validateBeforeShare: function () {
+        if (!passages.length) return "Enregistrez au moins un passage au plot avant de partager.";
+        return null;
+      },
+    });
+  }
 })();
