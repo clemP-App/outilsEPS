@@ -20,6 +20,7 @@ Les données principales sont stockées dans **IndexedDB** (`outilsEPSDB`) via `
 | Championnat poule (données par séance) | `championnats` |
 | Tournoi éliminatoire, pyramide de victoires | `tournoisElimination` |
 | Composition d’équipes et autres réglages | `parametres` |
+| Imports élèves (QR) | `importsEleves` |
 
 **Limites :**
 
@@ -52,6 +53,34 @@ Quatre outils utilisent des **séances** pour enregistrer plusieurs contextes (e
 
 **Hors sauvegarde JSON :** certains réglages légers de l’accueil (favoris, ordre des outils) peuvent rester dans `localStorage` ; ils ne sont pas inclus dans l’export global.
 
+### Remontée des données élèves (QR, 100 % offline)
+
+Flux sans serveur ni cloud : l’élève partage un QR, le prof le scanne sur son téléphone.
+
+**Outils élèves concernés :** table de marque, compteur PTB, compteur bonus, vitesse aux plots, zone d’impact.
+
+#### Côté élève — partager
+
+1. Utilisez l’outil pendant la séance (noms d’équipes / joueurs / libellé modifiables et mémorisés sur l’appareil).
+2. Appuyez sur **Partager au prof (QR)** en bas de page.
+3. Optionnel : classe, groupe, nom du binôme (mémorisés pour les prochains partages).
+4. Montrez le QR au professeur. Un **lien texte** est aussi copiable en secours.
+
+#### Côté prof — récupérer
+
+1. Ouvrez **Récupération de données** sur l’accueil (section prof).
+2. **Démarrer la caméra** et scannez le QR, ou **collez le lien** si le scan échoue.
+3. En cas de doublon (`exportId` déjà importé), une confirmation est demandée.
+4. Consultez les imports dans **Visualisation des données** (filtres, détail, suppression, export JSON des imports).
+
+**Format technique :** JSON compact versionné (`v`, `toolId`, `exportId`, `checksum`, `payload`), compressé LZ-String + URL `outilseps://qr?v=1&d=…`. Bibliothèques locales dans `vendor/` (`lz-string`, `qrcodejs`, `html5-qrcode`).
+
+**Limites QR :**
+
+- Un QR standard convient pour **quelques Ko** de données compressées. Au-delà (~2–3 Ko d’URL), le scan peut échouer : privilégiez un résumé (match terminé, stats agrégées) plutôt qu’un historique très long.
+- Pas de **QR multi-parties** pour l’instant (gros historiques de passages ou dizaines d’impacts détaillés).
+- Les noms saisis sur l’appareil élève restent en `localStorage` ; seules les données du QR sont transférées au prof.
+
 ## Structure du projet
 
 ```
@@ -67,10 +96,14 @@ OutilsEPS/
 ├── dom-utils.js            # Helpers DOM partagés
 ├── session-manager.js      # UI séances (barre + dialogue ; code « session »)
 ├── shared/sessions-core.js # Règles séances (validation, toolId)
+├── shared/qr-exchange-core.js # Format QR encode/decode
+├── shared/qr-share-ui.js   # Dialogue partage élève
+├── shared/import-record-core.js # Normalisation imports IndexedDB
+├── shared/import-detail-render.js # Affichage détail import
 ├── scripts/
 │   ├── generate-precache.js
 │   └── check-js.js
-├── vendor/                 # Bibliothèques locales (ex. jsPDF)
+├── vendor/                 # Bibliothèques locales (jsPDF, lz-string, QR…)
 ├── assets/                 # Icônes PWA
 └── outils/                 # Une page HTML (+ JS) par outil
 ```
