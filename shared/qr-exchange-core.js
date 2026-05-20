@@ -30,6 +30,7 @@
     "table-marque",
     "compteur-ptb",
     "compteur-bonus",
+    "compteur-ratio",
     "vitesse-plots",
     "zone-impact",
   ];
@@ -229,6 +230,7 @@
       "table-marque": "Table de marque",
       "compteur-ptb": "Compteur PTB",
       "compteur-bonus": "Compteur bonus",
+      "compteur-ratio": "Compteur ratio",
       "vitesse-plots": "Vitesse aux plots",
       "zone-impact": "Zone d'impact",
     };

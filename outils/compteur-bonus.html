@@ -18,14 +18,18 @@
   </head>
   <body class="app app--tool">
     <div class="page-outil page-outil--bonus">
-      <header class="page-outil__header page-outil__header--compact">
+      <header class="page-outil__header">
         <a class="tool-back" href="../index.html"
           ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
         >
         <h1>Compteur bonus</h1>
       </header>
 
-      <details class="card card--accordion card--accordion-compact" id="accordion-reglages">
+      <p class="hint bonus-intro">
+        Comptez les bonus, points et malus pour observer deux joueurs en même temps.
+      </p>
+
+      <details class="card card--accordion" id="accordion-reglages">
         <summary class="card--accordion__summary">
           <span class="card--accordion__title">Paramètres des points</span>
           <span class="card--accordion__chev" aria-hidden="true"></span>
@@ -48,79 +52,142 @@
               <input type="number" id="pts-malus" inputmode="decimal" step="any" value="-1" />
             </div>
           </div>
-          <button type="button" class="btn btn--ghost btn--labeled" id="btn-reset-partie">
-            <span class="btn__text">Remettre les scores à zéro</span>
-          </button>
         </div>
       </details>
 
-      <div class="bonus-play" aria-live="polite">
-        <section class="card bonus-joueur bonus-joueur--a" aria-labelledby="lbl-joueur-a">
-          <div class="bonus-joueur__head">
-            <label class="field-label" for="bonus-name-a">Joueur A</label>
-            <input type="text" id="bonus-name-a" class="bonus-joueur__titre-input" maxlength="60" value="Joueur A" aria-labelledby="lbl-joueur-a" />
-            <p class="bonus-score-wrap">
-              <span class="bonus-score" id="score-a">0</span>
-              <span class="bonus-score-unit">pts</span>
+      <button
+        type="button"
+        class="btn btn--ghost btn--labeled bonus-undo"
+        id="btn-undo"
+        disabled
+        aria-label="Annuler le dernier clic"
+      >
+        <span class="btn__icon" aria-hidden="true">↩</span>
+        <span class="btn__text">Annuler le dernier clic</span>
+      </button>
+
+      <button type="button" class="btn btn--danger btn--labeled bonus-reset" id="btn-reset-partie">
+        <span class="btn__icon" aria-hidden="true">↺</span>
+        <span class="btn__text">Remettre les scores à zéro</span>
+      </button>
+
+      <section class="bonus-grid" aria-label="Compteurs bonus">
+        <article class="card bonus-card" data-bonus-card="a">
+          <div class="bonus-card__top">
+            <input
+              type="text"
+              class="bonus-name-input"
+              id="bonus-name-a"
+              value="Joueur A"
+              aria-label="Nom du joueur A"
+            />
+            <input
+              type="color"
+              class="bonus-color-input"
+              id="bonus-color-a"
+              value="#0d9488"
+              aria-label="Couleur du joueur A"
+            />
+          </div>
+          <div class="bonus-result">
+            <span class="bonus-result__label">Score</span>
+            <strong id="score-a">0</strong>
+            <span class="bonus-result__unit">pts</span>
+          </div>
+          <div class="bonus-stats">
+            <p>
+              <span>👍 Bonus</span>
+              <span class="bonus-stat__line"
+                ><strong id="stat-bonus-a">0</strong><span class="bonus-stat__pct" id="stat-bonus-pct-a"></span
+              ></span>
+            </p>
+            <p>
+              <span>➕ Points</span>
+              <span class="bonus-stat__line"
+                ><strong id="stat-normal-a">0</strong><span class="bonus-stat__pct" id="stat-normal-pct-a"></span
+              ></span>
+            </p>
+            <p>
+              <span>👎 Malus</span>
+              <span class="bonus-stat__line"
+                ><strong id="stat-malus-a">0</strong><span class="bonus-stat__pct" id="stat-malus-pct-a"></span
+              ></span>
             </p>
           </div>
-          <div class="bonus-btns" role="group" aria-label="Actions joueur A">
-            <button type="button" class="bonus-btn bonus-btn--bonus" data-joueur="A" data-type="bonus">
+          <div class="bonus-buttons">
+            <button type="button" class="bonus-btn bonus-btn--bonus" data-joueur="A" data-type="bonus" aria-label="Bonus joueur A">
               <span class="bonus-btn__icon" aria-hidden="true">👍</span>
               <span class="bonus-btn__label">Bonus</span>
-              <span class="bonus-btn__detail">0x · 0%</span>
             </button>
-            <button type="button" class="bonus-btn bonus-btn--normal" data-joueur="A" data-type="normal">
+            <button type="button" class="bonus-btn bonus-btn--normal" data-joueur="A" data-type="normal" aria-label="Point joueur A">
               <span class="bonus-btn__icon" aria-hidden="true">➕</span>
               <span class="bonus-btn__label">Point</span>
-              <span class="bonus-btn__detail">0x · 0%</span>
             </button>
-            <button type="button" class="bonus-btn bonus-btn--malus" data-joueur="A" data-type="malus">
+            <button type="button" class="bonus-btn bonus-btn--malus" data-joueur="A" data-type="malus" aria-label="Malus joueur A">
               <span class="bonus-btn__icon" aria-hidden="true">👎</span>
               <span class="bonus-btn__label">Malus</span>
-              <span class="bonus-btn__detail">0x · 0%</span>
             </button>
           </div>
-        </section>
+        </article>
 
-        <button
-          type="button"
-          class="btn btn--ghost bonus-undo-btn"
-          id="btn-undo"
-          disabled
-          aria-label="Annuler le dernier clic"
-        >
-          ↩ Annuler
-        </button>
-
-        <section class="card bonus-joueur bonus-joueur--b" aria-labelledby="lbl-joueur-b">
-          <div class="bonus-joueur__head">
-            <label class="field-label" for="bonus-name-b">Joueur B</label>
-            <input type="text" id="bonus-name-b" class="bonus-joueur__titre-input" maxlength="60" value="Joueur B" aria-labelledby="lbl-joueur-b" />
-            <p class="bonus-score-wrap">
-              <span class="bonus-score" id="score-b">0</span>
-              <span class="bonus-score-unit">pts</span>
+        <article class="card bonus-card" data-bonus-card="b">
+          <div class="bonus-card__top">
+            <input
+              type="text"
+              class="bonus-name-input"
+              id="bonus-name-b"
+              value="Joueur B"
+              aria-label="Nom du joueur B"
+            />
+            <input
+              type="color"
+              class="bonus-color-input"
+              id="bonus-color-b"
+              value="#6366f1"
+              aria-label="Couleur du joueur B"
+            />
+          </div>
+          <div class="bonus-result">
+            <span class="bonus-result__label">Score</span>
+            <strong id="score-b">0</strong>
+            <span class="bonus-result__unit">pts</span>
+          </div>
+          <div class="bonus-stats">
+            <p>
+              <span>👍 Bonus</span>
+              <span class="bonus-stat__line"
+                ><strong id="stat-bonus-b">0</strong><span class="bonus-stat__pct" id="stat-bonus-pct-b"></span
+              ></span>
+            </p>
+            <p>
+              <span>➕ Points</span>
+              <span class="bonus-stat__line"
+                ><strong id="stat-normal-b">0</strong><span class="bonus-stat__pct" id="stat-normal-pct-b"></span
+              ></span>
+            </p>
+            <p>
+              <span>👎 Malus</span>
+              <span class="bonus-stat__line"
+                ><strong id="stat-malus-b">0</strong><span class="bonus-stat__pct" id="stat-malus-pct-b"></span
+              ></span>
             </p>
           </div>
-          <div class="bonus-btns" role="group" aria-label="Actions joueur B">
-            <button type="button" class="bonus-btn bonus-btn--bonus" data-joueur="B" data-type="bonus">
+          <div class="bonus-buttons">
+            <button type="button" class="bonus-btn bonus-btn--bonus" data-joueur="B" data-type="bonus" aria-label="Bonus joueur B">
               <span class="bonus-btn__icon" aria-hidden="true">👍</span>
               <span class="bonus-btn__label">Bonus</span>
-              <span class="bonus-btn__detail">0x · 0%</span>
             </button>
-            <button type="button" class="bonus-btn bonus-btn--normal" data-joueur="B" data-type="normal">
+            <button type="button" class="bonus-btn bonus-btn--normal" data-joueur="B" data-type="normal" aria-label="Point joueur B">
               <span class="bonus-btn__icon" aria-hidden="true">➕</span>
               <span class="bonus-btn__label">Point</span>
-              <span class="bonus-btn__detail">0x · 0%</span>
             </button>
-            <button type="button" class="bonus-btn bonus-btn--malus" data-joueur="B" data-type="malus">
+            <button type="button" class="bonus-btn bonus-btn--malus" data-joueur="B" data-type="malus" aria-label="Malus joueur B">
               <span class="bonus-btn__icon" aria-hidden="true">👎</span>
               <span class="bonus-btn__label">Malus</span>
-              <span class="bonus-btn__detail">0x · 0%</span>
             </button>
           </div>
-        </section>
-      </div>
+        </article>
+      </section>
 
       <div class="card eleve-share-bar" id="eleve-share-bar"></div>
     </div>
@@ -140,15 +207,15 @@
           {
             title: "L’intérêt principal",
             text:
-              "Pendant un duel ou une observation, vous notez chaque action d’un joueur en un clic et le score se calcule tout seul.",
+              "Même présentation que le compteur ratio : deux cartes côte à côte, score en grand, compteurs par type d’action.",
           },
           {
             title: "Comment s’en servir",
             list: [
-              "Réglez d’abord la valeur des points (bonus, point normal, malus négatif ou positif).",
-              "Joueur A en haut, joueur B en bas : appuyez sur 👍, ➕ ou 👎 selon l’action.",
-              "Chaque bouton affiche le nombre d’actions (ex. 3x), le pourcentage et les points gagnés.",
-              "« Annuler » corrige la dernière action.",
+              "Réglez les valeurs des points dans l’accordéon si besoin.",
+              "Renommez les joueurs et choisissez une couleur par carte.",
+              "Appuyez sur 👍, ➕ ou 👎 pour chaque action observée.",
+              "« Annuler » corrige le dernier clic ; le bouton rouge remet tout à zéro.",
             ],
           },
         ],

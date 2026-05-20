@@ -313,6 +313,9 @@
   if (typeof EleveQrShare !== "undefined") {
     EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
       toolId: TOOL_ID,
+      getParticipantLabel: function () {
+        return labelEl ? labelEl.value.trim() : "";
+      },
       getPayload: buildExportPayload,
       validateBeforeShare: function () {
         if (!impacts.length) return "Enregistrez au moins un impact avant de partager.";

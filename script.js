@@ -44,26 +44,6 @@
       publicCible: "prof",
     },
     {
-      id: "recuperation-donnees",
-      titre: "Récupération de données",
-      description:
-        "Scannez le QR affiché par un élève pour importer ses résultats, sans connexion internet.",
-      icone: "📲",
-      href: "outils/recuperation-donnees.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "visualisation-donnees",
-      titre: "Visualisation des données",
-      description:
-        "Consultez les remontées élèves : filtres par outil, classe, date et détail des statistiques.",
-      icone: "📊",
-      href: "outils/visualisation-donnees.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
       id: "dispenses-eps",
       titre: "Dispenses / Inaptitudes",
       description:
@@ -81,6 +61,16 @@
       icone: "👟",
       href: "outils/oubli-materiel.html",
       categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
+      id: "donnees-eleves",
+      titre: "Données élèves",
+      description:
+        "Scannez les QR des élèves, consultez leurs résultats (aperçu identique à chaque outil) et gérez les imports.",
+      icone: "📲",
+      href: "outils/donnees-eleves.html",
+      categorie: "Organisation EPS",
       publicCible: "prof",
     },
     {

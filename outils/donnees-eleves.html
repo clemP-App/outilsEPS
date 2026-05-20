@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Données élèves — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--donnees-eleves">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Données élèves</h1>
+      </header>
+
+      <p class="hint">
+        Récupérez et consultez les données partagées par les élèves via QR (table de marque, PTB, bonus, ratio, vitesse aux plots, zone d’impact). Aucune connexion internet.
+      </p>
+
+      <p id="imports-msg" class="msg-error" role="alert" hidden></p>
+      <p id="imports-ok" class="msg-ok" role="status" hidden></p>
+
+      <div class="donnees-eleves-layout">
+        <section class="card donnees-eleves-scan" aria-labelledby="lbl-scan">
+          <h2 id="lbl-scan">Récupérer un QR</h2>
+          <div id="imports-reader" class="recup-reader"></div>
+          <div class="recup-scan-actions">
+            <button type="button" class="btn btn--primary" id="imports-start">Démarrer la caméra</button>
+            <button type="button" class="btn btn--ghost" id="imports-stop" hidden>Arrêter</button>
+          </div>
+          <label class="field-label" for="imports-paste">Ou coller le lien outilseps://…</label>
+          <textarea id="imports-paste" class="eleve-qr-url" rows="2" placeholder="outilseps://qr?v=1&d=…"></textarea>
+          <button type="button" class="btn btn--ghost" id="imports-import-paste">Importer ce lien</button>
+        </section>
+
+        <section class="card donnees-eleves-liste" aria-labelledby="lbl-liste">
+          <h2 id="lbl-liste">Visualiser les imports <span id="imports-count" class="viz-count"></span></h2>
+
+          <div class="viz-filtres">
+            <div class="field-group viz-filtres__full">
+              <label class="field-label" for="imports-tool">Outil</label>
+              <select id="imports-tool" required>
+                <option value="" disabled selected>Choisir un outil…</option>
+                <option value="table-marque">Table de marque</option>
+                <option value="compteur-ptb">Compteur PTB</option>
+                <option value="compteur-bonus">Compteur bonus</option>
+                <option value="compteur-ratio">Compteur ratio</option>
+                <option value="vitesse-plots">Vitesse aux plots</option>
+                <option value="zone-impact">Zone d'impact</option>
+              </select>
+            </div>
+            <div class="viz-filtres__row viz-filtres__row--2">
+              <div class="field-group">
+                <label class="field-label" for="imports-classe">Classe</label>
+                <input type="text" id="imports-classe" maxlength="80" autocomplete="off" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="imports-participant">Joueur / Équipe</label>
+                <input type="text" id="imports-participant" maxlength="120" autocomplete="off" />
+              </div>
+            </div>
+            <div class="viz-filtres__row viz-filtres__row--2">
+              <div class="field-group">
+                <label class="field-label" for="imports-date-from">Depuis</label>
+                <input type="date" id="imports-date-from" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="imports-date-to">Jusqu’au</label>
+                <input type="date" id="imports-date-to" />
+              </div>
+            </div>
+          </div>
+          <p class="hint">
+            Choisissez l’outil pour afficher le tableau. Après un scan, l’outil est sélectionné automatiquement. Limitez par classe ou date si besoin.
+          </p>
+          <div class="viz-filtres-actions">
+            <button type="button" class="btn btn--ghost" id="imports-apply">Actualiser</button>
+            <button type="button" class="btn btn--ghost" id="imports-export-csv">Exporter Excel (CSV)</button>
+            <button type="button" class="btn btn--ghost" id="imports-export-pdf">Exporter PDF</button>
+            <button type="button" class="btn btn--danger btn--ghost" id="imports-clear-filtered">Supprimer (filtre)</button>
+          </div>
+
+          <p id="imports-pick-tool" class="empty-state">Choisissez un outil pour afficher les imports.</p>
+          <div id="imports-table-wrap" class="imports-table-wrap" hidden>
+            <table class="imports-table" aria-describedby="lbl-liste">
+              <thead id="imports-table-head"></thead>
+              <tbody id="imports-table-body"></tbody>
+            </table>
+          </div>
+          <p id="imports-empty" class="empty-state" hidden>Aucun import pour cet outil et ces filtres.</p>
+
+          <div id="imports-detail-card" class="imports-detail-card" hidden>
+            <h3 class="sauvegarde-imports__sub">Aperçu (lecture seule)</h3>
+            <div id="imports-detail" class="imports-detail"></div>
+            <button type="button" class="btn btn--danger btn--ghost" id="imports-delete-one">Supprimer cet import</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="../vendor/lz-string.min.js"></script>
+    <script src="../shared/qr-exchange-core.js"></script>
+    <script src="../shared/import-record-core.js"></script>
+    <script src="../shared/import-detail-render.js"></script>
+    <script src="../shared/imports-eleves-export.js"></script>
+    <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="../vendor/html5-qrcode.min.js"></script>
+    <script src="../shared/imports-eleves-ui.js"></script>
+    <script src="../data-manager.js"></script>
+    <script src="donnees-eleves.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Scannez les QR des élèves et consultez leurs résultats comme dans l’outil d’origine.",
+        sections: [
+          {
+            title: "Récupérer",
+            list: [
+              "L’élève appuie sur « Partager au prof (QR) » dans son outil.",
+              "Démarrez la caméra ou collez le lien en secours.",
+            ],
+          },
+          {
+            title: "Visualiser",
+            list: [
+              "Choisissez l’outil : les imports s’affichent en tableau (colonnes adaptées).",
+              "Après un scan, l’outil concerné est sélectionné automatiquement.",
+              "Cliquez une ligne pour l’aperçu détaillé ; export Excel ou PDF du tableau affiché.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

@@ -2,84 +2,11 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <meta name="theme-color" content="#1a2744" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
-    <title>Récupération de données — Outils EPS</title>
-    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
-    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
-    <link rel="stylesheet" href="../style.css" />
+    <meta http-equiv="refresh" content="0; url=donnees-eleves.html" />
+    <title>Redirection — Données élèves</title>
+    <script>location.replace("donnees-eleves.html");</script>
   </head>
-  <body class="app app--tool">
-    <div class="page-outil page-outil--recup-donnees">
-      <header class="page-outil__header">
-        <a class="tool-back" href="../index.html"
-          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
-        >
-        <h1>Récupération de données</h1>
-      </header>
-
-      <p class="hint">
-        Scannez le QR affiché par un élève (table de marque, PTB, bonus, vitesse aux plots, zone d’impact).
-        Aucune connexion internet requise.
-      </p>
-
-      <p id="recup-msg" class="msg-error" role="alert" hidden></p>
-      <p id="recup-ok" class="msg-ok" role="status" hidden></p>
-
-      <section class="card" aria-labelledby="lbl-scan">
-        <h2 id="lbl-scan">Scanner la caméra</h2>
-        <div id="recup-reader" class="recup-reader"></div>
-        <div class="recup-scan-actions">
-          <button type="button" class="btn btn--primary" id="recup-start">Démarrer la caméra</button>
-          <button type="button" class="btn btn--ghost" id="recup-stop" hidden>Arrêter</button>
-        </div>
-      </section>
-
-      <section class="card" aria-labelledby="lbl-paste">
-        <h2 id="lbl-paste">Coller un lien (secours)</h2>
-        <p class="hint">Si le scan échoue, copiez le lien depuis l’écran élève et collez-le ici.</p>
-        <label class="field-label" for="recup-paste">Lien outilseps://…</label>
-        <textarea id="recup-paste" class="eleve-qr-url" rows="3" placeholder="outilseps://qr?v=1&d=…"></textarea>
-        <button type="button" class="btn btn--ghost btn--labeled" id="recup-import-paste">
-          <span class="btn__text">Importer ce lien</span>
-        </button>
-      </section>
-
-      <p class="hint">
-        <a href="visualisation-donnees.html">Voir les imports enregistrés →</a>
-      </p>
-    </div>
-
-    <script src="../vendor/lz-string.min.js"></script>
-    <script src="../shared/qr-exchange-core.js"></script>
-    <script src="../vendor/html5-qrcode.min.js"></script>
-    <script src="../shared/import-record-core.js"></script>
-    <script src="../data-manager.js"></script>
-    <script src="recuperation-donnees.js"></script>
-    <script src="../tool-info.js"></script>
-    <script>
-      ToolInfo.init({
-        intro: "Récupérez les données saisies par les élèves via QR code, sans connexion internet.",
-        sections: [
-          {
-            title: "Utilisation",
-            list: [
-              "L’élève termine sa saisie et appuie sur « Partager au prof (QR) ».",
-              "Démarrez la caméra et scannez le QR affiché.",
-              "En cas de doublon, confirmez si vous souhaitez réimporter.",
-              "Consultez les données dans « Visualisation des données ».",
-            ],
-          },
-        ],
-      });
-    </script>
-    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  <body>
+    <p><a href="donnees-eleves.html">Ouvrir Données élèves</a></p>
   </body>
 </html>

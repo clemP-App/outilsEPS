@@ -49,6 +49,18 @@ describe("qr-exchange-core", function () {
     assert.ok(err && err.indexOf("Checksum") >= 0);
   });
 
+  it("encode un compteur ratio", function () {
+    var record = Qr.buildExportRecord("compteur-ratio", {
+      students: {
+        a: { name: "Bleus", plus: 5, minus: 2, total: 7, ratio: 71 },
+        b: { name: "Rouges", plus: 3, minus: 4, total: 7, ratio: 43 },
+      },
+    });
+    var parsed = Qr.parseQrUrl(Qr.encodeRecord(record));
+    assert.equal(parsed.record.toolId, "compteur-ratio");
+    assert.equal(parsed.record.payload.students.a.ratio, 71);
+  });
+
   it("rejette un outil inconnu", function () {
     assert.throws(function () {
       Qr.buildExportRecord("outil-inconnu", {});

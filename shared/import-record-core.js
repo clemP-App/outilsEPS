@@ -56,6 +56,10 @@
       var gl = String(filters.groupeLabel).trim().toLowerCase();
       if ((item.groupeLabel || "").toLowerCase().indexOf(gl) < 0) return false;
     }
+    if (filters.auteurLabel) {
+      var al = String(filters.auteurLabel).trim().toLowerCase();
+      if ((item.auteurLabel || "").toLowerCase().indexOf(al) < 0) return false;
+    }
     if (filters.dateFrom) {
       if (new Date(item.importedAt || item.createdAt).getTime() < new Date(filters.dateFrom).getTime()) {
         return false;

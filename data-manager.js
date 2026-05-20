@@ -1419,9 +1419,10 @@ var DataManager = (function () {
 
   function formatBytes(bytes) {
     var n = Math.max(0, bytes || 0);
-    if (n < 1024) return n + " o";
-    if (n < 1024 * 1024) return (n / 1024).toFixed(n < 10240 ? 1 : 0) + " Ko";
-    return (n / (1024 * 1024)).toFixed(2) + " Mo";
+    if (n >= 1024 * 1024) return (n / (1024 * 1024)).toFixed(2) + " Mo";
+    if (n === 0) return "0 Ko";
+    var ko = n / 1024;
+    return ko.toFixed(ko < 10 ? 1 : 0) + " Ko";
   }
 
   function countLabelForCategory(cat, storeData) {
@@ -1660,7 +1661,10 @@ var DataManager = (function () {
   }
 
   function clearImportedRecords(filters) {
-    if (!filters || (!filters.toolId && !filters.classeLabel && !filters.groupeLabel)) {
+    if (
+      !filters ||
+      (!filters.toolId && !filters.classeLabel && !filters.groupeLabel && !filters.auteurLabel)
+    ) {
       return clearStore("importsEleves");
     }
     return getImportedRecords(filters).then(function (list) {

@@ -57,21 +57,24 @@ Quatre outils utilisent des **séances** pour enregistrer plusieurs contextes (e
 
 Flux sans serveur ni cloud : l’élève partage un QR, le prof le scanne sur son téléphone.
 
-**Outils élèves concernés :** table de marque, compteur PTB, compteur bonus, vitesse aux plots, zone d’impact.
+**Outils élèves concernés :** table de marque, compteur PTB, compteur bonus, compteur ratio, vitesse aux plots, zone d’impact.
 
 #### Côté élève — partager
 
 1. Utilisez l’outil pendant la séance (noms d’équipes / joueurs / libellé modifiables et mémorisés sur l’appareil).
 2. Appuyez sur **Partager au prof (QR)** en bas de page.
-3. Optionnel : classe, groupe, nom du binôme (mémorisés pour les prochains partages).
+3. **Classe** (optionnel) et **Joueur / Équipe** (prérempli automatiquement depuis les noms saisis dans l’outil).
 4. Montrez le QR au professeur. Un **lien texte** est aussi copiable en secours.
 
-#### Côté prof — récupérer
+#### Côté prof — récupérer et visualiser
 
-1. Ouvrez **Récupération de données** sur l’accueil (section prof).
+1. Ouvrez **Données élèves** sur l’accueil (section prof).
 2. **Démarrer la caméra** et scannez le QR, ou **collez le lien** si le scan échoue.
 3. En cas de doublon (`exportId` déjà importé), une confirmation est demandée.
-4. Consultez les imports dans **Visualisation des données** (filtres, détail, suppression, export JSON des imports).
+4. **Choisissez l’outil** pour afficher les imports en **tableau** (colonnes adaptées : buts, ratio, etc.). Après un scan, l’outil est **sélectionné automatiquement** et l’import apparaît dans le tableau.
+5. Cliquez une ligne pour l’**aperçu détaillé**. **Export** Excel (CSV) ou PDF du tableau affiché. Sauvegarde globale : **Sauvegarde et restauration**.
+
+La sauvegarde globale JSON (💾) reste dans **Sauvegarde et restauration** et inclut aussi le store `importsEleves`.
 
 **Format technique :** JSON compact versionné (`v`, `toolId`, `exportId`, `checksum`, `payload`), compressé LZ-String + URL `outilseps://qr?v=1&d=…`. Bibliothèques locales dans `vendor/` (`lz-string`, `qrcodejs`, `html5-qrcode`).
 
@@ -100,6 +103,7 @@ OutilsEPS/
 ├── shared/qr-share-ui.js   # Dialogue partage élève
 ├── shared/import-record-core.js # Normalisation imports IndexedDB
 ├── shared/import-detail-render.js # Affichage détail import
+├── shared/imports-eleves-export.js # Export CSV/PDF des imports
 ├── scripts/
 │   ├── generate-precache.js
 │   └── check-js.js

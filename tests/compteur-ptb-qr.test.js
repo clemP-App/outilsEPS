@@ -12,6 +12,12 @@ describe("compteur-ptb QR (non-régression)", function () {
     var payload = {
       mode: "down",
       finished: true,
+      timer: {
+        mode: "down",
+        durationLabel: "08:00",
+        displayLabel: "00:00",
+        statusLabel: "Fin du match",
+      },
       teams: {
         a: {
           name: "Bleus",
@@ -19,7 +25,11 @@ describe("compteur-ptb QR (non-régression)", function () {
           goals: 3,
           shots: 8,
           losses: 2,
+          possessions: 10,
           efficiency: 38,
+          shotsPerPossession: 80,
+          lossesPerPossession: 20,
+          possessionMs: 252000,
           possessionLabel: "04:12 (52%)",
         },
         b: {
@@ -28,7 +38,11 @@ describe("compteur-ptb QR (non-régression)", function () {
           goals: 2,
           shots: 6,
           losses: 3,
+          possessions: 9,
           efficiency: 33,
+          shotsPerPossession: 67,
+          lossesPerPossession: 33,
+          possessionMs: 230000,
           possessionLabel: "03:50 (48%)",
         },
       },
@@ -48,6 +62,9 @@ describe("compteur-ptb QR (non-régression)", function () {
     assert.equal(stored.item.toolId, "compteur-ptb");
     assert.equal(stored.item.payload.teams.a.name, "Bleus");
     assert.equal(stored.item.payload.teams.b.goals, 2);
+    assert.equal(stored.item.payload.teams.a.possessions, 10);
+    assert.equal(stored.item.payload.teams.a.possessionMs, 252000);
+    assert.equal(stored.item.payload.timer.displayLabel, "00:00");
     assert.equal(stored.item.groupeLabel, "Terrain 2");
   });
 });

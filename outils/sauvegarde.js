@@ -11,6 +11,8 @@
   var stockageVideEl = document.getElementById("stockage-vide");
 
   var DELETE_CONFIRM = {
+    "imports-eleves":
+      "Supprimer tous les imports QR élèves enregistrés ?\n\nLes données saisies par les élèves ne seront plus consultables ici.\n\nCette action est irréversible.",
     classes:
       "Supprimer toutes les classes et tous les élèves ?\n\nLes autres outils qui s’appuient sur les classes ne pourront plus importer d’élèves tant que vous n’aurez pas recréé des classes.\n\nCette action est irréversible.",
     dispenses: "Supprimer toutes les dispenses / inaptitudes et leurs réglages d’affichage ?\n\nCette action est irréversible.",

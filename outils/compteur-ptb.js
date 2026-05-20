@@ -125,26 +125,47 @@
     function pack(id) {
       var t = state.teams[id];
       var st = teamStats(t);
+      var hasChrono = state.mode !== "none";
       return {
         name: t.name,
         color: t.color,
         goals: t.goals,
         shots: t.shots,
         losses: t.losses,
+        possessions: st.possessions,
         efficiency: st.efficiency,
+        lossRate: st.lossRate,
         shotsPerPossession: Math.round(st.shotsPerPossession * 100),
         lossesPerPossession: Math.round(st.lossesPerPossession * 100),
-        possessionLabel:
-          state.mode !== "none"
-            ? formatTime(t.possessionMs) + " (" + Math.round((t.possessionMs / totalPossMs) * 100) + "%)"
-            : null,
+        possessionMs: hasChrono ? t.possessionMs : null,
+        possessionLabel: hasChrono
+          ? formatTime(t.possessionMs) + " (" + Math.round((t.possessionMs / totalPossMs) * 100) + "%)"
+          : null,
       };
     }
+    var hasChrono = state.mode !== "none";
     return {
       mode: state.mode,
       finished: state.finished,
       startedAtIso: state.startedAtIso,
       endedAtIso: state.endedAtIso,
+      timer: hasChrono
+        ? {
+            mode: state.mode,
+            durationLabel: formatTime(state.durationMs),
+            elapsedLabel: formatTime(state.elapsedMs),
+            displayLabel: formatTime(displayedTimeMs()),
+            statusLabel: state.finished
+              ? "Fin du match"
+              : state.paused
+                ? "En pause"
+                : state.running
+                  ? state.mode === "down"
+                    ? "Temps restant"
+                    : "Temps écoulé"
+                  : "Prêt",
+          }
+        : null,
       teams: { a: pack("a"), b: pack("b") },
     };
   }
@@ -617,6 +638,10 @@
   if (typeof EleveQrShare !== "undefined") {
     EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
       toolId: TOOL_ID,
+      getParticipantLabel: function () {
+        readConfig();
+        return state.teams.a.name + " — " + state.teams.b.name;
+      },
       getPayload: buildExportPayload,
       validateBeforeShare: function () {
         if (!state.history.length && !state.finished) {

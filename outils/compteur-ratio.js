@@ -4,6 +4,8 @@
 (function () {
   "use strict";
 
+  var TOOL_ID = "compteur-ratio";
+
   var state = {
     a: { plus: 0, minus: 0 },
     b: { plus: 0, minus: 0 },
@@ -11,6 +13,27 @@
 
   function el(id) {
     return document.getElementById(id);
+  }
+
+  function nomEleve(id) {
+    var nameEl = el("ratio-name-" + id);
+    var def = id === "a" ? "Équipe A" : "Équipe B";
+    return (nameEl && nameEl.value.trim()) || def;
+  }
+
+  function persisterNoms() {
+    if (typeof EleveLabels === "undefined") return;
+    EleveLabels.saveToolLabels(TOOL_ID, {
+      nameA: nomEleve("a"),
+      nameB: nomEleve("b"),
+    });
+  }
+
+  function chargerNoms() {
+    if (typeof EleveLabels === "undefined") return;
+    var saved = EleveLabels.getToolLabels(TOOL_ID);
+    if (saved.nameA && el("ratio-name-a")) el("ratio-name-a").value = saved.nameA;
+    if (saved.nameB && el("ratio-name-b")) el("ratio-name-b").value = saved.nameB;
   }
 
   function ratioPour(eleve) {
@@ -53,7 +76,10 @@
   }
 
   function resetStats() {
-    if ((state.a.plus || state.a.minus || state.b.plus || state.b.minus) && !confirm("Remettre les statistiques des deux élèves à zéro ?")) {
+    if (
+      (state.a.plus || state.a.minus || state.b.plus || state.b.minus) &&
+      !confirm("Remettre les statistiques des deux élèves à zéro ?")
+    ) {
       return;
     }
     state.a.plus = 0;
@@ -61,6 +87,28 @@
     state.b.plus = 0;
     state.b.minus = 0;
     render();
+  }
+
+  function buildExportPayload() {
+    function pack(id) {
+      var data = state[id];
+      var total = data.plus + data.minus;
+      var colorEl = el("ratio-color-" + id);
+      return {
+        name: nomEleve(id),
+        color: colorEl ? colorEl.value : undefined,
+        plus: data.plus,
+        minus: data.minus,
+        total: total,
+        ratio: ratioPour(data),
+      };
+    }
+    return {
+      students: {
+        a: pack("a"),
+        b: pack("b"),
+      },
+    };
   }
 
   document.querySelectorAll(".ratio-btn").forEach(function (btn) {
@@ -71,17 +119,40 @@
 
   ["a", "b"].forEach(function (id) {
     var colorEl = el("ratio-color-" + id);
-    if (!colorEl) return;
-    colorEl.addEventListener("input", function () {
-      appliquerCouleur(id);
-    });
-    colorEl.addEventListener("change", function () {
-      appliquerCouleur(id);
-    });
+    var nameEl = el("ratio-name-" + id);
+    if (colorEl) {
+      colorEl.addEventListener("input", function () {
+        appliquerCouleur(id);
+      });
+      colorEl.addEventListener("change", function () {
+        appliquerCouleur(id);
+      });
+    }
+    if (nameEl) {
+      nameEl.addEventListener("input", persisterNoms);
+      nameEl.addEventListener("change", persisterNoms);
+    }
   });
 
   var resetBtn = el("ratio-reset");
   if (resetBtn) resetBtn.addEventListener("click", resetStats);
 
+  chargerNoms();
   render();
+
+  if (typeof EleveQrShare !== "undefined") {
+    EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
+      toolId: TOOL_ID,
+      getParticipantLabel: function () {
+        return nomEleve("a") + " — " + nomEleve("b");
+      },
+      getPayload: buildExportPayload,
+      validateBeforeShare: function () {
+        if (!state.a.plus && !state.a.minus && !state.b.plus && !state.b.minus) {
+          return "Enregistrez au moins une réussite ou un échec avant de partager.";
+        }
+        return null;
+      },
+    });
+  }
 })();

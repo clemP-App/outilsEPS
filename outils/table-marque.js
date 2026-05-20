@@ -342,6 +342,10 @@
   if (typeof EleveQrShare !== "undefined") {
     EleveQrShare.mountButton(document.getElementById("eleve-share-bar"), {
       toolId: TOOL_ID,
+      getParticipantLabel: function () {
+        var n = nomsEquipes();
+        return n.left + " — " + n.right;
+      },
       getPayload: buildExportPayload,
       validateBeforeShare: function () {
         if (!scores.left && !scores.right) {
