@@ -5,6 +5,6 @@
   "scripts": {
     "check:js": "node scripts/check-js.js",
     "precache": "node scripts/generate-precache.js",
-    "test": "node --test tests/championnat-standings.test.js tests/precache-manifest.test.js"
+    "test": "node --test tests/championnat-standings.test.js tests/precache-manifest.test.js tests/pyramide-victoires.test.js"
   }
 }

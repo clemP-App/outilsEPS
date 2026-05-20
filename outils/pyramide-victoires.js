@@ -91,6 +91,7 @@
     data.players.forEach(function (p) {
       p.wins = 0;
       p.reachedAt = {};
+      p.promotedAutoAt = {};
     });
     var ordered = (data.matches || []).slice().sort(function (a, b) {
       return (a.at || 0) - (b.at || 0);
@@ -106,6 +107,8 @@
           winner.reachedAt[niveauAuto] = m.at || Date.now();
         }
         winner.wins += 1;
+        if (!winner.promotedAutoAt) winner.promotedAutoAt = {};
+        winner.promotedAutoAt[winner.wins] = true;
         return;
       }
       var loser = data.players.filter(function (p) {
@@ -189,16 +192,23 @@
       .filter(Boolean);
   }
 
+  function estPromuAutoAuPalierActuel(p) {
+    return !!(p.promotedAutoAt && p.promotedAutoAt[p.wins]);
+  }
+
+  function comparerJoueursClassement(a, b) {
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    var autoA = estPromuAutoAuPalierActuel(a);
+    var autoB = estPromuAutoAuPalierActuel(b);
+    if (autoA !== autoB) return autoA ? 1 : -1;
+    var ta = a.reachedAt[a.wins] != null ? a.reachedAt[a.wins] : a.joinedAt;
+    var tb = b.reachedAt[b.wins] != null ? b.reachedAt[b.wins] : b.joinedAt;
+    if (ta !== tb) return ta - tb;
+    return a.joinedAt - b.joinedAt;
+  }
+
   function classementJoueurs() {
-    return tournoi.players
-      .slice()
-      .sort(function (a, b) {
-        if (b.wins !== a.wins) return b.wins - a.wins;
-        var ta = a.reachedAt[a.wins] != null ? a.reachedAt[a.wins] : a.joinedAt;
-        var tb = b.reachedAt[b.wins] != null ? b.reachedAt[b.wins] : b.joinedAt;
-        if (ta !== tb) return ta - tb;
-        return a.joinedAt - b.joinedAt;
-      });
+    return tournoi.players.slice().sort(comparerJoueursClassement);
   }
 
   function joueursParPalier() {
@@ -209,11 +219,7 @@
       map[w].push(p);
     });
     Object.keys(map).forEach(function (k) {
-      map[k].sort(function (a, b) {
-        var ta = a.reachedAt[a.wins] != null ? a.reachedAt[a.wins] : a.joinedAt;
-        var tb = b.reachedAt[b.wins] != null ? b.reachedAt[b.wins] : b.joinedAt;
-        return ta - tb;
-      });
+      map[k].sort(comparerJoueursClassement);
     });
     return map;
   }
@@ -226,9 +232,13 @@
     });
   }
 
-  function dejaAffrontes(id1, id2) {
+  function dejaAffrontes(id1, id2, winsLevel) {
     return (tournoi.matches || []).some(function (m) {
       if (m.auto) return false;
+      if (typeof winsLevel === "number") {
+        if (m.winnerWinsBefore !== winsLevel) return false;
+        if (m.loserWinsBefore != null && m.loserWinsBefore !== winsLevel) return false;
+      }
       return (
         (m.winnerId === id1 && m.loserId === id2) ||
         (m.winnerId === id2 && m.loserId === id1)
@@ -402,7 +412,7 @@
       })
       .forEach(function (p) {
         var adv = adversairesPossibles(p.id).filter(function (a) {
-          return !dejaAffrontes(p.id, a.id);
+          return !dejaAffrontes(p.id, a.id, p.wins);
         });
         if (!adv.length) return;
         var o = document.createElement("option");
@@ -429,8 +439,10 @@
       perdantEl.appendChild(o);
       return;
     }
+    var winner = getJoueur(winnerId);
+    var palier = winner ? winner.wins : 0;
     var adv = adversairesPossibles(winnerId).filter(function (a) {
-      return !dejaAffrontes(winnerId, a.id);
+      return !dejaAffrontes(winnerId, a.id, palier);
     });
     if (!adv.length) {
       perdantEl.disabled = true;
@@ -573,7 +585,7 @@
       montrerMsg("Les deux joueurs doivent être sur le même palier.", true);
       return;
     }
-    if (dejaAffrontes(winner.id, loser.id)) {
+    if (dejaAffrontes(winner.id, loser.id, winner.wins)) {
       montrerMsg("Ces joueurs se sont déjà affrontés à ce palier.", true);
       return;
     }
