@@ -12,7 +12,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Outils EPS" />
     <title>Tournoi éliminatoire — Outils EPS</title>
-    <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
@@ -26,6 +25,8 @@
         <h1>Tournoi éliminatoire</h1>
       </header>
 
+      <div class="tool-session-gated" hidden>
+      <div id="session-manager-mount"></div>
       <p id="tournoi-msg" class="msg-error" role="alert" hidden></p>
 
       <details class="card card--accordion" id="tournoi-setup" open>
@@ -38,22 +39,24 @@
             Saisissez un nom par ligne. Le tableau s’adapte automatiquement : 1/8, 1/4, demi-finale, finale, avec
             des exempts si besoin.
           </p>
-          <div class="field-group">
-            <span class="field-label">Format du tournoi</span>
-            <div class="tournoi-format-options" role="radiogroup" aria-label="Format du tournoi">
-              <label class="tournoi-format-option">
+          <fieldset class="tournoi-format-field debrief-portee">
+            <legend class="field-label">Format du tournoi</legend>
+            <div class="debrief-portee__toggle" role="radiogroup" aria-label="Format du tournoi">
+              <label class="debrief-portee__btn">
                 <input type="radio" name="tournoi-format" value="elimination" checked />
-                <span>Élimination directe</span>
+                <span class="debrief-portee__icon" aria-hidden="true">🎾</span>
+                <span class="debrief-portee__label">Élimination directe</span>
               </label>
-              <label class="tournoi-format-option">
+              <label class="debrief-portee__btn">
                 <input type="radio" name="tournoi-format" value="classement" />
-                <span>Avec reclassement</span>
+                <span class="debrief-portee__icon" aria-hidden="true">📊</span>
+                <span class="debrief-portee__label">Avec reclassement</span>
               </label>
             </div>
-            <p class="hint">
+            <p class="hint debrief-portee-hint">
               En reclassement, les perdants continuent dans des tableaux de places pour classer tout le monde.
             </p>
-          </div>
+          </fieldset>
           <button type="button" class="btn btn--ghost btn--labeled tournoi-import-classe" id="tournoi-import-classe">
             <span class="btn__icon" aria-hidden="true">👥</span>
             <span class="btn__text">Importer une classe</span>
@@ -120,10 +123,13 @@
           </div>
         </div>
       </details>
+      </div>
     </div>
 
     <script src="../dom-utils.js"></script>
+    <script src="../shared/sessions-core.js"></script>
     <script src="../data-manager.js"></script>
+    <script src="../session-manager.js"></script>
     <script src="../class-import.js"></script>
     <script src="tournoi-elimination.js"></script>
     <script src="../tool-info.js"></script>

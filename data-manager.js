@@ -6,13 +6,60 @@ var DataManager = (function () {
   "use strict";
 
   var DB_NAME = "outilsEPSDB";
-  var DB_VERSION = 3;
+  var DB_VERSION = 4;
   var APP_NAME = "OutilsEPS";
   var BACKUP_VERSION = "1.0";
   var BACKUP_FILENAME = "outilsEPS-backup.json";
   var PYRAMIDE_VICTOIRES_ID = "pyramide-victoires";
+  var SC =
+    typeof SessionsCore !== "undefined"
+      ? SessionsCore
+      : {
+          SESSION_TOOLS: {
+            COMPOSITION: "composition-equipes",
+            TOURNOI: "tournoi-elimination",
+            PYRAMIDE: "pyramide-victoires",
+            CHAMPIONNAT: "championnat-poule",
+          },
+          MIGRATION_FLAG_ID: "migration-sessions-v1",
+          LEGACY_TOURNOI_LS_KEY: "outils_eps_tournoi_elimination_v1",
+          isSessionTool: function () {
+            return true;
+          },
+          activeSessionParamId: function (t) {
+            return "active-session__" + t;
+          },
+          compositionDataId: function (sid) {
+            return "composition-equipes__" + sid;
+          },
+          legacySessionName: function (t) {
+            return "Legacy — " + t;
+          },
+          validateSession: function () {
+            return null;
+          },
+          normalizeSession: function (r) {
+            return r;
+          },
+          filterSessionsForTool: function (list, toolId) {
+            return (list || []).filter(function (s) {
+              return s && s.toolId === toolId && !s.archived;
+            });
+          },
+        };
 
-  var STORE_NAMES = ["classes", "eleves", "dispenses", "oublisMateriel", "championnats", "tournoisElimination", "parametres"];
+  var STORE_NAMES = [
+    "classes",
+    "eleves",
+    "dispenses",
+    "oublisMateriel",
+    "sessions",
+    "championnats",
+    "tournoisElimination",
+    "parametres",
+  ];
+
+  var INDEXED_STORES = ["championnats", "tournoisElimination"];
 
   var APP_KEY = "outils_eps_app_v1";
   var LEGACY_DISPENSES = "outils_eps_dispenses_v1";
@@ -66,9 +113,20 @@ var DataManager = (function () {
       var req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = function (e) {
         var database = e.target.result;
+        var tx = e.target.transaction;
         STORE_NAMES.forEach(function (name) {
           if (!database.objectStoreNames.contains(name)) {
-            database.createObjectStore(name, { keyPath: "id" });
+            var store = database.createObjectStore(name, { keyPath: "id" });
+            if (name === "sessions") {
+              store.createIndex("toolId", "toolId", { unique: false });
+            }
+          }
+        });
+        INDEXED_STORES.forEach(function (name) {
+          if (!database.objectStoreNames.contains(name)) return;
+          var store = tx.objectStore(name);
+          if (!store.indexNames.contains("sessionId")) {
+            store.createIndex("sessionId", "sessionId", { unique: false });
           }
         });
       };
@@ -90,6 +148,9 @@ var DataManager = (function () {
       })
       .then(function () {
         return maybeMigrateHiitPresetsFromLocalStorage();
+      })
+      .then(function () {
+        return maybeMigrateSessions();
       })
       .then(function () {
         return db;
@@ -310,7 +371,9 @@ var DataManager = (function () {
       eleves: [],
       dispenses: [],
       oublisMateriel: [],
+      sessions: [],
       championnats: [],
+      tournoisElimination: [],
       parametres: [],
     };
     var i;
@@ -390,6 +453,8 @@ var DataManager = (function () {
             store.put(cloneData(items[j]));
           }
         }
+      }).then(function () {
+        return linkOrphanSessionData();
       });
     });
   }
@@ -444,11 +509,17 @@ var DataManager = (function () {
         }
       }
     }
+    var si;
+    for (si = 0; si < (payload.sessions || []).length; si++) {
+      var sessErr = SC.validateSession(payload.sessions[si]);
+      if (sessErr) return sessErr;
+    }
     var total =
       payload.classes.length +
       payload.eleves.length +
       payload.dispenses.length +
       payload.oublisMateriel.length +
+      (payload.sessions || []).length +
       payload.championnats.length +
       payload.tournoisElimination.length +
       payload.parametres.length;
@@ -496,6 +567,7 @@ var DataManager = (function () {
       eleves: eleves,
       dispenses: data.dispenses || [],
       oublisMateriel: data.oublisMateriel || [],
+      sessions: data.sessions || [],
       championnats: data.championnats || [],
       tournoisElimination: data.tournoisElimination || [],
       parametres: Array.isArray(parametres) ? parametres : [],
@@ -508,6 +580,7 @@ var DataManager = (function () {
       getAll("eleves"),
       getAll("dispenses"),
       getAll("oublisMateriel"),
+      getAll("sessions"),
       getAll("championnats"),
       getAll("tournoisElimination"),
       getAll("parametres"),
@@ -522,9 +595,10 @@ var DataManager = (function () {
         eleves: arrays[1],
         dispenses: arrays[2],
         oublisMateriel: arrays[3],
-        championnats: arrays[4],
-        tournoisElimination: arrays[5],
-        parametres: arrays[6],
+        sessions: arrays[4],
+        championnats: arrays[5],
+        tournoisElimination: arrays[6],
+        parametres: arrays[7],
       };
     });
   }
@@ -775,27 +849,264 @@ var DataManager = (function () {
     });
   }
 
-  function getChampionnatActif() {
-    return getAll("championnats").then(function (list) {
-      if (!list.length) return { teams: [], matches: [] };
+  /* --- Sessions (multi-séances par outil) --- */
+
+  function getBySession(storeName, sessionId) {
+    if (!sessionId) return Promise.resolve([]);
+    return requireDb().then(function () {
+      var store = storeTx(storeName, "readonly");
+      if (!store.indexNames.contains("sessionId")) {
+        return getAll(storeName).then(function (all) {
+          return all.filter(function (r) {
+            return r && r.sessionId === sessionId;
+          });
+        });
+      }
+      return promisifyRequest(store.index("sessionId").getAll(sessionId));
+    });
+  }
+
+  function getSessionById(sessionId) {
+    return getById("sessions", sessionId);
+  }
+
+  function listSessionsByTool(toolId, options) {
+    options = options || {};
+    return getAll("sessions").then(function (all) {
+      var list = SC.filterSessionsForTool(all, toolId, {
+        includeArchived: !!options.includeArchived,
+      });
+      if (options.limit && options.limit > 0) {
+        list = list.slice(0, options.limit);
+      }
+      return list;
+    });
+  }
+
+  function getActiveSessionId(toolId) {
+    return getParametre(SC.activeSessionParamId(toolId)).then(function (rec) {
+      return rec && rec.sessionId ? rec.sessionId : null;
+    });
+  }
+
+  function setActiveSessionId(toolId, sessionId) {
+    return saveParametre({
+      id: SC.activeSessionParamId(toolId),
+      sessionId: sessionId || null,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  function touchSession(sessionId) {
+    return getSessionById(sessionId).then(function (s) {
+      if (!s) return null;
+      var now = new Date().toISOString();
+      s.lastOpenedAt = now;
+      s.updatedAt = now;
+      return updateItem("sessions", s).then(function () {
+        return s;
+      });
+    });
+  }
+
+  function createSession(input) {
+    var err = SC.validateSession(
+      Object.assign({}, input, { id: input.id || genererId("session") })
+    );
+    if (err) return Promise.reject(new Error(err));
+    var session = SC.normalizeSession(
+      Object.assign({ archived: false }, input, {
+        id: input.id || genererId("session"),
+      })
+    );
+    return addItem("sessions", session).then(function () {
+      return setActiveSessionId(session.toolId, session.id).then(function () {
+        return session;
+      });
+    });
+  }
+
+  function updateSessionRecord(session) {
+    var err = SC.validateSession(session);
+    if (err) return Promise.reject(new Error(err));
+    var norm = SC.normalizeSession(session, session.updatedAt);
+    norm.updatedAt = new Date().toISOString();
+    return updateItem("sessions", norm).then(function () {
+      return norm;
+    });
+  }
+
+  function renameSession(sessionId, nomSession) {
+    return getSessionById(sessionId).then(function (s) {
+      if (!s) return Promise.reject(new Error("Séance introuvable."));
+      s.nomSession = (nomSession || "").trim() || s.nomSession;
+      return updateSessionRecord(s);
+    });
+  }
+
+  function setSessionArchived(sessionId, archived) {
+    return getSessionById(sessionId).then(function (s) {
+      if (!s) return Promise.reject(new Error("Séance introuvable."));
+      s.archived = !!archived;
+      return updateSessionRecord(s);
+    });
+  }
+
+  function openSession(sessionId) {
+    return getSessionById(sessionId).then(function (s) {
+      if (!s) return Promise.reject(new Error("Séance introuvable ou corrompue."));
+      if (s.archived) return Promise.reject(new Error("Cette séance est archivée."));
+      return touchSession(sessionId).then(function (updated) {
+        return setActiveSessionId(updated.toolId, updated.id).then(function () {
+          return updated;
+        });
+      });
+    });
+  }
+
+  function deleteSessionData(sessionId) {
+    return Promise.all([
+      getBySession("championnats", sessionId),
+      getBySession("tournoisElimination", sessionId),
+      getParametre(SC.compositionDataId(sessionId)).then(function (p) {
+        return p ? deleteParametre(p.id) : null;
+      }),
+    ]).then(function (res) {
+      var ops = [];
+      (res[0] || []).forEach(function (c) {
+        ops.push(deleteItem("championnats", c.id));
+      });
+      (res[1] || []).forEach(function (t) {
+        ops.push(deleteItem("tournoisElimination", t.id));
+      });
+      return Promise.all(ops);
+    });
+  }
+
+  function deleteSession(sessionId) {
+    return getSessionById(sessionId).then(function (s) {
+      if (!s) return Promise.reject(new Error("Séance introuvable."));
+      return getActiveSessionId(s.toolId).then(function (activeId) {
+        return deleteSessionData(sessionId)
+          .then(function () {
+            return deleteItem("sessions", sessionId);
+          })
+          .then(function () {
+            if (activeId === sessionId) {
+              return setActiveSessionId(s.toolId, null);
+            }
+          });
+      });
+    });
+  }
+
+  function getChampionnatForSession(sessionId) {
+    return getBySession("championnats", sessionId).then(function (list) {
       var c = list[0];
+      if (!c) {
+        return { dataId: null, teams: [], matches: [], nom: null };
+      }
       return {
+        dataId: c.id,
+        nom: c.nom || null,
         teams: Array.isArray(c.teams) ? c.teams.slice() : [],
         matches: Array.isArray(c.matches) ? c.matches.slice() : [],
       };
     });
   }
 
-  function saveChampionnatActif(state) {
-    return getAll("championnats").then(function (list) {
+  function saveChampionnatForSession(sessionId, state, meta) {
+    if (!sessionId) {
+      return Promise.reject(new Error("Aucune séance active."));
+    }
+    meta = meta || {};
+    return getBySession("championnats", sessionId).then(function (list) {
       var bloc = {
         id: list[0] ? list[0].id : genererId("championnat"),
-        nom: list[0] && list[0].nom ? list[0].nom : "Championnat",
+        sessionId: sessionId,
+        nom: meta.nom || (list[0] && list[0].nom) || "Championnat",
         teams: state.teams || [],
         matches: state.matches || [],
+        updatedAt: new Date().toISOString(),
       };
       if (list.length) return updateItem("championnats", bloc);
       return addItem("championnats", bloc);
+    }).then(function () {
+      return touchSession(sessionId);
+    });
+  }
+
+  function getChampionnatActif() {
+    return getActiveSessionId(SC.SESSION_TOOLS.CHAMPIONNAT).then(function (sid) {
+      if (!sid) return { teams: [], matches: [] };
+      return getChampionnatForSession(sid).then(function (d) {
+        return { teams: d.teams, matches: d.matches };
+      });
+    });
+  }
+
+  function saveChampionnatActif(state) {
+    return getActiveSessionId(SC.SESSION_TOOLS.CHAMPIONNAT).then(function (sid) {
+      if (!sid) return Promise.reject(new Error("Aucune séance championnat active."));
+      return saveChampionnatForSession(sid, state);
+    });
+  }
+
+  function getTournoiForSession(sessionId) {
+    return getBySession("tournoisElimination", sessionId).then(function (list) {
+      var rec = list.filter(function (r) {
+        return r && r.kind === "tournoi-elimination";
+      })[0];
+      if (!rec || !rec.payload) {
+        return { dataId: null, payload: null };
+      }
+      return { dataId: rec.id, payload: cloneData(rec.payload) };
+    });
+  }
+
+  function saveTournoiForSession(sessionId, payload) {
+    if (!sessionId) return Promise.reject(new Error("Aucune séance active."));
+    return getBySession("tournoisElimination", sessionId).then(function (list) {
+      var existing = list.filter(function (r) {
+        return r && r.kind === "tournoi-elimination";
+      })[0];
+      var bloc = {
+        id: existing ? existing.id : genererId("tournoi"),
+        sessionId: sessionId,
+        kind: "tournoi-elimination",
+        nom: existing && existing.nom ? existing.nom : "Tournoi éliminatoire",
+        payload: cloneData(payload),
+        updatedAt: new Date().toISOString(),
+      };
+      if (existing) return updateItem("tournoisElimination", bloc);
+      return addItem("tournoisElimination", bloc);
+    }).then(function () {
+      return touchSession(sessionId);
+    });
+  }
+
+  function getCompositionForSession(sessionId) {
+    return getParametre(SC.compositionDataId(sessionId)).then(function (rec) {
+      if (!rec) return null;
+      return {
+        listeBrute: rec.listeBrute || "",
+        players: Array.isArray(rec.players) ? rec.players.slice() : [],
+        nbEquipes: rec.nbEquipes,
+        assignments: rec.assignments,
+      };
+    });
+  }
+
+  function saveCompositionForSession(sessionId, data) {
+    if (!sessionId) return Promise.reject(new Error("Aucune séance active."));
+    var record = Object.assign({}, data, {
+      id: SC.compositionDataId(sessionId),
+      sessionId: sessionId,
+      toolId: SC.SESSION_TOOLS.COMPOSITION,
+      updatedAt: new Date().toISOString(),
+    });
+    return saveParametre(record).then(function () {
+      return touchSession(sessionId);
     });
   }
 
@@ -817,31 +1128,219 @@ var DataManager = (function () {
     return deleteItem("parametres", id);
   }
 
-  function getPyramideVictoires() {
-    return getById("tournoisElimination", PYRAMIDE_VICTOIRES_ID).then(function (r) {
-      if (!r) return { players: [], matches: [] };
+  function getPyramideForSession(sessionId) {
+    return getBySession("tournoisElimination", sessionId).then(function (list) {
+      var r = list.filter(function (x) {
+        return x && x.kind === "pyramide-victoires";
+      })[0];
+      if (!r) return { dataId: null, players: [], matches: [] };
       return {
+        dataId: r.id,
         players: Array.isArray(r.players) ? r.players.slice() : [],
         matches: Array.isArray(r.matches) ? r.matches.slice() : [],
       };
     });
   }
 
-  function savePyramideVictoires(state) {
-    var bloc = {
-      id: PYRAMIDE_VICTOIRES_ID,
-      nom: "Pyramide de victoires",
-      players: state.players || [],
-      matches: state.matches || [],
-      updatedAt: new Date().toISOString(),
-    };
-    return getById("tournoisElimination", PYRAMIDE_VICTOIRES_ID).then(function (existing) {
+  function savePyramideForSession(sessionId, state) {
+    if (!sessionId) return Promise.reject(new Error("Aucune séance active."));
+    return getBySession("tournoisElimination", sessionId).then(function (list) {
+      var existing = list.filter(function (x) {
+        return x && x.kind === "pyramide-victoires";
+      })[0];
+      var bloc = {
+        id: existing ? existing.id : genererId("pyramide"),
+        sessionId: sessionId,
+        kind: "pyramide-victoires",
+        nom: "Pyramide de victoires",
+        players: state.players || [],
+        matches: state.matches || [],
+        updatedAt: new Date().toISOString(),
+      };
       if (existing) return updateItem("tournoisElimination", bloc);
       return addItem("tournoisElimination", bloc);
+    }).then(function () {
+      return touchSession(sessionId);
     });
   }
 
+  function getPyramideVictoires() {
+    return getActiveSessionId(SC.SESSION_TOOLS.PYRAMIDE).then(function (sid) {
+      if (!sid) return { players: [], matches: [] };
+      return getPyramideForSession(sid);
+    });
+  }
+
+  function savePyramideVictoires(state) {
+    return getActiveSessionId(SC.SESSION_TOOLS.PYRAMIDE).then(function (sid) {
+      if (!sid) return Promise.reject(new Error("Aucune séance pyramide active."));
+      return savePyramideForSession(sid, state);
+    });
+  }
+
+  function readLegacyTournoiLocalStorage() {
+    try {
+      var raw = localStorage.getItem(SC.LEGACY_TOURNOI_LS_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function maybeMigrateSessions() {
+    return getParametre(SC.MIGRATION_FLAG_ID).then(function (flag) {
+      if (flag && flag.done) return false;
+      return runSessionsMigration().then(function () {
+        return saveParametre({
+          id: SC.MIGRATION_FLAG_ID,
+          done: true,
+          migratedAt: new Date().toISOString(),
+        });
+      });
+    });
+  }
+
+  function linkOrphanSessionData() {
+    return runSessionsMigration(true);
+  }
+
+  function runSessionsMigration(orphansOnly) {
+    var now = new Date().toISOString();
+    var created = {};
+
+    function ensureLegacySession(toolId) {
+      if (created[toolId]) return Promise.resolve(created[toolId]);
+      var session = SC.normalizeSession({
+        id: genererId("session"),
+        toolId: toolId,
+        nomSession: SC.legacySessionName(toolId, now),
+        createdAt: now,
+        updatedAt: now,
+        lastOpenedAt: now,
+        archived: false,
+      });
+      return addItem("sessions", session).then(function () {
+        created[toolId] = session;
+        return setActiveSessionId(toolId, session.id).then(function () {
+          return session;
+        });
+      });
+    }
+
+    return getAll("championnats")
+      .then(function (list) {
+        var orphans = list.filter(function (c) {
+          return c && !c.sessionId;
+        });
+        if (!orphans.length) return null;
+        return ensureLegacySession(SC.SESSION_TOOLS.CHAMPIONNAT).then(function (session) {
+          return Promise.all(
+            orphans.map(function (c) {
+              c.sessionId = session.id;
+              c.updatedAt = now;
+              return updateItem("championnats", c);
+            })
+          );
+        });
+      })
+      .then(function () {
+        return getAll("tournoisElimination");
+      })
+      .then(function (list) {
+        var pyramide = list.filter(function (r) {
+          return r && (r.id === PYRAMIDE_VICTOIRES_ID || r.kind === "pyramide-victoires");
+        });
+        var tournois = list.filter(function (r) {
+          return r && !r.sessionId && r.id !== PYRAMIDE_VICTOIRES_ID;
+        });
+        var ops = [];
+        if (pyramide.length) {
+          ops.push(
+            ensureLegacySession(SC.SESSION_TOOLS.PYRAMIDE).then(function (session) {
+              return Promise.all(
+                pyramide.map(function (r) {
+                  var bloc = {
+                    id: r.id === PYRAMIDE_VICTOIRES_ID ? genererId("pyramide") : r.id,
+                    sessionId: session.id,
+                    kind: "pyramide-victoires",
+                    nom: r.nom || "Pyramide de victoires",
+                    players: r.players || [],
+                    matches: r.matches || [],
+                    updatedAt: now,
+                  };
+                  if (r.id === PYRAMIDE_VICTOIRES_ID) {
+                    return addItem("tournoisElimination", bloc).then(function () {
+                      return deleteItem("tournoisElimination", PYRAMIDE_VICTOIRES_ID);
+                    });
+                  }
+                  return updateItem("tournoisElimination", bloc);
+                })
+              );
+            })
+          );
+        }
+        if (tournois.length) {
+          ops.push(
+            ensureLegacySession(SC.SESSION_TOOLS.TOURNOI).then(function (session) {
+              return Promise.all(
+                tournois.map(function (r) {
+                  r.sessionId = session.id;
+                  r.kind = r.kind || "tournoi-elimination";
+                  r.updatedAt = now;
+                  return updateItem("tournoisElimination", r);
+                })
+              );
+            })
+          );
+        }
+        return Promise.all(ops);
+      })
+      .then(function () {
+        return getParametre("composition-equipes");
+      })
+      .then(function (old) {
+        if (!old || old.sessionId) return null;
+        return ensureLegacySession(SC.SESSION_TOOLS.COMPOSITION).then(function (session) {
+          var neu = Object.assign({}, old, {
+            id: SC.compositionDataId(session.id),
+            sessionId: session.id,
+            toolId: SC.SESSION_TOOLS.COMPOSITION,
+            updatedAt: now,
+          });
+          return saveParametre(neu).then(function () {
+            return deleteParametre("composition-equipes");
+          });
+        });
+      })
+      .then(function () {
+        if (orphansOnly) return null;
+        var ls = readLegacyTournoiLocalStorage();
+        if (!ls || !Array.isArray(ls.rounds)) return null;
+        return ensureLegacySession(SC.SESSION_TOOLS.TOURNOI).then(function (session) {
+          return getBySession("tournoisElimination", session.id).then(function (existing) {
+            var has = existing.some(function (r) {
+              return r && r.kind === "tournoi-elimination";
+            });
+            if (has) return null;
+            return saveTournoiForSession(session.id, ls).then(function () {
+              try {
+                localStorage.removeItem(SC.LEGACY_TOURNOI_LS_KEY);
+              } catch (e) {
+                /* ignore */
+              }
+            });
+          });
+        });
+      });
+  }
+
   var STORAGE_CATEGORIES = [
+    {
+      id: "sessions",
+      label: "Séances (championnats, tournois…)",
+      stores: ["sessions"],
+    },
     {
       id: "classes",
       label: "Classes & niveau",
@@ -883,6 +1382,16 @@ var DataManager = (function () {
       label: "Timer HIIT / Tabata",
       paramIds: [PARAM_HIIT_PRESETS_ID],
     },
+    {
+      id: "inducteur-danse",
+      label: "Inducteur danse",
+      paramIds: ["inducteur-danse"],
+    },
+    {
+      id: "questions-debrief",
+      label: "Questions débrief",
+      paramIds: ["questions-debrief"],
+    },
   ];
 
   function jsonByteSize(data) {
@@ -912,6 +1421,8 @@ var DataManager = (function () {
         parts.push(n + " dispense" + (n !== 1 ? "s" : ""));
       } else if (store === "oublisMateriel") {
         parts.push(n + " oubli" + (n !== 1 ? "s" : ""));
+      } else if (store === "sessions") {
+        parts.push(n + " séance" + (n !== 1 ? "s" : ""));
       } else if (store === "championnats") {
         parts.push(n + " championnat" + (n !== 1 ? "s" : ""));
       } else if (store === "tournoisElimination") {
@@ -1079,8 +1590,31 @@ var DataManager = (function () {
     saveDispenses: saveDispenses,
     getOublisMateriel: getOublisMateriel,
     saveOublisMateriel: saveOublisMateriel,
+    SESSION_TOOLS: SC.SESSION_TOOLS,
+    SessionsCore: SC,
+    getSessionById: getSessionById,
+    listSessionsByTool: listSessionsByTool,
+    listRecentSessionsByTool: function (toolId, limit) {
+      return listSessionsByTool(toolId, { limit: limit || 20 });
+    },
+    getActiveSessionId: getActiveSessionId,
+    setActiveSessionId: setActiveSessionId,
+    createSession: createSession,
+    updateSessionRecord: updateSessionRecord,
+    renameSession: renameSession,
+    setSessionArchived: setSessionArchived,
+    openSession: openSession,
+    deleteSession: deleteSession,
+    getChampionnatForSession: getChampionnatForSession,
+    saveChampionnatForSession: saveChampionnatForSession,
     getChampionnatActif: getChampionnatActif,
     saveChampionnatActif: saveChampionnatActif,
+    getTournoiForSession: getTournoiForSession,
+    saveTournoiForSession: saveTournoiForSession,
+    getCompositionForSession: getCompositionForSession,
+    saveCompositionForSession: saveCompositionForSession,
+    getPyramideForSession: getPyramideForSession,
+    savePyramideForSession: savePyramideForSession,
     getPyramideVictoires: getPyramideVictoires,
     savePyramideVictoires: savePyramideVictoires,
     PYRAMIDE_VICTOIRES_ID: PYRAMIDE_VICTOIRES_ID,

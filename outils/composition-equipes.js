@@ -8,7 +8,6 @@
 (function () {
   "use strict";
 
-  var PARAM_ID = "composition-equipes";
   var SAVE_DELAY_MS = 350;
 
   var listeBruteEl = document.getElementById("liste-brute");
@@ -46,8 +45,12 @@
   }
 
   function charger() {
-    if (typeof DataManager === "undefined") return Promise.resolve(null);
-    return DataManager.getParametre(PARAM_ID);
+    if (typeof DataManager === "undefined" || typeof SessionManager === "undefined") {
+      return Promise.resolve(null);
+    }
+    return SessionManager.requireSessionId().then(function (sessionId) {
+      return DataManager.getCompositionForSession(sessionId);
+    });
   }
 
   function sauverDebounced() {
@@ -59,18 +62,20 @@
   }
 
   function sauverImmediate() {
-    if (typeof DataManager === "undefined") {
+    if (typeof DataManager === "undefined" || typeof SessionManager === "undefined") {
       montrerMsg("Stockage indisponible.");
       return Promise.resolve();
     }
     var data = {
-      id: PARAM_ID,
       listeBrute: listeBruteEl ? listeBruteEl.value : "",
       players: players,
       nbEquipes: parseInt(nbEquipesEl.value, 10) || 2,
       assignments: assignments,
     };
-    return DataManager.saveParametre(data)
+    return SessionManager.requireSessionId()
+      .then(function (sessionId) {
+        return DataManager.saveCompositionForSession(sessionId, data);
+      })
       .then(function () {
         montrerMsg("");
       })
@@ -867,7 +872,22 @@
     sauverDebounced();
   });
 
-  DataManager.ready.then(restaurer).catch(function () {
-    montrerMsg("Impossible de charger les données.");
-  });
+  if (typeof SessionManager !== "undefined" && typeof DataManager !== "undefined") {
+    SessionManager.init({
+      toolId: DataManager.SESSION_TOOLS.COMPOSITION,
+      toolLabel: "Composition d’équipes",
+      onSessionReady: restaurer,
+      onSessionCleared: function () {
+        players = [];
+        assignments = null;
+        if (listeBruteEl) listeBruteEl.value = "";
+        majBoutonTirage();
+        renderJoueurs();
+        sectionEquipes.hidden = true;
+        OutilsDom.clear(equipesContainer);
+      },
+    });
+  } else {
+    montrerMsg("Gestion des séances indisponible sur cet appareil.");
+  }
 })();

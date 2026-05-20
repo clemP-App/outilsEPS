@@ -4,7 +4,9 @@ Petite application web **HTML / CSS / JavaScript** (sans framework) pour regroup
 
 ## Utilisation
 
-Ouvrez `index.html` dans un navigateur (double-clic ou « Ouvrir avec… »). Aucun serveur n’est obligatoire ; pour éviter certaines restrictions sur `file://`, vous pouvez aussi servir le dossier avec un serveur statique local (ou GitHub Pages).
+Ouvrez `index.html` dans un navigateur (double-clic ou « Ouvrir avec… »). Aucun serveur n’est obligatoire.
+
+**Preview Cursor :** l’aperçu intégré ne gère souvent pas `file://` (erreur `ERR_FAILED`). Sans Node ni Python, double-cliquez sur `ouvrir-apercu.bat` à la racine du projet, puis dans Cursor ouvrez **http://localhost:5173/index.html** (Simple Browser : `Ctrl+Shift+P` → « Simple Browser: Show »). La PWA reste active sur GitHub Pages ; le service worker est désactivé en local / preview IDE (`pwa-register.js`).
 
 ## Données et sauvegarde
 
@@ -14,8 +16,10 @@ Les données principales sont stockées dans **IndexedDB** (`outilsEPSDB`) via `
 |--------|------------------|
 | Classes et élèves | `classes`, `eleves` |
 | Dispenses EPS | `dispenses` |
-| Championnat poule | `championnats` |
-| Réglages d’outils (composition, compteur bonus, timer HIIT, etc.) | `parametres` |
+| Séances (méta : nom, classe, outil ; store `sessions`) | `sessions` |
+| Championnat poule (données par séance) | `championnats` |
+| Tournoi éliminatoire, pyramide de victoires | `tournoisElimination` |
+| Composition d’équipes et autres réglages | `parametres` |
 
 **Limites :**
 
@@ -25,6 +29,26 @@ Les données principales sont stockées dans **IndexedDB** (`outilsEPSDB`) via `
 - L’**import** remplace **toutes** les données de l’appareil après confirmation (transaction atomique : en cas d’échec, les anciennes données sont conservées).
 
 **Migration :** au premier lancement après une mise à jour, les anciennes données encore présentes dans `localStorage` peuvent être proposées à la migration vers IndexedDB (dispenses, championnat, composition, etc.). Les raccourcis HIIT issus de `outils_eps_hiit_presets_v1` sont migrés automatiquement vers IndexedDB.
+
+### Séances (championnat, tournois, composition, pyramide)
+
+Quatre outils utilisent des **séances** pour enregistrer plusieurs contextes (ex. 6e1 le matin, 6e2 l’après-midi, reprise la semaine suivante) :
+
+- Composition d’équipes
+- Tournoi éliminatoire
+- Pyramide de victoires
+- Championnat à poule unique
+
+**Utilisation :**
+
+1. Ouvrez l’outil : un accordéon **Séance** (fermé par défaut) indique la séance active ; la **première ouverture** crée automatiquement « Première séance » (sans dialogue).
+2. **Nouvelle séance** : vous saisissez le nom (ex. « 6e1 — Badminton »). **Changer** : ouvrir une autre séance existante.
+3. Toutes les actions (équipes, scores, tableau…) sont enregistrées **uniquement** dans la séance ouverte.
+4. **Archiver** ou **Supprimer** une séance depuis la liste (suppression = données de la séance effacées).
+
+**Technique (code) :** chaque enregistrement métier porte un `sessionId`. La séance active par outil est mémorisée dans `parametres` (`active-session__<toolId>`). Les sauvegardes JSON incluent le store `sessions`.
+
+**Migration ascendante :** à la première ouverture après mise à jour, les données existantes sans `sessionId` sont rattachées à une séance **Legacy — … (date)** par outil (y compris l’ancien tournoi éliminatoire stocké en `localStorage`). Aucune perte volontaire.
 
 **Hors sauvegarde JSON :** certains réglages légers de l’accueil (favoris, ordre des outils) peuvent rester dans `localStorage` ; ils ne sont pas inclus dans l’export global.
 
@@ -41,6 +65,8 @@ OutilsEPS/
 ├── app-version.js          # Version PWA (cache Service Worker)
 ├── precache-manifest.js    # Liste precache (générée)
 ├── dom-utils.js            # Helpers DOM partagés
+├── session-manager.js      # UI séances (barre + dialogue ; code « session »)
+├── shared/sessions-core.js # Règles séances (validation, toolId)
 ├── scripts/
 │   ├── generate-precache.js
 │   └── check-js.js

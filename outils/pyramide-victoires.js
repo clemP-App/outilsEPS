@@ -247,12 +247,20 @@
   }
 
   function sauver() {
-    if (typeof DataManager === "undefined" || !DataManager.savePyramideVictoires) {
+    if (
+      typeof DataManager === "undefined" ||
+      typeof SessionManager === "undefined" ||
+      !DataManager.savePyramideForSession
+    ) {
       return Promise.resolve();
     }
-    return DataManager.savePyramideVictoires(tournoi).catch(function () {
-      montrerMsg("Impossible d’enregistrer les données.", true);
-    });
+    return SessionManager.requireSessionId()
+      .then(function (sessionId) {
+        return DataManager.savePyramideForSession(sessionId, tournoi);
+      })
+      .catch(function () {
+        montrerMsg("Impossible d’enregistrer les données.", true);
+      });
   }
 
   function majNbJoueurs() {
@@ -637,20 +645,27 @@
     });
   }
 
-  function init() {
-    if (typeof DataManager !== "undefined" && DataManager.getPyramideVictoires) {
-      return DataManager.ready.then(function () {
-        return DataManager.getPyramideVictoires();
-      }).then(function (data) {
+  function initTournoi() {
+    if (typeof DataManager === "undefined" || typeof SessionManager === "undefined") {
+      render();
+      return Promise.resolve();
+    }
+    return SessionManager.requireSessionId()
+      .then(function (sessionId) {
+        return DataManager.getPyramideForSession(sessionId);
+      })
+      .then(function (data) {
         tournoi = {
           players: data.players || [],
           matches: data.matches || [],
         };
         synchroniserEtat();
         render();
+      })
+      .catch(function (err) {
+        montrerMsg(err && err.message ? err.message : "Impossible de charger la séance.");
+        render();
       });
-    }
-    render();
   }
 
   if (document.getElementById("btn-import-classe-pyramide")) {
@@ -675,5 +690,18 @@
     });
   }
 
-  init();
+  if (typeof SessionManager !== "undefined" && typeof DataManager !== "undefined") {
+    SessionManager.init({
+      toolId: DataManager.SESSION_TOOLS.PYRAMIDE,
+      toolLabel: "Pyramide de victoires",
+      onSessionReady: initTournoi,
+      onSessionCleared: function () {
+        tournoi = { players: [], matches: [] };
+        synchroniserEtat();
+        render();
+      },
+    });
+  } else {
+    initTournoi();
+  }
 })();

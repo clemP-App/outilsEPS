@@ -12,7 +12,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Outils EPS" />
     <title>Pyramide de victoires — Outils EPS</title>
-    <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
@@ -26,6 +25,8 @@
         <h1>Pyramide de victoires</h1>
       </header>
 
+      <div class="tool-session-gated" hidden>
+      <div id="session-manager-mount"></div>
       <p id="pyramide-msg" class="msg-error" role="alert" hidden></p>
 
       <details class="card card--accordion" id="pyramide-joueurs-panel" open>
@@ -113,10 +114,13 @@
           <ul class="pyramide-historique" id="pyramide-historique"></ul>
         </div>
       </details>
+      </div>
     </div>
 
     <script src="../dom-utils.js"></script>
+    <script src="../shared/sessions-core.js"></script>
     <script src="../data-manager.js"></script>
+    <script src="../session-manager.js"></script>
     <script src="../class-import.js"></script>
     <script src="pyramide-victoires.js"></script>
     <script src="../tool-info.js"></script>

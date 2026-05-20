@@ -45,18 +45,31 @@
   }
 
   function charger() {
-    if (typeof DataManager === "undefined") {
+    if (typeof DataManager === "undefined" || typeof SessionManager === "undefined") {
       return Promise.resolve({ teams: [], matches: [] });
     }
-    return DataManager.getChampionnatActif();
+    return SessionManager.requireSessionId().then(function (sessionId) {
+      return DataManager.getChampionnatForSession(sessionId).then(function (data) {
+        return {
+          teams: data.teams || [],
+          matches: data.matches || [],
+        };
+      });
+    });
   }
 
   function sauverImmediate() {
-    if (typeof DataManager === "undefined") {
+    if (typeof DataManager === "undefined" || typeof SessionManager === "undefined") {
       montrerMsg("Stockage indisponible.");
       return Promise.resolve();
     }
-    return DataManager.saveChampionnatActif(state)
+    return SessionManager.requireSessionId()
+      .then(function (sessionId) {
+        var meta = {};
+        var s = SessionManager.getActiveSession();
+        if (s && s.nomSession) meta.nom = s.nomSession;
+        return DataManager.saveChampionnatForSession(sessionId, state, meta);
+      })
       .then(function () {
         montrerMsg("");
       })
@@ -551,20 +564,37 @@
     });
   }
 
-  DataManager.ready
-    .then(charger)
-    .then(function (data) {
-      state = data;
-      if (!calendrierCoherent()) {
-        reconstruireMatchsDepuisEquipes();
-        return sauverImmediate();
-      }
-    })
-    .then(function () {
-      render();
-    })
-    .catch(function () {
-      montrerMsg("Impossible de charger le championnat.");
-      render();
+  function demarrerSession() {
+    return charger()
+      .then(function (data) {
+        state = data;
+        if (!calendrierCoherent()) {
+          reconstruireMatchsDepuisEquipes();
+          return sauverImmediate();
+        }
+      })
+      .then(function () {
+        render();
+      })
+      .catch(function (err) {
+        montrerMsg(
+          err && err.message ? err.message : "Impossible de charger le championnat."
+        );
+        render();
+      });
+  }
+
+  if (typeof SessionManager !== "undefined" && typeof DataManager !== "undefined") {
+    SessionManager.init({
+      toolId: DataManager.SESSION_TOOLS.CHAMPIONNAT,
+      toolLabel: "Championnat à poule",
+      onSessionReady: demarrerSession,
+      onSessionCleared: function () {
+        state = { teams: [], matches: [] };
+        render();
+      },
     });
+  } else {
+    montrerMsg("Gestion des séances indisponible sur cet appareil.");
+  }
 })();

@@ -12,7 +12,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Outils EPS" />
     <title>Championnat à poule unique — Outils EPS</title>
-    <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
@@ -26,6 +25,8 @@
         <h1>Championnat à poule unique</h1>
       </header>
 
+      <div class="tool-session-gated" hidden>
+      <div id="session-manager-mount"></div>
       <p id="champ-msg" class="msg-error" role="alert" hidden></p>
 
       <details class="card card--accordion" id="accordion-gestion">
@@ -123,11 +124,14 @@
           <div id="match-list" class="champ-match-list"></div>
         </div>
       </details>
+      </div>
     </div>
 
     <script src="../dom-utils.js"></script>
     <script src="../shared/championnat-standings.js"></script>
+    <script src="../shared/sessions-core.js"></script>
     <script src="../data-manager.js"></script>
+    <script src="../session-manager.js"></script>
     <script src="../class-import.js"></script>
     <script src="championnat-poule.js"></script>
     <script src="../tool-info.js"></script>

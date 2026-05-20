@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Inducteur danse — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--inducteur-danse">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Inducteur danse</h1>
+      </header>
+
+      <p id="inducteur-msg" class="msg-error inducteur-msg" role="alert" hidden></p>
+
+      <section class="card inducteur-draw-card" aria-labelledby="lbl-tirage">
+        <h2 id="lbl-tirage">Tirage d’inducteurs</h2>
+
+        <fieldset class="inducteur-mode">
+          <legend class="field-label">Source du tirage</legend>
+          <label class="inducteur-mode__opt">
+            <input type="radio" name="mode-tirage" value="toutes" checked />
+            <span>Toutes les listes (un inducteur au hasard)</span>
+          </label>
+          <label class="inducteur-mode__opt">
+            <input type="radio" name="mode-tirage" value="une-liste" />
+            <span>Une seule liste</span>
+          </label>
+          <label class="inducteur-mode__opt">
+            <input type="radio" name="mode-tirage" value="plusieurs-listes" />
+            <span>Plusieurs listes (un inducteur par liste cochée)</span>
+          </label>
+        </fieldset>
+
+        <div id="wrap-select-une-liste" class="inducteur-wrap-select" hidden>
+          <label class="field-label" for="select-une-liste">Liste</label>
+          <select id="select-une-liste" class="inducteur-select"></select>
+        </div>
+
+        <div id="wrap-check-listes" class="inducteur-check-listes" hidden>
+          <p class="hint">Cochez les listes : vous obtiendrez un inducteur tiré dans chacune.</p>
+          <div id="check-listes" class="inducteur-check-grid" role="group" aria-label="Listes pour le tirage combiné"></div>
+        </div>
+
+        <div id="inducteur-resultats" class="inducteur-resultats" role="status" aria-live="polite" hidden></div>
+        <p id="inducteur-resultat-hint" class="hint inducteur-resultat-hint">
+          Choisissez un mode de tirage, puis lancez le tirage aléatoire.
+        </p>
+
+        <button type="button" class="btn btn--primary btn--labeled inducteur-btn-draw" id="btn-tirer">
+          <span class="btn__icon" aria-hidden="true">🎲</span>
+          <span class="btn__text">Tirer</span>
+        </button>
+      </section>
+
+      <details class="card card--accordion" id="accordion-listes">
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">Gérer les listes d’inducteurs</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p class="hint">
+            Chaque liste regroupe des inducteurs d’un même type (espace, objet, contraintes corporelles…). Vous pouvez les
+            modifier, en ajouter ou en supprimer. Les listes sont enregistrées sur cet appareil.
+          </p>
+          <div id="listes-editor" class="inducteur-listes-editor"></div>
+          <div class="field-row inducteur-listes-actions">
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-nouvelle-liste">
+              <span class="btn__icon" aria-hidden="true">＋</span>
+              <span class="btn__text">Nouvelle liste</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-reset-listes">
+              <span class="btn__icon" aria-hidden="true">↺</span>
+              <span class="btn__text">Réinitialiser les listes par défaut</span>
+            </button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <script src="../data-manager.js"></script>
+    <script src="../dom-utils.js"></script>
+    <script src="inducteur-danse.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro:
+          "Tirez au hasard des inducteurs pour l’improvisation ou la composition en danse (APSA, cours d’EPS).",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Proposer rapidement une contrainte ou une inspiration (espace, objet, qualité de mouvement…) sans préparer des cartes à l’avance.",
+          },
+          {
+            title: "Modes de tirage",
+            list: [
+              "Toutes les listes : un inducteur pris au hasard dans l’ensemble.",
+              "Une seule liste : tirage dans le type choisi (ex. uniquement « Objet »).",
+              "Plusieurs listes : un inducteur par liste cochée (ex. Espace + Objet + Partenaire).",
+            ],
+          },
+          {
+            title: "Personnaliser",
+            text:
+              "Ouvrez « Gérer les listes » pour renommer une liste, ajouter des inducteurs (un par ligne) ou créer vos propres catégories.",
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

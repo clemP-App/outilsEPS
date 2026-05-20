@@ -12,7 +12,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Outils EPS" />
     <title>Composition d’équipes homogènes — Outils EPS</title>
-    <link rel="manifest" href="../manifest.webmanifest" />
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
@@ -26,6 +25,8 @@
         <h1>Composition d’équipes homogènes</h1>
       </header>
 
+      <div class="tool-session-gated" hidden>
+      <div id="session-manager-mount"></div>
       <p id="compo-msg" class="msg-error" role="alert" hidden></p>
 
       <details class="card card--accordion" id="accordion-joueurs" open>
@@ -109,10 +110,13 @@
         </div>
         <div id="equipes-container" class="compo-equipes-grid"></div>
       </section>
+      </div>
     </div>
 
     <script src="../dom-utils.js"></script>
+    <script src="../shared/sessions-core.js"></script>
     <script src="../data-manager.js"></script>
+    <script src="../session-manager.js"></script>
     <script src="../class-import.js"></script>
     <script src="../vendor/jspdf.umd.min.js"></script>
     <script src="composition-equipes.js"></script>

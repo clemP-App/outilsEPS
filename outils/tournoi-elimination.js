@@ -4,7 +4,6 @@
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "outils_eps_tournoi_elimination_v1";
   var textareaEl = document.getElementById("tournoi-participants");
   var seedingListEl = document.getElementById("tournoi-seeding-list");
   var seedingCountEl = document.getElementById("tournoi-seeding-count");
@@ -37,35 +36,49 @@
     msgEl.textContent = msg || "";
   }
 
+  function appliquerPayload(data) {
+    if (!data || !Array.isArray(data.rounds)) return;
+    state = {
+      format: data.format === "classement" ? "classement" : "elimination",
+      participantsText: typeof data.participantsText === "string" ? data.participantsText : "",
+      levels: data.levels && typeof data.levels === "object" ? data.levels : {},
+      totalParticipants: typeof data.totalParticipants === "number" ? data.totalParticipants : 0,
+      size: typeof data.size === "number" ? data.size : 0,
+      rounds: data.rounds,
+      tables: Array.isArray(data.tables) ? data.tables : [],
+      placements: data.placements && typeof data.placements === "object" ? data.placements : {},
+    };
+    if (textareaEl) textareaEl.value = state.participantsText;
+    setFormat(state.format);
+  }
+
   function save() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch (e) {
-      /* stockage indisponible */
+    if (typeof DataManager === "undefined" || typeof SessionManager === "undefined") {
+      return Promise.resolve();
     }
+    return SessionManager.requireSessionId()
+      .then(function (sessionId) {
+        return DataManager.saveTournoiForSession(sessionId, state);
+      })
+      .catch(function () {
+        montrerMsg("Impossible d’enregistrer la séance.");
+      });
   }
 
   function load() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      var data = JSON.parse(raw);
-      if (!data || !Array.isArray(data.rounds)) return;
-      state = {
-        format: data.format === "classement" ? "classement" : "elimination",
-        participantsText: typeof data.participantsText === "string" ? data.participantsText : "",
-        levels: data.levels && typeof data.levels === "object" ? data.levels : {},
-        totalParticipants: typeof data.totalParticipants === "number" ? data.totalParticipants : 0,
-        size: typeof data.size === "number" ? data.size : 0,
-        rounds: data.rounds,
-        tables: Array.isArray(data.tables) ? data.tables : [],
-        placements: data.placements && typeof data.placements === "object" ? data.placements : {},
-      };
-      if (textareaEl) textareaEl.value = state.participantsText;
-      setFormat(state.format);
-    } catch (e) {
-      /* données anciennes ou corrompues */
+    if (typeof DataManager === "undefined" || typeof SessionManager === "undefined") {
+      return Promise.resolve();
     }
+    return SessionManager.requireSessionId()
+      .then(function (sessionId) {
+        return DataManager.getTournoiForSession(sessionId);
+      })
+      .then(function (res) {
+        if (res && res.payload) appliquerPayload(res.payload);
+      })
+      .catch(function (err) {
+        montrerMsg(err && err.message ? err.message : "Séance introuvable.");
+      });
   }
 
   function setFormat(format) {
@@ -532,13 +545,10 @@
       placements: {},
     };
     if (textareaEl) textareaEl.value = "";
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch (e) {
-      /* ignore */
-    }
-    renderSeedingList();
-    render();
+    save().then(function () {
+      renderSeedingList();
+      render();
+    });
   }
 
   function nomEleve(e) {
@@ -904,8 +914,39 @@
   if (bracketWrapEl) bracketWrapEl.addEventListener("scroll", drawConnectors);
   window.addEventListener("resize", drawConnectors);
 
-  load();
-  renderSeedingList();
-  autoAdvanceByes();
-  render();
+  function demarrerSession() {
+    return load().then(function () {
+      renderSeedingList();
+      autoAdvanceByes();
+      render();
+    });
+  }
+
+  if (typeof SessionManager !== "undefined" && typeof DataManager !== "undefined") {
+    SessionManager.init({
+      toolId: DataManager.SESSION_TOOLS.TOURNOI,
+      toolLabel: "Tournoi éliminatoire",
+      onSessionReady: demarrerSession,
+      onSessionCleared: function () {
+        state = {
+          format: "elimination",
+          participantsText: "",
+          levels: {},
+          totalParticipants: 0,
+          size: 0,
+          rounds: [],
+          tables: [],
+          placements: {},
+        };
+        if (textareaEl) textareaEl.value = "";
+        setFormat("elimination");
+        renderSeedingList();
+        render();
+      },
+    });
+  } else {
+    montrerMsg("Gestion des séances indisponible.");
+    renderSeedingList();
+    render();
+  }
 })();

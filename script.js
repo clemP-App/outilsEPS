@@ -12,6 +12,15 @@
 (function () {
   "use strict";
 
+  if (typeof OutilsDom === "undefined") {
+    window.OutilsDom = {
+      clear: function (node) {
+        if (!node) return;
+        while (node.firstChild) node.removeChild(node.firstChild);
+      },
+    };
+  }
+
   var FAVORIS_KEY = "outils_eps_favoris_v1";
   var VIEW_KEY = "outils_eps_view_v1";
   var PROF_VIEW_KEY = "outils_eps_prof_view_v1";
@@ -125,6 +134,16 @@
       publicCible: "prof",
     },
     {
+      id: "inducteur-danse",
+      titre: "Inducteur danse",
+      description:
+        "Tirez au hasard des inducteurs (espace, objet, contraintes corporelles…) pour l’improvisation ou la composition en danse APSA.",
+      icone: "💃",
+      href: "outils/inducteur-danse.html",
+      categorie: "Danse APSA",
+      publicCible: "prof",
+    },
+    {
       id: "test-vma",
       titre: "Test VMA",
       description:
@@ -182,6 +201,16 @@
       icone: "📊",
       href: "outils/compteur-ratio.html",
       categorie: "Observation",
+      publicCible: "eleve",
+    },
+    {
+      id: "questions-debrief",
+      titre: "Questions débrief",
+      description:
+        "Choisissez un bilan individuel ou d’équipe, puis tirez des questions pour faire le point sur la séance.",
+      icone: "💬",
+      href: "outils/questions-debrief.html",
+      categorie: "Réflexion",
       publicCible: "eleve",
     },
     {
