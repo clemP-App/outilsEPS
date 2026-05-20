@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Visualisation des données — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--viz-donnees">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Visualisation des données</h1>
+      </header>
+
+      <p class="hint">
+        Consultez les remontées QR enregistrées sur cet appareil.
+        <a href="recuperation-donnees.html">Scanner un nouveau QR →</a>
+      </p>
+
+      <p id="viz-msg" class="msg-error" role="alert" hidden></p>
+      <p id="viz-ok" class="msg-ok" role="status" hidden></p>
+
+      <section class="card" aria-labelledby="lbl-filtres">
+        <h2 id="lbl-filtres">Filtres</h2>
+        <div class="field-row viz-filtres">
+          <div class="field-group">
+            <label class="field-label" for="viz-tool">Outil</label>
+            <select id="viz-tool">
+              <option value="">Tous</option>
+              <option value="table-marque">Table de marque</option>
+              <option value="compteur-ptb">Compteur PTB</option>
+              <option value="compteur-bonus">Compteur bonus</option>
+              <option value="vitesse-plots">Vitesse aux plots</option>
+              <option value="zone-impact">Zone d'impact</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="viz-classe">Classe</label>
+            <input type="text" id="viz-classe" maxlength="80" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="viz-groupe">Groupe</label>
+            <input type="text" id="viz-groupe" maxlength="80" autocomplete="off" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="viz-date-from">Depuis</label>
+            <input type="date" id="viz-date-from" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="viz-date-to">Jusqu’au</label>
+            <input type="date" id="viz-date-to" />
+          </div>
+        </div>
+        <div class="viz-filtres-actions">
+          <button type="button" class="btn btn--ghost" id="viz-apply">Appliquer</button>
+          <button type="button" class="btn btn--ghost" id="viz-export-json">Exporter JSON</button>
+          <button type="button" class="btn btn--danger btn--ghost" id="viz-clear-filtered">Supprimer (filtre)</button>
+        </div>
+      </section>
+
+      <section class="card viz-layout" aria-labelledby="lbl-liste">
+        <h2 id="lbl-liste">Imports <span id="viz-count" class="viz-count"></span></h2>
+        <ul id="viz-list" class="viz-list"></ul>
+        <p id="viz-empty" class="empty-state" hidden>Aucun import pour ces filtres.</p>
+      </section>
+
+      <section class="card viz-detail-card" id="viz-detail-card" hidden aria-labelledby="lbl-detail">
+        <h2 id="lbl-detail">Détail</h2>
+        <div id="viz-detail"></div>
+        <button type="button" class="btn btn--danger btn--ghost" id="viz-delete-one">Supprimer cet import</button>
+      </section>
+    </div>
+
+    <script src="../shared/qr-exchange-core.js"></script>
+    <script src="../shared/import-detail-render.js"></script>
+    <script src="../shared/import-record-core.js"></script>
+    <script src="../data-manager.js"></script>
+    <script src="visualisation-donnees.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Liste, filtres et détail des données remontées par QR depuis les outils élèves.",
+        sections: [
+          {
+            title: "Actions",
+            list: [
+              "Filtrez par outil, classe, groupe ou période.",
+              "Cliquez un import pour voir noms, scores et statistiques.",
+              "Exportez tout en JSON ou supprimez par lot selon les filtres actifs.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>
