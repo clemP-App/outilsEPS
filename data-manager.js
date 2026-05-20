@@ -6,7 +6,7 @@ var DataManager = (function () {
   "use strict";
 
   var DB_NAME = "outilsEPSDB";
-  var DB_VERSION = 4;
+  var DB_VERSION = 5;
   var APP_NAME = "OutilsEPS";
   var BACKUP_VERSION = "1.0";
   var BACKUP_FILENAME = "outilsEPS-backup.json";
@@ -57,6 +57,7 @@ var DataManager = (function () {
     "championnats",
     "tournoisElimination",
     "parametres",
+    "importsEleves",
   ];
 
   var INDEXED_STORES = ["championnats", "tournoisElimination"];
@@ -118,6 +119,10 @@ var DataManager = (function () {
           if (!database.objectStoreNames.contains(name)) {
             var store = database.createObjectStore(name, { keyPath: "id" });
             if (name === "sessions") {
+              store.createIndex("toolId", "toolId", { unique: false });
+            }
+            if (name === "importsEleves") {
+              store.createIndex("exportId", "exportId", { unique: false });
               store.createIndex("toolId", "toolId", { unique: false });
             }
           }
@@ -375,6 +380,7 @@ var DataManager = (function () {
       championnats: [],
       tournoisElimination: [],
       parametres: [],
+      importsEleves: [],
     };
     var i;
     for (i = 0; i < sources.length; i++) {
@@ -522,7 +528,8 @@ var DataManager = (function () {
       (payload.sessions || []).length +
       payload.championnats.length +
       payload.tournoisElimination.length +
-      payload.parametres.length;
+      payload.parametres.length +
+      (payload.importsEleves || []).length;
     if (total === 0) {
       return "Aucune donnée à importer dans ce fichier.";
     }
@@ -571,6 +578,7 @@ var DataManager = (function () {
       championnats: data.championnats || [],
       tournoisElimination: data.tournoisElimination || [],
       parametres: Array.isArray(parametres) ? parametres : [],
+      importsEleves: data.importsEleves || [],
     };
   }
 
@@ -584,6 +592,7 @@ var DataManager = (function () {
       getAll("championnats"),
       getAll("tournoisElimination"),
       getAll("parametres"),
+      getAll("importsEleves"),
     ]).then(function (arrays) {
       return {
         metadata: {
@@ -599,6 +608,7 @@ var DataManager = (function () {
         championnats: arrays[5],
         tournoisElimination: arrays[6],
         parametres: arrays[7],
+        importsEleves: arrays[8],
       };
     });
   }
@@ -1392,6 +1402,11 @@ var DataManager = (function () {
       label: "Questions débrief",
       paramIds: ["questions-debrief"],
     },
+    {
+      id: "imports-eleves",
+      label: "Imports élèves (QR)",
+      stores: ["importsEleves"],
+    },
   ];
 
   function jsonByteSize(data) {
@@ -1427,6 +1442,8 @@ var DataManager = (function () {
         parts.push(n + " championnat" + (n !== 1 ? "s" : ""));
       } else if (store === "tournoisElimination") {
         parts.push(n + " tournoi" + (n !== 1 ? "s" : ""));
+      } else if (store === "importsEleves") {
+        parts.push(n + " import" + (n !== 1 ? "s" : "") + " QR");
       }
     });
     (cat.paramIds || []).forEach(function (pid) {
@@ -1556,6 +1573,118 @@ var DataManager = (function () {
     return Promise.all(ops);
   }
 
+  var IRC =
+    typeof ImportRecordCore !== "undefined"
+      ? ImportRecordCore
+      : {
+          buildStoredImport: function (r, gen) {
+            return {
+              item: {
+                id: r.id || gen("import"),
+                exportId: String(r.exportId),
+                toolId: String(r.toolId),
+                createdAt: r.createdAt || new Date().toISOString(),
+                importedAt: r.importedAt || new Date().toISOString(),
+                classeLabel: (r.classeLabel || "").trim(),
+                groupeLabel: (r.groupeLabel || "").trim(),
+                auteurLabel: (r.auteurLabel || "").trim(),
+                checksum: r.checksum || "",
+                payload: r.payload,
+              },
+            };
+          },
+          matchesFilters: function () {
+            return true;
+          },
+          sortImportsNewestFirst: function (list) {
+            return list || [];
+          },
+        };
+
+  function normalizeImportedRecord(record) {
+    var built = IRC.buildStoredImport(record, genererId);
+    if (built.error) return Promise.reject(new Error(built.error));
+    return Promise.resolve(built.item);
+  }
+
+  function saveImportedRecord(record) {
+    return normalizeImportedRecord(record).then(function (item) {
+      return addItem("importsEleves", item).then(function () {
+        return item;
+      });
+    });
+  }
+
+  function hasImportedRecord(exportId) {
+    if (!exportId) return Promise.resolve(false);
+    return requireDb().then(function () {
+      return new Promise(function (resolve, reject) {
+        var tx = transaction(["importsEleves"], "readonly");
+        var store = tx.objectStore("importsEleves");
+        if (!store.indexNames.contains("exportId")) {
+          getAll("importsEleves")
+            .then(function (all) {
+              resolve(
+                all.some(function (r) {
+                  return r && r.exportId === exportId;
+                })
+              );
+            })
+            .catch(reject);
+          return;
+        }
+        var idx = store.index("exportId");
+        var req = idx.getAll(exportId);
+        req.onsuccess = function () {
+          resolve((req.result || []).length > 0);
+        };
+        req.onerror = function () {
+          reject(req.error || new Error("Erreur IndexedDB"));
+        };
+      });
+    });
+  }
+
+  function getImportedRecords(filters) {
+    filters = filters || {};
+    return getAll("importsEleves").then(function (all) {
+      var list = (all || []).filter(function (r) {
+        return IRC.matchesFilters(r, filters);
+      });
+      return IRC.sortImportsNewestFirst(list);
+    });
+  }
+
+  function deleteImportedRecord(id) {
+    return deleteItem("importsEleves", id);
+  }
+
+  function clearImportedRecords(filters) {
+    if (!filters || (!filters.toolId && !filters.classeLabel && !filters.groupeLabel)) {
+      return clearStore("importsEleves");
+    }
+    return getImportedRecords(filters).then(function (list) {
+      return Promise.all(
+        list.map(function (r) {
+          return deleteImportedRecord(r.id);
+        })
+      );
+    });
+  }
+
+  function exportImportsElevesJson() {
+    return getImportedRecords().then(function (list) {
+      return {
+        metadata: {
+          app: APP_NAME,
+          kind: "imports-eleves",
+          exportedAt: new Date().toISOString(),
+        },
+        importsEleves: list,
+      };
+    });
+  }
+
   var ready = initDB();
 
   return {
@@ -1625,5 +1754,11 @@ var DataManager = (function () {
     formatBytes: formatBytes,
     getStorageBreakdown: getStorageBreakdown,
     clearStorageCategory: clearStorageCategory,
+    saveImportedRecord: saveImportedRecord,
+    getImportedRecords: getImportedRecords,
+    deleteImportedRecord: deleteImportedRecord,
+    clearImportedRecords: clearImportedRecords,
+    hasImportedRecord: hasImportedRecord,
+    exportImportsElevesJson: exportImportsElevesJson,
   };
 })();
