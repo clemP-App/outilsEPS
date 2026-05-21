@@ -141,7 +141,10 @@
       main.className = "classes-eleve-item__main";
       var nom = document.createElement("span");
       nom.className = "classes-eleve-item__nom";
-      nom.textContent = [e.prenom, e.nom].filter(Boolean).join(" ") || "Sans nom";
+      nom.textContent =
+        typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+          ? EleveDisplay.formatEleveListe(e)
+          : [e.nom, e.prenom].filter(Boolean).join(" ") || "Sans nom";
       var meta = document.createElement("span");
       meta.className = "classes-eleve-item__meta";
       var parts = [];

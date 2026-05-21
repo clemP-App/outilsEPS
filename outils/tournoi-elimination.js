@@ -552,7 +552,10 @@
   }
 
   function nomEleve(e) {
-    var nom = [e.prenom, e.nom].filter(Boolean).join(" ").trim();
+    var nom =
+      typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+        ? EleveDisplay.formatEleveListe(e, "")
+        : [e.nom, e.prenom].filter(Boolean).join(" ").trim();
     return nom || "Sans nom";
   }
 

@@ -502,7 +502,10 @@
       left.className = "dispense-item__main";
       var h3 = document.createElement("h3");
       h3.className = "dispense-item__title";
-      h3.textContent = d.prenom + " " + d.nom;
+      h3.textContent =
+        typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+          ? EleveDisplay.formatEleveListe(d)
+          : [d.nom, d.prenom].filter(Boolean).join(" ");
       var meta = document.createElement("p");
       meta.style.margin = "0";
       meta.style.fontSize = "0.9rem";
@@ -566,7 +569,13 @@
       var bEdit = document.createElement("button");
       bEdit.type = "button";
       bEdit.className = "btn btn--ghost btn--small btn--icon-only";
-      bEdit.setAttribute("aria-label", "Modifier la dispense / inaptitude de " + d.prenom + " " + d.nom);
+      bEdit.setAttribute(
+        "aria-label",
+        "Modifier la dispense / inaptitude de " +
+          (typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+            ? EleveDisplay.formatEleveListe(d)
+            : [d.nom, d.prenom].filter(Boolean).join(" "))
+      );
       bEdit.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">✏️</span>';
 
       bEdit.addEventListener("click", function () {
@@ -576,7 +585,13 @@
       var bDel = document.createElement("button");
       bDel.type = "button";
       bDel.className = "btn btn--danger btn--small btn--icon-only";
-      bDel.setAttribute("aria-label", "Supprimer la dispense / inaptitude de " + d.prenom + " " + d.nom);
+      bDel.setAttribute(
+        "aria-label",
+        "Supprimer la dispense / inaptitude de " +
+          (typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+            ? EleveDisplay.formatEleveListe(d)
+            : [d.nom, d.prenom].filter(Boolean).join(" "))
+      );
       bDel.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">🗑️</span>';
       bDel.addEventListener("click", function () {
         supprimer(d.id);

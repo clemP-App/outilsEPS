@@ -25,132 +25,142 @@
         <h1>Distance VMA</h1>
       </header>
 
-      <section class="card" aria-labelledby="lbl-distance-vma-saisie">
-        <h2 id="lbl-distance-vma-saisie">Objectif de course</h2>
-        <p class="hint">
-          Indique la durée, ta VMA et le pourcentage demandé : la distance objectif s’affiche tout de suite.
-        </p>
+      <nav class="vma-tabs distance-vma-tabs" aria-label="Sections de l’outil">
+        <button type="button" class="vma-tab is-active" data-tab="reglages">Réglages</button>
+        <button type="button" class="vma-tab" data-tab="passages">Temps de passages</button>
+      </nav>
 
-        <div class="field-row field-row--distance-vma">
-          <div class="field-group">
-            <label class="field-label" for="duree-min">Durée — minutes</label>
-            <input type="number" id="duree-min" inputmode="numeric" min="0" step="1" placeholder="6" autocomplete="off" />
+      <div id="tab-reglages" class="distance-vma-panel">
+        <section class="card" aria-labelledby="lbl-distance-vma-vitesse">
+          <h2 id="lbl-distance-vma-vitesse">Vitesse</h2>
+          <p class="hint">
+            Réglez la VMA puis le pourcentage d’allure : la vitesse résultante sert de base aux calculs distance / temps.
+          </p>
+
+          <div class="distance-vma-slider">
+            <label class="field-label" for="vma-base">VMA (km/h)</label>
+            <div class="distance-vma-slider__bubble" id="bubble-vma" aria-hidden="true">12 km/h</div>
+            <div class="distance-vma-slider__row">
+              <button type="button" class="distance-vma-step" data-target="vma-base" data-step="-0.1" aria-label="Diminuer la VMA">−</button>
+              <input type="range" id="vma-base" min="5" max="25" step="0.1" value="12" />
+              <button type="button" class="distance-vma-step" data-target="vma-base" data-step="0.1" aria-label="Augmenter la VMA">+</button>
+            </div>
           </div>
-          <div class="field-group">
-            <label class="field-label" for="duree-sec">Secondes</label>
-            <input type="number" id="duree-sec" inputmode="numeric" min="0" max="59" step="1" placeholder="0" autocomplete="off" />
+
+          <div class="distance-vma-slider">
+            <label class="field-label" for="vma-pourcent">Pourcentage d’allure</label>
+            <div class="distance-vma-slider__bubble" id="bubble-pourcent" aria-hidden="true">100%</div>
+            <div class="distance-vma-slider__row">
+              <button type="button" class="distance-vma-step" data-target="vma-pourcent" data-step="-1" aria-label="Diminuer le pourcentage">−</button>
+              <input type="range" id="vma-pourcent" min="50" max="150" step="1" value="100" />
+              <button type="button" class="distance-vma-step" data-target="vma-pourcent" data-step="1" aria-label="Augmenter le pourcentage">+</button>
+            </div>
           </div>
-        </div>
 
-        <div class="distance-vma-presets" aria-label="Durées rapides">
-          <button class="distance-vma-chip" type="button" data-min="1" data-sec="30">1 min 30</button>
-          <button class="distance-vma-chip" type="button" data-min="3" data-sec="0">3 min</button>
-          <button class="distance-vma-chip" type="button" data-min="6" data-sec="0">6 min</button>
-          <button class="distance-vma-chip" type="button" data-min="8" data-sec="0">8 min</button>
-          <button class="distance-vma-chip" type="button" data-min="10" data-sec="0">10 min</button>
-          <button class="distance-vma-chip" type="button" data-min="12" data-sec="0">12 min</button>
-          <button class="distance-vma-chip" type="button" data-min="15" data-sec="0">15 min</button>
-        </div>
+          <p class="distance-vma-vitesse-result" id="resultat-vitesse" aria-live="polite">
+            Vitesse résultante : <strong>12,0</strong> km/h
+          </p>
+        </section>
 
-        <div class="field-row field-row--distance-vma">
-          <div class="field-group">
-            <label class="field-label" for="vma">VMA</label>
-            <input type="number" id="vma" inputmode="decimal" min="0" step="0.1" placeholder="ex. 14" autocomplete="off" />
+        <section class="card" aria-labelledby="lbl-distance-vma-objectif">
+          <h2 id="lbl-distance-vma-objectif">Distance et temps</h2>
+          <p class="hint">Les curseurs distance et temps sont liés : modifier l’un ajuste l’autre.</p>
+
+          <div class="distance-vma-slider">
+            <label class="field-label" for="vma-distance">Distance</label>
+            <div class="distance-vma-slider__bubble" id="bubble-distance" aria-hidden="true">750 m</div>
+            <div class="distance-vma-slider__row">
+              <button type="button" class="distance-vma-step" data-target="vma-distance" data-step="-10" aria-label="Diminuer la distance">−</button>
+              <input type="range" id="vma-distance" min="10" max="5000" step="10" value="750" />
+              <button type="button" class="distance-vma-step" data-target="vma-distance" data-step="10" aria-label="Augmenter la distance">+</button>
+            </div>
           </div>
-        </div>
-        <div class="field-row field-row--distance-vma">
-          <div class="field-group">
-            <label class="field-label" for="pourcentage-vma">% de VMA</label>
-            <input type="number" id="pourcentage-vma" inputmode="decimal" min="0" max="200" step="1" placeholder="ex. 85" autocomplete="off" />
+
+          <div class="distance-vma-slider">
+            <label class="field-label" for="vma-temps">Temps</label>
+            <div class="distance-vma-slider__bubble" id="bubble-temps" aria-hidden="true">3:00</div>
+            <div class="distance-vma-slider__row">
+              <button type="button" class="distance-vma-step" data-target="vma-temps" data-step="-1" aria-label="Diminuer le temps">−</button>
+              <input type="range" id="vma-temps" min="10" max="1200" step="1" value="180" />
+              <button type="button" class="distance-vma-step" data-target="vma-temps" data-step="1" aria-label="Augmenter le temps">+</button>
+            </div>
           </div>
-        </div>
+        </section>
+      </div>
 
-        <div class="distance-vma-presets" aria-label="Pourcentages rapides">
-          <button class="distance-vma-chip" type="button" data-percent="75">75%</button>
-          <button class="distance-vma-chip" type="button" data-percent="80">80%</button>
-          <button class="distance-vma-chip" type="button" data-percent="85">85%</button>
-          <button class="distance-vma-chip" type="button" data-percent="90">90%</button>
-          <button class="distance-vma-chip" type="button" data-percent="95">95%</button>
-          <button class="distance-vma-chip" type="button" data-percent="100">100%</button>
-        </div>
+      <div id="tab-passages" class="distance-vma-panel" hidden>
+        <section class="card distance-vma-passages-card" aria-labelledby="lbl-distance-vma-passages">
+          <h2 id="lbl-distance-vma-passages">Temps de passages</h2>
 
-        <p id="distance-vma-msg" class="msg-error" role="alert" hidden></p>
-      </section>
-
-      <section class="card distance-vma-result-card" id="section-resultats" aria-labelledby="lbl-distance-vma-resultats" hidden>
-        <h2 id="lbl-distance-vma-resultats">Résultat</h2>
-        <div class="distance-vma-result-main">
-          <span class="distance-vma-result-label">Distance objectif</span>
-          <strong id="resultat-distance">—</strong>
-          <span class="distance-vma-result-unit">m</span>
-        </div>
-
-        <div class="vitesse-resultats distance-vma-details">
-          <div class="result-box vitesse-result-box">
-            <span class="vitesse-result-label">Vitesse cible</span>
-            <strong id="resultat-vitesse">—</strong>
-            <span class="vitesse-result-unit">km/h</span>
+          <div class="distance-vma-chrono distance-vma-no-print">
+            <p class="distance-vma-chrono__display" id="chrono-display" aria-live="polite">0:00.0</p>
+            <div class="distance-vma-chrono__actions">
+              <button type="button" class="btn btn--primary btn--labeled" id="chrono-start">
+                <span class="btn__text">Démarrer</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="chrono-pause" hidden>
+                <span class="btn__text">Pause</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="chrono-stop" hidden>
+                <span class="btn__text">Stop</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="chrono-reset" hidden>
+                <span class="btn__text">Reset</span>
+              </button>
+            </div>
           </div>
-          <div class="result-box vitesse-result-box">
-            <span class="vitesse-result-label">Allure</span>
-            <strong id="resultat-allure">—</strong>
-            <span class="vitesse-result-unit">min/km</span>
-          </div>
-        </div>
 
-        <div class="distance-vma-reperes" aria-labelledby="lbl-distance-vma-reperes">
-          <h3 id="lbl-distance-vma-reperes">Tableau de repères</h3>
-          <table>
-            <thead>
-              <tr>
-                <th scope="col">25 m</th>
-                <th scope="col">50 m</th>
-                <th scope="col">100 m</th>
-                <th scope="col">200 m</th>
-                <th scope="col">400 m</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td id="repere-25">—</td>
-                <td id="repere-50">—</td>
-                <td id="repere-100">—</td>
-                <td id="repere-200">—</td>
-                <td id="repere-400">—</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+          <p class="distance-vma-recap distance-vma-no-print" id="passages-recap" aria-live="polite"></p>
+
+          <div class="field-row field-row--distance-vma distance-vma-balise-row distance-vma-no-print">
+            <div class="field-group">
+              <label class="field-label" for="balise-distance">Distance entre balises (m)</label>
+              <input type="number" id="balise-distance" inputmode="numeric" min="1" step="1" value="25" autocomplete="off" />
+            </div>
+          </div>
+
+          <div class="distance-vma-passages-table-wrap">
+            <table class="distance-vma-passages-table" id="passages-table">
+              <thead>
+                <tr>
+                  <th scope="col">Distance (m)</th>
+                  <th scope="col">Temps</th>
+                </tr>
+              </thead>
+              <tbody id="passages-tbody"></tbody>
+            </table>
+          </div>
+
+        </section>
+      </div>
     </div>
 
     <script src="distance-vma.js"></script>
     <script src="../tool-info.js"></script>
     <script>
       ToolInfo.init({
-        intro: "Calculez rapidement la distance à viser selon une durée, une VMA et un pourcentage de VMA.",
+        intro:
+          "Convertisseur distance–temps à partir de la VMA : curseurs liés, tableau de passages et chronomètre de suivi.",
         sections: [
           {
-            title: "L’intérêt principal",
-            text:
-              "L’élève obtient une distance objectif claire pour savoir combien de mètres il doit parcourir sur le temps demandé.",
+            title: "Onglet Réglages",
+            list: [
+              "Choisissez une VMA entre 5 et 25 km/h.",
+              "Ajustez le pourcentage d’allure (50 % à 150 %).",
+              "Réglez la distance (10 à 5000 m) ou le temps (10 s à 20 min) : les deux curseurs restent synchronisés.",
+            ],
           },
           {
-            title: "Comment s’en servir",
+            title: "Onglet Temps de passages",
             list: [
-              "Choisissez une durée avec les boutons rapides ou saisissez minutes et secondes.",
-              "Entrez la VMA de l’élève puis le pourcentage demandé.",
-              "La distance objectif, la vitesse cible et l’allure se mettent à jour automatiquement.",
+              "Un tableau liste les temps de passage selon la distance entre balises.",
+              "Démarrez le chronomètre : le prochain passage attendu est mis en surbrillance, avec un bip à chaque nouveau repère.",
             ],
           },
         ],
       });
     </script>
-    <script
-      data-goatcounter="https://clempapp.goatcounter.com/count"
-      async
-      src="//gc.zgo.at/count.js"
-    ></script>
+    <script src="../goatcounter.js"></script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>
 </html>

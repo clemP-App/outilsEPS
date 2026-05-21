@@ -537,11 +537,14 @@
     btnImportClasse.addEventListener("click", function () {
       ClassImport.open({
         title: "Importer des équipes depuis une classe",
-        hint: "Chaque élève coché devient une équipe (prénom nom).",
+        hint: "Chaque élève coché devient une équipe (nom prénom).",
         onConfirm: function (eleves, classe) {
           var ajout = 0;
           eleves.forEach(function (e) {
-            var name = [e.prenom, e.nom].filter(Boolean).join(" ").trim();
+            var name =
+              typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+                ? EleveDisplay.formatEleveListe(e, "")
+                : [e.nom, e.prenom].filter(Boolean).join(" ").trim();
             if (!name) return;
             var existe = state.teams.some(function (t) {
               return t.name === name;

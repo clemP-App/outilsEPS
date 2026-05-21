@@ -214,6 +214,16 @@
       publicCible: "eleve",
     },
     {
+      id: "video-retard",
+      titre: "Vidéo avec retard",
+      description:
+        "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
+      icone: "📹",
+      href: "outils/video-retard.html",
+      categorie: "Observation",
+      publicCible: "prof",
+    },
+    {
       id: "questions-debrief",
       titre: "Questions débrief",
       description:
@@ -247,7 +257,7 @@
       id: "distance-vma",
       titre: "Distance VMA",
       description:
-        "Calculez la distance objectif selon la durée de course, la VMA et le pourcentage demandé.",
+        "Convertisseur distance–temps à partir de la VMA, avec tableau de passages et chronomètre de suivi.",
       icone: "🎯",
       href: "outils/distance-vma.html",
       categorie: "Course à pied",

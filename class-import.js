@@ -191,7 +191,12 @@ var ClassImport = (function () {
   }
 
   function formatEleve(e) {
-    var nom = [e.prenom, e.nom].filter(Boolean).join(" ").trim();
+    if (typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe) {
+      var nom = EleveDisplay.formatEleveListe(e);
+    } else {
+      var nom = [e.nom, e.prenom].filter(Boolean).join(" ").trim();
+      if (!nom) nom = "Sans nom";
+    }
     if (!nom) nom = "Sans nom";
     var extra = [];
     if (e.sexe) extra.push(e.sexe);

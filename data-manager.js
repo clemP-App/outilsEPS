@@ -720,6 +720,31 @@ var DataManager = (function () {
 
   /* --- API métier (async) --- */
 
+  function compareTexteFr(a, b) {
+    return String(a || "").localeCompare(String(b || ""), "fr", { sensitivity: "base" });
+  }
+
+  /** Tri nom puis prénom (ordre alphabétique français). */
+  function sortElevesAlphabetique(eleves) {
+    return (eleves || []).slice().sort(function (a, b) {
+      var cmpNom = compareTexteFr(a.nom, b.nom);
+      if (cmpNom !== 0) return cmpNom;
+      return compareTexteFr(a.prenom, b.prenom);
+    });
+  }
+
+  function sortClassesAlphabetique(classes) {
+    return (classes || []).slice().sort(function (a, b) {
+      return compareTexteFr(a.nom, b.nom);
+    });
+  }
+
+  function mapEleveSansClasseId(e) {
+    var copy = Object.assign({}, e);
+    delete copy.classeId;
+    return copy;
+  }
+
   function getElevesByClasseId(classeId) {
     return getAll("eleves").then(function (all) {
       return all.filter(function (e) {
@@ -732,21 +757,21 @@ var DataManager = (function () {
     return Promise.all([getAll("classes"), getAll("eleves")]).then(function (res) {
       var classes = res[0];
       var eleves = res[1];
-      return classes.map(function (c) {
-        return {
-          id: c.id,
-          nom: c.nom,
-          eleves: eleves
-            .filter(function (e) {
-              return e.classeId === c.id;
-            })
-            .map(function (e) {
-              var copy = Object.assign({}, e);
-              delete copy.classeId;
-              return copy;
-            }),
-        };
-      });
+      return sortClassesAlphabetique(
+        classes.map(function (c) {
+          return {
+            id: c.id,
+            nom: c.nom,
+            eleves: sortElevesAlphabetique(
+              eleves
+                .filter(function (e) {
+                  return e.classeId === c.id;
+                })
+                .map(mapEleveSansClasseId)
+            ),
+          };
+        })
+      );
     });
   }
 
@@ -757,16 +782,13 @@ var DataManager = (function () {
       return {
         id: c.id,
         nom: c.nom,
-        eleves: res[1].map(function (e) {
-          var copy = Object.assign({}, e);
-          delete copy.classeId;
-          return copy;
-        }),
+        eleves: sortElevesAlphabetique(res[1].map(mapEleveSansClasseId)),
       };
     });
   }
 
   function syncElevesForClasse(classeId, eleves) {
+    eleves = sortElevesAlphabetique(eleves);
     return getElevesByClasseId(classeId).then(function (existing) {
       var existingIds = {};
       var newIds = {};
@@ -804,7 +826,7 @@ var DataManager = (function () {
     };
     return addItem("classes", item).then(function () {
       if (classe.eleves && classe.eleves.length) {
-        return syncElevesForClasse(id, classe.eleves).then(function () {
+        return syncElevesForClasse(id, sortElevesAlphabetique(classe.eleves)).then(function () {
           return id;
         });
       }
@@ -851,11 +873,7 @@ var DataManager = (function () {
 
   function getElevesFromClasse(id) {
     return getElevesByClasseId(id).then(function (list) {
-      return list.map(function (e) {
-        var copy = Object.assign({}, e);
-        delete copy.classeId;
-        return copy;
-      });
+      return sortElevesAlphabetique(list.map(mapEleveSansClasseId));
     });
   }
 

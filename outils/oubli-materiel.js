@@ -297,7 +297,10 @@
       left.className = "dispense-item__main";
       var h3 = document.createElement("h3");
       h3.className = "dispense-item__title";
-      h3.textContent = (o.prenom || "") + " " + (o.nom || "");
+      h3.textContent =
+        typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+          ? EleveDisplay.formatEleveListe(o)
+          : [o.nom, o.prenom].filter(Boolean).join(" ");
       var meta = document.createElement("p");
       meta.style.margin = "0";
       meta.style.fontSize = "0.9rem";
@@ -324,7 +327,13 @@
       var bEdit = document.createElement("button");
       bEdit.type = "button";
       bEdit.className = "btn btn--ghost btn--small btn--icon-only";
-      bEdit.setAttribute("aria-label", "Modifier l'oubli de " + o.prenom + " " + o.nom);
+      bEdit.setAttribute(
+        "aria-label",
+        "Modifier l'oubli de " +
+          (typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+            ? EleveDisplay.formatEleveListe(o)
+            : [o.nom, o.prenom].filter(Boolean).join(" "))
+      );
       bEdit.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">✏️</span>';
       bEdit.addEventListener("click", function () {
         editer(o);
@@ -332,7 +341,13 @@
       var bDel = document.createElement("button");
       bDel.type = "button";
       bDel.className = "btn btn--danger btn--small btn--icon-only";
-      bDel.setAttribute("aria-label", "Supprimer l'oubli de " + o.prenom + " " + o.nom);
+      bDel.setAttribute(
+        "aria-label",
+        "Supprimer l'oubli de " +
+          (typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+            ? EleveDisplay.formatEleveListe(o)
+            : [o.nom, o.prenom].filter(Boolean).join(" "))
+      );
       bDel.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">🗑️</span>';
       bDel.addEventListener("click", function () {
         supprimer(o.id);

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Vidéo avec retard — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--video-retard">
+      <header class="page-outil__header video-retard-header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Vidéo avec retard</h1>
+      </header>
+
+      <section class="video-retard-stage" aria-label="Aperçu retardé">
+        <canvas id="video-retard-canvas" class="video-retard-canvas"></canvas>
+        <p id="video-retard-status" class="video-retard-status" aria-live="polite">
+          Appuyez sur Démarrer pour activer la caméra.
+        </p>
+        <p id="video-retard-buffer" class="video-retard-buffer" hidden></p>
+      </section>
+
+      <section class="card video-retard-controls">
+        <p
+          id="video-retard-advice"
+          class="video-retard-capacity stockage-alert stockage-alert--notice"
+          role="status"
+        ></p>
+        <p
+          id="video-retard-warn"
+          class="video-retard-capacity stockage-alert stockage-alert--warning"
+          role="alert"
+          hidden
+        ></p>
+
+        <div class="field-group">
+          <label class="field-label" for="video-retard-delay"
+            >Retard affiché : <strong id="video-retard-delay-val">20</strong> s</label
+          >
+          <input
+            type="range"
+            id="video-retard-delay"
+            min="5"
+            max="60"
+            step="5"
+            value="20"
+          />
+        </div>
+
+        <div class="video-retard-actions">
+          <button type="button" class="btn btn--primary btn--labeled" id="video-retard-start">
+            <span class="btn__icon" aria-hidden="true">▶</span>
+            <span class="btn__text">Démarrer</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="video-retard-flip" disabled>
+            <span class="btn__icon" aria-hidden="true">🔄</span>
+            <span class="btn__text">Changer de caméra</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="video-retard-mirror" disabled>
+            <span class="btn__icon" aria-hidden="true">↔</span>
+            <span class="btn__text">Miroir</span>
+          </button>
+        </div>
+
+        <label class="video-retard-opt">
+          <input type="checkbox" id="video-retard-fill" checked disabled />
+          <span>Remplir l’écran (recadrage)</span>
+        </label>
+
+        <p id="video-retard-msg" class="msg-error" role="alert" hidden></p>
+      </section>
+    </div>
+
+    <video id="video-retard-src" class="video-retard-src" playsinline muted autoplay hidden></video>
+
+    <script src="video-retard.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro:
+          "Filmez une action et affichez-la avec un décalage : idéal pour que l’élève se corrige en voyant ce qu’il a fait quelques secondes plus tôt.",
+        sections: [
+          {
+            title: "Principe",
+            text:
+              "La caméra enregistre en continu dans un tampon mémoire. L’écran montre l’image d’il y a X secondes (par défaut 20 s), pas le direct.",
+          },
+          {
+            title: "Utilisation en cours",
+            list: [
+              "Placez la tablette ou le téléphone face au groupe ou à un élève.",
+              "Réglez le retard (5 à 60 s) avant ou après le démarrage.",
+              "Au lancement, attendez que le tampon se remplisse : le compte à rebours indique quand l’image apparaît.",
+              "« Miroir » inverse l’image horizontalement (plus naturel pour se regarder).",
+              "« Changer de caméra » alterne avant / arrière si l’appareil le permet.",
+            ],
+          },
+          {
+            title: "Retard et mémoire",
+            text:
+              "Un message indique le retard conseillé pour votre appareil. Au-delà, un avertissement orange apparaît : l’image peut ramer ou l’onglet planter. Testez avant le cours. L’enregistrement n’est pas sauvegardé.",
+          },
+          {
+            title: "Limites",
+            text:
+              "Nécessite l’accès à la caméra (HTTPS ou localhost). La fiabilité de l’estimation dépend du navigateur (meilleure sur Chrome / Edge).",
+          },
+        ],
+      });
+    </script>
+    <script src="../goatcounter.js" data-goatcounter="https://outils-eps.goatcounter.com/count"></script>
+  </body>
+</html>

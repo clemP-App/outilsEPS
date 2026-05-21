@@ -150,7 +150,7 @@ npm test
 
 ## Statistiques de visites
 
-Les pages chargent [GoatCounter](https://www.goatcounter.com/) (`clempapp.goatcounter.com`) pour mesurer le nombre de visites sur le site publié (GitHub Pages). Consultez le tableau de bord GoatCounter pour voir visiteurs et pages vues ; aucune donnée nominative des utilisateurs.
+Les pages chargent [GoatCounter](https://www.goatcounter.com/) (`clempapp.goatcounter.com`) **uniquement sur GitHub Pages** (`*.github.io`) — pas en local (`file://`, `localhost`) pour éviter les lenteurs en développement. Consultez le tableau de bord GoatCounter pour voir visiteurs et pages vues ; aucune donnée nominative des utilisateurs.
 
 ## Licence
 

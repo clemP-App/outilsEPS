@@ -217,7 +217,10 @@
    * @returns {{id:string,name:string,level:number}|null}
    */
   function eleveVersJoueur(e) {
-    var name = [e.prenom, e.nom].filter(Boolean).join(" ").trim() || e.nom || e.prenom || "?";
+    var name =
+      typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+        ? EleveDisplay.formatEleveListe(e, "?")
+        : [e.nom, e.prenom].filter(Boolean).join(" ").trim() || e.nom || e.prenom || "?";
     var level = 3;
     if (e.niveau) {
       var n = parseInt(String(e.niveau), 10);

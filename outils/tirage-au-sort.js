@@ -44,7 +44,10 @@
   }
 
   function eleveVersNom(e) {
-    return normaliserNom([e.prenom, e.nom].filter(Boolean).join(" "));
+    if (typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe) {
+      return normaliserNom(EleveDisplay.formatEleveListe(e, ""));
+    }
+    return normaliserNom([e.nom, e.prenom].filter(Boolean).join(" "));
   }
 
   function contientNom(nom) {
