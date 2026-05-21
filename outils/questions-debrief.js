@@ -386,7 +386,7 @@
       radio.checked = radio.value === seance.portee;
     });
     ensureSeanceQuestions(seance);
-    majInterfacePortee();
+    majInterfacePorteeSansReappliquerPortee();
     afficherFiche(seance);
     majShareBar();
     if (viewSession.scrollIntoView) viewSession.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -418,18 +418,24 @@
     else renderSessionsList();
   }
 
-  function majInterfacePortee() {
+  function majInterfacePorteeHint() {
     var portee = porteeDebrief();
-    state.portee = portee;
-    sauvegarderPortee();
-
     if (porteeHintEl) {
       porteeHintEl.textContent =
         portee === "equipe"
           ? "4 notes de 1 à 5, puis 3 questions texte (obstacles, progrès, priorités)."
           : "4 notes de 1 à 5, puis 3 questions texte (difficultés, progrès, axes de travail).";
     }
+  }
 
+  function majInterfacePorteeSansReappliquerPortee() {
+    state.portee = porteeDebrief();
+    sauvegarderPortee();
+    majInterfacePorteeHint();
+  }
+
+  function majInterfacePortee() {
+    majInterfacePorteeSansReappliquerPortee();
     if (currentSeanceId) appliquerPorteeSurSeance();
   }
 
@@ -459,10 +465,20 @@
     entete.textContent = Core.porteeLabel(seance.portee);
     resultatsEl.appendChild(entete);
 
+    var sectionEchelleAffichee = false;
     var sectionTexteAffichee = false;
     seance.items.forEach(function (item, index) {
       var qDef = Core.questionDef(item, seance.portee);
-      var estTexte = qDef && Core.isTexte(qDef);
+      var estTexte = Core.itemIsTexte(item, seance.portee);
+      var estEchelle = Core.itemIsEchelle(item, seance.portee);
+
+      if (estEchelle && !sectionEchelleAffichee) {
+        sectionEchelleAffichee = true;
+        var sepEchelle = document.createElement("p");
+        sepEchelle.className = "debrief-resultats__section debrief-resultats__section--echelle";
+        sepEchelle.textContent = "Critères notés de 1 à 5";
+        resultatsEl.appendChild(sepEchelle);
+      }
 
       if (estTexte && !sectionTexteAffichee) {
         sectionTexteAffichee = true;

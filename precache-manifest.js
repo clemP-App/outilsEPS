@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "40";
+var APP_CACHE_VERSION = "41";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -50,7 +50,6 @@ var PRECACHE = [
   "./outils/pyramide-victoires.js",
   "./outils/questions-debrief.html",
   "./outils/questions-debrief.js",
-  "./shared/questions-debrief-core.js",
   "./outils/recuperation-donnees.html",
   "./outils/sauvegarde.html",
   "./outils/sauvegarde.js",
@@ -79,12 +78,13 @@ var PRECACHE = [
   "./shared/import-record-core.js",
   "./shared/imports-eleves-export.js",
   "./shared/imports-eleves-ui.js",
-  "./shared/outils-dom.js",
-  "./shared/rm-formulas.js",
-  "./shared/journal-musculation-core.js",
   "./shared/journal-musculation-body.js",
+  "./shared/journal-musculation-core.js",
+  "./shared/outils-dom.js",
   "./shared/qr-exchange-core.js",
   "./shared/qr-share-ui.js",
+  "./shared/questions-debrief-core.js",
+  "./shared/rm-formulas.js",
   "./shared/sessions-core.js",
   "./style.css",
   "./tool-info.js",

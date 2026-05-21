@@ -12,6 +12,14 @@ describe("questions-debrief-core", function () {
     assert.equal(Debrief.questionsEchelle("individuel").length, 4);
   });
 
+  it("détecte le type échelle sur les items construits", function () {
+    var items = Debrief.buildItemsForPortee("individuel");
+    assert.equal(Debrief.itemIsEchelle(items[0], "individuel"), true);
+    assert.equal(Debrief.itemIsTexte(items[0], "individuel"), false);
+    assert.equal(Debrief.itemIsEchelle(items[4], "individuel"), false);
+    assert.equal(Debrief.itemIsTexte(items[4], "individuel"), true);
+  });
+
   it("exporte notes et textes", function () {
     var items = Debrief.buildItemsForPortee("individuel");
     items[0].reponse = "4";

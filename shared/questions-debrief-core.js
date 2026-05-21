@@ -110,13 +110,32 @@
   ];
 
   function questionDef(itemOrId, portee) {
-    var id = typeof itemOrId === "string" ? itemOrId : itemOrId && itemOrId.id;
+    var id =
+      typeof itemOrId === "string"
+        ? itemOrId
+        : itemOrId && (itemOrId.id || itemOrId.listeId);
     if (!id) return null;
     var list = questionsForPortee(portee || "individuel");
     for (var i = 0; i < list.length; i++) {
       if (list[i].id === id) return list[i];
     }
     return null;
+  }
+
+  function itemIsEchelle(item, portee) {
+    if (!item) return false;
+    if (item.type === "echelle") return true;
+    if (item.type === "texte") return false;
+    var def = questionDef(item, portee);
+    return def ? isEchelle(def) : false;
+  }
+
+  function itemIsTexte(item, portee) {
+    if (!item) return false;
+    if (item.type === "texte") return true;
+    if (item.type === "echelle") return false;
+    var def = questionDef(item, portee);
+    return def ? isTexte(def) : true;
   }
 
   function isEchelle(def) {
@@ -181,7 +200,7 @@
     var prev = previousItems || [];
     return questionsForPortee(portee).map(function (q) {
       var old = prev.find(function (x) {
-        return x.id === q.id;
+        return x.id === q.id || x.listeId === q.id;
       });
       return {
         id: q.id,
@@ -269,6 +288,8 @@
     porteeCode: porteeCode,
     porteeFromCode: porteeFromCode,
     questionDef: questionDef,
+    itemIsEchelle: itemIsEchelle,
+    itemIsTexte: itemIsTexte,
     isEchelle: isEchelle,
     isTexte: isTexte,
     questionsEchelle: questionsEchelle,

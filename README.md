@@ -148,6 +148,10 @@ npm test
 - IndexedDB pour la persistance ; `localStorage` uniquement pour migration et préférences légères de l’accueil.
 - Accessibilité de base : labels, champs, messages d’erreur, zones `aria-live` où utile.
 
+## Statistiques de visites
+
+Les pages chargent [GoatCounter](https://www.goatcounter.com/) (`clempapp.goatcounter.com`) pour mesurer le nombre de visites sur le site publié (GitHub Pages). Consultez le tableau de bord GoatCounter pour voir visiteurs et pages vues ; aucune donnée nominative des utilisateurs.
+
 ## Licence
 
 Usage libre pour un contexte éducatif ; adaptez le contenu à vos besoins.
