@@ -193,7 +193,7 @@
     if (!isFinite(distM) || distM <= 0) return label;
     var best = bests[e.id];
     if (best) return label + " — " + formaterTemps(best.tempsMs);
-    return label + " — —";
+    return label + " — pas passé";
   }
 
   function remplirSelectEleves() {
@@ -527,6 +527,7 @@
     sauverPerfs()
       .then(function () {
         renderHistorique();
+        remplirSelectEleves();
         montrerFeedback("Performance supprimée.", false);
       })
       .catch(function (err) {

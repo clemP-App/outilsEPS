@@ -29,7 +29,6 @@
   var drawHintEl = document.getElementById("video-retard-draw-hint");
   var fillCheckbox = document.getElementById("video-retard-fill");
   var pipShowCheckbox = document.getElementById("video-retard-pip-show");
-  var btnPipClose = document.getElementById("video-retard-pip-close");
   var msgEl = document.getElementById("video-retard-msg");
   var adviceEl = document.getElementById("video-retard-advice");
   var warnEl = document.getElementById("video-retard-warn");
@@ -512,12 +511,7 @@
   }
 
   function pipAffichee() {
-    return pipShowCheckbox ? pipShowCheckbox.checked : true;
-  }
-
-  function setPipVisible(visible) {
-    if (pipShowCheckbox) pipShowCheckbox.checked = !!visible;
-    majVisibilitePip();
+    return pipShowCheckbox ? pipShowCheckbox.checked : false;
   }
 
   function majVisibilitePip() {
@@ -594,10 +588,11 @@
 
     if (elapsed < delayMs) {
       setBufferInfo("Tampon en cours… " + remaining + " s", true);
-      setStatus("Enregistrement en cours — image retardée bientôt visible.");
-      if (videoEl && videoEl.readyState >= 2) {
-        computeVideoRect(videoEl.videoWidth, videoEl.videoHeight);
-        drawLiveToCtx(displayCtx, canvasEl.width, canvasEl.height);
+      setStatus("Remplissage du tampon — l’image retardée apparaîtra dans " + remaining + " s.");
+      if (displayCtx && canvasEl) {
+        displayCtx.fillStyle = "#0a0a0a";
+        displayCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+        lastVideoRect = null;
         redrawOverlay();
       }
       return;
@@ -797,19 +792,7 @@
   if (btnDrawCircle) btnDrawCircle.addEventListener("click", function () { setDrawTool("circle"); });
   if (btnDrawClear) btnDrawClear.addEventListener("click", effacerAnnotations);
   if (fillCheckbox) fillCheckbox.addEventListener("change", function () { redrawOverlay(); });
-  if (pipShowCheckbox) {
-    pipShowCheckbox.addEventListener("change", majVisibilitePip);
-    pipShowCheckbox.addEventListener("click", function (e) {
-      e.stopPropagation();
-    });
-  }
-  if (btnPipClose) {
-    btnPipClose.addEventListener("click", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      setPipVisible(false);
-    });
-  }
+  if (pipShowCheckbox) pipShowCheckbox.addEventListener("change", majVisibilitePip);
 
   if (overlayEl) {
     overlayEl.addEventListener("pointerdown", onOverlayPointerDown);

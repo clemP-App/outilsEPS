@@ -5290,44 +5290,19 @@ body.class-import-open {
   border: 2px solid rgba(250, 204, 21, 0.85);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
   background: #0a0a0a;
-  pointer-events: auto;
-}
-
-.video-retard-pip__head {
-  display: flex;
-  align-items: stretch;
-  background: #facc15;
+  pointer-events: none;
 }
 
 .video-retard-pip__label {
-  flex: 1;
+  display: block;
   padding: 0.2rem 0.4rem;
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: #0f172a;
+  background: #facc15;
   text-align: center;
-  align-self: center;
-}
-
-.video-retard-pip__close {
-  flex-shrink: 0;
-  width: 1.65rem;
-  border: none;
-  border-left: 1px solid rgba(15, 23, 42, 0.15);
-  background: rgba(15, 23, 42, 0.08);
-  color: #0f172a;
-  font-size: 1.1rem;
-  line-height: 1;
-  cursor: pointer;
-  pointer-events: auto;
-  padding: 0;
-}
-
-.video-retard-pip__close:hover,
-.video-retard-pip__close:focus-visible {
-  background: rgba(15, 23, 42, 0.18);
 }
 
 .video-retard-pip__canvas {
