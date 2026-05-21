@@ -6,7 +6,7 @@ var DataManager = (function () {
   "use strict";
 
   var DB_NAME = "outilsEPSDB";
-  var DB_VERSION = 5;
+  var DB_VERSION = 6;
   var APP_NAME = "OutilsEPS";
   var BACKUP_VERSION = "1.0";
   var BACKUP_FILENAME = "outilsEPS-backup.json";
@@ -53,6 +53,7 @@ var DataManager = (function () {
     "eleves",
     "dispenses",
     "oublisMateriel",
+    "radarPerfs",
     "sessions",
     "championnats",
     "tournoisElimination",
@@ -400,6 +401,7 @@ var DataManager = (function () {
       eleves: [],
       dispenses: [],
       oublisMateriel: [],
+      radarPerfs: [],
       sessions: [],
       championnats: [],
       tournoisElimination: [],
@@ -549,6 +551,7 @@ var DataManager = (function () {
       payload.eleves.length +
       payload.dispenses.length +
       payload.oublisMateriel.length +
+      (payload.radarPerfs || []).length +
       (payload.sessions || []).length +
       payload.championnats.length +
       payload.tournoisElimination.length +
@@ -598,6 +601,7 @@ var DataManager = (function () {
       eleves: eleves,
       dispenses: data.dispenses || [],
       oublisMateriel: data.oublisMateriel || [],
+      radarPerfs: data.radarPerfs || [],
       sessions: data.sessions || [],
       championnats: data.championnats || [],
       tournoisElimination: data.tournoisElimination || [],
@@ -612,6 +616,7 @@ var DataManager = (function () {
       getAll("eleves"),
       getAll("dispenses"),
       getAll("oublisMateriel"),
+      getAll("radarPerfs"),
       getAll("sessions"),
       getAll("championnats"),
       getAll("tournoisElimination"),
@@ -628,11 +633,12 @@ var DataManager = (function () {
         eleves: arrays[1],
         dispenses: arrays[2],
         oublisMateriel: arrays[3],
-        sessions: arrays[4],
-        championnats: arrays[5],
-        tournoisElimination: arrays[6],
-        parametres: arrays[7],
-        importsEleves: arrays[8],
+        radarPerfs: arrays[4],
+        sessions: arrays[5],
+        championnats: arrays[6],
+        tournoisElimination: arrays[7],
+        parametres: arrays[8],
+        importsEleves: arrays[9],
       };
     });
   }

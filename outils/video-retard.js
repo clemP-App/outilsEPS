@@ -28,6 +28,7 @@
   var btnDrawClear = document.getElementById("video-retard-draw-clear");
   var drawHintEl = document.getElementById("video-retard-draw-hint");
   var fillCheckbox = document.getElementById("video-retard-fill");
+  var pipShowCheckbox = document.getElementById("video-retard-pip-show");
   var msgEl = document.getElementById("video-retard-msg");
   var adviceEl = document.getElementById("video-retard-advice");
   var warnEl = document.getElementById("video-retard-warn");
@@ -509,6 +510,15 @@
     ctx.restore();
   }
 
+  function pipAffichee() {
+    return pipShowCheckbox ? pipShowCheckbox.checked : true;
+  }
+
+  function majVisibilitePip() {
+    if (!pipWrapEl) return;
+    pipWrapEl.hidden = !running || !pipAffichee();
+  }
+
   function drawPipPreview() {
     if (!pipCtx || !pipCanvasEl || !pipWrapEl || pipWrapEl.hidden) return;
     var ratio = 16 / 9;
@@ -646,7 +656,8 @@
     if (btnDrawCircle) btnDrawCircle.disabled = !active;
     if (btnDrawClear) btnDrawClear.disabled = !active;
     if (fillCheckbox) fillCheckbox.disabled = !active;
-    if (pipWrapEl) pipWrapEl.hidden = !active;
+    if (pipShowCheckbox) pipShowCheckbox.disabled = !active;
+    majVisibilitePip();
     if (!active) {
       setDrawTool(null);
       quitterPleinEcran();
@@ -781,6 +792,7 @@
   if (btnDrawCircle) btnDrawCircle.addEventListener("click", function () { setDrawTool("circle"); });
   if (btnDrawClear) btnDrawClear.addEventListener("click", effacerAnnotations);
   if (fillCheckbox) fillCheckbox.addEventListener("change", function () { redrawOverlay(); });
+  if (pipShowCheckbox) pipShowCheckbox.addEventListener("change", majVisibilitePip);
 
   if (overlayEl) {
     overlayEl.addEventListener("pointerdown", onOverlayPointerDown);

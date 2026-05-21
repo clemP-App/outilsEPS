@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Radar — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--radar">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Radar</h1>
+      </header>
+
+      <div class="dispense-nav" role="tablist" aria-label="Affichage Radar">
+        <button
+          type="button"
+          class="dispense-nav__btn dispense-nav__btn--active"
+          role="tab"
+          id="tab-chrono"
+          aria-selected="true"
+          aria-controls="radar-panel-chrono"
+          tabindex="0"
+        >
+          <span class="btn-icon-emoji" aria-hidden="true">⏱️</span>
+          <span class="sr-only">Chronomètre</span>
+        </button>
+        <button
+          type="button"
+          class="dispense-nav__btn"
+          role="tab"
+          id="tab-historique"
+          aria-selected="false"
+          aria-controls="radar-panel-historique"
+          tabindex="-1"
+        >
+          <span class="btn-icon-emoji" aria-hidden="true">📋</span>
+          <span class="sr-only">Historique des performances</span>
+        </button>
+      </div>
+      <p id="radar-feedback" class="dispense-feedback" role="status" aria-live="polite" hidden></p>
+
+      <div
+        id="radar-panel-chrono"
+        class="dispense-view"
+        role="tabpanel"
+        aria-labelledby="tab-chrono"
+      >
+        <section class="card" aria-labelledby="lbl-distance">
+          <h2 id="lbl-distance">Distance</h2>
+          <div class="field-row field-row--vitesse-distance">
+            <div class="field-group field-group--grow">
+              <label class="field-label" for="radar-distance">Distance à parcourir</label>
+              <input
+                type="number"
+                id="radar-distance"
+                inputmode="decimal"
+                min="0"
+                step="any"
+                placeholder="ex. 100"
+                autocomplete="off"
+              />
+            </div>
+            <div class="field-group field-group--unite">
+              <label class="field-label" for="radar-unite">Unité</label>
+              <select id="radar-unite">
+                <option value="m" selected>mètres</option>
+                <option value="km">kilomètres</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" aria-labelledby="lbl-eleve">
+          <h2 id="lbl-eleve">Élève</h2>
+          <button
+            type="button"
+            class="btn btn--ghost btn--labeled dispense-import-classe"
+            id="btn-import-classe-radar"
+          >
+            <span class="btn__icon" aria-hidden="true">👥</span>
+            <span class="btn__text">Importer une classe</span>
+          </button>
+          <p class="hint dispense-import-hint">
+            Charge la liste des élèves pour attribuer chaque chronométrage.
+          </p>
+          <div class="field-group" id="radar-select-wrap" hidden>
+            <label class="field-label" for="radar-eleve-select">Élève chronométré</label>
+            <select id="radar-eleve-select"></select>
+          </div>
+          <p id="radar-eleve-label" class="radar-eleve-actif" hidden></p>
+          <input type="hidden" id="radar-eleve-id" value="" />
+          <input type="hidden" id="radar-classe-id" value="" />
+        </section>
+
+        <section class="card radar-chrono-card" aria-live="polite" aria-atomic="true">
+          <p class="radar-chrono-label" id="radar-chrono-label">Prêt</p>
+          <p class="radar-chrono-time" id="radar-chrono-time">00:00.0</p>
+          <div class="radar-chrono-actions">
+            <button type="button" class="btn btn--primary btn--labeled" id="radar-btn-start">
+              <span class="btn__icon" aria-hidden="true">▶</span>
+              <span class="btn__text">Départ</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="radar-btn-arrivee" disabled>
+              <span class="btn__icon" aria-hidden="true">🏁</span>
+              <span class="btn__text">Arrivée</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="radar-btn-reset">
+              <span class="btn__icon" aria-hidden="true">↺</span>
+              <span class="btn__text">Réinitialiser</span>
+            </button>
+          </div>
+          <p id="radar-msg" class="msg-error" role="alert" hidden></p>
+        </section>
+
+        <section class="card" id="radar-section-resultats" aria-labelledby="lbl-resultats" hidden>
+          <h2 id="lbl-resultats">Vitesse à l’arrivée</h2>
+          <div class="vitesse-resultats">
+            <div class="result-box vitesse-result-box">
+              <span class="vitesse-result-label">Vitesse</span>
+              <strong id="radar-result-kmh">—</strong>
+              <span class="vitesse-result-unit">km/h</span>
+            </div>
+            <div class="result-box vitesse-result-box">
+              <span class="vitesse-result-label">Allure</span>
+              <strong id="radar-result-allure">—</strong>
+              <span class="vitesse-result-unit">min/km</span>
+            </div>
+          </div>
+          <p class="hint" id="radar-result-meta"></p>
+          <button type="button" class="btn btn--primary btn--labeled" id="radar-btn-enregistrer">
+            <span class="btn__icon" aria-hidden="true">💾</span>
+            <span class="btn__text">Enregistrer la performance</span>
+          </button>
+        </section>
+      </div>
+
+      <div
+        id="radar-panel-historique"
+        class="dispense-view"
+        role="tabpanel"
+        aria-labelledby="tab-historique"
+        hidden
+      >
+        <section class="card" aria-labelledby="lbl-historique">
+          <h2 id="lbl-historique">Performances enregistrées</h2>
+          <div class="filter-bar field-group">
+            <label class="field-label" for="radar-filtre">Filtrer (nom, prénom, classe)</label>
+            <input
+              type="search"
+              id="radar-filtre"
+              placeholder="Tapez pour filtrer…"
+              autocomplete="off"
+            />
+          </div>
+          <div id="radar-liste-perfs" aria-live="polite"></div>
+        </section>
+      </div>
+    </div>
+
+    <script src="../data-manager.js"></script>
+    <script src="../class-import.js"></script>
+    <script src="../shared/eleve-display.js"></script>
+    <script src="../shared/outils-dom.js"></script>
+    <script src="radar.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro:
+          "Chronométrez un élève sur une distance fixe : à l’arrivée, la vitesse (km/h) et l’allure (min/km) s’affichent. Les performances peuvent être enregistrées par élève.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Sur le terrain (VMA, sprint, course de vitesse…), un seul chronomètre suffit : vous lancez au départ, vous stoppez à l’arrivée, et vous obtenez tout de suite la vitesse sans calcul mental.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Indiquez la distance à parcourir (en mètres ou en kilomètres).",
+              "Importez une classe pour choisir l’élève chronométré.",
+              "Appuyez sur Départ, puis sur Arrivée quand l’élève franchit la ligne.",
+              "Enregistrez la performance pour la retrouver dans l’historique.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../goatcounter.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

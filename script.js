@@ -164,6 +164,16 @@
       publicCible: "prof",
     },
     {
+      id: "radar",
+      titre: "Radar",
+      description:
+        "Chronométrez un élève sur une distance : à l’arrivée, vitesse (km/h) et allure (min/km), performances enregistrées par classe.",
+      icone: "📡",
+      href: "outils/radar.html",
+      categorie: "Course à pied",
+      publicCible: "prof",
+    },
+    {
       id: "table-marque",
       titre: "Table de marque",
       description:
