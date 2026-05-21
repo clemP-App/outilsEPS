@@ -1122,7 +1122,7 @@ main.container {
   margin-top: clamp(0.75rem, 3vh, 1.25rem);
 }
 
-/* --- Radar (chrono course) --- */
+/* --- Radar vitesse (chrono course) --- */
 .page-outil--radar {
   max-width: min(40rem, 100%);
 }
@@ -1153,47 +1153,24 @@ main.container {
 
 .radar-chrono-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 2fr 1fr;
   gap: 0.5rem;
+  align-items: stretch;
+}
+
+.radar-btn-main {
+  min-height: 3.25rem;
 }
 
 @media (max-width: 380px) {
   .radar-chrono-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: 2fr 1fr;
   }
 }
 
 .radar-eleve-actif {
   margin: 0.5rem 0 0;
   font-weight: 700;
-  color: var(--accent-deep);
-}
-
-.dispense-item.radar-item {
-  padding: 0.6rem 0.7rem;
-  margin-bottom: 0.45rem;
-  background: rgba(255, 255, 255, 0.94);
-  border-color: rgba(13, 148, 136, 0.28);
-}
-
-.dispense-item.radar-item .dispense-item__head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 0.45rem;
-  align-items: center;
-}
-
-.radar-item__vitesse {
-  align-items: center;
-  min-width: 4.5rem;
-  padding: 0.3rem 0.45rem;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  text-align: center;
-}
-
-.radar-item__vitesse .dispense-item__days-num {
-  font-size: 1.05rem;
   color: var(--accent-deep);
 }
 
@@ -1235,30 +1212,226 @@ main.container {
   }
 }
 
-.radar-item__meta {
+/* --- Radar : liste historique --- */
+.radar-historique-filtres {
+  align-items: flex-end;
+  gap: 0.65rem;
+}
+
+.radar-historique-filtres .filter-bar {
+  margin-bottom: 0;
+}
+
+.radar-historique-tri {
+  flex: 0 1 11.5rem;
+  min-width: 0;
+}
+
+.page-outil--radar #radar-liste-perfs {
+  margin-top: 0.25rem;
+  --radar-liste-action: 2.5rem;
+}
+
+.radar-liste {
+  list-style: none;
   margin: 0;
-  font-size: 0.9rem;
-  color: var(--text-muted);
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: transparent;
 }
 
-.radar-item--best {
-  border-color: rgba(13, 148, 136, 0.45);
-  box-shadow: 0 0 0 1px rgba(13, 148, 136, 0.12);
+.radar-liste__groupe {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
 }
 
-.radar-item__title--best,
-.radar-item__vitesse-num--best,
-.radar-item__allure--best {
-  font-weight: 850;
+.radar-liste__groupe:last-child {
+  border-bottom: none;
+}
+
+.radar-liste__details > summary {
+  list-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.radar-liste__details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.radar-liste__summary {
+  padding: 0;
+}
+
+.radar-liste__entete {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto var(--radar-liste-action);
+  gap: 0.35rem 0.5rem;
+  align-items: center;
+  padding: 0.65rem 0.75rem;
+}
+
+.radar-liste__identite {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.radar-liste__nom {
+  font-weight: 750;
+  font-size: 0.95rem;
   color: var(--text);
 }
 
-.radar-item__allure {
-  margin: 0.35rem 0 0;
-  padding-top: 0.35rem;
-  border-top: 1px solid rgba(148, 163, 184, 0.22);
-  font-size: 0.86rem;
+.radar-liste__sous {
+  font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.radar-liste__resume {
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.radar-liste__action {
+  width: var(--radar-liste-action);
+  height: var(--radar-liste-action);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.radar-liste__chev {
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.radar-liste__chev::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+}
+
+.radar-liste__details[open] .radar-liste__chev::after {
+  transform: rotate(-135deg);
+  margin-top: 0.2rem;
+}
+
+.radar-liste__passages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.radar-liste__groupe--solo .radar-liste__passages {
+  border-top: none;
+}
+
+.radar-liste__ligne {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--radar-liste-action);
+  gap: 0.2rem 0.5rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  padding-left: 1rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+  font-size: 0.86rem;
+}
+
+.radar-liste__ligne-contenu {
+  min-width: 0;
+}
+
+.radar-liste__ligne:first-child {
+  border-top: none;
+}
+
+.radar-liste__ligne-stats {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.radar-liste__ligne-detail {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.radar-liste__suppr {
+  width: var(--radar-liste-action);
+  height: var(--radar-liste-action);
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.radar-liste__suppr:hover {
+  background: rgba(190, 18, 60, 0.08);
+  color: var(--danger);
+}
+
+.radar-liste__suppr .btn-icon-emoji {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.radar-liste__ligne--best .radar-liste__ligne-stats,
+.radar-liste__ligne--best .radar-liste__ligne-detail {
+  font-weight: 750;
+}
+
+@media (max-width: 480px) {
+  .radar-liste__entete {
+    grid-template-columns: minmax(0, 1fr) var(--radar-liste-action);
+    grid-template-rows: auto auto;
+  }
+
+  .radar-liste__identite {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .radar-liste__resume {
+    grid-column: 1;
+    grid-row: 2;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .radar-liste__action {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
 }
 
 .page-outil--maxi-timer .msg-error {

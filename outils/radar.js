@@ -1,5 +1,5 @@
 /**
- * Radar — chronomètre distance → vitesse (km/h, min/km, m/s), performances par élève.
+ * Radar vitesse — chronomètre distance → vitesse (km/h, min/km, m/s), performances par élève.
  */
 (function () {
   "use strict";
@@ -17,8 +17,9 @@
   var classeIdEl = document.getElementById("radar-classe-id");
   var chronoLabelEl = document.getElementById("radar-chrono-label");
   var chronoTimeEl = document.getElementById("radar-chrono-time");
-  var btnStart = document.getElementById("radar-btn-start");
-  var btnArrivee = document.getElementById("radar-btn-arrivee");
+  var btnMain = document.getElementById("radar-btn-main");
+  var btnMainIcon = btnMain ? btnMain.querySelector(".btn__icon") : null;
+  var btnMainText = btnMain ? btnMain.querySelector(".btn__text") : null;
   var btnReset = document.getElementById("radar-btn-reset");
   var msgEl = document.getElementById("radar-msg");
   var sectionApresChrono = document.getElementById("radar-section-apres-chrono");
@@ -29,6 +30,20 @@
   var btnEnregistrer = document.getElementById("radar-btn-enregistrer");
   var listePerfsEl = document.getElementById("radar-liste-perfs");
   var filtreEl = document.getElementById("radar-filtre");
+  var triEl = document.getElementById("radar-tri");
+  var TRI_DEFAUT = "alpha";
+  var MODES_TRI_VALIDES = [
+    "alpha",
+    "alpha-desc",
+    "classe",
+    "vitesse-desc",
+    "vitesse-asc",
+    "temps-asc",
+    "temps-desc",
+    "date-desc",
+    "date-asc",
+    "passages-desc",
+  ];
   var feedbackEl = document.getElementById("radar-feedback");
   var tabChrono = document.getElementById("tab-chrono");
   var tabHistorique = document.getElementById("tab-historique");
@@ -193,7 +208,7 @@
     if (!isFinite(distM) || distM <= 0) return label;
     var best = bests[e.id];
     if (best) return label + " — " + formaterTemps(best.tempsMs);
-    return label + " — pas passé";
+    return label + " — aucun temps";
   }
 
   function remplirSelectEleves() {
@@ -243,7 +258,7 @@
   }
 
   function lireDistanceSauvegardee() {
-    var out = { distance: "", unite: "m" };
+    var out = { distance: "", unite: "m", tri: TRI_DEFAUT };
     try {
       var raw = localStorage.getItem(LS_DISTANCE_KEY);
       if (raw) {
@@ -251,6 +266,7 @@
         if (ls && typeof ls === "object") {
           if (ls.distance != null) out.distance = String(ls.distance);
           if (ls.unite === "m" || ls.unite === "km") out.unite = ls.unite;
+          if (ls.tri && MODES_TRI_VALIDES.indexOf(ls.tri) >= 0) out.tri = ls.tri;
         }
       }
     } catch (e) {
@@ -259,10 +275,16 @@
     return out;
   }
 
+  function lireModeTri() {
+    if (triEl && MODES_TRI_VALIDES.indexOf(triEl.value) >= 0) return triEl.value;
+    return TRI_DEFAUT;
+  }
+
   function sauverDistance() {
     var rec = {
       distance: distanceEl ? distanceEl.value : "",
       unite: uniteEl && uniteEl.value === "km" ? "km" : "m",
+      tri: lireModeTri(),
     };
     try {
       localStorage.setItem(LS_DISTANCE_KEY, JSON.stringify(rec));
@@ -274,14 +296,25 @@
       id: PARAM_DISTANCE,
       distance: rec.distance,
       unite: rec.unite,
+      tri: rec.tri,
     });
   }
 
+  function appliquerTriSauvegarde(tri) {
+    if (!triEl) return;
+    if (MODES_TRI_VALIDES.indexOf(tri) >= 0) triEl.value = tri;
+  }
+
   function chargerDistance() {
-    appliquerDistanceSauvegardee(lireDistanceSauvegardee());
+    var local = lireDistanceSauvegardee();
+    appliquerDistanceSauvegardee(local);
+    appliquerTriSauvegarde(local.tri);
     if (!dbReady || typeof DataManager === "undefined") return Promise.resolve();
     return DataManager.getParametre(PARAM_DISTANCE).then(function (rec) {
-      if (rec) appliquerDistanceSauvegardee(rec);
+      if (rec) {
+        appliquerDistanceSauvegardee(rec);
+        appliquerTriSauvegarde(rec.tri);
+      }
     });
   }
 
@@ -398,10 +431,24 @@
     if (chronoLabelEl) {
       chronoLabelEl.textContent = running ? "En course…" : elapsedMs > 0 ? "Temps final" : "Prêt";
     }
-    if (btnStart) btnStart.disabled = running;
-    if (btnArrivee) btnArrivee.disabled = !running;
+    if (btnMain) {
+      if (running) {
+        if (btnMainIcon) btnMainIcon.textContent = "🏁";
+        if (btnMainText) btnMainText.textContent = "Arrivée";
+        btnMain.setAttribute("aria-label", "Arrivée");
+      } else {
+        if (btnMainIcon) btnMainIcon.textContent = "▶";
+        if (btnMainText) btnMainText.textContent = "Départ";
+        btnMain.setAttribute("aria-label", "Départ");
+      }
+    }
     if (btnReset) btnReset.disabled = running;
     champsDistanceVerrouilles(running);
+  }
+
+  function actionChronoPrincipal() {
+    if (running) arrivee();
+    else demarrer();
   }
 
   function stopTick() {
@@ -562,16 +609,207 @@
     }
   }
 
+  function meilleurePerfEleve(perfs) {
+    var best = null;
+    (perfs || []).forEach(function (p) {
+      if (!best || p.kmh > best.kmh) best = p;
+    });
+    return best;
+  }
+
+  function grouperParEleve(liste) {
+    var map = {};
+    var order = [];
+    liste.forEach(function (p) {
+      var k = cleElevePerf(p);
+      if (!map[k]) {
+        map[k] = { key: k, perfs: [] };
+        order.push(k);
+      }
+      map[k].perfs.push(p);
+    });
+    return order.map(function (k) {
+      var g = map[k];
+      g.perfs.sort(function (a, b) {
+        return (b.createdAt || "").localeCompare(a.createdAt || "");
+      });
+      g.meilleure = meilleurePerfEleve(g.perfs);
+      return g;
+    });
+  }
+
+  function refGroupe(g) {
+    return g.meilleure || g.perfs[0] || null;
+  }
+
+  function nomEleveGroupe(g) {
+    var r = refGroupe(g);
+    return r ? formatEleve(r) : "";
+  }
+
+  function dateMaxGroupe(g) {
+    var max = "";
+    g.perfs.forEach(function (p) {
+      var t = p.createdAt || "";
+      if (t > max) max = t;
+    });
+    return max;
+  }
+
+  function trierGroupes(groupes, mode) {
+    var list = groupes.slice();
+    mode = MODES_TRI_VALIDES.indexOf(mode) >= 0 ? mode : TRI_DEFAUT;
+
+    list.sort(function (a, b) {
+      var ra = refGroupe(a);
+      var rb = refGroupe(b);
+      if (!ra && !rb) return 0;
+      if (!ra) return 1;
+      if (!rb) return -1;
+
+      var cmp = 0;
+      if (mode === "alpha") {
+        cmp = nomEleveGroupe(a).localeCompare(nomEleveGroupe(b), "fr", { sensitivity: "base" });
+      } else if (mode === "alpha-desc") {
+        cmp = nomEleveGroupe(b).localeCompare(nomEleveGroupe(a), "fr", { sensitivity: "base" });
+      } else if (mode === "classe") {
+        var ca = (ra.classe || "").toLowerCase();
+        var cb = (rb.classe || "").toLowerCase();
+        cmp = ca.localeCompare(cb, "fr", { sensitivity: "base" });
+        if (cmp === 0) {
+          cmp = nomEleveGroupe(a).localeCompare(nomEleveGroupe(b), "fr", { sensitivity: "base" });
+        }
+      } else if (mode === "vitesse-desc") {
+        cmp = (rb.kmh || 0) - (ra.kmh || 0);
+      } else if (mode === "vitesse-asc") {
+        cmp = (ra.kmh || 0) - (rb.kmh || 0);
+      } else if (mode === "temps-asc") {
+        cmp = (ra.tempsMs || 0) - (rb.tempsMs || 0);
+      } else if (mode === "temps-desc") {
+        cmp = (rb.tempsMs || 0) - (ra.tempsMs || 0);
+      } else if (mode === "date-desc") {
+        cmp = dateMaxGroupe(b).localeCompare(dateMaxGroupe(a));
+      } else if (mode === "date-asc") {
+        cmp = dateMaxGroupe(a).localeCompare(dateMaxGroupe(b));
+      } else if (mode === "passages-desc") {
+        cmp = b.perfs.length - a.perfs.length;
+      }
+
+      if (cmp !== 0) return cmp;
+      return nomEleveGroupe(a).localeCompare(nomEleveGroupe(b), "fr", { sensitivity: "base" });
+    });
+
+    return list;
+  }
+
+  function texteStatsPerf(perf) {
+    return (
+      formaterDistance(perf.distanceM) +
+      " · " +
+      formaterTemps(perf.tempsMs) +
+      " · " +
+      formaterNombre(perf.kmh, 1) +
+      " km/h"
+    );
+  }
+
+  function creerSlotAction(contenu) {
+    var slot = document.createElement("div");
+    slot.className = "radar-liste__action";
+    if (contenu) slot.appendChild(contenu);
+    return slot;
+  }
+
+  function creerBoutonSupprimer(perf) {
+    var bDel = document.createElement("button");
+    bDel.type = "button";
+    bDel.className = "radar-liste__suppr";
+    bDel.setAttribute("aria-label", "Supprimer ce passage");
+    bDel.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">🗑️</span>';
+    bDel.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      supprimerPerf(perf.id);
+    });
+    return bDel;
+  }
+
+  function creerLignePassage(perf, meilleuresIds) {
+    var estMeilleure = !!(meilleuresIds && meilleuresIds[perf.id]);
+    var li = document.createElement("li");
+    li.className = "radar-liste__ligne" + (estMeilleure ? " radar-liste__ligne--best" : "");
+
+    var stats = document.createElement("span");
+    stats.className = "radar-liste__ligne-stats";
+    stats.textContent = texteStatsPerf(perf);
+
+    var detail = document.createElement("span");
+    detail.className = "radar-liste__ligne-detail";
+    detail.textContent =
+      formatDateHeure(perf.createdAt) +
+      " · " +
+      formaterAllure(perf.allureMin) +
+      " · " +
+      formaterNombre(perf.ms, 2) +
+      " m/s" +
+      (estMeilleure ? " · Meilleure" : "");
+
+    var contenu = document.createElement("div");
+    contenu.className = "radar-liste__ligne-contenu";
+    contenu.appendChild(stats);
+    contenu.appendChild(detail);
+    li.appendChild(contenu);
+    li.appendChild(creerSlotAction(creerBoutonSupprimer(perf)));
+    return li;
+  }
+
+  function creerEnteteEleve(groupe, mode, perfSolo) {
+    var best = groupe.meilleure;
+    if (!best) return null;
+    var nb = groupe.perfs.length;
+    var entete = document.createElement("div");
+    entete.className = "radar-liste__entete";
+
+    var identite = document.createElement("div");
+    identite.className = "radar-liste__identite";
+    var nom = document.createElement("span");
+    nom.className = "radar-liste__nom";
+    nom.textContent = formatEleve(best);
+    var sous = document.createElement("span");
+    sous.className = "radar-liste__sous";
+    sous.textContent =
+      (best.classe || "Sans classe") + (nb > 1 ? " · " + nb + " passages" : "");
+    identite.appendChild(nom);
+    identite.appendChild(sous);
+
+    var resume = document.createElement("span");
+    resume.className = "radar-liste__resume";
+    resume.textContent = texteStatsPerf(best);
+
+    entete.appendChild(identite);
+    entete.appendChild(resume);
+
+    if (mode === "accordeon") {
+      var chev = document.createElement("span");
+      chev.className = "radar-liste__chev";
+      chev.setAttribute("aria-hidden", "true");
+      entete.appendChild(creerSlotAction(chev));
+    } else if (perfSolo) {
+      entete.appendChild(creerSlotAction(creerBoutonSupprimer(perfSolo)));
+    } else {
+      entete.appendChild(creerSlotAction());
+    }
+
+    return entete;
+  }
+
   function renderHistorique() {
     if (!listePerfsEl) return;
     var q = filtreEl ? filtreEl.value : "";
     var brute = listePerfs.slice();
     var liste = filtrerPerfs(brute, q);
-    var meilleures = idsMeilleuresPerfs(brute);
-
-    liste.sort(function (a, b) {
-      return (b.createdAt || "").localeCompare(a.createdAt || "");
-    });
+    var meilleuresIds = idsMeilleuresPerfs(brute);
+    var groupes = trierGroupes(grouperParEleve(liste), lireModeTri());
 
     if (typeof OutilsDom !== "undefined" && OutilsDom.clear) {
       OutilsDom.clear(listePerfsEl);
@@ -579,7 +817,7 @@
       listePerfsEl.innerHTML = "";
     }
 
-    if (liste.length === 0) {
+    if (!groupes.length) {
       var p = document.createElement("p");
       p.className = "empty-state";
       p.textContent =
@@ -590,76 +828,42 @@
       return;
     }
 
-    liste.forEach(function (perf) {
-      var estMeilleure = !!meilleures[perf.id];
-      var article = document.createElement("article");
-      article.className =
-        "dispense-item dispense-item--active radar-item" +
-        (estMeilleure ? " radar-item--best" : "");
+    var ulListe = document.createElement("ul");
+    ulListe.className = "radar-liste";
+    ulListe.setAttribute("role", "list");
 
-      var head = document.createElement("div");
-      head.className = "dispense-item__head";
+    groupes.forEach(function (groupe) {
+      var nb = groupe.perfs.length;
+      var item = document.createElement("li");
+      item.className = "radar-liste__groupe";
 
-      var left = document.createElement("div");
-      left.className = "dispense-item__main";
-      var h3 = document.createElement("h3");
-      h3.className = "dispense-item__title" + (estMeilleure ? " radar-item__title--best" : "");
-      h3.textContent = formatEleve(perf);
-      var meta = document.createElement("p");
-      meta.className = "radar-item__meta";
-      meta.textContent =
-        (perf.classe || "Sans classe") +
-        " · " +
-        formaterDistance(perf.distanceM) +
-        " · " +
-        formaterTemps(perf.tempsMs) +
-        " · " +
-        formatDateHeure(perf.createdAt) +
-        (estMeilleure ? " · Meilleure perf." : "");
-      left.appendChild(h3);
-      left.appendChild(meta);
-
-      var badge = document.createElement("div");
-      badge.className = "dispense-item__days dispense-item__days--active radar-item__vitesse";
-      var num = document.createElement("span");
-      num.className =
-        "dispense-item__days-num" + (estMeilleure ? " radar-item__vitesse-num--best" : "");
-      num.textContent = formaterNombre(perf.kmh, 1);
-      var lbl = document.createElement("span");
-      lbl.className = "dispense-item__days-label";
-      lbl.textContent = "km/h";
-      badge.appendChild(num);
-      badge.appendChild(lbl);
-
-      var actions = document.createElement("div");
-      actions.className = "dispense-actions";
-      var bDel = document.createElement("button");
-      bDel.type = "button";
-      bDel.className = "btn btn--danger btn--small btn--icon-only";
-      bDel.setAttribute("aria-label", "Supprimer la performance de " + formatEleve(perf));
-      bDel.innerHTML = '<span class="btn-icon-emoji" aria-hidden="true">🗑️</span>';
-      bDel.addEventListener("click", function () {
-        supprimerPerf(perf.id);
+      var passages = document.createElement("ul");
+      passages.className = "radar-liste__passages";
+      passages.setAttribute("role", "list");
+      groupe.perfs.forEach(function (perf) {
+        passages.appendChild(creerLignePassage(perf, meilleuresIds));
       });
-      actions.appendChild(bDel);
 
-      head.appendChild(left);
-      head.appendChild(badge);
-      head.appendChild(actions);
-      article.appendChild(head);
+      if (nb > 1) {
+        var details = document.createElement("details");
+        details.className = "radar-liste__details";
+        var summary = document.createElement("summary");
+        summary.className = "radar-liste__summary";
+        var entete = creerEnteteEleve(groupe, "accordeon");
+        if (entete) summary.appendChild(entete);
+        details.appendChild(summary);
+        details.appendChild(passages);
+        item.appendChild(details);
+      } else {
+        item.className = "radar-liste__groupe radar-liste__groupe--solo";
+        var enteteSolo = creerEnteteEleve(groupe, "solo", groupe.perfs[0]);
+        if (enteteSolo) item.appendChild(enteteSolo);
+      }
 
-      var detail = document.createElement("p");
-      detail.className = "radar-item__allure" + (estMeilleure ? " radar-item__allure--best" : "");
-      detail.textContent =
-        "Allure : " +
-        formaterAllure(perf.allureMin) +
-        " · " +
-        formaterNombre(perf.ms, 2) +
-        " m/s";
-      article.appendChild(detail);
-
-      listePerfsEl.appendChild(article);
+      ulListe.appendChild(item);
     });
+
+    listePerfsEl.appendChild(ulListe);
   }
 
   function afficherVue(mode) {
@@ -720,12 +924,17 @@
     });
   }
 
-  if (btnStart) btnStart.addEventListener("click", demarrer);
-  if (btnArrivee) btnArrivee.addEventListener("click", arrivee);
+  if (btnMain) btnMain.addEventListener("click", actionChronoPrincipal);
   if (btnReset) btnReset.addEventListener("click", reinitialiser);
   if (btnEnregistrer) btnEnregistrer.addEventListener("click", enregistrerPerf);
   if (selectEl) selectEl.addEventListener("change", majChampsEleve);
   if (filtreEl) filtreEl.addEventListener("input", renderHistorique);
+  if (triEl) {
+    triEl.addEventListener("change", function () {
+      sauverDistance();
+      renderHistorique();
+    });
+  }
   if (distanceEl) {
     distanceEl.addEventListener("input", function () {
       sauverDistance();

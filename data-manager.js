@@ -1444,7 +1444,7 @@ var DataManager = (function () {
     },
     {
       id: "radar",
-      label: "Radar (performances course)",
+      label: "Radar vitesse (performances course)",
       stores: ["radarPerfs"],
       paramIds: ["radar-session", "radar-settings"],
     },
@@ -1519,7 +1519,7 @@ var DataManager = (function () {
       } else if (store === "oublisMateriel") {
         parts.push(n + " oubli" + (n !== 1 ? "s" : ""));
       } else if (store === "radarPerfs") {
-        parts.push(n + " perf" + (n !== 1 ? "s" : "") + " Radar");
+        parts.push(n + " perf" + (n !== 1 ? "s" : "") + " Radar vitesse");
       } else if (store === "sessions") {
         parts.push(n + " séance" + (n !== 1 ? "s" : ""));
       } else if (store === "championnats") {

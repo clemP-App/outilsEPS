@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Outils EPS" />
-    <title>Radar — Outils EPS</title>
+    <title>Radar vitesse — Outils EPS</title>
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
@@ -22,10 +22,10 @@
         <a class="tool-back" href="../index.html"
           ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
         >
-        <h1>Radar</h1>
+        <h1>Radar vitesse</h1>
       </header>
 
-      <div class="dispense-nav" role="tablist" aria-label="Affichage Radar">
+      <div class="dispense-nav" role="tablist" aria-label="Affichage Radar vitesse">
         <button
           type="button"
           class="dispense-nav__btn dispense-nav__btn--active"
@@ -88,13 +88,14 @@
           <p class="radar-chrono-label" id="radar-chrono-label">Prêt</p>
           <p class="radar-chrono-time" id="radar-chrono-time">00:00.0</p>
           <div class="radar-chrono-actions">
-            <button type="button" class="btn btn--primary btn--labeled" id="radar-btn-start">
+            <button
+              type="button"
+              class="btn btn--primary btn--labeled radar-btn-main"
+              id="radar-btn-main"
+              aria-label="Départ"
+            >
               <span class="btn__icon" aria-hidden="true">▶</span>
               <span class="btn__text">Départ</span>
-            </button>
-            <button type="button" class="btn btn--ghost btn--labeled" id="radar-btn-arrivee" disabled>
-              <span class="btn__icon" aria-hidden="true">🏁</span>
-              <span class="btn__text">Arrivée</span>
             </button>
             <button type="button" class="btn btn--ghost btn--labeled" id="radar-btn-reset">
               <span class="btn__icon" aria-hidden="true">↺</span>
@@ -160,14 +161,31 @@
       >
         <section class="card" aria-labelledby="lbl-historique">
           <h2 id="lbl-historique">Performances enregistrées</h2>
-          <div class="filter-bar field-group">
-            <label class="field-label" for="radar-filtre">Filtrer (nom, prénom, classe)</label>
-            <input
-              type="search"
-              id="radar-filtre"
-              placeholder="Tapez pour filtrer…"
-              autocomplete="off"
-            />
+          <div class="field-row radar-historique-filtres">
+            <div class="field-group field-group--grow filter-bar">
+              <label class="field-label" for="radar-filtre">Filtrer (nom, prénom, classe)</label>
+              <input
+                type="search"
+                id="radar-filtre"
+                placeholder="Tapez pour filtrer…"
+                autocomplete="off"
+              />
+            </div>
+            <div class="field-group radar-historique-tri">
+              <label class="field-label" for="radar-tri">Trier par</label>
+              <select id="radar-tri">
+                <option value="alpha">Nom (A → Z)</option>
+                <option value="alpha-desc">Nom (Z → A)</option>
+                <option value="classe">Classe, puis nom</option>
+                <option value="vitesse-desc">Vitesse max. (↓)</option>
+                <option value="vitesse-asc">Vitesse max. (↑)</option>
+                <option value="temps-asc">Meilleur temps (↑ rapide)</option>
+                <option value="temps-desc">Meilleur temps (↓ lent)</option>
+                <option value="date-desc">Dernier passage (récent)</option>
+                <option value="date-asc">Dernier passage (ancien)</option>
+                <option value="passages-desc">Nombre de passages (↓)</option>
+              </select>
+            </div>
           </div>
           <div id="radar-liste-perfs" aria-live="polite"></div>
         </section>

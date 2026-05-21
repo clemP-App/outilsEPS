@@ -104,6 +104,16 @@
       publicCible: "prof",
     },
     {
+      id: "video-retard",
+      titre: "Vidéo avec retard",
+      description:
+        "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
+      icone: "📹",
+      href: "outils/video-retard.html",
+      categorie: "Observation",
+      publicCible: "prof",
+    },
+    {
       id: "pyramide-victoires",
       titre: "Pyramide de victoires",
       description:
@@ -165,7 +175,7 @@
     },
     {
       id: "radar",
-      titre: "Radar",
+      titre: "Radar vitesse",
       description:
         "Chronométrez un élève sur une distance : à l’arrivée, vitesse (km/h) et allure (min/km), performances enregistrées par classe.",
       icone: "📡",
@@ -222,16 +232,6 @@
       href: "outils/compteur-ratio.html",
       categorie: "Observation",
       publicCible: "eleve",
-    },
-    {
-      id: "video-retard",
-      titre: "Vidéo avec retard",
-      description:
-        "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
-      icone: "📹",
-      href: "outils/video-retard.html",
-      categorie: "Observation",
-      publicCible: "prof",
     },
     {
       id: "questions-debrief",
