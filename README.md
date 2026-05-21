@@ -25,7 +25,7 @@ Les données principales sont stockées dans **IndexedDB** (`outilsEPSDB`) via `
 **Limites :**
 
 - Données **locales à l’appareil** : pas de serveur, pas de synchronisation automatique entre téléphones ou ordinateurs.
-- Pensez à **exporter** régulièrement une sauvegarde JSON depuis l’écran **Sauvegarde et restauration** (icône 💾 sur l’accueil).
+- Pensez à **exporter** régulièrement une sauvegarde JSON depuis l’écran **Sauvegarde et restauration** (icône 💾 sur l’accueil). Cette page affiche aussi le **quota navigateur estimé** et une alerte si l’espace se remplit (≥ 50 %, 75 %, 90 %).
 - Le fichier `outilsEPS-backup.json` contient **tous** les stores ci-dessus (y compris les raccourcis personnalisés du timer HIIT / Tabata).
 - L’**import** remplace **toutes** les données de l’appareil après confirmation (transaction atomique : en cas d’échec, les anciennes données sont conservées).
 
@@ -69,7 +69,7 @@ Flux sans serveur ni cloud : l’élève partage un QR, le prof le scanne sur so
 #### Côté prof — récupérer et visualiser
 
 1. Ouvrez **Données élèves** sur l’accueil (section prof).
-2. **Démarrer la caméra** et scannez le QR, ou **collez le lien** si le scan échoue.
+2. **Démarrer la caméra** et scannez le QR, ou **collez le lien** si le scan échoue. Outils concernés : table de marque, PTB, bonus, ratio, vitesse aux plots, zone d’impact, **journal de musculation** (une séance par QR).
 3. En cas de doublon (`exportId` déjà importé), une confirmation est demandée.
 4. **Choisissez l’outil** pour afficher les imports en **tableau** (colonnes adaptées : buts, ratio, etc.). Après un scan, l’outil est **sélectionné automatiquement** et l’import apparaît dans le tableau.
 5. Cliquez une ligne pour l’**aperçu détaillé**. **Export** Excel (CSV) ou PDF du tableau affiché. Sauvegarde globale : **Sauvegarde et restauration**.

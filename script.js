@@ -264,6 +264,16 @@
       publicCible: "eleve",
     },
     {
+      id: "journal-musculation",
+      titre: "Journal de musculation",
+      description:
+        "Enregistrez vos séances (exercices, séries, charges) et partagez une séance à la fois au prof via QR.",
+      icone: "📓",
+      href: "outils/journal-musculation.html",
+      categorie: "Musculation",
+      publicCible: "eleve",
+    },
+    {
       id: "vitesse-course",
       titre: "Vitesse de course",
       description:

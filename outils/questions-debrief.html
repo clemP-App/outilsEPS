@@ -26,69 +26,116 @@
       </header>
 
       <p class="hint debrief-intro">
-        Choisissez un bilan individuel ou d’équipe, puis obtenez vos questions pour faire le point sur la séance.
+        Chaque débrief est lié à une séance : conservez vos réponses, rouvrez-les plus tard et partagez-les au
+        professeur via QR.
       </p>
 
       <p id="debrief-msg" class="msg-error inducteur-msg" role="alert" hidden></p>
 
-      <section class="card inducteur-draw-card" aria-labelledby="lbl-tirage">
-        <h2 id="lbl-tirage">Vos questions</h2>
+      <div id="debrief-view-list" class="debrief-home">
 
-        <fieldset class="debrief-portee">
-          <legend class="field-label">Type de bilan</legend>
-          <div class="debrief-portee__toggle" role="group" aria-label="Bilan individuel ou d’équipe">
-            <label class="debrief-portee__btn">
-              <input type="radio" name="portee-debrief" value="individuel" checked />
-              <span class="debrief-portee__icon" aria-hidden="true">👤</span>
-              <span class="debrief-portee__label">Bilan individuel</span>
-            </label>
-            <label class="debrief-portee__btn">
-              <input type="radio" name="portee-debrief" value="equipe" />
-              <span class="debrief-portee__icon" aria-hidden="true">👥</span>
-              <span class="debrief-portee__label">Bilan d’équipe</span>
-            </label>
+        <details class="card card--accordion debrief-acc" id="debrief-acc-seances" open>
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title">Mes débriefs de séance</span>
+            <span class="debrief-acc__badge" id="debrief-seances-acc-badge" hidden></span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel">
+            <button type="button" class="btn btn--primary debrief-new-btn" id="debrief-btn-new">
+              Nouveau débrief de séance
+            </button>
+            <ul id="debrief-seances-list" class="debrief-seances"></ul>
+            <p id="debrief-seances-empty" class="empty-state" hidden>Aucun débrief enregistré.</p>
           </div>
-          <p id="debrief-portee-hint" class="hint debrief-portee-hint">
-            Sur vous : ressenti, progrès personnels et axes de travail.
+        </details>
+
+        <details class="card card--accordion debrief-acc" id="accordion-listes">
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title">Personnaliser les questions</span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel">
+            <p class="hint">
+              Chaque liste correspond à un thème de débrief. Les modifications sont enregistrées sur cet appareil.
+            </p>
+            <div id="listes-editor" class="inducteur-listes-editor"></div>
+            <div class="field-row inducteur-listes-actions">
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-nouvelle-liste">
+                <span class="btn__icon" aria-hidden="true">＋</span>
+                <span class="btn__text">Nouvelle liste</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-reset-listes">
+                <span class="btn__icon" aria-hidden="true">↺</span>
+                <span class="btn__text">Réinitialiser les questions par défaut</span>
+              </button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <div id="debrief-view-session" class="debrief-session-view" hidden>
+        <header class="debrief-session-head">
+          <button type="button" class="btn btn--ghost debrief-back" id="debrief-btn-back-list">
+            ‹ Mes débriefs
+          </button>
+          <div class="debrief-session-fields">
+            <div class="field-group debrief-title-field">
+              <label class="field-label" for="debrief-seance-title">Séance / activité</label>
+              <input type="text" id="debrief-seance-title" maxlength="80" autocomplete="off" placeholder="Ex. Basket 12 mars" />
+            </div>
+            <div class="field-group debrief-date-field">
+              <label class="field-label" for="debrief-seance-date">Date</label>
+              <input type="date" id="debrief-seance-date" />
+            </div>
+          </div>
+        </header>
+
+        <section class="card inducteur-draw-card" aria-labelledby="lbl-tirage">
+          <h2 id="lbl-tirage" class="sr-only">Fiche de débrief</h2>
+
+          <fieldset class="debrief-portee">
+            <legend class="field-label">Type de bilan</legend>
+            <div class="debrief-portee__toggle" role="group" aria-label="Bilan individuel ou d’équipe">
+              <label class="debrief-portee__btn">
+                <input type="radio" name="portee-debrief" value="individuel" checked />
+                <span class="debrief-portee__icon" aria-hidden="true">👤</span>
+                <span class="debrief-portee__label">Bilan individuel</span>
+              </label>
+              <label class="debrief-portee__btn">
+                <input type="radio" name="portee-debrief" value="equipe" />
+                <span class="debrief-portee__icon" aria-hidden="true">👥</span>
+                <span class="debrief-portee__label">Bilan d’équipe</span>
+              </label>
+            </div>
+            <p id="debrief-portee-hint" class="hint debrief-portee-hint">
+              Sur vous : ressenti, progrès personnels et axes de travail.
+            </p>
+          </fieldset>
+
+          <button type="button" class="btn btn--primary btn--labeled inducteur-btn-draw debrief-btn-draw-top" id="btn-tirer">
+            <span class="btn__icon" aria-hidden="true">💬</span>
+            <span class="btn__text" id="btn-tirer-label">Obtenir ma fiche personnalisée</span>
+          </button>
+
+          <div id="debrief-resultats" class="inducteur-resultats debrief-resultats" role="status" aria-live="polite" hidden></div>
+          <p id="debrief-resultat-hint" class="hint inducteur-resultat-hint">
+            Choisissez le type de bilan, lancez le tirage, puis rédigez vos réponses.
           </p>
-        </fieldset>
+        </section>
 
-        <div id="debrief-resultats" class="inducteur-resultats debrief-resultats" role="status" aria-live="polite" hidden></div>
-        <p id="debrief-resultat-hint" class="hint inducteur-resultat-hint">
-          Choisissez votre type de bilan, puis lancez le tirage.
-        </p>
+        <div class="card eleve-share-bar" id="eleve-share-bar" hidden></div>
 
-        <button type="button" class="btn btn--primary btn--labeled inducteur-btn-draw" id="btn-tirer">
-          <span class="btn__icon" aria-hidden="true">💬</span>
-          <span class="btn__text" id="btn-tirer-label">Obtenir ma fiche individuelle</span>
+        <button type="button" class="btn btn--danger btn--ghost debrief-delete" id="debrief-btn-delete">
+          Supprimer ce débrief
         </button>
-      </section>
-
-      <details class="card card--accordion" id="accordion-listes">
-        <summary class="card--accordion__summary">
-          <span class="card--accordion__title">Personnaliser les questions</span>
-          <span class="card--accordion__chev" aria-hidden="true"></span>
-        </summary>
-        <div class="card--accordion__panel">
-          <p class="hint">
-            Chaque liste correspond à un thème de débrief. Votre professeur peut adapter ces questions pour votre
-            classe. Les modifications sont enregistrées sur cet appareil.
-          </p>
-          <div id="listes-editor" class="inducteur-listes-editor"></div>
-          <div class="field-row inducteur-listes-actions">
-            <button type="button" class="btn btn--ghost btn--labeled" id="btn-nouvelle-liste">
-              <span class="btn__icon" aria-hidden="true">＋</span>
-              <span class="btn__text">Nouvelle liste</span>
-            </button>
-            <button type="button" class="btn btn--ghost btn--labeled" id="btn-reset-listes">
-              <span class="btn__icon" aria-hidden="true">↺</span>
-              <span class="btn__text">Réinitialiser les questions par défaut</span>
-            </button>
-          </div>
-        </div>
-      </details>
+      </div>
     </div>
 
+    <script src="../vendor/lz-string.min.js"></script>
+    <script src="../shared/qr-exchange-core.js"></script>
+    <script src="../shared/eleve-labels.js"></script>
+    <script src="../vendor/qrcode.min.js"></script>
+    <script src="../shared/qr-share-ui.js"></script>
     <script src="../data-manager.js"></script>
     <script src="../dom-utils.js"></script>
     <script src="questions-debrief.js"></script>
@@ -99,21 +146,20 @@
           "Des questions pour faire le point après la séance, sur vous ou sur votre équipe.",
         sections: [
           {
-            title: "Bilan individuel ou d’équipe",
+            title: "Un débrief par séance",
             text:
-              "Choisissez d’abord le type de bilan : questions sur votre ressenti et vos progrès personnels, ou sur le fonctionnement du groupe.",
+              "Créez un débrief lié à une séance (nom + date). Vos réponses restent enregistrées : rouvrez un ancien débrief pour le compléter ou le partager.",
           },
           {
-            title: "Fiche complète",
+            title: "Fiche personnalisée",
             text:
-              "Vous recevez plusieurs questions pour structurer votre réflexion : progrès, difficultés ou points positifs, pistes pour la prochaine séance…",
+              "Le tirage propose une question par thème (progrès, difficultés, pistes…). Rédigez vos réponses sous chaque question.",
           },
           {
-            title: "Comment répondre",
+            title: "Partage au professeur",
             list: [
-              "Bilan individuel : seul ou avec le professeur.",
-              "Bilan d’équipe : en petit groupe, à l’oral ou par écrit.",
-              "Notez vos réponses dans votre cahier si le professeur le demande.",
+              "Partage QR depuis le débrief ouvert.",
+              "Le professeur récupère vos textes dans Données élèves.",
             ],
           },
         ],

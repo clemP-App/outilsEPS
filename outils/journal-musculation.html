@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Journal de musculation — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--journal-muscu">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Journal de musculation</h1>
+      </header>
+
+      <div id="journal-view-list" class="journal-muscu-home">
+        <p class="hint journal-muscu-intro">
+          Vos séances restent sur cet appareil. Partage au prof : <strong>QR depuis une séance</strong>.
+        </p>
+
+        <details class="card card--accordion journal-muscu-acc" id="journal-acc-sessions" open>
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title" id="lbl-sessions">Mes séances</span>
+            <span class="journal-muscu-acc__badge" id="journal-sessions-acc-badge" hidden></span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel">
+            <button type="button" class="btn btn--primary journal-muscu-new-btn" id="journal-btn-new">
+              Nouvelle séance
+            </button>
+            <ul id="journal-sessions-list" class="journal-muscu-sessions"></ul>
+            <p id="journal-sessions-empty" class="empty-state" hidden>Aucune séance enregistrée.</p>
+          </div>
+        </details>
+
+        <details class="card card--accordion journal-muscu-acc" id="journal-acc-summary">
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title" id="lbl-summary">Résumé</span>
+            <span class="journal-muscu-acc__badge" id="journal-summary-acc-badge" hidden></span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel">
+            <div id="journal-global-summary" class="journal-muscu-summary-grid"></div>
+            <div id="journal-global-insights" class="journal-muscu-insights" hidden></div>
+          </div>
+        </details>
+
+        <details class="card card--accordion journal-muscu-acc journal-muscu-acc--rm" id="journal-acc-rm">
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title" id="lbl-rm">1RM — charges max</span>
+            <span class="journal-muscu-acc__badge" id="journal-rm-acc-badge" hidden></span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel">
+            <p class="hint journal-muscu-rm-intro">
+              <strong>Max testés</strong> = charges réelles. <strong>1RM potentiel</strong> = estimation (séries), pas un
+              test à l’échec.
+            </p>
+            <fieldset class="journal-muscu-rm-formula" id="journal-rm-formula">
+              <legend class="field-label">Formule d’estimation</legend>
+              <label class="journal-muscu-rm-formula-opt"
+                ><input type="radio" name="rm-formula" value="epley" checked /> Epley</label
+              >
+              <label class="journal-muscu-rm-formula-opt"
+                ><input type="radio" name="rm-formula" value="brzycki" /> Brzycki</label
+              >
+            </fieldset>
+            <div id="journal-rm-recorded" class="journal-muscu-rm-recorded"></div>
+            <details class="journal-muscu-rm-add">
+              <summary>Enregistrer un max testé</summary>
+              <div class="journal-muscu-rm-add-form">
+                <input
+                  type="text"
+                  id="journal-rm-exercise"
+                  list="journal-rm-exercise-list"
+                  placeholder="Exercice"
+                  maxlength="120"
+                  autocomplete="off"
+                />
+                <datalist id="journal-rm-exercise-list"></datalist>
+                <input
+                  type="number"
+                  id="journal-rm-kg"
+                  placeholder="kg (1RM réel)"
+                  inputmode="decimal"
+                  min="0"
+                  step="0.5"
+                />
+                <button type="button" class="btn btn--primary" id="journal-btn-save-rm">Enregistrer</button>
+              </div>
+            </details>
+            <div id="journal-rm-potentials" class="journal-muscu-rm-potentials"></div>
+          </div>
+        </details>
+      </div>
+
+      <div id="journal-view-session" class="journal-muscu-session-view" hidden>
+        <header class="journal-muscu-session-head">
+          <button type="button" class="btn btn--ghost journal-muscu-back" id="journal-btn-back-list">
+            ‹ Mes séances
+          </button>
+          <div class="journal-muscu-session-fields">
+            <div class="field-group journal-muscu-title-field">
+              <label class="field-label" for="journal-session-title">Nom de la séance</label>
+              <input type="text" id="journal-session-title" maxlength="80" autocomplete="off" />
+            </div>
+            <div class="field-group journal-muscu-date-field">
+              <label class="field-label" for="journal-session-date">Date</label>
+              <input type="date" id="journal-session-date" />
+            </div>
+          </div>
+        </header>
+
+        <details class="card card--accordion journal-muscu-acc" id="journal-acc-session-summary">
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title">Résumé de la séance</span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel" aria-live="polite">
+            <div id="journal-session-summary" class="journal-muscu-summary-grid"></div>
+            <div id="journal-session-insights" class="journal-muscu-insights" hidden></div>
+          </div>
+        </details>
+
+        <details class="card card--accordion journal-muscu-acc" id="journal-acc-session-add">
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title" id="lbl-catalog">Ajouter un exercice</span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel journal-muscu-catalog-panel">
+            <p class="hint journal-muscu-catalog-hint">
+              Touchez un exercice pour l’ajouter à la séance.
+            </p>
+            <div class="journal-muscu-catalog-toolbar">
+              <div class="field-group journal-muscu-catalog-search">
+                <label class="field-label" for="journal-catalog-filter">Rechercher</label>
+                <input
+                  type="search"
+                  id="journal-catalog-filter"
+                  class="journal-muscu-catalog-filter"
+                  placeholder="Nom d'exercice…"
+                  autocomplete="off"
+                  enterkeyhint="search"
+                />
+              </div>
+              <label class="field-label" for="journal-catalog-sort">Trier par</label>
+              <select id="journal-catalog-sort" class="journal-muscu-catalog-sort">
+                <option value="bodyPart">Partie du corps</option>
+                <option value="muscle">Muscle</option>
+                <option value="category">Catégorie</option>
+              </select>
+            </div>
+            <div id="journal-catalog-list" class="journal-muscu-catalog-list" role="list"></div>
+            <details class="journal-muscu-other-exo">
+              <summary>Autre exercice (hors liste)</summary>
+              <p class="hint journal-muscu-other-hint">
+                Nom libre : ajouté à la séance et au catalogue.
+              </p>
+              <div class="journal-muscu-other-form">
+                <input
+                  type="text"
+                  id="journal-exercise-name"
+                  placeholder="Ex. : Développé haltères prise serrée"
+                  maxlength="120"
+                  autocomplete="off"
+                />
+                <button type="button" class="btn btn--primary" id="journal-btn-add-exercise">Ajouter à la séance</button>
+              </div>
+            </details>
+            <details class="journal-muscu-catalog-custom">
+              <summary>Créer un exercice pour le catalogue</summary>
+              <div class="journal-muscu-catalog-custom-form">
+                <input
+                  type="text"
+                  id="journal-custom-name"
+                  placeholder="Nom"
+                  maxlength="120"
+                  autocomplete="off"
+                />
+                <input
+                  type="text"
+                  id="journal-custom-category"
+                  placeholder="Catégorie (optionnel)"
+                  maxlength="60"
+                  autocomplete="off"
+                />
+                <input
+                  type="text"
+                  id="journal-custom-muscle"
+                  placeholder="Muscle (optionnel)"
+                  maxlength="60"
+                  autocomplete="off"
+                />
+                <input
+                  type="text"
+                  id="journal-custom-body"
+                  placeholder="Partie du corps (optionnel)"
+                  maxlength="60"
+                  autocomplete="off"
+                />
+                <button type="button" class="btn btn--ghost" id="journal-btn-add-custom">
+                  Enregistrer dans le catalogue
+                </button>
+              </div>
+            </details>
+          </div>
+        </details>
+
+        <details class="card card--accordion journal-muscu-acc" id="journal-acc-session-exos" open>
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title" id="lbl-exos">Exercices</span>
+            <span class="journal-muscu-acc__badge" id="journal-exos-acc-badge" hidden></span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel">
+            <div id="journal-exercises" class="journal-muscu-exercises"></div>
+            <p id="journal-exercises-empty" class="empty-state" hidden>
+              Aucun exercice — ajoutez-en depuis le catalogue ci-dessus.
+            </p>
+          </div>
+        </details>
+
+        <section class="card journal-muscu-session-footer">
+          <label class="field-label" for="journal-session-notes">Notes (optionnel)</label>
+          <textarea id="journal-session-notes" rows="2" maxlength="500" placeholder="Ressenti, consignes…"></textarea>
+          <div class="eleve-share-bar" id="eleve-share-bar"></div>
+          <button type="button" class="btn btn--danger btn--ghost journal-muscu-delete" id="journal-btn-delete-session">
+            Supprimer cette séance
+          </button>
+        </section>
+      </div>
+    </div>
+
+    <script src="../vendor/lz-string.min.js"></script>
+    <script src="../shared/qr-exchange-core.js"></script>
+    <script src="../shared/rm-formulas.js"></script>
+    <script src="../shared/journal-musculation-core.js"></script>
+    <script src="../shared/journal-musculation-body.js"></script>
+    <script src="../shared/eleve-labels.js"></script>
+    <script src="../vendor/qrcode.min.js"></script>
+    <script src="../shared/qr-share-ui.js"></script>
+    <script src="journal-musculation.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Tenez un carnet de séances et partagez une séance à la fois au professeur via QR.",
+        sections: [
+          {
+            title: "Côté élève",
+            list: [
+              "Créez autant de séances que vous voulez : elles restent sur cet appareil.",
+              "Catalogue d’exercices (tri par catégorie, muscle ou partie du corps) + saisie libre.",
+              "Séries identiques : nombre de séries + reps et charge communes, ou saisie série par série.",
+              "1RM : enregistrez vos max testés ; 1RM potentiels = estimations (Epley ou Brzycki).",
+              "Le QR « Partager au prof » n’envoie que la séance ouverte (pas tout l’historique).",
+            ],
+          },
+          {
+            title: "Côté prof",
+            list: [
+              "Récupération dans l’outil Données élèves, comme les autres outils EPS.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

@@ -61,6 +61,28 @@ describe("qr-exchange-core", function () {
     assert.equal(parsed.record.payload.students.a.ratio, 71);
   });
 
+  it("encode des réponses questions débrief", function () {
+    var record = Qr.buildExportRecord(
+      "questions-debrief",
+      {
+        portee: "individuel",
+        porteeLabel: "Bilan individuel",
+        titre: "Fiche bilan individuel",
+        reponses: [
+          {
+            theme: "Bilan personnel",
+            question: "Comment vous êtes-vous senti(e) ?",
+            reponse: "Bien, un peu fatigué à la fin.",
+          },
+        ],
+      },
+      { classeLabel: "3eB", auteurLabel: "Léa M." }
+    );
+    var parsed = Qr.parseQrUrl(Qr.encodeRecord(record));
+    assert.equal(parsed.record.toolId, "questions-debrief");
+    assert.equal(parsed.record.payload.reponses[0].reponse, "Bien, un peu fatigué à la fin.");
+  });
+
   it("rejette un outil inconnu", function () {
     assert.throws(function () {
       Qr.buildExportRecord("outil-inconnu", {});

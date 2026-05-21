@@ -83,13 +83,37 @@ var DataManager = (function () {
     return p + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9);
   }
 
+  var STORAGE_QUOTA_WARN_RATIO = 0.75;
+  var STORAGE_QUOTA_CRITICAL_RATIO = 0.9;
+  var STORAGE_QUOTA_NOTICE_RATIO = 0.5;
+
+  function isQuotaExceededError(err) {
+    if (!err) return false;
+    return err.name === "QuotaExceededError" || err.code === 22;
+  }
+
+  function storageErrorMessage(err) {
+    if (isQuotaExceededError(err)) {
+      return (
+        "Espace de stockage insuffisant sur cet appareil. Ouvrez « Sauvegarde et restauration » " +
+        "pour supprimer des données (par ex. imports élèves) ou exportez une sauvegarde puis libérez de la place."
+      );
+    }
+    if (err && err.message) return err.message;
+    return "Erreur IndexedDB";
+  }
+
+  function wrapDbError(err) {
+    return new Error(storageErrorMessage(err));
+  }
+
   function promisifyRequest(req) {
     return new Promise(function (resolve, reject) {
       req.onsuccess = function () {
         resolve(req.result);
       };
       req.onerror = function () {
-        reject(req.error || new Error("Erreur IndexedDB"));
+        reject(wrapDbError(req.error));
       };
     });
   }
@@ -250,7 +274,7 @@ var DataManager = (function () {
           resolve();
         };
         tx.onerror = function () {
-          reject(tx.error || new Error("Erreur lors de l'import."));
+          reject(wrapDbError(tx.error));
         };
       });
     });
@@ -435,7 +459,7 @@ var DataManager = (function () {
         var items;
 
         tx.onerror = function () {
-          reject(tx.error || new Error("Erreur lors de l'import."));
+          reject(wrapDbError(tx.error));
         };
         tx.onabort = function () {
           reject(
@@ -1518,6 +1542,87 @@ var DataManager = (function () {
     });
   }
 
+  function storageLevelFromRatio(ratio) {
+    if (ratio == null || ratio < 0) return "unknown";
+    if (ratio >= STORAGE_QUOTA_CRITICAL_RATIO) return "critical";
+    if (ratio >= STORAGE_QUOTA_WARN_RATIO) return "warning";
+    if (ratio >= STORAGE_QUOTA_NOTICE_RATIO) return "notice";
+    return "ok";
+  }
+
+  function getStorageEstimate() {
+    if (!navigator.storage || typeof navigator.storage.estimate !== "function") {
+      return Promise.resolve({
+        supported: false,
+        usage: null,
+        quota: null,
+        ratio: null,
+        percent: null,
+      });
+    }
+    return navigator.storage
+      .estimate()
+      .then(function (est) {
+        var usage = est.usage || 0;
+        var quota = est.quota || 0;
+        var ratio = quota > 0 ? usage / quota : null;
+        var percent = ratio != null ? Math.round(ratio * 100) : null;
+        return {
+          supported: true,
+          usage: usage,
+          quota: quota,
+          ratio: ratio,
+          percent: percent,
+          level: storageLevelFromRatio(ratio),
+        };
+      })
+      .catch(function () {
+        return {
+          supported: false,
+          usage: null,
+          quota: null,
+          ratio: null,
+          percent: null,
+          level: "unknown",
+        };
+      });
+  }
+
+  function getStorageOverview() {
+    return Promise.all([getStorageBreakdown(), getStorageEstimate()]).then(function (results) {
+      var breakdown = results[0];
+      var estimate = results[1];
+      return {
+        breakdown: breakdown,
+        estimate: estimate,
+        level: estimate.level || "unknown",
+      };
+    });
+  }
+
+  function storageAlertMessage(level) {
+    switch (level) {
+      case "critical":
+        return (
+          "Quota navigateur presque atteint. Les nouveaux enregistrements (imports QR, classes, etc.) " +
+          "risquent d’échouer. Supprimez des données ci-dessous, en commençant par les imports élèves, " +
+          "ou exportez une sauvegarde puis libérez de l’espace."
+        );
+      case "warning":
+        return (
+          "Espace de stockage bientôt saturé sur cet appareil. Pour éviter des erreurs à l’enregistrement, " +
+          "supprimez les données dont vous n’avez plus besoin ou exportez une sauvegarde."
+        );
+      case "notice":
+        return (
+          "Plus de la moitié du quota navigateur estimé est utilisé. Surveillez l’espace ou supprimez " +
+          "d’anciennes données si vous accumulez beaucoup d’imports."
+        );
+      default:
+        return "";
+    }
+  }
+
   function clearStorageCategory(categoryId) {
     var cat = null;
     var i;
@@ -1640,7 +1745,7 @@ var DataManager = (function () {
           resolve((req.result || []).length > 0);
         };
         req.onerror = function () {
-          reject(req.error || new Error("Erreur IndexedDB"));
+          reject(wrapDbError(req.error));
         };
       });
     });
@@ -1757,6 +1862,11 @@ var DataManager = (function () {
     STORAGE_CATEGORIES: STORAGE_CATEGORIES,
     formatBytes: formatBytes,
     getStorageBreakdown: getStorageBreakdown,
+    getStorageEstimate: getStorageEstimate,
+    getStorageOverview: getStorageOverview,
+    storageAlertMessage: storageAlertMessage,
+    storageErrorMessage: storageErrorMessage,
+    isQuotaExceededError: isQuotaExceededError,
     clearStorageCategory: clearStorageCategory,
     saveImportedRecord: saveImportedRecord,
     getImportedRecords: getImportedRecords,

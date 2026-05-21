@@ -62,12 +62,36 @@
       <section class="card" aria-labelledby="lbl-stockage">
         <h2 id="lbl-stockage">Espace utilisé</h2>
         <p class="hint">
-          Estimation du poids des données enregistrées sur cet appareil (IndexedDB). Vous pouvez supprimer les données
-          d’un outil pour libérer de la place.
+          Estimation du poids des données Outils EPS (IndexedDB) et, si le navigateur le permet, du quota total alloué
+          à ce site sur l’appareil. Supprimez les données d’un outil pour libérer de la place.
         </p>
+        <div
+          id="stockage-alert"
+          class="stockage-alert"
+          hidden
+          role="status"
+          aria-live="polite"
+        ></div>
         <p class="stockage-total" aria-live="polite">
-          Total : <strong id="stockage-total">—</strong>
+          Données Outils EPS : <strong id="stockage-total">—</strong>
         </p>
+        <div id="stockage-quota-wrap" class="stockage-quota-wrap" hidden>
+          <p class="stockage-quota__line">
+            Quota navigateur (estimation) :
+            <strong id="stockage-quota-text">—</strong>
+          </p>
+          <div
+            class="stockage-quota__bar"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            id="stockage-quota-bar"
+          >
+            <div id="stockage-quota-fill" class="stockage-quota__fill"></div>
+          </div>
+        </div>
+        <p id="stockage-quota-hint" class="hint stockage-quota-hint" hidden></p>
         <ul id="stockage-outils" class="stockage-list" aria-live="polite"></ul>
         <p id="stockage-vide" class="hint stockage-vide" hidden>Aucune donnée enregistrée pour le moment.</p>
       </section>
@@ -91,7 +115,7 @@
               "« Exporter » télécharge un fichier sur votre téléphone ou ordinateur.",
               "Conservez ce fichier (cloud, clé USB, mail à vous-même…).",
               "« Importer » remplace les données actuelles par celles du fichier : à utiliser avec prudence.",
-              "La section « Espace utilisé » indique le poids par outil et permet de supprimer des données ciblées.",
+              "La section « Espace utilisé » indique le poids par outil, alerte si le quota navigateur se remplit, et permet de supprimer des données ciblées.",
               "Pour les QR élèves : ouvrez l’outil Données élèves.",
             ],
           },

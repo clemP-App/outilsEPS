@@ -396,6 +396,116 @@ var ImportDetailRender = (function () {
     parent.appendChild(wrap);
   }
 
+  function renderQuestionsDebrief(payload, parent) {
+    var wrap = el("div", "import-preview import-preview--debrief");
+    var titre = payload.seanceTitle || payload.titre || payload.porteeLabel || "Débrief";
+    wrap.appendChild(el("h3", "debrief-preview-title", titre));
+    var meta = [];
+    if (payload.dateLabel) meta.push(payload.dateLabel);
+    if (payload.porteeLabel) meta.push(payload.porteeLabel);
+    if (meta.length) {
+      wrap.appendChild(el("p", "hint debrief-preview-portee", meta.join(" · ")));
+    }
+    var reponses = payload.reponses || [];
+    if (!reponses.length) {
+      wrap.appendChild(el("p", "empty-state", "Aucune réponse dans cet import."));
+      parent.appendChild(wrap);
+      return;
+    }
+    reponses.forEach(function (row, index) {
+      var card = el("article", "card debrief-preview-item");
+      if (row.theme) {
+        card.appendChild(el("span", "debrief-preview-theme", row.theme));
+      }
+      card.appendChild(
+        el("p", "debrief-preview-question", (index + 1) + ". " + (row.question || "—"))
+      );
+      var rep = el("div", "debrief-preview-reponse");
+      rep.appendChild(el("span", "debrief-preview-reponse__label", "Réponse"));
+      rep.appendChild(
+        el(
+          "p",
+          "debrief-preview-reponse__text",
+          row.reponse && String(row.reponse).trim() ? row.reponse : "—"
+        )
+      );
+      card.appendChild(rep);
+      wrap.appendChild(card);
+    });
+    parent.appendChild(wrap);
+  }
+
+  function renderJournalMusculation(payload, parent) {
+    var wrap = el("div", "import-preview import-preview--journal-muscu page-outil--journal-muscu");
+    var session = payload.session || payload;
+    if (!session) {
+      parent.appendChild(el("p", "empty-state", "Séance non disponible."));
+      return;
+    }
+
+    var head = el("header", "journal-muscu-preview-head");
+    head.appendChild(el("h3", "journal-muscu-preview-title", session.title || "Séance"));
+    head.appendChild(
+      el("p", "hint journal-muscu-preview-date", session.dateLabel || session.dateIso || "")
+    );
+    wrap.appendChild(head);
+
+    var summary = session.summary || {};
+    var sumRow = el("div", "journal-muscu-preview-summary");
+    [
+      ["Exercices", summary.exerciseCount],
+      ["Séries", summary.setCount],
+      ["Répétitions", summary.repCount],
+      ["Volume", summary.volumeKg != null ? summary.volumeKg + " kg" : "—"],
+    ].forEach(function (pair) {
+      var p = el("p");
+      p.appendChild(el("span", null, pair[0]));
+      p.appendChild(el("strong", null, String(pair[1] != null ? pair[1] : "—")));
+      sumRow.appendChild(p);
+    });
+    wrap.appendChild(sumRow);
+
+    if (session.notes) {
+      var notes = el("p", "journal-muscu-preview-notes");
+      notes.appendChild(el("span", "journal-muscu-preview-notes__label", "Notes : "));
+      notes.appendChild(document.createTextNode(session.notes));
+      wrap.appendChild(notes);
+    }
+
+    (session.exercises || []).forEach(function (ex) {
+      var card = el("article", "card journal-muscu-preview-exo");
+      card.appendChild(el("h4", null, ex.name || "Exercice"));
+      if (ex.muscle || ex.bodyPart) {
+        card.appendChild(
+          el(
+            "p",
+            "hint journal-muscu-preview-exo-meta",
+            [ex.bodyPart, ex.muscle].filter(Boolean).join(" · ")
+          )
+        );
+      }
+      if (ex.setMode === "uniform" && ex.setsLabel) {
+        card.appendChild(el("p", "journal-muscu-preview-uniform", ex.setsLabel));
+      } else {
+        var table = el("div", "journal-muscu-preview-sets");
+        var h = el("div", "journal-muscu-preview-sets__head");
+        h.innerHTML = "<span>#</span><span>Reps</span><span>kg</span>";
+        table.appendChild(h);
+        (ex.sets || []).forEach(function (set, i) {
+          var row = el("div", "journal-muscu-preview-sets__row");
+          row.appendChild(el("span", null, String(i + 1)));
+          row.appendChild(el("strong", null, set.reps != null ? String(set.reps) : "—"));
+          row.appendChild(el("strong", null, set.weightKg != null ? String(set.weightKg) : "—"));
+          table.appendChild(row);
+        });
+        card.appendChild(table);
+      }
+      wrap.appendChild(card);
+    });
+
+    parent.appendChild(wrap);
+  }
+
   function renderPayload(record, parent) {
     var payload = record.payload || {};
     if (record.toolId === "table-marque") renderTableMarque(payload, parent);
@@ -404,6 +514,8 @@ var ImportDetailRender = (function () {
     else if (record.toolId === "compteur-ratio") renderRatio(payload, parent);
     else if (record.toolId === "vitesse-plots") renderVitesse(payload, parent);
     else if (record.toolId === "zone-impact") renderImpact(payload, parent);
+    else if (record.toolId === "journal-musculation") renderJournalMusculation(payload, parent);
+    else if (record.toolId === "questions-debrief") renderQuestionsDebrief(payload, parent);
     else parent.appendChild(el("p", "empty-state", "Aperçu non disponible pour cet outil."));
   }
 

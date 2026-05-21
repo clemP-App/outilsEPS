@@ -33,6 +33,8 @@
     "compteur-ratio",
     "vitesse-plots",
     "zone-impact",
+    "journal-musculation",
+    "questions-debrief",
   ];
 
   function stableStringify(obj) {
@@ -233,6 +235,8 @@
       "compteur-ratio": "Compteur ratio",
       "vitesse-plots": "Vitesse aux plots",
       "zone-impact": "Zone d'impact",
+      "journal-musculation": "Journal de musculation",
+      "questions-debrief": "Questions débrief",
     };
     return titles[toolId] || toolId;
   }

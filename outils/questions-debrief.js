@@ -6,6 +6,9 @@
   "use strict";
 
   var PARAM_ID = "questions-debrief";
+  var TOOL_ID = "questions-debrief";
+  var SEANCES_STORAGE_KEY = "outils_eps_questions_debrief_seances_v1";
+  var FICHE_STORAGE_KEY_LEGACY = "outils_eps_questions_debrief_fiches_v1";
 
   /** Fiche bilan individuel : une question par thème. */
   var FICHE_INDIVIDUEL_IDS = [
@@ -104,9 +107,13 @@
     },
   ];
 
-  var state = { listes: [], portee: "individuel" };
+  var state = { listes: [], seances: [], portee: "individuel" };
+  var currentSeanceId = null;
   var saveTimer = null;
+  var seanceSaveTimer = null;
 
+  var viewList = document.getElementById("debrief-view-list");
+  var viewSession = document.getElementById("debrief-view-session");
   var msgEl = document.getElementById("debrief-msg");
   var resultatsEl = document.getElementById("debrief-resultats");
   var hintEl = document.getElementById("debrief-resultat-hint");
@@ -114,6 +121,12 @@
   var porteeHintEl = document.getElementById("debrief-portee-hint");
   var btnTirerLabelEl = document.getElementById("btn-tirer-label");
   var porteeRadios = document.querySelectorAll('input[name="portee-debrief"]');
+  var shareBarEl = document.getElementById("eleve-share-bar");
+  var seancesListEl = document.getElementById("debrief-seances-list");
+  var seancesEmptyEl = document.getElementById("debrief-seances-empty");
+  var seancesBadgeEl = document.getElementById("debrief-seances-acc-badge");
+  var titleInput = document.getElementById("debrief-seance-title");
+  var dateInput = document.getElementById("debrief-seance-date");
 
   function genererId(prefix) {
     if (typeof DataManager !== "undefined" && DataManager.genererId) {
@@ -173,9 +186,300 @@
     msgEl.classList.toggle("msg-ok", !!ok);
   }
 
+  function todayIsoDate() {
+    var d = new Date();
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
+  }
+
+  function formatDateFr(iso) {
+    if (!iso) return "";
+    try {
+      var p = String(iso).split("-");
+      if (p.length === 3) return p[2] + "/" + p[1] + "/" + p[0];
+    } catch (e) {
+      /* ignore */
+    }
+    return iso;
+  }
+
   function porteeDebrief() {
     var checked = document.querySelector('input[name="portee-debrief"]:checked');
     return checked && checked.value === "equipe" ? "equipe" : "individuel";
+  }
+
+  function porteeLabel(portee) {
+    return portee === "equipe" ? "Bilan d’équipe" : "Bilan individuel";
+  }
+
+  function titreBilan(portee) {
+    return portee === "equipe" ? "Fiche bilan d’équipe" : "Fiche bilan individuel";
+  }
+
+  function currentSeance() {
+    if (!currentSeanceId) return null;
+    return state.seances.filter(function (s) {
+      return s.id === currentSeanceId;
+    })[0] || null;
+  }
+
+  function normaliserSeance(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    var portee = raw.portee === "equipe" ? "equipe" : "individuel";
+    return {
+      id: raw.id || genererId("db_"),
+      title: normaliserTexte(raw.title) || "Débrief",
+      dateIso: raw.dateIso || todayIsoDate(),
+      portee: portee,
+      items: (raw.items || []).map(function (it) {
+        return {
+          listeId: it.listeId || "",
+          listeNom: it.listeNom || "Thème",
+          question: normaliserTexte(it.question || it.texte),
+          reponse: String(it.reponse != null ? it.reponse : ""),
+        };
+      }).filter(function (it) {
+        return it.question;
+      }),
+      updatedAt: raw.updatedAt || new Date().toISOString(),
+    };
+  }
+
+  function uniqueSeanceTitle(title) {
+    title = normaliserTexte(title) || "Débrief";
+    var exists = state.seances.some(function (s) {
+      return s.title === title;
+    });
+    if (!exists) return title;
+    var n = 2;
+    while (
+      state.seances.some(function (s) {
+        return s.title === title + " (" + n + ")";
+      })
+    ) {
+      n++;
+    }
+    return title + " (" + n + ")";
+  }
+
+  function touchSeance(seance) {
+    seance.updatedAt = new Date().toISOString();
+  }
+
+  function planifierSauvegardeSeances() {
+    if (seanceSaveTimer) clearTimeout(seanceSaveTimer);
+    seanceSaveTimer = setTimeout(sauvegarderSeances, 350);
+  }
+
+  function sauvegarderSeances() {
+    try {
+      localStorage.setItem(
+        SEANCES_STORAGE_KEY,
+        JSON.stringify({ seances: state.seances })
+      );
+    } catch (e) {
+      montrerMsg("Enregistrement des débriefs impossible sur cet appareil.");
+    }
+    majSeancesBadge();
+    renderSessionsList();
+  }
+
+  function chargerSeances() {
+    try {
+      var raw = localStorage.getItem(SEANCES_STORAGE_KEY);
+      if (raw) {
+        var data = JSON.parse(raw);
+        if (data && Array.isArray(data.seances)) {
+          state.seances = data.seances.map(normaliserSeance).filter(Boolean);
+          return;
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    migrerAnciennesFiches();
+  }
+
+  function migrerAnciennesFiches() {
+    try {
+      var raw = localStorage.getItem(FICHE_STORAGE_KEY_LEGACY);
+      if (!raw) return;
+      var data = JSON.parse(raw);
+      if (!data || typeof data !== "object") return;
+      var today = todayIsoDate();
+      if (data.individuel && Array.isArray(data.individuel.items) && data.individuel.items.length) {
+        state.seances.push(
+          normaliserSeance({
+            id: genererId("db_"),
+            title: "Débrief individuel (import)",
+            dateIso: today,
+            portee: "individuel",
+            items: data.individuel.items,
+          })
+        );
+      }
+      if (data.equipe && Array.isArray(data.equipe.items) && data.equipe.items.length) {
+        state.seances.push(
+          normaliserSeance({
+            id: genererId("db_"),
+            title: "Débrief d’équipe (import)",
+            dateIso: today,
+            portee: "equipe",
+            items: data.equipe.items,
+          })
+        );
+      }
+      if (state.seances.length) sauvegarderSeances();
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function majSeancesBadge() {
+    if (!seancesBadgeEl) return;
+    var n = state.seances.length;
+    seancesBadgeEl.textContent = n ? n + " débrief" + (n > 1 ? "s" : "") : "";
+    seancesBadgeEl.hidden = !n;
+  }
+
+  function compteReponses(seance) {
+    return (seance.items || []).filter(function (it) {
+      return String(it.reponse || "").trim().length > 0;
+    }).length;
+  }
+
+  function renderSessionsList() {
+    if (!seancesListEl) return;
+    OutilsDom.clear(seancesListEl);
+    var seances = state.seances.slice().sort(function (a, b) {
+      return (b.dateIso || "").localeCompare(a.dateIso || "") || (b.updatedAt || "").localeCompare(a.updatedAt || "");
+    });
+    if (seancesEmptyEl) seancesEmptyEl.hidden = seances.length > 0;
+    seances.forEach(function (seance) {
+      var li = document.createElement("li");
+      li.className = "debrief-seance-row";
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "debrief-seance-btn";
+      btn.setAttribute("data-seance-id", seance.id);
+      var nbRep = compteReponses(seance);
+      var meta =
+        formatDateFr(seance.dateIso) +
+        " · " +
+        porteeLabel(seance.portee) +
+        (seance.items.length
+          ? " · " + seance.items.length + " question" + (seance.items.length > 1 ? "s" : "")
+          : "") +
+        (nbRep ? " · " + nbRep + " rép." : "");
+      btn.innerHTML =
+        '<span class="debrief-seance-btn__title">' +
+        escapeHtml(seance.title) +
+        '</span><span class="debrief-seance-btn__meta">' +
+        escapeHtml(meta) +
+        "</span>";
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "btn btn--ghost btn--small debrief-seance-del";
+      del.setAttribute("data-action", "delete-seance");
+      del.setAttribute("data-seance-id", seance.id);
+      del.setAttribute("aria-label", "Supprimer " + seance.title);
+      del.textContent = "✕";
+      li.appendChild(btn);
+      li.appendChild(del);
+      seancesListEl.appendChild(li);
+    });
+    majSeancesBadge();
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function showList() {
+    currentSeanceId = null;
+    if (viewList) viewList.hidden = false;
+    if (viewSession) viewSession.hidden = true;
+    renderSessionsList();
+  }
+
+  function syncSeanceFieldsFromInputs() {
+    var seance = currentSeance();
+    if (!seance) return;
+    if (titleInput) seance.title = normaliserTexte(titleInput.value) || "Débrief";
+    if (dateInput) seance.dateIso = dateInput.value || todayIsoDate();
+    touchSeance(seance);
+    planifierSauvegardeSeances();
+  }
+
+  function appliquerPorteeSurSeance() {
+    var seance = currentSeance();
+    if (!seance) return;
+    seance.portee = porteeDebrief();
+    touchSeance(seance);
+    planifierSauvegardeSeances();
+    if (seance.items.length) afficherFiche(seance);
+    else {
+      if (resultatsEl) resultatsEl.hidden = true;
+      if (hintEl) hintEl.hidden = false;
+    }
+    majShareBar();
+  }
+
+  function showSession(seanceId) {
+    var seance = state.seances.filter(function (s) {
+      return s.id === seanceId;
+    })[0];
+    if (!seance) {
+      showList();
+      return;
+    }
+    currentSeanceId = seanceId;
+    if (viewList) viewList.hidden = true;
+    if (viewSession) viewSession.hidden = false;
+    if (titleInput) titleInput.value = seance.title;
+    if (dateInput) dateInput.value = seance.dateIso;
+    porteeRadios.forEach(function (radio) {
+      radio.checked = radio.value === seance.portee;
+    });
+    majInterfacePortee();
+    if (seance.items.length) afficherFiche(seance);
+    else {
+      if (resultatsEl) resultatsEl.hidden = true;
+      if (hintEl) hintEl.hidden = false;
+    }
+    majShareBar();
+    if (viewSession.scrollIntoView) viewSession.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function createSeance() {
+    var seance = normaliserSeance({
+      id: genererId("db_"),
+      title: uniqueSeanceTitle("Débrief"),
+      dateIso: todayIsoDate(),
+      portee: state.portee === "equipe" ? "equipe" : "individuel",
+      items: [],
+    });
+    state.seances.unshift(seance);
+    sauvegarderSeances();
+    showSession(seance.id);
+  }
+
+  function deleteSeance(seanceId) {
+    state.seances = state.seances.filter(function (s) {
+      return s.id !== seanceId;
+    });
+    sauvegarderSeances();
+    if (currentSeanceId === seanceId) showList();
+    else renderSessionsList();
   }
 
   function idsFichePourPortee(portee) {
@@ -195,9 +499,10 @@
     }
 
     if (btnTirerLabelEl) {
-      btnTirerLabelEl.textContent =
-        portee === "equipe" ? "Obtenir ma fiche d’équipe" : "Obtenir ma fiche individuelle";
+      btnTirerLabelEl.textContent = "Obtenir ma fiche personnalisée";
     }
+
+    if (currentSeanceId) appliquerPorteeSurSeance();
   }
 
   function questionsParListeId(listeId) {
@@ -218,12 +523,19 @@
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
-  function afficherResultats(items, titreFiche) {
+  function majShareBar() {
+    if (!shareBarEl) return;
+    var seance = currentSeance();
+    shareBarEl.hidden = !(seance && seance.items.length);
+  }
+
+  function afficherFiche(seance) {
     if (!resultatsEl) return;
     OutilsDom.clear(resultatsEl);
-    if (!items.length) {
+    if (!seance || !seance.items.length) {
       resultatsEl.hidden = true;
       if (hintEl) hintEl.hidden = false;
+      majShareBar();
       return;
     }
     resultatsEl.hidden = false;
@@ -233,32 +545,55 @@
     }, 400);
     if (hintEl) hintEl.hidden = true;
 
-    if (titreFiche && items.length > 1) {
-      var entete = document.createElement("p");
-      entete.className = "debrief-resultats__titre";
-      entete.textContent = titreFiche;
-      resultatsEl.appendChild(entete);
-    }
+    var entete = document.createElement("p");
+    entete.className = "debrief-resultats__titre";
+    entete.textContent = titreBilan(seance.portee);
+    resultatsEl.appendChild(entete);
 
-    items.forEach(function (item, index) {
+    seance.items.forEach(function (item, index) {
       var bloc = document.createElement("div");
       bloc.className = "inducteur-resultat debrief-resultat";
+
+      if (seance.items.length > 1) {
+        var num = document.createElement("span");
+        num.className = "debrief-resultat__num";
+        num.textContent = "Question " + (index + 1);
+        bloc.appendChild(num);
+      }
+
       var label = document.createElement("span");
       label.className = "inducteur-resultat__liste";
       label.textContent = item.listeNom;
       bloc.appendChild(label);
+
       var strong = document.createElement("p");
       strong.className = "inducteur-resultat__texte debrief-resultat__question";
-      strong.textContent = item.texte;
+      strong.textContent = item.question;
       bloc.appendChild(strong);
-      if (items.length > 1) {
-        var num = document.createElement("span");
-        num.className = "debrief-resultat__num";
-        num.textContent = "Question " + (index + 1);
-        bloc.insertBefore(num, label);
-      }
+
+      var repLabel = document.createElement("label");
+      repLabel.className = "field-label debrief-reponse-label";
+      repLabel.setAttribute("for", "debrief-reponse-" + index);
+      repLabel.textContent = "Votre réponse";
+      bloc.appendChild(repLabel);
+
+      var textarea = document.createElement("textarea");
+      textarea.id = "debrief-reponse-" + index;
+      textarea.className = "debrief-reponse-input";
+      textarea.rows = 3;
+      textarea.maxLength = 2000;
+      textarea.placeholder = "Rédigez votre réponse…";
+      textarea.value = item.reponse || "";
+      textarea.addEventListener("input", function () {
+        item.reponse = textarea.value;
+        touchSeance(seance);
+        planifierSauvegardeSeances();
+      });
+      bloc.appendChild(textarea);
+
       resultatsEl.appendChild(bloc);
     });
+    majShareBar();
   }
 
   function tirerFiche(portee) {
@@ -278,28 +613,104 @@
 
   function tirer() {
     montrerMsg("");
+    var seance = currentSeance();
+    if (!seance) {
+      montrerMsg("Créez ou ouvrez un débrief de séance.");
+      return;
+    }
+    syncSeanceFieldsFromInputs();
     var portee = porteeDebrief();
-    var titreFiche = portee === "equipe" ? "Fiche bilan d’équipe" : "Fiche bilan individuel";
+    seance.portee = portee;
 
     if (!state.listes.length) {
       montrerMsg("Aucune liste de questions disponible.");
       return;
     }
 
-    var fiche = tirerFiche(portee);
-    var resultats = fiche.resultats;
+    var tirage = tirerFiche(portee);
+    var resultats = tirage.resultats;
     if (!resultats.length) {
       montrerMsg("Les questions de ce bilan sont vides. Réinitialisez ou complétez les listes.");
       return;
     }
-    if (fiche.manquantes.length) {
+    if (tirage.manquantes.length) {
       montrerMsg(
         "Fiche incomplète : certains thèmes sont vides. Les autres questions sont affichées.",
         true
       );
     }
 
-    afficherResultats(resultats, titreFiche);
+    var prevItems = seance.items || [];
+    seance.items = resultats.map(function (item) {
+      var prev = prevItems.find(function (x) {
+        return x.listeId === item.listeId && x.question === item.texte;
+      });
+      return {
+        listeId: item.listeId,
+        listeNom: item.listeNom,
+        question: item.texte,
+        reponse: prev ? prev.reponse : "",
+      };
+    });
+    touchSeance(seance);
+    sauvegarderSeances();
+    afficherFiche(seance);
+  }
+
+  function buildExportPayload() {
+    syncSeanceFieldsFromInputs();
+    var seance = currentSeance();
+    if (!seance) return { portee: "individuel", titre: "", reponses: [] };
+    return {
+      seanceTitle: seance.title,
+      dateIso: seance.dateIso,
+      dateLabel: formatDateFr(seance.dateIso),
+      portee: seance.portee,
+      porteeLabel: porteeLabel(seance.portee),
+      titre: titreBilan(seance.portee),
+      reponses: seance.items.map(function (it) {
+        return {
+          theme: it.listeNom,
+          question: it.question,
+          reponse: String(it.reponse || "").trim(),
+        };
+      }),
+    };
+  }
+
+  function validateBeforeShare() {
+    syncSeanceFieldsFromInputs();
+    var seance = currentSeance();
+    if (!seance || !seance.items.length) {
+      return "Obtenez d’abord votre fiche personnalisée.";
+    }
+    var remplies = seance.items.filter(function (it) {
+      return String(it.reponse || "").trim().length > 0;
+    });
+    if (!remplies.length) {
+      return "Rédigez au moins une réponse avant de partager.";
+    }
+    return null;
+  }
+
+  function mountQrShare() {
+    if (typeof EleveQrShare === "undefined" || !shareBarEl) return;
+    EleveQrShare.mountButton(shareBarEl, {
+      toolId: TOOL_ID,
+      buttonLabel: "Partager ce débrief au prof (QR)",
+      getParticipantLabel: function () {
+        syncSeanceFieldsFromInputs();
+        var seance = currentSeance();
+        var base = seance ? seance.title + " · " + porteeLabel(seance.portee) : "Débrief";
+        if (typeof EleveLabels !== "undefined" && EleveLabels.getToolLabels) {
+          var labels = EleveLabels.getToolLabels(TOOL_ID);
+          if (labels.auteurLabel) return labels.auteurLabel + " · " + base;
+        }
+        return base;
+      },
+      getPayload: buildExportPayload,
+      validateBeforeShare: validateBeforeShare,
+    });
   }
 
   function planifierSauvegarde() {
@@ -350,7 +761,6 @@
         if (rec && rec.portee === "equipe") state.portee = "equipe";
         else state.portee = "individuel";
         fusionnerListesDefautManquantes();
-        appliquerPorteeEnregistree();
       })
       .catch(function () {
         state.listes = copierListesDefaut();
@@ -515,13 +925,6 @@
     montrerMsg("Liste « " + n + " » créée.", true);
   }
 
-  function appliquerPorteeEnregistree() {
-    porteeRadios.forEach(function (radio) {
-      radio.checked = radio.value === state.portee;
-    });
-    majInterfacePortee();
-  }
-
   function resetListes() {
     if (
       !confirm(
@@ -533,26 +936,74 @@
     state.listes = copierListesDefaut();
     planifierSauvegarde();
     renderEditor();
-    if (resultatsEl) resultatsEl.hidden = true;
-    if (hintEl) hintEl.hidden = false;
     montrerMsg("Questions réinitialisées.", true);
   }
 
-  porteeRadios.forEach(function (radio) {
-    radio.addEventListener("change", majInterfacePortee);
-  });
+  function bindListeners() {
+    porteeRadios.forEach(function (radio) {
+      radio.addEventListener("change", majInterfacePortee);
+    });
 
-  var btnTirer = document.getElementById("btn-tirer");
-  if (btnTirer) btnTirer.addEventListener("click", tirer);
+    var btnTirer = document.getElementById("btn-tirer");
+    if (btnTirer) btnTirer.addEventListener("click", tirer);
 
-  var btnNouvelle = document.getElementById("btn-nouvelle-liste");
-  if (btnNouvelle) btnNouvelle.addEventListener("click", nouvelleListe);
+    var btnNouvelle = document.getElementById("btn-nouvelle-liste");
+    if (btnNouvelle) btnNouvelle.addEventListener("click", nouvelleListe);
 
-  var btnReset = document.getElementById("btn-reset-listes");
-  if (btnReset) btnReset.addEventListener("click", resetListes);
+    var btnReset = document.getElementById("btn-reset-listes");
+    if (btnReset) btnReset.addEventListener("click", resetListes);
+
+    var btnNew = document.getElementById("debrief-btn-new");
+    if (btnNew) btnNew.addEventListener("click", createSeance);
+
+    var btnBack = document.getElementById("debrief-btn-back-list");
+    if (btnBack) btnBack.addEventListener("click", showList);
+
+    var btnDelete = document.getElementById("debrief-btn-delete");
+    if (btnDelete) {
+      btnDelete.addEventListener("click", function () {
+        var seance = currentSeance();
+        if (!seance) return;
+        if (!confirm("Supprimer ce débrief et toutes ses réponses ?")) return;
+        deleteSeance(seance.id);
+      });
+    }
+
+    if (titleInput) {
+      titleInput.addEventListener("change", syncSeanceFieldsFromInputs);
+      titleInput.addEventListener("blur", syncSeanceFieldsFromInputs);
+    }
+    if (dateInput) {
+      dateInput.addEventListener("change", syncSeanceFieldsFromInputs);
+    }
+
+    if (seancesListEl) {
+      seancesListEl.addEventListener("click", function (e) {
+        var delBtn = e.target.closest('[data-action="delete-seance"]');
+        if (delBtn) {
+          e.stopPropagation();
+          var delId = delBtn.getAttribute("data-seance-id");
+          var s = state.seances.filter(function (x) {
+            return x.id === delId;
+          })[0];
+          if (!s || !confirm("Supprimer « " + s.title + " » ?")) return;
+          deleteSeance(delId);
+          return;
+        }
+        var openBtn = e.target.closest(".debrief-seance-btn[data-seance-id]");
+        if (!openBtn) return;
+        showSession(openBtn.getAttribute("data-seance-id"));
+      });
+    }
+  }
+
+  mountQrShare();
+  bindListeners();
+  chargerSeances();
 
   charger().then(function () {
     renderEditor();
-    appliquerPorteeEnregistree();
+    renderSessionsList();
+    showList();
   });
 })();

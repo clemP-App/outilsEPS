@@ -225,8 +225,9 @@ var EleveQrShare = (function () {
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "btn btn--ghost btn--labeled eleve-qr-share-btn";
+    var label = options.buttonLabel || "Partager au prof (QR)";
     btn.innerHTML =
-      '<span class="btn__icon" aria-hidden="true">📲</span><span class="btn__text">Partager au prof (QR)</span>';
+      '<span class="btn__icon" aria-hidden="true">📲</span><span class="btn__text">' + label + "</span>";
     btn.addEventListener("click", function () {
       open(options);
     });

@@ -132,6 +132,28 @@
         if (p.mainZone) z.push("zone " + p.mainZone);
         return z.length ? z.join(" · ") : "—";
       }
+      case "journal-musculation": {
+        var sess = p.session || p;
+        var sum = sess.summary || {};
+        return (
+          (sess.title || "Séance") +
+          " · " +
+          (sum.exerciseCount != null ? sum.exerciseCount : "—") +
+          " exo. · " +
+          (sum.setCount != null ? sum.setCount : "—") +
+          " séries" +
+          (sum.volumeKg ? " · " + sum.volumeKg + " kg" : "")
+        );
+      }
+      case "questions-debrief": {
+        var reps = p.reponses || [];
+        var nb = reps.filter(function (r) {
+          return r.reponse && String(r.reponse).trim();
+        }).length;
+        var label = p.seanceTitle || p.titre || p.porteeLabel || "Débrief";
+        if (p.dateLabel) label += " · " + p.dateLabel;
+        return label + " · " + nb + " réponse(s)";
+      }
       default:
         return "—";
     }
@@ -219,6 +241,37 @@
       case "zone-impact":
         (p.zones || []).forEach(function (z) {
           lines.push(z.label + " : " + z.count + " (" + z.percent + " %)");
+        });
+        break;
+      case "journal-musculation": {
+        var sess = p.session || p;
+        (sess.exercises || []).forEach(function (ex) {
+          if (ex.setMode === "uniform" && ex.setsLabel) {
+            lines.push((ex.name || "Exercice") + " : " + ex.setsLabel);
+            return;
+          }
+          var bits = (ex.sets || []).map(function (set, i) {
+            return (
+              "S" +
+              (i + 1) +
+              " " +
+              (set.reps != null ? set.reps : "—") +
+              "×" +
+              (set.weightKg != null ? set.weightKg + "kg" : "—")
+            );
+          });
+          lines.push((ex.name || "Exercice") + " : " + (bits.length ? bits.join(", ") : "—"));
+        });
+        if (sess.notes) lines.push("Notes : " + sess.notes);
+        break;
+      }
+      case "questions-debrief":
+        (p.reponses || []).forEach(function (row, i) {
+          var q = row.question || "—";
+          var r = row.reponse && String(row.reponse).trim() ? row.reponse : "—";
+          var theme = row.theme ? "[" + row.theme + "] " : "";
+          lines.push(theme + (i + 1) + ". " + q);
+          lines.push("→ " + r);
         });
         break;
       case "table-marque":
@@ -347,6 +400,29 @@
           "Zone principale",
           "Zones touchées",
         ];
+      case "journal-musculation":
+        return [
+          "Date import",
+          "Classe",
+          "Séance / élève",
+          "Titre séance",
+          "Date séance",
+          "Exercices",
+          "Séries",
+          "Répétitions",
+          "Volume (kg)",
+        ];
+      case "questions-debrief":
+        return [
+          "Date import",
+          "Classe",
+          "Élève / groupe",
+          "Séance",
+          "Date séance",
+          "Type de bilan",
+          "Réponses renseignées",
+          "Total questions",
+        ];
       default:
         return ["Date import", "Classe", "Joueur / Équipe", "Résultat"];
     }
@@ -434,6 +510,31 @@
           cell(p.mainZone),
           cell(p.coverage),
         ]);
+      case "journal-musculation": {
+        var sess = p.session || p;
+        var sum = sess.summary || {};
+        return baseMeta(rec).concat([
+          cell(sess.title),
+          cell(sess.dateLabel || sess.dateIso),
+          cell(sum.exerciseCount),
+          cell(sum.setCount),
+          cell(sum.repCount),
+          cell(sum.volumeKg),
+        ]);
+      }
+      case "questions-debrief": {
+        var repsDebrief = p.reponses || [];
+        var nbDebrief = repsDebrief.filter(function (r) {
+          return r.reponse && String(r.reponse).trim();
+        }).length;
+        return baseMeta(rec).concat([
+          cell(p.seanceTitle || p.titre),
+          cell(p.dateLabel || p.dateIso),
+          cell(p.porteeLabel || p.portee),
+          cell(nbDebrief),
+          cell(repsDebrief.length),
+        ]);
+      }
       default:
         return baseMeta(rec).concat([cell(humanSummary(rec))]);
     }

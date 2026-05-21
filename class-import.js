@@ -9,6 +9,15 @@ var ClassImport = (function () {
   var currentOpts = {};
   var D = "d" + "iv";
 
+  function domClear(node) {
+    if (!node) return;
+    if (typeof OutilsDom !== "undefined" && OutilsDom.clear) {
+      OutilsDom.clear(node);
+      return;
+    }
+    while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
   function creerOverlay() {
     if (overlayEl) return overlayEl;
     overlayEl = document.createElement(D);
@@ -133,7 +142,7 @@ var ClassImport = (function () {
     var empty = overlayEl.querySelector("#class-import-empty");
     if (!sel || !list) return;
 
-    OutilsDom.clear(list);
+    domClear(list);
     var id = sel.value;
     if (!id) {
       list.hidden = true;
@@ -260,7 +269,7 @@ var ClassImport = (function () {
         return DataManager.getClasses();
       })
       .then(function (classes) {
-        OutilsDom.clear(sel);
+        domClear(sel);
         if (!classes.length) {
           empty.hidden = false;
           empty.textContent =
@@ -282,8 +291,11 @@ var ClassImport = (function () {
         document.body.classList.add("class-import-open");
         sel.focus();
       })
-      .catch(function () {
-        alert("Impossible de charger les classes.");
+      .catch(function (err) {
+        if (typeof console !== "undefined" && console.warn) {
+          console.warn("[ClassImport] chargement classes", err);
+        }
+        alert("Impossible de charger les classes. Rechargez la page ou vérifiez que des classes existent dans « Classes et groupes ».");
       });
   }
 
