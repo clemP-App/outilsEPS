@@ -1,14 +1,19 @@
 /**
- * Vidéo avec retard — tampon d’images pour afficher la caméra avec décalage.
+ * Vidéo avec retard — tampon d’images, aperçu direct, plein écran et annotations.
  */
 (function () {
   "use strict";
 
   var CAPTURE_INTERVAL_MS = 100;
   var CAPTURE_MAX_WIDTH = 640;
+  var PIP_WIDTH = 140;
 
   var videoEl = document.getElementById("video-retard-src");
+  var stageEl = document.getElementById("video-retard-stage");
   var canvasEl = document.getElementById("video-retard-canvas");
+  var overlayEl = document.getElementById("video-retard-overlay");
+  var pipWrapEl = document.getElementById("video-retard-pip");
+  var pipCanvasEl = document.getElementById("video-retard-pip-canvas");
   var statusEl = document.getElementById("video-retard-status");
   var bufferEl = document.getElementById("video-retard-buffer");
   var delayInput = document.getElementById("video-retard-delay");
@@ -16,6 +21,12 @@
   var btnStart = document.getElementById("video-retard-start");
   var btnFlip = document.getElementById("video-retard-flip");
   var btnMirror = document.getElementById("video-retard-mirror");
+  var btnFullscreen = document.getElementById("video-retard-fullscreen");
+  var btnFsExit = document.getElementById("video-retard-fs-exit");
+  var btnDrawLine = document.getElementById("video-retard-draw-line");
+  var btnDrawCircle = document.getElementById("video-retard-draw-circle");
+  var btnDrawClear = document.getElementById("video-retard-draw-clear");
+  var drawHintEl = document.getElementById("video-retard-draw-hint");
   var fillCheckbox = document.getElementById("video-retard-fill");
   var msgEl = document.getElementById("video-retard-msg");
   var adviceEl = document.getElementById("video-retard-advice");
@@ -24,6 +35,8 @@
   var capaciteAppareil = null;
 
   var displayCtx = canvasEl && canvasEl.getContext("2d", { alpha: false });
+  var overlayCtx = overlayEl && overlayEl.getContext("2d");
+  var pipCtx = pipCanvasEl && pipCanvasEl.getContext("2d", { alpha: false });
   var captureCanvas = document.createElement("canvas");
   var captureCtx = captureCanvas.getContext("2d", { alpha: false });
 
@@ -36,6 +49,12 @@
   var frames = [];
   var startedAt = 0;
   var delayMs = 20000;
+  var lastVideoRect = null;
+  var drawTool = null;
+  var annotations = [];
+  var draftAnnotation = null;
+  var lineFirstPoint = null;
+  var pointerDown = false;
 
   function montrerMsg(texte) {
     if (!msgEl) return;
@@ -51,6 +70,12 @@
     if (!bufferEl) return;
     bufferEl.hidden = !visible;
     bufferEl.textContent = texte || "";
+  }
+
+  function setDrawHint(texte, visible) {
+    if (!drawHintEl) return;
+    drawHintEl.hidden = !visible;
+    drawHintEl.textContent = texte || "";
   }
 
   function delayFromInput() {
@@ -234,13 +259,29 @@
     }
   }
 
+  function stageHeight() {
+    if (!stageEl) return Math.max(200, window.innerHeight * 0.55);
+    if (isFullscreenActif() || stageEl.classList.contains("is-fullscreen-fallback")) {
+      return window.innerHeight;
+    }
+    return Math.max(200, stageEl.clientHeight || window.innerHeight * 0.55);
+  }
+
+  function isFullscreenActif() {
+    var el = document.fullscreenElement || document.webkitFullscreenElement;
+    return !!el && (el === stageEl || (stageEl && el.contains && el.contains(stageEl)));
+  }
+
   function resizeCanvas() {
-    if (!canvasEl) return;
-    var stage = canvasEl.parentElement;
-    var w = stage ? stage.clientWidth : window.innerWidth;
-    var h = stage ? stage.clientHeight : Math.max(200, window.innerHeight * 0.55);
+    if (!canvasEl || !stageEl) return;
+    var w = stageEl.clientWidth || window.innerWidth;
+    var h = stageHeight();
     canvasEl.width = Math.max(1, Math.floor(w));
     canvasEl.height = Math.max(1, Math.floor(h));
+    if (overlayEl) {
+      overlayEl.width = canvasEl.width;
+      overlayEl.height = canvasEl.height;
+    }
   }
 
   function setupCaptureSize() {
@@ -250,6 +291,233 @@
     var scale = Math.min(1, CAPTURE_MAX_WIDTH / vw);
     captureCanvas.width = Math.max(1, Math.floor(vw * scale));
     captureCanvas.height = Math.max(1, Math.floor(vh * scale));
+  }
+
+  function computeVideoRect(bw, bh) {
+    if (!canvasEl) return null;
+    var cw = canvasEl.width;
+    var ch = canvasEl.height;
+    var fill = fillCheckbox && fillCheckbox.checked;
+    var scale;
+    var dw;
+    var dh;
+    var dx;
+    var dy;
+
+    if (fill) {
+      scale = Math.max(cw / bw, ch / bh);
+      dw = bw * scale;
+      dh = bh * scale;
+      dx = (cw - dw) / 2;
+      dy = (ch - dh) / 2;
+    } else {
+      scale = Math.min(cw / bw, ch / bh);
+      dw = bw * scale;
+      dh = bh * scale;
+      dx = (cw - dw) / 2;
+      dy = (ch - dh) / 2;
+    }
+
+    lastVideoRect = { dx: dx, dy: dy, dw: dw, dh: dh };
+    return lastVideoRect;
+  }
+
+  function normDansVideo(nx, ny) {
+    return nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1;
+  }
+
+  function normVersCanvas(nx, ny) {
+    var v = lastVideoRect;
+    if (!v) return { x: 0, y: 0 };
+    return { x: v.dx + nx * v.dw, y: v.dy + ny * v.dh };
+  }
+
+  function pointerVersNorm(clientX, clientY) {
+    if (!canvasEl) return null;
+    var r = canvasEl.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    var x = (clientX - r.left) * (canvasEl.width / r.width);
+    var y = (clientY - r.top) * (canvasEl.height / r.height);
+    var v = lastVideoRect;
+    if (!v || v.dw <= 0 || v.dh <= 0) return null;
+    return { x: (x - v.dx) / v.dw, y: (y - v.dy) / v.dh };
+  }
+
+  function traceForme(ctx, forme) {
+    if (!forme || !lastVideoRect) return;
+    var p1 = normVersCanvas(forme.x1, forme.y1);
+    var p2 = normVersCanvas(forme.x2, forme.y2);
+
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = Math.max(2, Math.min(5, lastVideoRect.dw * 0.006));
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (forme.type === "line") {
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      return;
+    }
+
+    if (forme.type === "circle") {
+      var cx = p1.x;
+      var cy = p1.y;
+      var rayon = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      ctx.beginPath();
+      ctx.arc(cx, cy, rayon, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  function redrawOverlay() {
+    if (!overlayCtx || !overlayEl) return;
+    overlayCtx.clearRect(0, 0, overlayEl.width, overlayEl.height);
+    if (!lastVideoRect) return;
+    annotations.forEach(function (a) {
+      traceForme(overlayCtx, a);
+    });
+    if (draftAnnotation) traceForme(overlayCtx, draftAnnotation);
+  }
+
+  function resetDraft() {
+    draftAnnotation = null;
+    lineFirstPoint = null;
+    pointerDown = false;
+    redrawOverlay();
+  }
+
+  function setDrawTool(tool) {
+    drawTool = drawTool === tool ? null : tool;
+    resetDraft();
+    if (btnDrawLine) btnDrawLine.classList.toggle("is-active", drawTool === "line");
+    if (btnDrawCircle) btnDrawCircle.classList.toggle("is-active", drawTool === "circle");
+    if (overlayEl) {
+      overlayEl.classList.toggle("video-retard-overlay--draw", !!drawTool);
+    }
+    if (drawTool === "line") {
+      setDrawHint("Touchez le début du trait, puis la fin (sur l’image).", true);
+    } else if (drawTool === "circle") {
+      setDrawHint("Maintenez du centre vers le bord pour dimensionner le cercle.", true);
+    } else {
+      setDrawHint("", false);
+    }
+  }
+
+  function effacerAnnotations() {
+    annotations = [];
+    resetDraft();
+  }
+
+  function onOverlayPointerDown(e) {
+    if (!drawTool || !running) return;
+    var p = pointerVersNorm(e.clientX, e.clientY);
+    if (!p || !normDansVideo(p.x, p.y)) return;
+    e.preventDefault();
+
+    if (drawTool === "line") {
+      if (!lineFirstPoint) {
+        lineFirstPoint = p;
+        draftAnnotation = { type: "line", x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+        if (overlayEl.setPointerCapture) overlayEl.setPointerCapture(e.pointerId);
+        redrawOverlay();
+        return;
+      }
+      if (!normDansVideo(p.x, p.y)) return;
+      annotations.push({
+        type: "line",
+        x1: lineFirstPoint.x,
+        y1: lineFirstPoint.y,
+        x2: p.x,
+        y2: p.y,
+      });
+      resetDraft();
+      return;
+    }
+
+    if (drawTool === "circle") {
+      pointerDown = true;
+      draftAnnotation = { type: "circle", x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+      if (overlayEl.setPointerCapture) overlayEl.setPointerCapture(e.pointerId);
+      redrawOverlay();
+    }
+  }
+
+  function onOverlayPointerMove(e) {
+    if (!drawTool || !running) return;
+    var p = pointerVersNorm(e.clientX, e.clientY);
+    if (!p) return;
+
+    if (drawTool === "line" && lineFirstPoint && draftAnnotation) {
+      draftAnnotation.x2 = Math.max(0, Math.min(1, p.x));
+      draftAnnotation.y2 = Math.max(0, Math.min(1, p.y));
+      redrawOverlay();
+      return;
+    }
+
+    if (drawTool === "circle" && pointerDown && draftAnnotation) {
+      draftAnnotation.x2 = p.x;
+      draftAnnotation.y2 = p.y;
+      redrawOverlay();
+    }
+  }
+
+  function onOverlayPointerUp(e) {
+    if (drawTool !== "circle" || !pointerDown || !draftAnnotation) return;
+    pointerDown = false;
+    var p = pointerVersNorm(e.clientX, e.clientY);
+    if (!p) {
+      resetDraft();
+      return;
+    }
+    draftAnnotation.x2 = p.x;
+    draftAnnotation.y2 = p.y;
+    var rayon = Math.hypot(draftAnnotation.x2 - draftAnnotation.x1, draftAnnotation.y2 - draftAnnotation.y1);
+    if (rayon > 0.01) {
+      annotations.push({
+        type: "circle",
+        x1: draftAnnotation.x1,
+        y1: draftAnnotation.y1,
+        x2: draftAnnotation.x2,
+        y2: draftAnnotation.y2,
+      });
+    }
+    resetDraft();
+  }
+
+  function drawLiveToCtx(ctx, w, h) {
+    if (!videoEl || videoEl.readyState < 2 || !ctx) return;
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(0, 0, w, h);
+    var vw = videoEl.videoWidth;
+    var vh = videoEl.videoHeight;
+    if (!vw || !vh) return;
+    var scale = Math.min(w / vw, h / vh);
+    var dw = vw * scale;
+    var dh = vh * scale;
+    var dx = (w - dw) / 2;
+    var dy = (h - dh) / 2;
+    ctx.save();
+    if (mirror) {
+      ctx.translate(dx + dw, dy);
+      ctx.scale(-1, 1);
+      ctx.drawImage(videoEl, 0, 0, dw, dh);
+    } else {
+      ctx.drawImage(videoEl, dx, dy, dw, dh);
+    }
+    ctx.restore();
+  }
+
+  function drawPipPreview() {
+    if (!pipCtx || !pipCanvasEl || !pipWrapEl || pipWrapEl.hidden) return;
+    var ratio = 16 / 9;
+    if (videoEl && videoEl.videoWidth) {
+      ratio = videoEl.videoWidth / videoEl.videoHeight;
+    }
+    pipCanvasEl.width = PIP_WIDTH;
+    pipCanvasEl.height = Math.max(1, Math.round(PIP_WIDTH / ratio));
+    drawLiveToCtx(pipCtx, pipCanvasEl.width, pipCanvasEl.height);
   }
 
   function captureFrame() {
@@ -291,34 +559,11 @@
 
   function drawBitmapCover(bitmap) {
     if (!displayCtx || !canvasEl) return;
-    var cw = canvasEl.width;
-    var ch = canvasEl.height;
-    var bw = bitmap.width;
-    var bh = bitmap.height;
-    var fill = fillCheckbox && fillCheckbox.checked;
-    var scale;
-    var dw;
-    var dh;
-    var dx;
-    var dy;
-
-    if (fill) {
-      scale = Math.max(cw / bw, ch / bh);
-      dw = bw * scale;
-      dh = bh * scale;
-      dx = (cw - dw) / 2;
-      dy = (ch - dh) / 2;
-    } else {
-      scale = Math.min(cw / bw, ch / bh);
-      dw = bw * scale;
-      dh = bh * scale;
-      dx = (cw - dw) / 2;
-      dy = (ch - dh) / 2;
-    }
-
+    var rect = computeVideoRect(bitmap.width, bitmap.height);
     displayCtx.fillStyle = "#0a0a0a";
-    displayCtx.fillRect(0, 0, cw, ch);
-    displayCtx.drawImage(bitmap, dx, dy, dw, dh);
+    displayCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
+    displayCtx.drawImage(bitmap, rect.dx, rect.dy, rect.dw, rect.dh);
+    redrawOverlay();
   }
 
   function renderLoop() {
@@ -329,9 +574,16 @@
     var elapsed = now - startedAt;
     var remaining = Math.max(0, Math.ceil((delayMs - elapsed) / 1000));
 
+    drawPipPreview();
+
     if (elapsed < delayMs) {
       setBufferInfo("Tampon en cours… " + remaining + " s", true);
       setStatus("Enregistrement en cours — image retardée bientôt visible.");
+      if (videoEl && videoEl.readyState >= 2) {
+        computeVideoRect(videoEl.videoWidth, videoEl.videoHeight);
+        drawLiveToCtx(displayCtx, canvasEl.width, canvasEl.height);
+        redrawOverlay();
+      }
       return;
     }
 
@@ -342,10 +594,63 @@
     if (frame && frame.bitmap) drawBitmapCover(frame.bitmap);
   }
 
+  function syncFullscreenUi() {
+    var actif = isFullscreenActif() || (stageEl && stageEl.classList.contains("is-fullscreen-fallback"));
+    if (btnFsExit) btnFsExit.hidden = !actif;
+    if (btnFullscreen) {
+      var txt = btnFullscreen.querySelector(".btn__text");
+      if (txt) txt.textContent = actif ? "Quitter plein écran" : "Plein écran";
+      btnFullscreen.classList.toggle("is-active", actif);
+    }
+    if (actif) {
+      document.body.classList.add("video-retard-body-fs");
+    } else {
+      document.body.classList.remove("video-retard-body-fs");
+    }
+    resizeCanvas();
+  }
+
+  function quitterPleinEcran() {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(function () {});
+    }
+    if (stageEl) stageEl.classList.remove("is-fullscreen-fallback");
+    syncFullscreenUi();
+  }
+
+  function entrerPleinEcran() {
+    if (!stageEl) return;
+    if (isFullscreenActif() || stageEl.classList.contains("is-fullscreen-fallback")) {
+      quitterPleinEcran();
+      return;
+    }
+    var req = stageEl.requestFullscreen || stageEl.webkitRequestFullscreen;
+    if (req) {
+      Promise.resolve(req.call(stageEl))
+        .then(syncFullscreenUi)
+        .catch(function () {
+          stageEl.classList.add("is-fullscreen-fallback");
+          syncFullscreenUi();
+        });
+    } else {
+      stageEl.classList.add("is-fullscreen-fallback");
+      syncFullscreenUi();
+    }
+  }
+
   function setControlsActive(active) {
     if (btnFlip) btnFlip.disabled = !active;
     if (btnMirror) btnMirror.disabled = !active;
+    if (btnFullscreen) btnFullscreen.disabled = !active;
+    if (btnDrawLine) btnDrawLine.disabled = !active;
+    if (btnDrawCircle) btnDrawCircle.disabled = !active;
+    if (btnDrawClear) btnDrawClear.disabled = !active;
     if (fillCheckbox) fillCheckbox.disabled = !active;
+    if (pipWrapEl) pipWrapEl.hidden = !active;
+    if (!active) {
+      setDrawTool(null);
+      quitterPleinEcran();
+    }
   }
 
   function updateStartButton() {
@@ -371,6 +676,7 @@
     stopRenderLoop();
     stopStream();
     clearFrames();
+    effacerAnnotations();
     setControlsActive(false);
     updateStartButton();
     setBufferInfo("", false);
@@ -379,6 +685,10 @@
       displayCtx.fillStyle = "#0a0a0a";
       displayCtx.fillRect(0, 0, canvasEl.width, canvasEl.height);
     }
+    if (overlayCtx && overlayEl) {
+      overlayCtx.clearRect(0, 0, overlayEl.width, overlayEl.height);
+    }
+    lastVideoRect = null;
   }
 
   function demarrerCapture() {
@@ -461,16 +771,29 @@
     if (btnMirror) btnMirror.classList.toggle("is-active", mirror);
   }
 
-  if (delayInput) {
-    delayInput.addEventListener("input", syncDelayLabel);
-  }
+  if (delayInput) delayInput.addEventListener("input", syncDelayLabel);
   if (btnStart) btnStart.addEventListener("click", toggle);
   if (btnFlip) btnFlip.addEventListener("click", flipCamera);
   if (btnMirror) btnMirror.addEventListener("click", toggleMirror);
-  if (fillCheckbox) fillCheckbox.addEventListener("change", function () {});
+  if (btnFullscreen) btnFullscreen.addEventListener("click", entrerPleinEcran);
+  if (btnFsExit) btnFsExit.addEventListener("click", quitterPleinEcran);
+  if (btnDrawLine) btnDrawLine.addEventListener("click", function () { setDrawTool("line"); });
+  if (btnDrawCircle) btnDrawCircle.addEventListener("click", function () { setDrawTool("circle"); });
+  if (btnDrawClear) btnDrawClear.addEventListener("click", effacerAnnotations);
+  if (fillCheckbox) fillCheckbox.addEventListener("change", function () { redrawOverlay(); });
+
+  if (overlayEl) {
+    overlayEl.addEventListener("pointerdown", onOverlayPointerDown);
+    overlayEl.addEventListener("pointermove", onOverlayPointerMove);
+    overlayEl.addEventListener("pointerup", onOverlayPointerUp);
+    overlayEl.addEventListener("pointercancel", onOverlayPointerUp);
+  }
+
+  document.addEventListener("fullscreenchange", syncFullscreenUi);
+  document.addEventListener("webkitfullscreenchange", syncFullscreenUi);
 
   window.addEventListener("resize", function () {
-    if (running) resizeCanvas();
+    if (running || isFullscreenActif()) resizeCanvas();
   });
 
   window.addEventListener("pagehide", arret);

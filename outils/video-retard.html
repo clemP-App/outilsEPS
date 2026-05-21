@@ -25,8 +25,25 @@
         <h1>Vidéo avec retard</h1>
       </header>
 
-      <section class="video-retard-stage" aria-label="Aperçu retardé">
+      <section class="video-retard-stage" id="video-retard-stage" aria-label="Aperçu retardé">
         <canvas id="video-retard-canvas" class="video-retard-canvas"></canvas>
+        <canvas
+          id="video-retard-overlay"
+          class="video-retard-overlay"
+          aria-hidden="true"
+        ></canvas>
+        <div id="video-retard-pip" class="video-retard-pip" hidden>
+          <span class="video-retard-pip__label">Direct (tampon)</span>
+          <canvas id="video-retard-pip-canvas" class="video-retard-pip__canvas"></canvas>
+        </div>
+        <button
+          type="button"
+          id="video-retard-fs-exit"
+          class="video-retard-fs-exit btn btn--ghost"
+          hidden
+        >
+          Quitter le plein écran
+        </button>
         <p id="video-retard-status" class="video-retard-status" aria-live="polite">
           Appuyez sur Démarrer pour activer la caméra.
         </p>
@@ -73,6 +90,44 @@
             <span class="btn__icon" aria-hidden="true">↔</span>
             <span class="btn__text">Miroir</span>
           </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="video-retard-fullscreen" disabled>
+            <span class="btn__icon" aria-hidden="true">⛶</span>
+            <span class="btn__text">Plein écran</span>
+          </button>
+        </div>
+
+        <div class="video-retard-draw-toolbar" role="group" aria-label="Annotations sur l’image">
+          <span class="field-label">Annotations</span>
+          <div class="video-retard-draw-actions">
+            <button
+              type="button"
+              class="btn btn--ghost btn--labeled video-retard-draw-btn"
+              id="video-retard-draw-line"
+              disabled
+            >
+              <span class="btn__icon" aria-hidden="true">╱</span>
+              <span class="btn__text">Trait</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn--ghost btn--labeled video-retard-draw-btn"
+              id="video-retard-draw-circle"
+              disabled
+            >
+              <span class="btn__icon" aria-hidden="true">○</span>
+              <span class="btn__text">Cercle</span>
+            </button>
+            <button
+              type="button"
+              class="btn btn--ghost btn--labeled"
+              id="video-retard-draw-clear"
+              disabled
+            >
+              <span class="btn__icon" aria-hidden="true">⌫</span>
+              <span class="btn__text">Effacer</span>
+            </button>
+          </div>
+          <p id="video-retard-draw-hint" class="hint video-retard-draw-hint" hidden></p>
         </div>
 
         <label class="video-retard-opt">
@@ -106,6 +161,9 @@
               "Au lancement, attendez que le tampon se remplisse : le compte à rebours indique quand l’image apparaît.",
               "« Miroir » inverse l’image horizontalement (plus naturel pour se regarder).",
               "« Changer de caméra » alterne avant / arrière si l’appareil le permet.",
+              "Le rectangle « Direct (tampon) » montre l’entrée caméra en direct ; l’écran principal affiche l’image retardée.",
+              "« Plein écran » agrandit la visualisation ; « Quitter le plein écran » pour revenir.",
+              "« Trait » puis deux points sur l’image, ou « Cercle » en glissant du centre vers le bord.",
             ],
           },
           {

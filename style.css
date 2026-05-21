@@ -5102,11 +5102,127 @@ body.class-import-open {
   margin-bottom: 0.75rem;
 }
 
-.video-retard-canvas {
+.video-retard-stage:fullscreen,
+.video-retard-stage.is-fullscreen-fallback {
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  min-height: 100vh;
+  margin: 0;
+  border-radius: 0;
+  background: #000;
+}
+
+.video-retard-stage:fullscreen .video-retard-canvas,
+.video-retard-stage.is-fullscreen-fallback .video-retard-canvas {
+  min-height: 100vh;
+  height: 100vh;
+}
+
+.video-retard-canvas,
+.video-retard-overlay {
   display: block;
   width: 100%;
   height: 100%;
   min-height: min(52vh, 28rem);
+}
+
+.video-retard-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  touch-action: none;
+  pointer-events: none;
+}
+
+.video-retard-overlay--draw {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.video-retard-pip {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 3;
+  width: 140px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 2px solid rgba(250, 204, 21, 0.85);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  background: #0a0a0a;
+  pointer-events: none;
+}
+
+.video-retard-pip__label {
+  display: block;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #0f172a;
+  background: #facc15;
+  text-align: center;
+}
+
+.video-retard-pip__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
+.video-retard-fs-exit {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 4;
+  font-size: 0.85rem;
+  background: rgba(15, 23, 42, 0.82) !important;
+  color: #f8fafc !important;
+  border-color: rgba(248, 250, 252, 0.35) !important;
+}
+
+.video-retard-stage:fullscreen .video-retard-fs-exit,
+.video-retard-stage.is-fullscreen-fallback .video-retard-fs-exit {
+  top: max(0.5rem, env(safe-area-inset-top));
+  left: max(0.5rem, env(safe-area-inset-left));
+}
+
+.video-retard-draw-toolbar {
+  margin-bottom: 0.65rem;
+}
+
+.video-retard-draw-toolbar .field-label {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.video-retard-draw-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.video-retard-draw-actions .btn,
+.video-retard-draw-btn.is-active {
+  flex: 1 1 auto;
+  min-width: 6.5rem;
+}
+
+.video-retard-draw-btn.is-active,
+#video-retard-fullscreen.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.video-retard-draw-hint {
+  margin: 0.35rem 0 0;
+}
+
+body.video-retard-body-fs {
+  overflow: hidden;
 }
 
 .video-retard-status,
