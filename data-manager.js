@@ -183,6 +183,9 @@ var DataManager = (function () {
         return maybeMigrateSessions();
       })
       .then(function () {
+        return migrateRadarPerfsFromParametres();
+      })
+      .then(function () {
         return db;
       })
       .catch(function (err) {
@@ -907,6 +910,30 @@ var DataManager = (function () {
     });
   }
 
+  function getRadarPerfs() {
+    return getAll("radarPerfs");
+  }
+
+  function saveRadarPerfs(liste) {
+    return clearStore("radarPerfs").then(function () {
+      var items = Array.isArray(liste) ? liste : [];
+      if (!items.length) return;
+      return bulkPut("radarPerfs", items);
+    });
+  }
+
+  function migrateRadarPerfsFromParametres() {
+    return getAll("radarPerfs").then(function (existing) {
+      if (existing.length) return;
+      return getParametre("radar-perfs").then(function (rec) {
+        if (!rec || !Array.isArray(rec.perfs) || !rec.perfs.length) return;
+        return saveRadarPerfs(rec.perfs).then(function () {
+          return deleteParametre("radar-perfs");
+        });
+      });
+    });
+  }
+
   /* --- Sessions (multi-séances par outil) --- */
 
   function getBySession(storeName, sessionId) {
@@ -1416,6 +1443,12 @@ var DataManager = (function () {
       stores: ["oublisMateriel"],
     },
     {
+      id: "radar",
+      label: "Radar (performances course)",
+      stores: ["radarPerfs"],
+      paramIds: ["radar-session", "radar-settings"],
+    },
+    {
       id: "championnat",
       label: "Championnat poule",
       stores: ["championnats"],
@@ -1485,6 +1518,8 @@ var DataManager = (function () {
         parts.push(n + " dispense" + (n !== 1 ? "s" : ""));
       } else if (store === "oublisMateriel") {
         parts.push(n + " oubli" + (n !== 1 ? "s" : ""));
+      } else if (store === "radarPerfs") {
+        parts.push(n + " perf" + (n !== 1 ? "s" : "") + " Radar");
       } else if (store === "sessions") {
         parts.push(n + " séance" + (n !== 1 ? "s" : ""));
       } else if (store === "championnats") {
@@ -1852,6 +1887,9 @@ var DataManager = (function () {
     saveDispenses: saveDispenses,
     getOublisMateriel: getOublisMateriel,
     saveOublisMateriel: saveOublisMateriel,
+    getRadarPerfs: getRadarPerfs,
+    saveRadarPerfs: saveRadarPerfs,
+    migrateRadarPerfsFromParametres: migrateRadarPerfsFromParametres,
     SESSION_TOOLS: SC.SESSION_TOOLS,
     SessionsCore: SC,
     getSessionById: getSessionById,

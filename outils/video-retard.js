@@ -29,6 +29,7 @@
   var drawHintEl = document.getElementById("video-retard-draw-hint");
   var fillCheckbox = document.getElementById("video-retard-fill");
   var pipShowCheckbox = document.getElementById("video-retard-pip-show");
+  var btnPipClose = document.getElementById("video-retard-pip-close");
   var msgEl = document.getElementById("video-retard-msg");
   var adviceEl = document.getElementById("video-retard-advice");
   var warnEl = document.getElementById("video-retard-warn");
@@ -514,6 +515,11 @@
     return pipShowCheckbox ? pipShowCheckbox.checked : true;
   }
 
+  function setPipVisible(visible) {
+    if (pipShowCheckbox) pipShowCheckbox.checked = !!visible;
+    majVisibilitePip();
+  }
+
   function majVisibilitePip() {
     if (!pipWrapEl) return;
     pipWrapEl.hidden = !running || !pipAffichee();
@@ -656,7 +662,6 @@
     if (btnDrawCircle) btnDrawCircle.disabled = !active;
     if (btnDrawClear) btnDrawClear.disabled = !active;
     if (fillCheckbox) fillCheckbox.disabled = !active;
-    if (pipShowCheckbox) pipShowCheckbox.disabled = !active;
     majVisibilitePip();
     if (!active) {
       setDrawTool(null);
@@ -792,7 +797,19 @@
   if (btnDrawCircle) btnDrawCircle.addEventListener("click", function () { setDrawTool("circle"); });
   if (btnDrawClear) btnDrawClear.addEventListener("click", effacerAnnotations);
   if (fillCheckbox) fillCheckbox.addEventListener("change", function () { redrawOverlay(); });
-  if (pipShowCheckbox) pipShowCheckbox.addEventListener("change", majVisibilitePip);
+  if (pipShowCheckbox) {
+    pipShowCheckbox.addEventListener("change", majVisibilitePip);
+    pipShowCheckbox.addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+  }
+  if (btnPipClose) {
+    btnPipClose.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      setPipVisible(false);
+    });
+  }
 
   if (overlayEl) {
     overlayEl.addEventListener("pointerdown", onOverlayPointerDown);
@@ -820,4 +837,5 @@
   syncDelayLabel();
   resizeCanvas();
   updateStartButton();
+  majVisibilitePip();
 })();

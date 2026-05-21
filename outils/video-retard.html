@@ -33,7 +33,18 @@
           aria-hidden="true"
         ></canvas>
         <div id="video-retard-pip" class="video-retard-pip" hidden>
-          <span class="video-retard-pip__label">Direct (tampon)</span>
+          <div class="video-retard-pip__head">
+            <span class="video-retard-pip__label">Direct (tampon)</span>
+            <button
+              type="button"
+              id="video-retard-pip-close"
+              class="video-retard-pip__close"
+              aria-label="Masquer la vignette"
+              title="Masquer la vignette"
+            >
+              ×
+            </button>
+          </div>
           <canvas id="video-retard-pip-canvas" class="video-retard-pip__canvas"></canvas>
         </div>
         <button
@@ -136,7 +147,7 @@
         </label>
 
         <label class="video-retard-opt">
-          <input type="checkbox" id="video-retard-pip-show" checked disabled />
+          <input type="checkbox" id="video-retard-pip-show" checked />
           <span>Afficher la vignette direct (tampon)</span>
         </label>
 
@@ -166,7 +177,7 @@
               "Au lancement, attendez que le tampon se remplisse : le compte à rebours indique quand l’image apparaît.",
               "« Miroir » inverse l’image horizontalement (plus naturel pour se regarder).",
               "« Changer de caméra » alterne avant / arrière si l’appareil le permet.",
-              "La vignette « Direct (tampon) » peut être affichée ou masquée ; l’écran principal montre toujours l’image retardée.",
+              "Décochez « Afficher la vignette » ou touchez × sur la vignette pour la masquer ; recochez pour l’afficher à nouveau.",
               "« Plein écran » agrandit la visualisation ; « Quitter le plein écran » pour revenir.",
               "« Trait » puis deux points sur l’image, ou « Cercle » en glissant du centre vers le bord.",
             ],

@@ -1,17 +1,18 @@
 /**
- * Radar — chronomètre distance → vitesse (km/h, min/km), performances par élève.
+ * Radar — chronomètre distance → vitesse (km/h, min/km, m/s), performances par élève.
  */
 (function () {
   "use strict";
 
-  var PARAM_PERFS = "radar-perfs";
   var PARAM_SESSION = "radar-session";
+  var PARAM_DISTANCE = "radar-settings";
+  var LS_PERFS_KEY = "outils_eps_radar_perfs_v1";
+  var LS_DISTANCE_KEY = "outils_eps_radar_distance_v1";
 
   var distanceEl = document.getElementById("radar-distance");
   var uniteEl = document.getElementById("radar-unite");
   var selectWrapEl = document.getElementById("radar-select-wrap");
   var selectEl = document.getElementById("radar-eleve-select");
-  var eleveLabelEl = document.getElementById("radar-eleve-label");
   var eleveIdEl = document.getElementById("radar-eleve-id");
   var classeIdEl = document.getElementById("radar-classe-id");
   var chronoLabelEl = document.getElementById("radar-chrono-label");
@@ -20,9 +21,10 @@
   var btnArrivee = document.getElementById("radar-btn-arrivee");
   var btnReset = document.getElementById("radar-btn-reset");
   var msgEl = document.getElementById("radar-msg");
-  var sectionResultats = document.getElementById("radar-section-resultats");
+  var sectionApresChrono = document.getElementById("radar-section-apres-chrono");
   var resultKmh = document.getElementById("radar-result-kmh");
   var resultAllure = document.getElementById("radar-result-allure");
+  var resultMs = document.getElementById("radar-result-ms");
   var resultMeta = document.getElementById("radar-result-meta");
   var btnEnregistrer = document.getElementById("radar-btn-enregistrer");
   var listePerfsEl = document.getElementById("radar-liste-perfs");
@@ -33,7 +35,6 @@
   var panelChrono = document.getElementById("radar-panel-chrono");
   var panelHistorique = document.getElementById("radar-panel-historique");
 
-  var vueState = "chrono";
   var running = false;
   var tickId = null;
   var startedAt = 0;
@@ -41,6 +42,7 @@
   var dernierResultat = null;
   var listePerfs = [];
   var session = { classeId: "", classeNom: "", eleves: [] };
+  var dbReady = false;
 
   function genererId(prefix) {
     if (typeof DataManager !== "undefined" && DataManager.genererId) {
@@ -80,6 +82,43 @@
       return EleveDisplay.formatEleveListe(e);
     }
     return [e.nom, e.prenom].filter(Boolean).join(" ").trim() || "Sans nom";
+  }
+
+  function cleMeilleurePerf(p) {
+    var eleve = p.eleveId || normalise([p.nom, p.prenom, p.classe].join("|"));
+    return eleve + "|" + String(p.distanceM || 0);
+  }
+
+  function cleElevePerf(p) {
+    return p.eleveId || normalise([p.nom, p.prenom, p.classe].join("|"));
+  }
+
+  function distancePerfEgale(a, b) {
+    return Math.abs((a || 0) - (b || 0)) < 0.001;
+  }
+
+  function meilleursTempsParEleve(distanceM) {
+    var map = {};
+    if (!isFinite(distanceM) || distanceM <= 0) return map;
+    listePerfs.forEach(function (p) {
+      if (!distancePerfEgale(p.distanceM, distanceM)) return;
+      var key = cleElevePerf(p);
+      if (!map[key] || p.tempsMs < map[key].tempsMs) map[key] = p;
+    });
+    return map;
+  }
+
+  function idsMeilleuresPerfs(liste) {
+    var best = {};
+    (liste || []).forEach(function (p) {
+      var k = cleMeilleurePerf(p);
+      if (!best[k] || p.kmh > best[k].kmh) best[k] = p;
+    });
+    var ids = {};
+    Object.keys(best).forEach(function (k) {
+      ids[best[k].id] = true;
+    });
+    return ids;
   }
 
   function lireDistanceMetres() {
@@ -127,10 +166,10 @@
   function calculerVitesses(distM, tempsMs) {
     var tempsS = tempsMs / 1000;
     var distKm = distM / 1000;
-    var tempsH = tempsS / 3600;
-    var kmh = distKm / tempsH;
+    var kmh = distKm / (tempsS / 3600);
     var allureMin = 60 / kmh;
-    return { kmh: kmh, allureMin: allureMin, tempsMs: tempsMs, distanceM: distM };
+    var ms = distM / tempsS;
+    return { kmh: kmh, allureMin: allureMin, ms: ms, tempsMs: tempsMs, distanceM: distM };
   }
 
   function getEleveSelectionne() {
@@ -147,20 +186,19 @@
     var e = getEleveSelectionne();
     if (eleveIdEl) eleveIdEl.value = e ? e.id || "" : "";
     if (classeIdEl) classeIdEl.value = session.classeId || "";
-    if (eleveLabelEl) {
-      if (e) {
-        eleveLabelEl.hidden = false;
-        eleveLabelEl.textContent =
-          formatEleve(e) + (session.classeNom ? " · " + session.classeNom : "");
-      } else {
-        eleveLabelEl.hidden = true;
-        eleveLabelEl.textContent = "";
-      }
-    }
+  }
+
+  function libelleEleveSelect(e, bests, distM) {
+    var label = formatEleve(e);
+    if (!isFinite(distM) || distM <= 0) return label;
+    var best = bests[e.id];
+    if (best) return label + " — " + formaterTemps(best.tempsMs);
+    return label + " — —";
   }
 
   function remplirSelectEleves() {
     if (!selectEl || !selectWrapEl) return;
+    var prev = selectEl.value;
     if (typeof OutilsDom !== "undefined" && OutilsDom.clear) {
       OutilsDom.clear(selectEl);
     } else {
@@ -172,6 +210,8 @@
       return;
     }
     selectWrapEl.hidden = false;
+    var distM = lireDistanceMetres();
+    var bests = meilleursTempsParEleve(distM);
     var opt0 = document.createElement("option");
     opt0.value = "";
     opt0.textContent = "— Choisir un élève —";
@@ -179,15 +219,74 @@
     session.eleves.forEach(function (e) {
       var opt = document.createElement("option");
       opt.value = e.id;
-      opt.textContent = formatEleve(e);
+      opt.textContent = libelleEleveSelect(e, bests, distM);
       selectEl.appendChild(opt);
     });
-    if (session.eleves.length === 1) selectEl.value = session.eleves[0].id;
+    if (prev && session.eleves.some(function (e) {
+      return e.id === prev;
+    })) {
+      selectEl.value = prev;
+    } else {
+      selectEl.value = "";
+    }
     majChampsEleve();
   }
 
+  function appliquerDistanceSauvegardee(rec) {
+    if (!rec) return;
+    if (distanceEl && rec.distance != null && rec.distance !== "") {
+      distanceEl.value = String(rec.distance);
+    }
+    if (uniteEl && (rec.unite === "m" || rec.unite === "km")) {
+      uniteEl.value = rec.unite;
+    }
+  }
+
+  function lireDistanceSauvegardee() {
+    var out = { distance: "", unite: "m" };
+    try {
+      var raw = localStorage.getItem(LS_DISTANCE_KEY);
+      if (raw) {
+        var ls = JSON.parse(raw);
+        if (ls && typeof ls === "object") {
+          if (ls.distance != null) out.distance = String(ls.distance);
+          if (ls.unite === "m" || ls.unite === "km") out.unite = ls.unite;
+        }
+      }
+    } catch (e) {
+      /* ignore */
+    }
+    return out;
+  }
+
+  function sauverDistance() {
+    var rec = {
+      distance: distanceEl ? distanceEl.value : "",
+      unite: uniteEl && uniteEl.value === "km" ? "km" : "m",
+    };
+    try {
+      localStorage.setItem(LS_DISTANCE_KEY, JSON.stringify(rec));
+    } catch (e) {
+      /* ignore */
+    }
+    if (!dbReady || typeof DataManager === "undefined") return Promise.resolve();
+    return DataManager.saveParametre({
+      id: PARAM_DISTANCE,
+      distance: rec.distance,
+      unite: rec.unite,
+    });
+  }
+
+  function chargerDistance() {
+    appliquerDistanceSauvegardee(lireDistanceSauvegardee());
+    if (!dbReady || typeof DataManager === "undefined") return Promise.resolve();
+    return DataManager.getParametre(PARAM_DISTANCE).then(function (rec) {
+      if (rec) appliquerDistanceSauvegardee(rec);
+    });
+  }
+
   function sauverSession() {
-    if (typeof DataManager === "undefined") return Promise.resolve();
+    if (!dbReady || typeof DataManager === "undefined") return Promise.resolve();
     return DataManager.saveParametre({
       id: PARAM_SESSION,
       classeId: session.classeId,
@@ -199,7 +298,7 @@
   }
 
   function chargerSession() {
-    if (typeof DataManager === "undefined") return Promise.resolve();
+    if (!dbReady || typeof DataManager === "undefined") return Promise.resolve();
     return DataManager.getParametre(PARAM_SESSION).then(function (rec) {
       if (!rec || !rec.classeId || !rec.eleveIds || !rec.eleveIds.length) {
         session = { classeId: "", classeNom: "", eleves: [] };
@@ -225,19 +324,52 @@
     });
   }
 
+  function lirePerfsLocalStorage() {
+    try {
+      var raw = localStorage.getItem(LS_PERFS_KEY);
+      if (!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function sauverPerfsLocalStorage() {
+    try {
+      localStorage.setItem(LS_PERFS_KEY, JSON.stringify(listePerfs));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function sauverPerfs() {
     listePerfs = Array.isArray(listePerfs) ? listePerfs.slice() : [];
-    if (typeof DataManager === "undefined") {
-      return Promise.reject(new Error("Stockage indisponible."));
+    sauverPerfsLocalStorage();
+    if (!dbReady || typeof DataManager === "undefined" || !DataManager.saveRadarPerfs) {
+      return Promise.resolve();
     }
-    return DataManager.saveParametre({ id: PARAM_PERFS, perfs: listePerfs });
+    return DataManager.saveRadarPerfs(listePerfs);
   }
 
   function chargerPerfs() {
-    if (typeof DataManager === "undefined") return Promise.resolve([]);
-    return DataManager.getParametre(PARAM_PERFS).then(function (rec) {
-      return rec && Array.isArray(rec.perfs) ? rec.perfs : [];
-    });
+    if (dbReady && typeof DataManager !== "undefined" && DataManager.getRadarPerfs) {
+      return DataManager.getRadarPerfs().then(function (arr) {
+        listePerfs = Array.isArray(arr) ? arr : [];
+        sauverPerfsLocalStorage();
+        return listePerfs;
+      });
+    }
+    listePerfs = lirePerfsLocalStorage();
+    return Promise.resolve(listePerfs);
+  }
+
+  function messageErreurStockage(err) {
+    if (typeof DataManager !== "undefined" && DataManager.storageErrorMessage) {
+      return DataManager.storageErrorMessage(err);
+    }
+    return (err && err.message) || "Stockage indisponible.";
   }
 
   function champsDistanceVerrouilles(verrou) {
@@ -245,12 +377,19 @@
     if (uniteEl) uniteEl.disabled = verrou;
   }
 
-  function masquerResultats() {
+  function masquerApresChrono() {
     dernierResultat = null;
-    if (sectionResultats) sectionResultats.hidden = true;
+    if (sectionApresChrono) sectionApresChrono.hidden = true;
     if (resultKmh) resultKmh.textContent = "—";
     if (resultAllure) resultAllure.textContent = "—";
+    if (resultMs) resultMs.textContent = "—";
     if (resultMeta) resultMeta.textContent = "";
+    if (selectEl) selectEl.value = "";
+    majChampsEleve();
+  }
+
+  function afficherApresChrono() {
+    if (sectionApresChrono) sectionApresChrono.hidden = false;
   }
 
   function majAffichageChrono() {
@@ -284,12 +423,7 @@
       montrerMsg("Indiquez une distance strictement positive avant le départ.");
       return;
     }
-    var e = getEleveSelectionne();
-    if (!e) {
-      montrerMsg("Importez une classe et choisissez l’élève à chronométrer.");
-      return;
-    }
-    masquerResultats();
+    masquerApresChrono();
     running = true;
     startedAt = Date.now();
     elapsedMs = 0;
@@ -311,30 +445,28 @@
     }
 
     var vit = calculerVitesses(distM, elapsedMs);
-    var e = getEleveSelectionne();
     dernierResultat = {
       distanceM: distM,
       tempsMs: elapsedMs,
       kmh: vit.kmh,
       allureMin: vit.allureMin,
-      eleveId: e ? e.id : "",
-      classeId: session.classeId,
-      nom: e ? e.nom : "",
-      prenom: e ? e.prenom : "",
-      classe: session.classeNom,
+      ms: vit.ms,
     };
 
-    if (sectionResultats) sectionResultats.hidden = false;
+    afficherApresChrono();
     if (resultKmh) resultKmh.textContent = formaterNombre(vit.kmh, 2);
     if (resultAllure) resultAllure.textContent = formaterAllure(vit.allureMin);
+    if (resultMs) resultMs.textContent = formaterNombre(vit.ms, 2);
     if (resultMeta) {
-      resultMeta.textContent =
-        formatDistance(distM) +
-        " en " +
-        formaterTemps(elapsedMs) +
-        (e ? " — " + formatEleve(e) : "");
+      resultMeta.textContent = formaterDistance(distM) + " en " + formaterTemps(elapsedMs);
     }
+    remplirSelectEleves();
+    if (selectEl) selectEl.value = "";
+    majChampsEleve();
     montrerMsg("");
+    if (sectionApresChrono && sectionApresChrono.scrollIntoView) {
+      sectionApresChrono.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   function reinitialiser() {
@@ -342,7 +474,7 @@
     stopTick();
     running = false;
     elapsedMs = 0;
-    masquerResultats();
+    masquerApresChrono();
     montrerMsg("");
     majAffichageChrono();
   }
@@ -354,7 +486,7 @@
     }
     var e = getEleveSelectionne();
     if (!e) {
-      montrerMsg("Choisissez l’élève avant d’enregistrer.");
+      montrerMsg("Importez une classe et choisissez l’élève concerné.");
       return;
     }
 
@@ -369,6 +501,7 @@
       tempsMs: dernierResultat.tempsMs,
       kmh: dernierResultat.kmh,
       allureMin: dernierResultat.allureMin,
+      ms: dernierResultat.ms,
       createdAt: new Date().toISOString(),
     };
 
@@ -376,16 +509,13 @@
     sauverPerfs()
       .then(function () {
         renderHistorique();
+        remplirSelectEleves();
         montrerFeedback("Performance enregistrée.", false);
         reinitialiser();
-        if (selectEl && session.eleves.length > 1) {
-          selectEl.value = "";
-          majChampsEleve();
-        }
       })
-      .catch(function () {
+      .catch(function (err) {
         listePerfs.pop();
-        montrerMsg("Stockage plein ou indisponible.");
+        montrerMsg(messageErreurStockage(err));
       });
   }
 
@@ -399,8 +529,8 @@
         renderHistorique();
         montrerFeedback("Performance supprimée.", false);
       })
-      .catch(function () {
-        montrerMsg("Impossible de supprimer.");
+      .catch(function (err) {
+        montrerMsg(messageErreurStockage(err));
       });
   }
 
@@ -436,6 +566,7 @@
     var q = filtreEl ? filtreEl.value : "";
     var brute = listePerfs.slice();
     var liste = filtrerPerfs(brute, q);
+    var meilleures = idsMeilleuresPerfs(brute);
 
     liste.sort(function (a, b) {
       return (b.createdAt || "").localeCompare(a.createdAt || "");
@@ -459,8 +590,11 @@
     }
 
     liste.forEach(function (perf) {
+      var estMeilleure = !!meilleures[perf.id];
       var article = document.createElement("article");
-      article.className = "dispense-item dispense-item--active radar-item";
+      article.className =
+        "dispense-item dispense-item--active radar-item" +
+        (estMeilleure ? " radar-item--best" : "");
 
       var head = document.createElement("div");
       head.className = "dispense-item__head";
@@ -468,27 +602,27 @@
       var left = document.createElement("div");
       left.className = "dispense-item__main";
       var h3 = document.createElement("h3");
-      h3.className = "dispense-item__title";
+      h3.className = "dispense-item__title" + (estMeilleure ? " radar-item__title--best" : "");
       h3.textContent = formatEleve(perf);
       var meta = document.createElement("p");
-      meta.style.margin = "0";
-      meta.style.fontSize = "0.9rem";
-      meta.style.color = "var(--text-muted)";
+      meta.className = "radar-item__meta";
       meta.textContent =
         (perf.classe || "Sans classe") +
         " · " +
-        formatDistance(perf.distanceM) +
+        formaterDistance(perf.distanceM) +
         " · " +
         formaterTemps(perf.tempsMs) +
         " · " +
-        formatDateHeure(perf.createdAt);
+        formatDateHeure(perf.createdAt) +
+        (estMeilleure ? " · Meilleure perf." : "");
       left.appendChild(h3);
       left.appendChild(meta);
 
       var badge = document.createElement("div");
       badge.className = "dispense-item__days dispense-item__days--active radar-item__vitesse";
       var num = document.createElement("span");
-      num.className = "dispense-item__days-num";
+      num.className =
+        "dispense-item__days-num" + (estMeilleure ? " radar-item__vitesse-num--best" : "");
       num.textContent = formaterNombre(perf.kmh, 1);
       var lbl = document.createElement("span");
       lbl.className = "dispense-item__days-label";
@@ -514,8 +648,13 @@
       article.appendChild(head);
 
       var detail = document.createElement("p");
-      detail.className = "radar-item__allure";
-      detail.textContent = "Allure : " + formaterAllure(perf.allureMin);
+      detail.className = "radar-item__allure" + (estMeilleure ? " radar-item__allure--best" : "");
+      detail.textContent =
+        "Allure : " +
+        formaterAllure(perf.allureMin) +
+        " · " +
+        formaterNombre(perf.ms, 2) +
+        " m/s";
       article.appendChild(detail);
 
       listePerfsEl.appendChild(article);
@@ -523,7 +662,6 @@
   }
 
   function afficherVue(mode) {
-    vueState = mode;
     var isChrono = mode === "chrono";
     if (panelChrono) {
       panelChrono.hidden = !isChrono;
@@ -553,7 +691,7 @@
     }
     ClassImport.open({
       title: "Importer une classe",
-      hint: "Cochez les élèves à chronométrer (ou tout cocher).",
+      hint: "Cochez les élèves de la classe (ou tout cocher).",
       onConfirm: function (eleves, classe) {
         if (!eleves.length) {
           montrerMsg("Aucun élève sélectionné.");
@@ -572,6 +710,7 @@
               false
             );
             montrerMsg("");
+            if (selectEl && selectEl.focus) selectEl.focus();
           })
           .catch(function () {
             montrerMsg("Impossible de mémoriser la classe.");
@@ -586,13 +725,31 @@
   if (btnEnregistrer) btnEnregistrer.addEventListener("click", enregistrerPerf);
   if (selectEl) selectEl.addEventListener("change", majChampsEleve);
   if (filtreEl) filtreEl.addEventListener("input", renderHistorique);
+  if (distanceEl) {
+    distanceEl.addEventListener("input", function () {
+      sauverDistance();
+      remplirSelectEleves();
+    });
+    distanceEl.addEventListener("change", function () {
+      sauverDistance();
+      remplirSelectEleves();
+    });
+  }
+  if (uniteEl) {
+    uniteEl.addEventListener("change", function () {
+      sauverDistance();
+      remplirSelectEleves();
+    });
+  }
 
   var btnImport = document.getElementById("btn-import-classe-radar");
   if (btnImport) btnImport.addEventListener("click", importerClasse);
 
-  if (tabChrono) tabChrono.addEventListener("click", function () {
-    afficherVue("chrono");
-  });
+  if (tabChrono) {
+    tabChrono.addEventListener("click", function () {
+      afficherVue("chrono");
+    });
+  }
   if (tabHistorique) {
     tabHistorique.addEventListener("click", function () {
       afficherVue("historique");
@@ -600,20 +757,33 @@
   }
 
   majAffichageChrono();
-  masquerResultats();
+  masquerApresChrono();
+
+  listePerfs = lirePerfsLocalStorage();
+  appliquerDistanceSauvegardee(lireDistanceSauvegardee());
 
   if (typeof DataManager !== "undefined") {
     DataManager.ready
       .then(function () {
-        return Promise.all([chargerPerfs(), chargerSession()]);
+        dbReady = typeof DataManager.getRadarPerfs === "function";
+        return chargerDistance();
       })
-      .then(function (arr) {
-        listePerfs = arr[0] || [];
+      .then(function () {
+        return chargerPerfs();
+      })
+      .then(function () {
+        return chargerSession();
+      })
+      .then(function () {
         afficherVue("chrono");
         renderHistorique();
       })
       .catch(function () {
         afficherVue("chrono");
+        renderHistorique();
       });
+  } else {
+    afficherVue("chrono");
+    renderHistorique();
   }
 })();

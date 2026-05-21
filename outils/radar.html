@@ -84,28 +84,6 @@
           </div>
         </section>
 
-        <section class="card" aria-labelledby="lbl-eleve">
-          <h2 id="lbl-eleve">Élève</h2>
-          <button
-            type="button"
-            class="btn btn--ghost btn--labeled dispense-import-classe"
-            id="btn-import-classe-radar"
-          >
-            <span class="btn__icon" aria-hidden="true">👥</span>
-            <span class="btn__text">Importer une classe</span>
-          </button>
-          <p class="hint dispense-import-hint">
-            Charge la liste des élèves pour attribuer chaque chronométrage.
-          </p>
-          <div class="field-group" id="radar-select-wrap" hidden>
-            <label class="field-label" for="radar-eleve-select">Élève chronométré</label>
-            <select id="radar-eleve-select"></select>
-          </div>
-          <p id="radar-eleve-label" class="radar-eleve-actif" hidden></p>
-          <input type="hidden" id="radar-eleve-id" value="" />
-          <input type="hidden" id="radar-classe-id" value="" />
-        </section>
-
         <section class="card radar-chrono-card" aria-live="polite" aria-atomic="true">
           <p class="radar-chrono-label" id="radar-chrono-label">Prêt</p>
           <p class="radar-chrono-time" id="radar-chrono-time">00:00.0</p>
@@ -126,21 +104,46 @@
           <p id="radar-msg" class="msg-error" role="alert" hidden></p>
         </section>
 
-        <section class="card" id="radar-section-resultats" aria-labelledby="lbl-resultats" hidden>
+        <section class="card" id="radar-section-apres-chrono" aria-labelledby="lbl-resultats" hidden>
           <h2 id="lbl-resultats">Vitesse à l’arrivée</h2>
-          <div class="vitesse-resultats">
-            <div class="result-box vitesse-result-box">
+          <div class="result-box radar-resultats-bandeau" role="group" aria-label="Résultats de vitesse">
+            <div class="radar-resultat-col">
               <span class="vitesse-result-label">Vitesse</span>
               <strong id="radar-result-kmh">—</strong>
               <span class="vitesse-result-unit">km/h</span>
             </div>
-            <div class="result-box vitesse-result-box">
+            <div class="radar-resultat-col">
               <span class="vitesse-result-label">Allure</span>
               <strong id="radar-result-allure">—</strong>
               <span class="vitesse-result-unit">min/km</span>
             </div>
+            <div class="radar-resultat-col">
+              <span class="vitesse-result-label">Vitesse</span>
+              <strong id="radar-result-ms">—</strong>
+              <span class="vitesse-result-unit">m/s</span>
+            </div>
           </div>
           <p class="hint" id="radar-result-meta"></p>
+
+          <h2 id="lbl-eleve" class="radar-eleve-titre">Attribuer à un élève</h2>
+          <button
+            type="button"
+            class="btn btn--ghost btn--labeled dispense-import-classe"
+            id="btn-import-classe-radar"
+          >
+            <span class="btn__icon" aria-hidden="true">👥</span>
+            <span class="btn__text">Importer une classe</span>
+          </button>
+          <p class="hint dispense-import-hint">
+            Après le chronométrage, choisissez l’élève concerné pour enregistrer sa performance.
+          </p>
+          <div class="field-group" id="radar-select-wrap" hidden>
+            <label class="field-label" for="radar-eleve-select">Élève</label>
+            <select id="radar-eleve-select"></select>
+          </div>
+          <input type="hidden" id="radar-eleve-id" value="" />
+          <input type="hidden" id="radar-classe-id" value="" />
+
           <button type="button" class="btn btn--primary btn--labeled" id="radar-btn-enregistrer">
             <span class="btn__icon" aria-hidden="true">💾</span>
             <span class="btn__text">Enregistrer la performance</span>
@@ -180,20 +183,20 @@
     <script>
       ToolInfo.init({
         intro:
-          "Chronométrez un élève sur une distance fixe : à l’arrivée, la vitesse (km/h) et l’allure (min/km) s’affichent. Les performances peuvent être enregistrées par élève.",
+          "Chronométrez un élève sur une distance fixe : à l’arrivée, la vitesse (km/h, min/km, m/s) s’affichent. Choisissez ensuite l’élève pour enregistrer la performance.",
         sections: [
           {
             title: "L’intérêt principal",
             text:
-              "Sur le terrain (VMA, sprint, course de vitesse…), un seul chronomètre suffit : vous lancez au départ, vous stoppez à l’arrivée, et vous obtenez tout de suite la vitesse sans calcul mental.",
+              "Sur le terrain (VMA, sprint, course de vitesse…), un seul chronomètre suffit : départ, arrivée, puis attribution à l’élève — sans calcul mental.",
           },
           {
             title: "Comment s’en servir",
             list: [
               "Indiquez la distance à parcourir (en mètres ou en kilomètres).",
-              "Importez une classe pour choisir l’élève chronométré.",
               "Appuyez sur Départ, puis sur Arrivée quand l’élève franchit la ligne.",
-              "Enregistrez la performance pour la retrouver dans l’historique.",
+              "Importez une classe et sélectionnez l’élève pour enregistrer le résultat.",
+              "Consultez l’historique : la meilleure performance par élève et par distance est en gras.",
             ],
           },
         ],
