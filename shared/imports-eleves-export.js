@@ -133,25 +133,34 @@
         return z.length ? z.join(" · ") : "—";
       }
       case "journal-musculation": {
-        var sess = p.session || p;
+        var sess = p;
+        if (typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.expandSharePayload) {
+          sess = JournalMusculationCore.expandSharePayload(p);
+        } else if (p.session) {
+          sess = p.session;
+        }
+        var exoN = (sess.exercises || []).length;
         var sum = sess.summary || {};
         return (
           (sess.title || "Séance") +
           " · " +
-          (sum.exerciseCount != null ? sum.exerciseCount : "—") +
-          " exo. · " +
-          (sum.setCount != null ? sum.setCount : "—") +
-          " séries" +
+          (exoN || sum.exerciseCount != null ? exoN || sum.exerciseCount : "—") +
+          " exo." +
+          (sum.setCount != null ? " · " + sum.setCount + " séries" : "") +
           (sum.volumeKg ? " · " + sum.volumeKg + " kg" : "")
         );
       }
       case "questions-debrief": {
-        var reps = p.reponses || [];
+        var exp =
+          typeof QuestionsDebriefCore !== "undefined" && QuestionsDebriefCore.expandPayload
+            ? QuestionsDebriefCore.expandPayload(p)
+            : p;
+        var reps = exp.reponses || [];
         var nb = reps.filter(function (r) {
           return r.reponse && String(r.reponse).trim();
         }).length;
-        var label = p.seanceTitle || p.titre || p.porteeLabel || "Débrief";
-        if (p.dateLabel) label += " · " + p.dateLabel;
+        var label = exp.seanceTitle || exp.titre || exp.porteeLabel || "Débrief";
+        if (exp.dateLabel) label += " · " + exp.dateLabel;
         return label + " · " + nb + " réponse(s)";
       }
       default:
@@ -265,8 +274,12 @@
         if (sess.notes) lines.push("Notes : " + sess.notes);
         break;
       }
-      case "questions-debrief":
-        (p.reponses || []).forEach(function (row, i) {
+      case "questions-debrief": {
+        var expLines =
+          typeof QuestionsDebriefCore !== "undefined" && QuestionsDebriefCore.expandPayload
+            ? QuestionsDebriefCore.expandPayload(p)
+            : p;
+        (expLines.reponses || []).forEach(function (row, i) {
           var q = row.question || "—";
           var r = row.reponse && String(row.reponse).trim() ? row.reponse : "—";
           var theme = row.theme ? "[" + row.theme + "] " : "";
@@ -274,6 +287,7 @@
           lines.push("→ " + r);
         });
         break;
+      }
       case "table-marque":
         if (p.timer && (p.timer.displayLabel || p.timer.durationLabel)) {
           lines.push(
@@ -523,14 +537,18 @@
         ]);
       }
       case "questions-debrief": {
-        var repsDebrief = p.reponses || [];
+        var expCells =
+          typeof QuestionsDebriefCore !== "undefined" && QuestionsDebriefCore.expandPayload
+            ? QuestionsDebriefCore.expandPayload(p)
+            : p;
+        var repsDebrief = expCells.reponses || [];
         var nbDebrief = repsDebrief.filter(function (r) {
           return r.reponse && String(r.reponse).trim();
         }).length;
         return baseMeta(rec).concat([
-          cell(p.seanceTitle || p.titre),
-          cell(p.dateLabel || p.dateIso),
-          cell(p.porteeLabel || p.portee),
+          cell(expCells.seanceTitle || expCells.titre),
+          cell(expCells.dateLabel || expCells.dateIso),
+          cell(expCells.porteeLabel || expCells.portee),
           cell(nbDebrief),
           cell(repsDebrief.length),
         ]);

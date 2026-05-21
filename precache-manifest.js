@@ -50,6 +50,7 @@ var PRECACHE = [
   "./outils/pyramide-victoires.js",
   "./outils/questions-debrief.html",
   "./outils/questions-debrief.js",
+  "./shared/questions-debrief-core.js",
   "./outils/recuperation-donnees.html",
   "./outils/sauvegarde.html",
   "./outils/sauvegarde.js",

@@ -61,26 +61,48 @@ describe("qr-exchange-core", function () {
     assert.equal(parsed.record.payload.students.a.ratio, 71);
   });
 
-  it("encode des réponses questions débrief", function () {
+  it("encode des réponses questions débrief (compact)", function () {
     var record = Qr.buildExportRecord(
       "questions-debrief",
       {
-        portee: "individuel",
-        porteeLabel: "Bilan individuel",
-        titre: "Fiche bilan individuel",
-        reponses: [
-          {
-            theme: "Bilan personnel",
-            question: "Comment vous êtes-vous senti(e) ?",
-            reponse: "Bien, un peu fatigué à la fin.",
-          },
-        ],
+        c: 1,
+        p: "i",
+        t: "Basket",
+        d: "2026-05-20",
+        a: ["Bien", "", "Fatigue", "Passes", "Objectif demain"],
       },
       { classeLabel: "3eB", auteurLabel: "Léa M." }
     );
     var parsed = Qr.parseQrUrl(Qr.encodeRecord(record));
     assert.equal(parsed.record.toolId, "questions-debrief");
-    assert.equal(parsed.record.payload.reponses[0].reponse, "Bien, un peu fatigué à la fin.");
+    assert.equal(parsed.record.payload.a[0], "Bien");
+    assert.ok(record.exportId.length < 80);
+  });
+
+  it("encode une séance musculation compacte", function () {
+    var JM = require("../shared/journal-musculation-core.js");
+    var session = {
+      title: "Push",
+      dateIso: "2026-05-20",
+      notes: "",
+      exercises: [
+        {
+          name: "Développé couché",
+          setMode: "uniform",
+          setCount: 4,
+          uniformReps: 8,
+          uniformWeightKg: 60,
+        },
+      ],
+    };
+    var payload = JM.buildSharePayloadCompact(session);
+    var record = Qr.buildExportRecord("journal-musculation", payload, {
+      auteurLabel: "Léa",
+    });
+    var url = Qr.encodeRecord(record);
+    assert.ok(url.length < 900, "URL compacte : " + url.length);
+    var parsed = Qr.parseQrUrl(url);
+    assert.equal(parsed.record.payload.e[0][0], "Développé couché");
   });
 
   it("rejette un outil inconnu", function () {

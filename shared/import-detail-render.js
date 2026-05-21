@@ -397,16 +397,21 @@ var ImportDetailRender = (function () {
   }
 
   function renderQuestionsDebrief(payload, parent) {
+    var expanded =
+      typeof QuestionsDebriefCore !== "undefined" && QuestionsDebriefCore.expandPayload
+        ? QuestionsDebriefCore.expandPayload(payload)
+        : payload;
     var wrap = el("div", "import-preview import-preview--debrief");
-    var titre = payload.seanceTitle || payload.titre || payload.porteeLabel || "Débrief";
+    var titre = expanded.seanceTitle || expanded.titre || expanded.porteeLabel || "Débrief";
     wrap.appendChild(el("h3", "debrief-preview-title", titre));
     var meta = [];
-    if (payload.dateLabel) meta.push(payload.dateLabel);
-    if (payload.porteeLabel) meta.push(payload.porteeLabel);
+    if (expanded.dateLabel || expanded.dateIso) meta.push(expanded.dateLabel || expanded.dateIso);
+    if (expanded.porteeLabel) meta.push(expanded.porteeLabel);
+    if (expanded.compact) meta.push("QR compact");
     if (meta.length) {
       wrap.appendChild(el("p", "hint debrief-preview-portee", meta.join(" · ")));
     }
-    var reponses = payload.reponses || [];
+    var reponses = expanded.reponses || [];
     if (!reponses.length) {
       wrap.appendChild(el("p", "empty-state", "Aucune réponse dans cet import."));
       parent.appendChild(wrap);
@@ -437,7 +442,12 @@ var ImportDetailRender = (function () {
 
   function renderJournalMusculation(payload, parent) {
     var wrap = el("div", "import-preview import-preview--journal-muscu page-outil--journal-muscu");
-    var session = payload.session || payload;
+    var session = payload;
+    if (typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.expandSharePayload) {
+      session = JournalMusculationCore.expandSharePayload(payload);
+    } else if (payload && payload.session) {
+      session = payload.session;
+    }
     if (!session) {
       parent.appendChild(el("p", "empty-state", "Séance non disponible."));
       return;

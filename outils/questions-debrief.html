@@ -112,14 +112,9 @@
             </p>
           </fieldset>
 
-          <button type="button" class="btn btn--primary btn--labeled inducteur-btn-draw debrief-btn-draw-top" id="btn-tirer">
-            <span class="btn__icon" aria-hidden="true">💬</span>
-            <span class="btn__text" id="btn-tirer-label">Obtenir ma fiche personnalisée</span>
-          </button>
-
-          <div id="debrief-resultats" class="inducteur-resultats debrief-resultats" role="status" aria-live="polite" hidden></div>
-          <p id="debrief-resultat-hint" class="hint inducteur-resultat-hint">
-            Choisissez le type de bilan, lancez le tirage, puis rédigez vos réponses.
+          <div id="debrief-resultats" class="inducteur-resultats debrief-resultats" role="status" aria-live="polite"></div>
+          <p id="debrief-resultat-hint" class="hint inducteur-resultat-hint" hidden>
+            Les questions sont identiques pour toutes les activités. Rédigez vos réponses ci-dessous.
           </p>
         </section>
 
@@ -132,6 +127,7 @@
     </div>
 
     <script src="../vendor/lz-string.min.js"></script>
+    <script src="../shared/questions-debrief-core.js"></script>
     <script src="../shared/qr-exchange-core.js"></script>
     <script src="../shared/eleve-labels.js"></script>
     <script src="../vendor/qrcode.min.js"></script>

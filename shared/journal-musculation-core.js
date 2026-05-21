@@ -771,19 +771,76 @@
     };
   }
 
-  function buildSharePayload(session) {
-    var summary = computeSessionSummary(session);
+  function formatSetsCompact(ex) {
+    ex = normalizeExercise(ex);
+    if (ex.setMode === "uniform") {
+      var n = parseNum(ex.setCount);
+      var r = parseNum(ex.uniformReps);
+      var w = parseNum(ex.uniformWeightKg);
+      if (n == null && r == null && w == null) return "";
+      return (n != null ? n : "?") + "×" + (r != null ? r : "?") + (w != null ? "@" + w + "kg" : "");
+    }
+    return expandExerciseSets(ex)
+      .map(function (set) {
+        var reps = parseNum(set.reps);
+        var w = parseNum(set.weightKg);
+        return (reps != null ? reps : "?") + (w != null ? "@" + w : "");
+      })
+      .join(";");
+  }
+
+  /** Payload court pour QR (noms + séries uniquement). */
+  function buildSharePayloadCompact(session) {
+    if (!session) return { c: 1, t: "", d: "", e: [] };
+    var notes = String(session.notes || "").trim();
+    var payload = {
+      c: 1,
+      t: String(session.title || "").trim().slice(0, 80),
+      d: session.dateIso || "",
+      e: (session.exercises || []).map(function (ex) {
+        return [String(ex.name || "").trim().slice(0, 60), formatSetsCompact(ex)];
+      }),
+    };
+    if (notes) payload.n = notes.slice(0, 200);
+    return payload;
+  }
+
+  function isCompactSharePayload(payload) {
+    return payload && payload.c === 1 && Array.isArray(payload.e);
+  }
+
+  function expandSharePayload(payload) {
+    if (!payload || typeof payload !== "object") return null;
+    if (!isCompactSharePayload(payload)) {
+      return payload.session ? payload.session : payload;
+    }
+    var exercises = (payload.e || []).map(function (row, i) {
+      return {
+        id: "ex_" + i,
+        name: row[0] || "Exercice",
+        setsLabel: row[1] || "",
+        setMode: "uniform",
+        sets: [],
+      };
+    });
     return {
-      session: {
-        id: session.id,
-        title: session.title,
-        dateIso: session.dateIso,
-        dateLabel: formatDateFr(session.dateIso),
-        notes: session.notes || "",
-        exercises: (session.exercises || []).map(serializeExerciseForExport),
-        summary: summary,
+      id: "",
+      title: payload.t || "Séance",
+      dateIso: payload.d || "",
+      dateLabel: formatDateFr(payload.d),
+      notes: payload.n || "",
+      exercises: exercises,
+      summary: {
+        exerciseCount: exercises.length,
+        setCount: null,
+        repCount: null,
+        volumeKg: null,
       },
     };
+  }
+
+  function buildSharePayload(session) {
+    return buildSharePayloadCompact(session);
   }
 
   function validateSessionForShare(session) {
@@ -837,6 +894,10 @@
     computeSessionSummary: computeSessionSummary,
     computeGlobalSummary: computeGlobalSummary,
     buildSharePayload: buildSharePayload,
+    buildSharePayloadCompact: buildSharePayloadCompact,
+    isCompactSharePayload: isCompactSharePayload,
+    expandSharePayload: expandSharePayload,
+    formatSetsCompact: formatSetsCompact,
     validateSessionForShare: validateSessionForShare,
     participantLabel: participantLabel,
     formatDateFr: formatDateFr,

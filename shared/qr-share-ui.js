@@ -150,7 +150,7 @@ var EleveQrShare = (function () {
       sizeEl.textContent =
         "Taille : " +
         url.length +
-        " caractères dans l’URL. Au-delà de ~2 Ko, le scan peut échouer.";
+        " caractères. Idéal : moins de 900. Au-delà de ~1 500, privilégiez le lien copié.";
     }
 
     clearQr();
@@ -160,14 +160,25 @@ var EleveQrShare = (function () {
     }
 
     try {
+      var len = url.length;
+      var qrSize = len > 1800 ? 200 : len > 1200 ? 220 : len > 700 ? 240 : 260;
       new QRCode(qrHostEl, {
         text: url,
-        width: 280,
-        height: 280,
+        width: qrSize,
+        height: qrSize,
         correctLevel: QRCode.CorrectLevel.L,
+        margin: 1,
       });
+      if (len > 1600) {
+        showMsg(
+          "QR dense (" +
+            len +
+            " car.). Zoomez l’écran ou utilisez le lien copié si le scan échoue.",
+          false
+        );
+      }
     } catch (e) {
-      showMsg("Données trop volumineuses pour un QR unique.", true);
+      showMsg("Données trop volumineuses pour un QR unique. Réduisez le contenu partagé.", true);
     }
   }
 

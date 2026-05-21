@@ -137,11 +137,14 @@ describe("journal-musculation-core", function () {
       uniformWeightKg: 80,
     });
     var payload = JM.buildSharePayload(session);
-    assert.equal(payload.session.title, "Legs");
-    assert.equal(payload.session.exercises[0].setMode, "uniform");
-    assert.match(payload.session.exercises[0].setsLabel, /2 série/);
-    assert.equal(payload.session.exercises[0].sets.length, 2);
-    assert.equal(payload.session.summary.volumeKg, 800);
+    assert.equal(payload.c, 1);
+    assert.equal(payload.t, "Legs");
+    assert.equal(payload.e[0][0], "Squat");
+    assert.match(payload.e[0][1], /2×5@80/);
+    var expanded = JM.expandSharePayload(payload);
+    assert.equal(expanded.title, "Legs");
+    assert.equal(expanded.exercises[0].name, "Squat");
+    assert.match(expanded.exercises[0].setsLabel, /2×5@80/);
   });
 });
 
@@ -228,6 +231,8 @@ describe("journal-musculation QR", function () {
     var parsed = Qr.parseQrUrl(Qr.encodeRecord(record));
     assert.equal(parsed.error, undefined);
     assert.equal(parsed.record.toolId, JM.TOOL_ID);
-    assert.equal(parsed.record.payload.session.exercises[0].name, "Traction");
+    assert.equal(parsed.record.payload.e[0][0], "Traction");
+    var back = JM.expandSharePayload(parsed.record.payload);
+    assert.equal(back.exercises[0].name, "Traction");
   });
 });

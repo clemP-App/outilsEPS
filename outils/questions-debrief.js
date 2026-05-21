@@ -5,26 +5,14 @@
 (function () {
   "use strict";
 
+  var Core =
+    typeof QuestionsDebriefCore !== "undefined" ? QuestionsDebriefCore : null;
+  if (!Core) return;
+
   var PARAM_ID = "questions-debrief";
   var TOOL_ID = "questions-debrief";
   var SEANCES_STORAGE_KEY = "outils_eps_questions_debrief_seances_v1";
   var FICHE_STORAGE_KEY_LEGACY = "outils_eps_questions_debrief_fiches_v1";
-
-  /** Fiche bilan individuel : une question par thème. */
-  var FICHE_INDIVIDUEL_IDS = [
-    "bilan-personnel",
-    "progressions",
-    "pistes-amelioration",
-    "difficultes",
-  ];
-
-  /** Fiche bilan d’équipe : une question par thème. */
-  var FICHE_EQUIPE_IDS = [
-    "bilan-equipe",
-    "progressions",
-    "pistes-amelioration",
-    "points-positifs",
-  ];
 
   var LISTES_DEFAUT = [
     {
@@ -119,7 +107,6 @@
   var hintEl = document.getElementById("debrief-resultat-hint");
   var editorEl = document.getElementById("listes-editor");
   var porteeHintEl = document.getElementById("debrief-portee-hint");
-  var btnTirerLabelEl = document.getElementById("btn-tirer-label");
   var porteeRadios = document.querySelectorAll('input[name="portee-debrief"]');
   var shareBarEl = document.getElementById("eleve-share-bar");
   var seancesListEl = document.getElementById("debrief-seances-list");
@@ -213,14 +200,6 @@
     return checked && checked.value === "equipe" ? "equipe" : "individuel";
   }
 
-  function porteeLabel(portee) {
-    return portee === "equipe" ? "Bilan d’équipe" : "Bilan individuel";
-  }
-
-  function titreBilan(portee) {
-    return portee === "equipe" ? "Fiche bilan d’équipe" : "Fiche bilan individuel";
-  }
-
   function currentSeance() {
     if (!currentSeanceId) return null;
     return state.seances.filter(function (s) {
@@ -231,23 +210,22 @@
   function normaliserSeance(raw) {
     if (!raw || typeof raw !== "object") return null;
     var portee = raw.portee === "equipe" ? "equipe" : "individuel";
-    return {
+    var seance = {
       id: raw.id || genererId("db_"),
       title: normaliserTexte(raw.title) || "Débrief",
       dateIso: raw.dateIso || todayIsoDate(),
       portee: portee,
-      items: (raw.items || []).map(function (it) {
-        return {
-          listeId: it.listeId || "",
-          listeNom: it.listeNom || "Thème",
-          question: normaliserTexte(it.question || it.texte),
-          reponse: String(it.reponse != null ? it.reponse : ""),
-        };
-      }).filter(function (it) {
-        return it.question;
-      }),
+      items: raw.items || [],
       updatedAt: raw.updatedAt || new Date().toISOString(),
     };
+    seance.items = Core.buildItemsForPortee(portee, seance.items);
+    return seance;
+  }
+
+  function ensureSeanceQuestions(seance) {
+    if (!seance) return;
+    seance.items = Core.buildItemsForPortee(seance.portee, seance.items);
+    touchSeance(seance);
   }
 
   function uniqueSeanceTitle(title) {
@@ -319,7 +297,16 @@
             title: "Débrief individuel (import)",
             dateIso: today,
             portee: "individuel",
-            items: data.individuel.items,
+            items: data.individuel.items.map(function (it, i) {
+              var canon = Core.questionsForPortee("individuel")[i];
+              return {
+                id: (canon && canon.id) || it.listeId || "q" + i,
+                listeId: it.listeId,
+                listeNom: it.listeNom,
+                question: it.question || it.texte,
+                reponse: it.reponse,
+              };
+            }),
           })
         );
       }
@@ -330,7 +317,16 @@
             title: "Débrief d’équipe (import)",
             dateIso: today,
             portee: "equipe",
-            items: data.equipe.items,
+            items: data.equipe.items.map(function (it, i) {
+              var canon = Core.questionsForPortee("equipe")[i];
+              return {
+                id: (canon && canon.id) || it.listeId || "q" + i,
+                listeId: it.listeId,
+                listeNom: it.listeNom,
+                question: it.question || it.texte,
+                reponse: it.reponse,
+              };
+            }),
           })
         );
       }
@@ -371,7 +367,7 @@
       var meta =
         formatDateFr(seance.dateIso) +
         " · " +
-        porteeLabel(seance.portee) +
+        Core.porteeLabel(seance.portee) +
         (seance.items.length
           ? " · " + seance.items.length + " question" + (seance.items.length > 1 ? "s" : "")
           : "") +
@@ -424,13 +420,9 @@
     var seance = currentSeance();
     if (!seance) return;
     seance.portee = porteeDebrief();
-    touchSeance(seance);
+    ensureSeanceQuestions(seance);
     planifierSauvegardeSeances();
-    if (seance.items.length) afficherFiche(seance);
-    else {
-      if (resultatsEl) resultatsEl.hidden = true;
-      if (hintEl) hintEl.hidden = false;
-    }
+    afficherFiche(seance);
     majShareBar();
   }
 
@@ -450,12 +442,9 @@
     porteeRadios.forEach(function (radio) {
       radio.checked = radio.value === seance.portee;
     });
+    ensureSeanceQuestions(seance);
     majInterfacePortee();
-    if (seance.items.length) afficherFiche(seance);
-    else {
-      if (resultatsEl) resultatsEl.hidden = true;
-      if (hintEl) hintEl.hidden = false;
-    }
+    afficherFiche(seance);
     majShareBar();
     if (viewSession.scrollIntoView) viewSession.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -468,6 +457,7 @@
       portee: state.portee === "equipe" ? "equipe" : "individuel",
       items: [],
     });
+    ensureSeanceQuestions(seance);
     state.seances.unshift(seance);
     sauvegarderSeances();
     showSession(seance.id);
@@ -482,10 +472,6 @@
     else renderSessionsList();
   }
 
-  function idsFichePourPortee(portee) {
-    return portee === "equipe" ? FICHE_EQUIPE_IDS : FICHE_INDIVIDUEL_IDS;
-  }
-
   function majInterfacePortee() {
     var portee = porteeDebrief();
     state.portee = portee;
@@ -494,33 +480,11 @@
     if (porteeHintEl) {
       porteeHintEl.textContent =
         portee === "equipe"
-          ? "Sur le groupe : coopération, réussites collectives et objectifs pour la prochaine séance."
-          : "Sur vous : ressenti, progrès personnels et axes de travail.";
-    }
-
-    if (btnTirerLabelEl) {
-      btnTirerLabelEl.textContent = "Obtenir ma fiche personnalisée";
+          ? "5 questions d’équipe, communes à toutes les activités."
+          : "5 questions individuelles, communes à toutes les activités.";
     }
 
     if (currentSeanceId) appliquerPorteeSurSeance();
-  }
-
-  function questionsParListeId(listeId) {
-    var liste = state.listes.filter(function (l) {
-      return l.id === listeId;
-    })[0];
-    if (!liste) return [];
-    return questionsListe(liste)
-      .map(normaliserTexte)
-      .filter(Boolean)
-      .map(function (t) {
-        return { texte: t, listeId: liste.id, listeNom: liste.nom };
-      });
-  }
-
-  function tirerUn(pool) {
-    if (!pool.length) return null;
-    return pool[Math.floor(Math.random() * pool.length)];
   }
 
   function majShareBar() {
@@ -539,15 +503,14 @@
       return;
     }
     resultatsEl.hidden = false;
+    if (hintEl) hintEl.hidden = true;
     resultatsEl.classList.add("inducteur-resultats--flash");
     setTimeout(function () {
       resultatsEl.classList.remove("inducteur-resultats--flash");
     }, 400);
-    if (hintEl) hintEl.hidden = true;
-
     var entete = document.createElement("p");
     entete.className = "debrief-resultats__titre";
-    entete.textContent = titreBilan(seance.portee);
+    entete.textContent = Core.porteeLabel(seance.portee);
     resultatsEl.appendChild(entete);
 
     seance.items.forEach(function (item, index) {
@@ -596,93 +559,18 @@
     majShareBar();
   }
 
-  function tirerFiche(portee) {
-    var resultats = [];
-    var manquantes = [];
-    idsFichePourPortee(portee).forEach(function (lid) {
-      var pool = questionsParListeId(lid);
-      if (!pool.length) {
-        manquantes.push(lid);
-        return;
-      }
-      var t = tirerUn(pool);
-      if (t) resultats.push(t);
-    });
-    return { resultats: resultats, manquantes: manquantes };
-  }
-
-  function tirer() {
-    montrerMsg("");
-    var seance = currentSeance();
-    if (!seance) {
-      montrerMsg("Créez ou ouvrez un débrief de séance.");
-      return;
-    }
-    syncSeanceFieldsFromInputs();
-    var portee = porteeDebrief();
-    seance.portee = portee;
-
-    if (!state.listes.length) {
-      montrerMsg("Aucune liste de questions disponible.");
-      return;
-    }
-
-    var tirage = tirerFiche(portee);
-    var resultats = tirage.resultats;
-    if (!resultats.length) {
-      montrerMsg("Les questions de ce bilan sont vides. Réinitialisez ou complétez les listes.");
-      return;
-    }
-    if (tirage.manquantes.length) {
-      montrerMsg(
-        "Fiche incomplète : certains thèmes sont vides. Les autres questions sont affichées.",
-        true
-      );
-    }
-
-    var prevItems = seance.items || [];
-    seance.items = resultats.map(function (item) {
-      var prev = prevItems.find(function (x) {
-        return x.listeId === item.listeId && x.question === item.texte;
-      });
-      return {
-        listeId: item.listeId,
-        listeNom: item.listeNom,
-        question: item.texte,
-        reponse: prev ? prev.reponse : "",
-      };
-    });
-    touchSeance(seance);
-    sauvegarderSeances();
-    afficherFiche(seance);
-  }
-
   function buildExportPayload() {
     syncSeanceFieldsFromInputs();
     var seance = currentSeance();
-    if (!seance) return { portee: "individuel", titre: "", reponses: [] };
-    return {
-      seanceTitle: seance.title,
-      dateIso: seance.dateIso,
-      dateLabel: formatDateFr(seance.dateIso),
-      portee: seance.portee,
-      porteeLabel: porteeLabel(seance.portee),
-      titre: titreBilan(seance.portee),
-      reponses: seance.items.map(function (it) {
-        return {
-          theme: it.listeNom,
-          question: it.question,
-          reponse: String(it.reponse || "").trim(),
-        };
-      }),
-    };
+    if (!seance) return Core.buildCompactSharePayload(null);
+    return Core.buildCompactSharePayload(seance);
   }
 
   function validateBeforeShare() {
     syncSeanceFieldsFromInputs();
     var seance = currentSeance();
     if (!seance || !seance.items.length) {
-      return "Obtenez d’abord votre fiche personnalisée.";
+      return "Ouvrez un débrief de séance.";
     }
     var remplies = seance.items.filter(function (it) {
       return String(it.reponse || "").trim().length > 0;
@@ -701,7 +589,7 @@
       getParticipantLabel: function () {
         syncSeanceFieldsFromInputs();
         var seance = currentSeance();
-        var base = seance ? seance.title + " · " + porteeLabel(seance.portee) : "Débrief";
+        var base = seance ? seance.title + " · " + Core.porteeLabel(seance.portee) : "Débrief";
         if (typeof EleveLabels !== "undefined" && EleveLabels.getToolLabels) {
           var labels = EleveLabels.getToolLabels(TOOL_ID);
           if (labels.auteurLabel) return labels.auteurLabel + " · " + base;
@@ -943,9 +831,6 @@
     porteeRadios.forEach(function (radio) {
       radio.addEventListener("change", majInterfacePortee);
     });
-
-    var btnTirer = document.getElementById("btn-tirer");
-    if (btnTirer) btnTirer.addEventListener("click", tirer);
 
     var btnNouvelle = document.getElementById("btn-nouvelle-liste");
     if (btnNouvelle) btnNouvelle.addEventListener("click", nouvelleListe);
