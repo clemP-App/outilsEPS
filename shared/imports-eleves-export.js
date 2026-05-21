@@ -253,7 +253,12 @@
         });
         break;
       case "journal-musculation": {
-        var sess = p.session || p;
+        var sess = p;
+        if (typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.expandSharePayload) {
+          sess = JournalMusculationCore.expandSharePayload(p);
+        } else if (p.session) {
+          sess = p.session;
+        }
         (sess.exercises || []).forEach(function (ex) {
           if (ex.setMode === "uniform" && ex.setsLabel) {
             lines.push((ex.name || "Exercice") + " : " + ex.setsLabel);
@@ -281,7 +286,16 @@
             : p;
         (expLines.reponses || []).forEach(function (row, i) {
           var q = row.question || "—";
-          var r = row.reponse && String(row.reponse).trim() ? row.reponse : "—";
+          var def =
+            typeof QuestionsDebriefCore !== "undefined" && QuestionsDebriefCore.questionDef
+              ? QuestionsDebriefCore.questionDef(row, expLines.portee)
+              : null;
+          var r =
+            typeof QuestionsDebriefCore !== "undefined" && QuestionsDebriefCore.formatReponseLabel
+              ? QuestionsDebriefCore.formatReponseLabel(row.reponse, def)
+              : row.reponse && String(row.reponse).trim()
+                ? row.reponse
+                : "—";
           var theme = row.theme ? "[" + row.theme + "] " : "";
           lines.push(theme + (i + 1) + ". " + q);
           lines.push("→ " + r);
@@ -525,7 +539,12 @@
           cell(p.coverage),
         ]);
       case "journal-musculation": {
-        var sess = p.session || p;
+        var sess = p;
+        if (typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.expandSharePayload) {
+          sess = JournalMusculationCore.expandSharePayload(p);
+        } else if (p.session) {
+          sess = p.session;
+        }
         var sum = sess.summary || {};
         return baseMeta(rec).concat([
           cell(sess.title),

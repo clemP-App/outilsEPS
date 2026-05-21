@@ -48,29 +48,6 @@
             <p id="debrief-seances-empty" class="empty-state" hidden>Aucun débrief enregistré.</p>
           </div>
         </details>
-
-        <details class="card card--accordion debrief-acc" id="accordion-listes">
-          <summary class="card--accordion__summary">
-            <span class="card--accordion__title">Personnaliser les questions</span>
-            <span class="card--accordion__chev" aria-hidden="true"></span>
-          </summary>
-          <div class="card--accordion__panel">
-            <p class="hint">
-              Chaque liste correspond à un thème de débrief. Les modifications sont enregistrées sur cet appareil.
-            </p>
-            <div id="listes-editor" class="inducteur-listes-editor"></div>
-            <div class="field-row inducteur-listes-actions">
-              <button type="button" class="btn btn--ghost btn--labeled" id="btn-nouvelle-liste">
-                <span class="btn__icon" aria-hidden="true">＋</span>
-                <span class="btn__text">Nouvelle liste</span>
-              </button>
-              <button type="button" class="btn btn--ghost btn--labeled" id="btn-reset-listes">
-                <span class="btn__icon" aria-hidden="true">↺</span>
-                <span class="btn__text">Réinitialiser les questions par défaut</span>
-              </button>
-            </div>
-          </div>
-        </details>
       </div>
 
       <div id="debrief-view-session" class="debrief-session-view" hidden>
@@ -78,16 +55,39 @@
           <button type="button" class="btn btn--ghost debrief-back" id="debrief-btn-back-list">
             ‹ Mes débriefs
           </button>
-          <div class="debrief-session-fields">
-            <div class="field-group debrief-title-field">
-              <label class="field-label" for="debrief-seance-title">Séance / activité</label>
-              <input type="text" id="debrief-seance-title" maxlength="80" autocomplete="off" placeholder="Ex. Basket 12 mars" />
+          <section class="card debrief-session-info" id="debrief-session-info" aria-label="Séance et élève">
+            <div class="debrief-session-info-grid">
+              <div class="field-group debrief-title-field">
+                <label class="field-label" for="debrief-seance-title">Séance / activité</label>
+                <input type="text" id="debrief-seance-title" maxlength="80" autocomplete="off" placeholder="Ex. Basket 12 mars" />
+              </div>
+              <div class="field-group debrief-date-field">
+                <label class="field-label" for="debrief-seance-date">Date</label>
+                <input type="date" id="debrief-seance-date" />
+              </div>
+              <hr class="debrief-session-info-sep" aria-hidden="true" />
+              <div class="field-group debrief-eleve-nom-field">
+                <label class="field-label" for="debrief-eleve-nom">Nom de l’élève</label>
+                <input
+                  type="text"
+                  id="debrief-eleve-nom"
+                  maxlength="120"
+                  autocomplete="name"
+                  placeholder="Prénom et nom"
+                />
+              </div>
+              <div class="field-group debrief-eleve-classe-field">
+                <label class="field-label" for="debrief-eleve-classe">Classe</label>
+                <input
+                  type="text"
+                  id="debrief-eleve-classe"
+                  maxlength="80"
+                  autocomplete="off"
+                  placeholder="ex. 3eB"
+                />
+              </div>
             </div>
-            <div class="field-group debrief-date-field">
-              <label class="field-label" for="debrief-seance-date">Date</label>
-              <input type="date" id="debrief-seance-date" />
-            </div>
-          </div>
+          </section>
         </header>
 
         <section class="card inducteur-draw-card" aria-labelledby="lbl-tirage">
@@ -108,13 +108,13 @@
               </label>
             </div>
             <p id="debrief-portee-hint" class="hint debrief-portee-hint">
-              Sur vous : ressenti, progrès personnels et axes de travail.
+              4 notes de 1 à 5, puis 3 questions texte (difficultés, progrès, axes de travail).
             </p>
           </fieldset>
 
           <div id="debrief-resultats" class="inducteur-resultats debrief-resultats" role="status" aria-live="polite"></div>
           <p id="debrief-resultat-hint" class="hint inducteur-resultat-hint" hidden>
-            Les questions sont identiques pour toutes les activités. Rédigez vos réponses ci-dessous.
+            Notez les 4 critères de 1 à 5 (obligatoire pour partager), puis répondez aux questions texte si vous le souhaitez.
           </p>
         </section>
 
@@ -132,7 +132,6 @@
     <script src="../shared/eleve-labels.js"></script>
     <script src="../vendor/qrcode.min.js"></script>
     <script src="../shared/qr-share-ui.js"></script>
-    <script src="../data-manager.js"></script>
     <script src="../dom-utils.js"></script>
     <script src="questions-debrief.js"></script>
     <script src="../tool-info.js"></script>
@@ -144,12 +143,12 @@
           {
             title: "Un débrief par séance",
             text:
-              "Créez un débrief lié à une séance (nom + date). Vos réponses restent enregistrées : rouvrez un ancien débrief pour le compléter ou le partager.",
+              "Créez un débrief lié à une séance (activité, date, nom et classe). Vos réponses restent enregistrées : rouvrez un ancien débrief pour le compléter ou le partager.",
           },
           {
-            title: "Fiche personnalisée",
+            title: "Notes et questions texte",
             text:
-              "Le tirage propose une question par thème (progrès, difficultés, pistes…). Rédigez vos réponses sous chaque question.",
+              "Quatre critères notés de 1 à 5, puis trois questions en texte libre (difficultés, progrès, axes pour la suite). Les notes sont obligatoires pour le partage QR.",
           },
           {
             title: "Partage au professeur",

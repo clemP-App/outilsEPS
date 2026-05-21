@@ -205,6 +205,34 @@ describe("journal-musculation-body", function () {
 });
 
 describe("journal-musculation QR", function () {
+  it("tronque les notes pour l'export QR", function () {
+    var long = "x".repeat(200);
+    var payload = JM.buildSharePayload({
+      title: "Push",
+      dateIso: "2026-05-20",
+      notes: long,
+      exercises: [],
+    });
+    assert.equal(payload.n.length, JM.NOTES_MAX_LENGTH);
+    assert.equal(JM.normalizeSessionNotes(long).length, JM.NOTES_MAX_LENGTH);
+  });
+
+  it("calcule le résumé depuis le payload compact", function () {
+    var session = JM.expandSharePayload({
+      c: 1,
+      t: "Push",
+      d: "2026-05-20",
+      e: [
+        ["Squat", "3×10@50kg"],
+        ["Curl", "8@20;10@22"],
+      ],
+    });
+    assert.equal(session.summary.exerciseCount, 2);
+    assert.equal(session.summary.setCount, 5);
+    assert.equal(session.summary.repCount, 48);
+    assert.equal(session.summary.volumeKg, 1880);
+  });
+
   it("roundtrip encode / decode", function () {
     var payload = JM.buildSharePayload({
       id: "jm_test",

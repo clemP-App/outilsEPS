@@ -14,63 +14,152 @@
 
   var TOOL_ID = "questions-debrief";
   var COMPACT_VERSION = 1;
+  var SCALE_MIN = 1;
+  var SCALE_MAX = 5;
+  var TEXTE_MAX_LENGTH = 120;
 
-  /** Questions fixes — valables pour toute activité EPS. */
+  /** Questions fixes — 4 notes (1 à 5) puis 3 réponses texte. */
   var QUESTIONS_INDIVIDUEL = [
     {
-      id: "ressenti",
-      theme: "Ressenti",
-      question: "Comment vous êtes-vous senti(e) pendant cette séance ?",
+      id: "implication",
+      theme: "Implication",
+      type: "echelle",
+      question: "J’évalue mon implication dans la séance",
     },
     {
-      id: "reussite",
-      theme: "Réussites",
-      question: "Qu’avez-vous réussi ou progressé aujourd’hui ?",
+      id: "concentration",
+      theme: "Concentration",
+      type: "echelle",
+      question: "J’évalue ma concentration",
+    },
+    {
+      id: "progres",
+      theme: "Progrès",
+      type: "echelle",
+      question: "J’évalue mes progrès",
+    },
+    {
+      id: "effort",
+      theme: "Effort",
+      type: "echelle",
+      question: "J’évalue mon effort",
     },
     {
       id: "difficulte",
-      theme: "Difficultés",
-      question: "Quelle difficulté avez-vous rencontrée ?",
+      theme: "Difficulté",
+      type: "texte",
+      question: "Qu’est-ce qui vous a le plus freiné ou bloqué ?",
+    },
+    {
+      id: "progres_texte",
+      theme: "Progrès",
+      type: "texte",
+      question: "Quels progrès retenez-vous ?",
     },
     {
       id: "amelioration",
-      theme: "Pistes",
-      question: "Que voulez-vous améliorer à la prochaine séance ?",
-    },
-    {
-      id: "objectif",
-      theme: "Objectif",
-      question: "Quel objectif ou consigne retenez-vous pour la suite ?",
+      theme: "À travailler",
+      type: "texte",
+      question: "Sur quoi voulez-vous progresser à la prochaine séance ?",
     },
   ];
 
   var QUESTIONS_EQUIPE = [
     {
-      id: "cooperation",
-      theme: "Coopération",
-      question: "Comment le groupe a-t-il fonctionné pendant la séance ?",
+      id: "implication",
+      theme: "Implication",
+      type: "echelle",
+      question: "J’évalue l’implication de l’équipe",
     },
     {
-      id: "positif",
-      theme: "Points positifs",
-      question: "Qu’est-ce qui a bien marché dans la coopération ?",
+      id: "concentration",
+      theme: "Concentration",
+      type: "echelle",
+      question: "J’évalue la concentration du groupe",
+    },
+    {
+      id: "progres",
+      theme: "Progrès",
+      type: "echelle",
+      question: "J’évalue les progrès collectifs",
+    },
+    {
+      id: "cooperation",
+      theme: "Coopération",
+      type: "echelle",
+      question: "J’évalue la coopération dans l’équipe",
     },
     {
       id: "difficulte",
-      theme: "Difficultés",
-      question: "Quelle difficulté l’équipe a-t-elle rencontrée ?",
+      theme: "Difficulté",
+      type: "texte",
+      question: "Quel obstacle le groupe a-t-il rencontré ?",
     },
     {
-      id: "collectif",
-      theme: "Collectif",
-      question: "Qu’allez-vous améliorer ensemble à la prochaine séance ?",
+      id: "progres_texte",
+      theme: "Progrès",
+      type: "texte",
+      question: "Quels progrès collectifs retenez-vous ?",
     },
     {
-      id: "objectif",
-      theme: "Objectif",
-      question: "Quel objectif le groupe fixe-t-il pour la suite ?",
+      id: "amelioration",
+      theme: "À améliorer",
+      type: "texte",
+      question: "Que doit travailler l’équipe à la prochaine séance ?",
     },
   ];
+
+  function questionDef(itemOrId, portee) {
+    var id = typeof itemOrId === "string" ? itemOrId : itemOrId && itemOrId.id;
+    if (!id) return null;
+    var list = questionsForPortee(portee || "individuel");
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) return list[i];
+    }
+    return null;
+  }
+
+  function isEchelle(def) {
+    return !!(def && def.type === "echelle");
+  }
+
+  function isTexte(def) {
+    return !!(def && def.type === "texte");
+  }
+
+  function normalizeTexteReponse(value) {
+    return String(value || "")
+      .trim()
+      .slice(0, TEXTE_MAX_LENGTH);
+  }
+
+  function normalizeEchelleReponse(value) {
+    var n = parseInt(String(value || "").trim(), 10);
+    if (isNaN(n) || n < SCALE_MIN || n > SCALE_MAX) return "";
+    return String(n);
+  }
+
+  function normalizeReponse(value, def) {
+    if (def && isEchelle(def)) return normalizeEchelleReponse(value);
+    if (def && isTexte(def)) return normalizeTexteReponse(value);
+    return normalizeTexteReponse(value);
+  }
+
+  function isReponseValide(value, def) {
+    if (def && isEchelle(def)) return normalizeEchelleReponse(value) !== "";
+    return normalizeTexteReponse(value).length > 0;
+  }
+
+  function questionsEchelle(portee) {
+    return questionsForPortee(portee).filter(isEchelle);
+  }
+
+  function formatReponseLabel(value, def) {
+    var norm = normalizeReponse(value, def);
+    if (!norm) return "—";
+    if (def && isEchelle(def)) return norm + " / " + SCALE_MAX;
+    return norm;
+  }
 
   function questionsForPortee(portee) {
     return portee === "equipe" ? QUESTIONS_EQUIPE : QUESTIONS_INDIVIDUEL;
@@ -98,8 +187,9 @@
         id: q.id,
         listeId: q.id,
         listeNom: q.theme,
+        type: q.type,
         question: q.question,
-        reponse: old ? String(old.reponse || "") : "",
+        reponse: old ? normalizeReponse(old.reponse, q) : "",
       };
     });
   }
@@ -108,16 +198,17 @@
     return payload && payload.c === COMPACT_VERSION && Array.isArray(payload.a);
   }
 
-  /** Payload minimal pour QR : réponses seules (questions connues côté prof). */
+  /** Payload minimal pour QR : notes 1–5 (questions connues côté prof). */
   function buildCompactSharePayload(seance) {
     if (!seance) return { c: COMPACT_VERSION, p: "i", t: "", d: "", a: [] };
+    var portee = seance.portee === "equipe" ? "equipe" : "individuel";
     return {
       c: COMPACT_VERSION,
-      p: porteeCode(seance.portee),
+      p: porteeCode(portee),
       t: String(seance.title || "").trim().slice(0, 80),
       d: seance.dateIso || "",
       a: (seance.items || []).map(function (it) {
-        return String(it.reponse || "").trim();
+        return normalizeReponse(it.reponse, questionDef(it, portee));
       }),
     };
   }
@@ -142,8 +233,9 @@
           return {
             id: q.id,
             theme: q.theme,
+            type: q.type,
             question: q.question,
-            reponse: answers[i] != null ? String(answers[i]) : "",
+            reponse: normalizeReponse(answers[i] != null ? answers[i] : "", q),
           };
         }),
       };
@@ -153,18 +245,40 @@
     });
   }
 
+  function seancePretPourPartage(seance) {
+    if (!seance || !seance.items || !seance.items.length) return false;
+    var portee = seance.portee === "equipe" ? "equipe" : "individuel";
+    return questionsEchelle(portee).every(function (q) {
+      var it = (seance.items || []).find(function (x) {
+        return x.id === q.id;
+      });
+      return it && isReponseValide(it.reponse, q);
+    });
+  }
+
   return {
     TOOL_ID: TOOL_ID,
     COMPACT_VERSION: COMPACT_VERSION,
+    SCALE_MIN: SCALE_MIN,
+    SCALE_MAX: SCALE_MAX,
+    TEXTE_MAX_LENGTH: TEXTE_MAX_LENGTH,
     QUESTIONS_INDIVIDUEL: QUESTIONS_INDIVIDUEL,
     QUESTIONS_EQUIPE: QUESTIONS_EQUIPE,
     questionsForPortee: questionsForPortee,
     porteeLabel: porteeLabel,
     porteeCode: porteeCode,
     porteeFromCode: porteeFromCode,
+    questionDef: questionDef,
+    isEchelle: isEchelle,
+    isTexte: isTexte,
+    questionsEchelle: questionsEchelle,
+    normalizeReponse: normalizeReponse,
+    isReponseValide: isReponseValide,
+    formatReponseLabel: formatReponseLabel,
     buildItemsForPortee: buildItemsForPortee,
     buildCompactSharePayload: buildCompactSharePayload,
     isCompactPayload: isCompactPayload,
     expandPayload: expandPayload,
+    seancePretPourPartage: seancePretPourPartage,
   };
 });

@@ -13,6 +13,7 @@
   var catalogSort = "bodyPart";
   var catalogFilter = "";
   var listenersBound = false;
+  var exerciseFieldSaveTimer = null;
 
   var viewList;
   var viewSession;
@@ -31,6 +32,8 @@
   var catalogListEl;
   var catalogSortEl;
   var catalogFilterEl;
+  var eleveNomInput;
+  var eleveClasseInput;
 
   function refreshState() {
     state = Core.loadState(localStorage);
@@ -54,6 +57,34 @@
     catalogListEl = document.getElementById("journal-catalog-list");
     catalogSortEl = document.getElementById("journal-catalog-sort");
     catalogFilterEl = document.getElementById("journal-catalog-filter");
+    eleveNomInput = document.getElementById("journal-eleve-nom");
+    eleveClasseInput = document.getElementById("journal-eleve-classe");
+  }
+
+  function getEleveMetaFields() {
+    return {
+      auteurLabel: eleveNomInput ? eleveNomInput.value.trim() : "",
+      classeLabel: eleveClasseInput ? eleveClasseInput.value.trim() : "",
+    };
+  }
+
+  function chargerEleveMeta() {
+    if (typeof EleveLabels === "undefined") return;
+    var meta = EleveLabels.getMetaFields();
+    var tool = EleveLabels.getToolLabels(Core.TOOL_ID);
+    if (eleveNomInput) {
+      eleveNomInput.value = tool.auteurLabel || meta.auteurLabel || "";
+    }
+    if (eleveClasseInput) {
+      eleveClasseInput.value = tool.classeLabel || meta.classeLabel || "";
+    }
+  }
+
+  function persisterEleveMeta() {
+    if (typeof EleveLabels === "undefined") return;
+    var fields = getEleveMetaFields();
+    EleveLabels.saveToolLabels(Core.TOOL_ID, fields);
+    EleveLabels.saveMetaFields({ classeLabel: fields.classeLabel });
   }
 
   function normalizeCatalogFilterQuery(query) {
@@ -604,13 +635,36 @@
     return frag;
   }
 
+  function scheduleExerciseFieldSave(session) {
+    if (!session) return;
+    if (exerciseFieldSaveTimer) clearTimeout(exerciseFieldSaveTimer);
+    exerciseFieldSaveTimer = setTimeout(function () {
+      persist();
+      renderSessionSummary(session);
+      updateSessionAccordions(session);
+    }, 450);
+  }
+
+  function refreshExerciseRmBlock(exerciseId) {
+    if (!exercisesEl || !exerciseId) return;
+    var session = currentSession();
+    if (!session) return;
+    var ex = findExerciseInSession(session, exerciseId);
+    if (!ex) return;
+    var card = exercisesEl.querySelector('.journal-muscu-exo-card[data-exercise-id="' + exerciseId + '"]');
+    if (!card) return;
+    var oldRm = card.querySelector(".journal-muscu-exo-rm");
+    if (oldRm) oldRm.remove();
+    appendExerciseRm(card, ex);
+  }
+
   function renderExercises(session) {
     if (!exercisesEl) return;
     exercisesEl.innerHTML = "";
     var exercises = session.exercises || [];
     if (exercisesEmptyEl) exercisesEmptyEl.hidden = exercises.length > 0;
 
-    exercises.forEach(function (ex) {
+    exercises.forEach(function (ex, index) {
       ex = Core.normalizeExercise(ex);
       var card = document.createElement("article");
       card.className = "card journal-muscu-exo-card";
@@ -618,7 +672,12 @@
 
       var head = document.createElement("div");
       head.className = "journal-muscu-exo-head";
+      var num = document.createElement("span");
+      num.className = "journal-muscu-exo-index";
+      num.textContent = String(index + 1);
+      num.setAttribute("aria-hidden", "true");
       var nameWrap = document.createElement("div");
+      nameWrap.className = "journal-muscu-exo-title-wrap";
       var name = document.createElement("h3");
       name.textContent = ex.name;
       nameWrap.appendChild(name);
@@ -634,6 +693,7 @@
       delEx.textContent = "Retirer";
       delEx.setAttribute("data-action", "remove-exercise");
       delEx.setAttribute("data-exercise-id", ex.id);
+      head.appendChild(num);
       head.appendChild(nameWrap);
       head.appendChild(delEx);
       card.appendChild(head);
@@ -670,7 +730,14 @@
     if (viewSession) viewSession.hidden = false;
     if (titleInput) titleInput.value = session.title;
     if (dateInput) dateInput.value = session.dateIso;
-    if (notesInput) notesInput.value = session.notes || "";
+    if (notesInput) {
+      var notes = Core.normalizeSessionNotes(session.notes || "");
+      notesInput.value = notes;
+      if (session.notes !== notes) {
+        session.notes = notes;
+        persist();
+      }
+    }
     renderCatalog();
     renderExercises(session);
     updateSessionAccordions(session);
@@ -685,7 +752,10 @@
     if (!session) return;
     if (titleInput) session.title = titleInput.value.trim() || "Séance";
     if (dateInput) session.dateIso = dateInput.value || Core.todayIsoDate();
-    if (notesInput) session.notes = notesInput.value.trim();
+    if (notesInput) {
+      session.notes = Core.normalizeSessionNotes(notesInput.value);
+      if (notesInput.value !== session.notes) notesInput.value = session.notes;
+    }
     Core.touchSession(session);
     persist();
   }
@@ -705,7 +775,7 @@
       buttonLabel: "Partager cette séance au prof (QR)",
       getParticipantLabel: function () {
         syncSessionFieldsFromInputs();
-        return Core.participantLabel(currentSession());
+        return getEleveMetaFields().auteurLabel;
       },
       getPayload: function () {
         syncSessionFieldsFromInputs();
@@ -718,9 +788,18 @@
     });
   }
 
+  function bindEleveMetaListeners() {
+    [eleveNomInput, eleveClasseInput].forEach(function (input) {
+      if (!input) return;
+      input.addEventListener("input", persisterEleveMeta);
+      input.addEventListener("change", persisterEleveMeta);
+    });
+  }
+
   function bindListeners() {
     if (listenersBound) return;
     listenersBound = true;
+    bindEleveMetaListeners();
 
     var btnNew = document.getElementById("journal-btn-new");
     if (btnNew) {
@@ -899,13 +978,14 @@
 
         var uniformInput = e.target.closest("input[data-exercise-id][data-field]");
         if (uniformInput) {
-          var exU = findExerciseInSession(session, uniformInput.getAttribute("data-exercise-id"));
+          var exId = uniformInput.getAttribute("data-exercise-id");
+          var exU = findExerciseInSession(session, exId);
           if (exU) {
             exU[uniformInput.getAttribute("data-field")] = uniformInput.value;
             Core.normalizeExercise(exU);
             Core.touchSession(session);
-            persist();
-            renderExercises(session);
+            scheduleExerciseFieldSave(session);
+            refreshExerciseRmBlock(exId);
           }
           return;
         }
@@ -914,15 +994,27 @@
         if (!input) return;
         var setId = input.getAttribute("data-set-id");
         var field = input.getAttribute("data-field");
+        var ownerExId = null;
         session.exercises.forEach(function (ex) {
           (ex.sets || []).forEach(function (set) {
             if (set.id !== setId) return;
             set[field] = input.value;
+            ownerExId = ex.id;
           });
         });
         Core.touchSession(session);
+        scheduleExerciseFieldSave(session);
+        if (ownerExId) refreshExerciseRmBlock(ownerExId);
+      });
+
+      exercisesEl.addEventListener("change", function (e) {
+        var session = currentSession();
+        if (!session) return;
+        if (!e.target.closest("input[data-field]")) return;
+        if (exerciseFieldSaveTimer) clearTimeout(exerciseFieldSaveTimer);
         persist();
-        renderExercises(session);
+        renderSessionSummary(session);
+        updateSessionAccordions(session);
       });
     }
 
@@ -982,14 +1074,13 @@
     bindDomRefs();
     refreshState();
     bindListeners();
-    if (typeof EleveLabels !== "undefined") {
-      EleveLabels.loadMetaFields();
-    }
+    chargerEleveMeta();
     showList();
   }
 
   window.addEventListener("pageshow", function () {
     bindDomRefs();
+    chargerEleveMeta();
     refreshState();
     if (!currentSessionId) showList();
     else showSession(currentSessionId);

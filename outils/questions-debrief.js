@@ -1,6 +1,5 @@
 /**
- * Questions débrief — tirage de questions pour bilan personnel ou d’équipe (élèves).
- * Stockage : IndexedDB (paramètres via DataManager).
+ * Questions débrief — bilan personnel ou d’équipe (élèves).
  */
 (function () {
   "use strict";
@@ -9,95 +8,16 @@
     typeof QuestionsDebriefCore !== "undefined" ? QuestionsDebriefCore : null;
   if (!Core) return;
 
-  var PARAM_ID = "questions-debrief";
   var TOOL_ID = "questions-debrief";
   var SEANCES_STORAGE_KEY = "outils_eps_questions_debrief_seances_v1";
+  var PORTEE_STORAGE_KEY = "outils_eps_questions_debrief_portee_v1";
   var FICHE_STORAGE_KEY_LEGACY = "outils_eps_questions_debrief_fiches_v1";
 
-  var LISTES_DEFAUT = [
-    {
-      id: "bilan-personnel",
-      nom: "Bilan personnel",
-      questions: [
-        "Comment vous êtes-vous senti(e) pendant la séance d’aujourd’hui ?",
-        "Qu’avez-vous le plus aimé dans cette séance ?",
-        "Qu’est-ce qui vous a le plus demandé d’effort ?",
-        "À quel moment avez-vous été le plus concentré(e) ?",
-        "Qu’avez-vous appris sur vous-même aujourd’hui ?",
-        "Quelle action ou geste vous a le plus marqué(e) ?",
-        "Comment évaluez-vous votre implication dans la séance ?",
-        "Qu’auriez-vous fait différemment si vous recommenciez ?",
-      ],
-    },
-    {
-      id: "bilan-equipe",
-      nom: "Bilan d’équipe",
-      questions: [
-        "Comment votre équipe a-t-elle fonctionné aujourd’hui ?",
-        "Qu’est-ce qui a bien marché dans la coopération du groupe ?",
-        "Y a-t-il eu des moments de désaccord ? Comment les avez-vous gérés ?",
-        "Chacun a-t-il pu s’exprimer et participer ?",
-        "Quel rôle avez-vous pris dans le groupe ?",
-        "Comment vous êtes-vous entraidés pendant la séance ?",
-        "Quelle décision commune avez-vous prise ? Était-elle efficace ?",
-        "Que pourrait faire l’équipe pour mieux travailler ensemble la prochaine fois ?",
-      ],
-    },
-    {
-      id: "progressions",
-      nom: "Progressions",
-      questions: [
-        "Par rapport à la dernière séance, qu’avez-vous progressé ?",
-        "Quelle compétence ou technique maîtrisez-vous mieux qu’avant ?",
-        "Quel objectif fixé en début de séance avez-vous atteint ?",
-        "Donnez un exemple concret d’un progrès réalisé aujourd’hui.",
-        "Qu’est-ce qui vous semble plus facile qu’au début de l’année ?",
-        "Quelle consigne avez-vous mieux comprise ou appliquée ?",
-        "En quoi votre niveau a-t-il changé sur l’activité travaillée ?",
-        "Quelle réussite voulez-vous garder en tête pour la suite ?",
-      ],
-    },
-    {
-      id: "pistes-amelioration",
-      nom: "Pistes d’amélioration",
-      questions: [
-        "Sur quoi voulez-vous progresser à la prochaine séance ?",
-        "Quelle compétence devez-vous encore travailler ?",
-        "Quel point technique ou tactique reste à améliorer ?",
-        "Qu’allez-vous essayer de faire différemment la prochaine fois ?",
-        "De quoi avez-vous besoin pour progresser (entraînement, aide, consigne…) ?",
-        "Quel objectif personnel fixez-vous pour la prochaine séance ?",
-        "Quelle habitude de travail pourriez-vous renforcer ?",
-        "Quelle question voulez-vous poser au professeur pour progresser ?",
-      ],
-    },
-    {
-      id: "points-positifs",
-      nom: "Points positifs",
-      questions: [
-        "Citez trois réussites de la séance (petites ou grandes).",
-        "Quel compliment feriez-vous à un camarade de votre groupe ?",
-        "Quel moment de la séance aimeriez-vous revivre ?",
-        "Qu’avez-vous réussi alors que vous pensiez que ce serait difficile ?",
-        "Quelle qualité avez-vous mise en avant aujourd’hui ?",
-      ],
-    },
-    {
-      id: "difficultes",
-      nom: "Difficultés",
-      questions: [
-        "Quelle difficulté avez-vous rencontrée aujourd’hui ?",
-        "Qu’est-ce qui vous a bloqué ou freiné pendant l’activité ?",
-        "Qu’avez-vous trouvé trop difficile et pourquoi ?",
-        "De quoi auriez-vous besoin pour surmonter cette difficulté ?",
-        "Comment le groupe pourrait-il vous aider sur ce point ?",
-      ],
-    },
-  ];
-
-  var state = { listes: [], seances: [], portee: "individuel" };
+  var state = { seances: [], portee: "individuel" };
+  var SCALE_MIN = Core.SCALE_MIN;
+  var SCALE_MAX = Core.SCALE_MAX;
+  var TEXTE_MAX = Core.TEXTE_MAX_LENGTH;
   var currentSeanceId = null;
-  var saveTimer = null;
   var seanceSaveTimer = null;
 
   var viewList = document.getElementById("debrief-view-list");
@@ -105,7 +25,6 @@
   var msgEl = document.getElementById("debrief-msg");
   var resultatsEl = document.getElementById("debrief-resultats");
   var hintEl = document.getElementById("debrief-resultat-hint");
-  var editorEl = document.getElementById("listes-editor");
   var porteeHintEl = document.getElementById("debrief-portee-hint");
   var porteeRadios = document.querySelectorAll('input[name="portee-debrief"]');
   var shareBarEl = document.getElementById("eleve-share-bar");
@@ -114,50 +33,49 @@
   var seancesBadgeEl = document.getElementById("debrief-seances-acc-badge");
   var titleInput = document.getElementById("debrief-seance-title");
   var dateInput = document.getElementById("debrief-seance-date");
+  var eleveNomInput = document.getElementById("debrief-eleve-nom");
+  var eleveClasseInput = document.getElementById("debrief-eleve-classe");
 
   function genererId(prefix) {
-    if (typeof DataManager !== "undefined" && DataManager.genererId) {
-      return DataManager.genererId(prefix || "liste");
-    }
-    return (prefix || "liste") + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
-  }
-
-  function copierListesDefaut() {
-    return LISTES_DEFAUT.map(function (l) {
-      return {
-        id: l.id,
-        nom: l.nom,
-        questions: l.questions.slice(),
-      };
-    });
-  }
-
-  function fusionnerListesDefautManquantes() {
-    var ids = {};
-    state.listes.forEach(function (l) {
-      ids[l.id] = true;
-    });
-    var ajouts = false;
-    LISTES_DEFAUT.forEach(function (def) {
-      if (ids[def.id]) return;
-      state.listes.push({
-        id: def.id,
-        nom: def.nom,
-        questions: def.questions.slice(),
-      });
-      ajouts = true;
-    });
-    if (ajouts) planifierSauvegarde();
+    return (prefix || "db") + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
   }
 
   function normaliserTexte(s) {
     return (s || "").trim().replace(/\s+/g, " ");
   }
 
-  function questionsListe(liste) {
-    var q = liste.questions;
-    if (!Array.isArray(q) && Array.isArray(liste.inducteurs)) q = liste.inducteurs;
-    return Array.isArray(q) ? q : [];
+  function getEleveMetaFields() {
+    return {
+      auteurLabel: eleveNomInput ? normaliserTexte(eleveNomInput.value) : "",
+      classeLabel: eleveClasseInput ? normaliserTexte(eleveClasseInput.value) : "",
+    };
+  }
+
+  function metaDepuisLabels() {
+    if (typeof EleveLabels === "undefined") {
+      return { auteurLabel: "", classeLabel: "" };
+    }
+    var meta = EleveLabels.getMetaFields();
+    var tool = EleveLabels.getToolLabels(TOOL_ID);
+    return {
+      auteurLabel: normaliserTexte(tool.auteurLabel || meta.auteurLabel || ""),
+      classeLabel: normaliserTexte(tool.classeLabel || meta.classeLabel || ""),
+    };
+  }
+
+  function persisterEleveMeta() {
+    if (typeof EleveLabels === "undefined") return;
+    var fields = getEleveMetaFields();
+    EleveLabels.saveToolLabels(TOOL_ID, fields);
+    EleveLabels.saveMetaFields({ classeLabel: fields.classeLabel, auteurLabel: fields.auteurLabel });
+  }
+
+  function remplirChampsEleve(seance) {
+    var labels = metaDepuisLabels();
+    var nom = seance ? normaliserTexte(seance.eleveNom) : "";
+    var classe = seance ? normaliserTexte(seance.eleveClasse) : "";
+    if (eleveNomInput) eleveNomInput.value = nom || labels.auteurLabel;
+    if (eleveClasseInput) eleveClasseInput.value = classe || labels.classeLabel;
   }
 
   function montrerMsg(texte, ok) {
@@ -200,6 +118,22 @@
     return checked && checked.value === "equipe" ? "equipe" : "individuel";
   }
 
+  function chargerPortee() {
+    try {
+      if (localStorage.getItem(PORTEE_STORAGE_KEY) === "equipe") state.portee = "equipe";
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function sauvegarderPortee() {
+    try {
+      localStorage.setItem(PORTEE_STORAGE_KEY, state.portee);
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
   function currentSeance() {
     if (!currentSeanceId) return null;
     return state.seances.filter(function (s) {
@@ -215,6 +149,8 @@
       title: normaliserTexte(raw.title) || "Débrief",
       dateIso: raw.dateIso || todayIsoDate(),
       portee: portee,
+      eleveNom: normaliserTexte(raw.eleveNom),
+      eleveClasse: normaliserTexte(raw.eleveClasse),
       items: raw.items || [],
       updatedAt: raw.updatedAt || new Date().toISOString(),
     };
@@ -344,8 +280,10 @@
   }
 
   function compteReponses(seance) {
+    if (!seance) return 0;
+    var portee = seance.portee === "equipe" ? "equipe" : "individuel";
     return (seance.items || []).filter(function (it) {
-      return String(it.reponse || "").trim().length > 0;
+      return Core.isReponseValide(it.reponse, Core.questionDef(it, portee));
     }).length;
   }
 
@@ -412,6 +350,10 @@
     if (!seance) return;
     if (titleInput) seance.title = normaliserTexte(titleInput.value) || "Débrief";
     if (dateInput) seance.dateIso = dateInput.value || todayIsoDate();
+    var eleve = getEleveMetaFields();
+    seance.eleveNom = eleve.auteurLabel;
+    seance.eleveClasse = eleve.classeLabel;
+    persisterEleveMeta();
     touchSeance(seance);
     planifierSauvegardeSeances();
   }
@@ -439,6 +381,7 @@
     if (viewSession) viewSession.hidden = false;
     if (titleInput) titleInput.value = seance.title;
     if (dateInput) dateInput.value = seance.dateIso;
+    remplirChampsEleve(seance);
     porteeRadios.forEach(function (radio) {
       radio.checked = radio.value === seance.portee;
     });
@@ -450,11 +393,14 @@
   }
 
   function createSeance() {
+    var labels = metaDepuisLabels();
     var seance = normaliserSeance({
       id: genererId("db_"),
       title: uniqueSeanceTitle("Débrief"),
       dateIso: todayIsoDate(),
       portee: state.portee === "equipe" ? "equipe" : "individuel",
+      eleveNom: labels.auteurLabel,
+      eleveClasse: labels.classeLabel,
       items: [],
     });
     ensureSeanceQuestions(seance);
@@ -475,13 +421,13 @@
   function majInterfacePortee() {
     var portee = porteeDebrief();
     state.portee = portee;
-    planifierSauvegarde();
+    sauvegarderPortee();
 
     if (porteeHintEl) {
       porteeHintEl.textContent =
         portee === "equipe"
-          ? "5 questions d’équipe, communes à toutes les activités."
-          : "5 questions individuelles, communes à toutes les activités.";
+          ? "4 notes de 1 à 5, puis 3 questions texte (obstacles, progrès, priorités)."
+          : "4 notes de 1 à 5, puis 3 questions texte (difficultés, progrès, axes de travail).";
     }
 
     if (currentSeanceId) appliquerPorteeSurSeance();
@@ -513,16 +459,27 @@
     entete.textContent = Core.porteeLabel(seance.portee);
     resultatsEl.appendChild(entete);
 
+    var sectionTexteAffichee = false;
     seance.items.forEach(function (item, index) {
-      var bloc = document.createElement("div");
-      bloc.className = "inducteur-resultat debrief-resultat";
+      var qDef = Core.questionDef(item, seance.portee);
+      var estTexte = qDef && Core.isTexte(qDef);
 
-      if (seance.items.length > 1) {
-        var num = document.createElement("span");
-        num.className = "debrief-resultat__num";
-        num.textContent = "Question " + (index + 1);
-        bloc.appendChild(num);
+      if (estTexte && !sectionTexteAffichee) {
+        sectionTexteAffichee = true;
+        var sep = document.createElement("p");
+        sep.className = "debrief-resultats__section";
+        sep.textContent = "Questions complémentaires (texte)";
+        resultatsEl.appendChild(sep);
       }
+
+      var bloc = document.createElement("div");
+      bloc.className =
+        "inducteur-resultat debrief-resultat" + (estTexte ? " debrief-resultat--texte" : "");
+
+      var num = document.createElement("span");
+      num.className = "debrief-resultat__num";
+      num.textContent = "Question " + (index + 1);
+      bloc.appendChild(num);
 
       var label = document.createElement("span");
       label.className = "inducteur-resultat__liste";
@@ -534,25 +491,103 @@
       strong.textContent = item.question;
       bloc.appendChild(strong);
 
-      var repLabel = document.createElement("label");
-      repLabel.className = "field-label debrief-reponse-label";
-      repLabel.setAttribute("for", "debrief-reponse-" + index);
-      repLabel.textContent = "Votre réponse";
-      bloc.appendChild(repLabel);
+      if (estTexte) {
+        var repLabel = document.createElement("label");
+        repLabel.className = "field-label debrief-reponse-label";
+        repLabel.setAttribute("for", "debrief-reponse-" + index);
+        repLabel.textContent = "Votre réponse";
+        bloc.appendChild(repLabel);
 
-      var textarea = document.createElement("textarea");
-      textarea.id = "debrief-reponse-" + index;
-      textarea.className = "debrief-reponse-input";
-      textarea.rows = 3;
-      textarea.maxLength = 2000;
-      textarea.placeholder = "Rédigez votre réponse…";
-      textarea.value = item.reponse || "";
-      textarea.addEventListener("input", function () {
-        item.reponse = textarea.value;
-        touchSeance(seance);
-        planifierSauvegardeSeances();
-      });
-      bloc.appendChild(textarea);
+        var textarea = document.createElement("textarea");
+        textarea.id = "debrief-reponse-" + index;
+        textarea.className = "debrief-reponse-input";
+        textarea.rows = 2;
+        textarea.maxLength = TEXTE_MAX;
+        textarea.placeholder = "Réponse courte (optionnel, " + TEXTE_MAX + " caractères max)…";
+        if (item.id === "difficulte") {
+          textarea.setAttribute("aria-describedby", "debrief-texte-hint");
+        }
+        textarea.value = Core.normalizeReponse(item.reponse, qDef);
+        textarea.addEventListener("input", function () {
+          item.reponse = Core.normalizeReponse(textarea.value, qDef);
+          touchSeance(seance);
+          planifierSauvegardeSeances();
+        });
+        bloc.appendChild(textarea);
+
+        if (item.id === "difficulte") {
+          var textHint = document.createElement("p");
+          textHint.id = "debrief-texte-hint";
+          textHint.className = "hint debrief-reponse-hint";
+          textHint.textContent =
+            "Texte optionnel — " +
+            TEXTE_MAX +
+            " caractères max par réponse pour un QR lisible.";
+          bloc.appendChild(textHint);
+        }
+      } else {
+        var noteLabel = document.createElement("span");
+        noteLabel.className = "field-label debrief-reponse-label";
+        noteLabel.textContent = "Votre note";
+        bloc.appendChild(noteLabel);
+
+        var echelle = document.createElement("fieldset");
+        echelle.className = "debrief-echelle";
+        var echelleHintId = "debrief-echelle-hint";
+        if (index === 0) {
+          echelle.setAttribute("aria-describedby", echelleHintId);
+        }
+
+        var options = document.createElement("div");
+        options.className = "debrief-echelle__options";
+        options.setAttribute("role", "radiogroup");
+        options.setAttribute(
+          "aria-label",
+          item.question + " — note de " + SCALE_MIN + " à " + SCALE_MAX
+        );
+
+        function choisirNote(note) {
+          item.reponse = Core.normalizeReponse(note, qDef);
+          touchSeance(seance);
+          planifierSauvegardeSeances();
+          options.querySelectorAll(".debrief-echelle__opt").forEach(function (opt) {
+            var input = opt.querySelector("input");
+            var actif = input && input.value === item.reponse;
+            opt.classList.toggle("is-selected", !!actif);
+            if (input) input.checked = !!actif;
+          });
+        }
+
+        for (var note = SCALE_MIN; note <= SCALE_MAX; note++) {
+          var opt = document.createElement("label");
+          opt.className = "debrief-echelle__opt";
+          var radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "debrief-echelle-" + seance.id + "-" + index;
+          radio.value = String(note);
+          radio.checked = item.reponse === String(note);
+          if (radio.checked) opt.classList.add("is-selected");
+          var numSpan = document.createElement("span");
+          numSpan.className = "debrief-echelle__num";
+          numSpan.textContent = String(note);
+          opt.appendChild(radio);
+          opt.appendChild(numSpan);
+          radio.addEventListener("change", function () {
+            if (this.checked) choisirNote(this.value);
+          });
+          options.appendChild(opt);
+        }
+        echelle.appendChild(options);
+
+        if (index === 0) {
+          var leg = document.createElement("p");
+          leg.id = echelleHintId;
+          leg.className = "hint debrief-echelle-legend";
+          leg.textContent = SCALE_MIN + " = pas du tout · " + SCALE_MAX + " = tout à fait";
+          echelle.appendChild(leg);
+        }
+        bloc.appendChild(echelle);
+      }
 
       resultatsEl.appendChild(bloc);
     });
@@ -572,11 +607,16 @@
     if (!seance || !seance.items.length) {
       return "Ouvrez un débrief de séance.";
     }
-    var remplies = seance.items.filter(function (it) {
-      return String(it.reponse || "").trim().length > 0;
-    });
-    if (!remplies.length) {
-      return "Rédigez au moins une réponse avant de partager.";
+    if (!Core.seancePretPourPartage(seance)) {
+      return (
+        "Attribuez une note de " +
+        SCALE_MIN +
+        " à " +
+        SCALE_MAX +
+        " pour chaque critère (implication, concentration, progrès, " +
+        (seance.portee === "equipe" ? "coopération" : "effort") +
+        ") avant de partager."
+      );
     }
     return null;
   }
@@ -588,255 +628,17 @@
       buttonLabel: "Partager ce débrief au prof (QR)",
       getParticipantLabel: function () {
         syncSeanceFieldsFromInputs();
-        var seance = currentSeance();
-        var base = seance ? seance.title + " · " + Core.porteeLabel(seance.portee) : "Débrief";
-        if (typeof EleveLabels !== "undefined" && EleveLabels.getToolLabels) {
-          var labels = EleveLabels.getToolLabels(TOOL_ID);
-          if (labels.auteurLabel) return labels.auteurLabel + " · " + base;
-        }
-        return base;
+        return getEleveMetaFields().auteurLabel;
       },
       getPayload: buildExportPayload,
       validateBeforeShare: validateBeforeShare,
     });
   }
 
-  function planifierSauvegarde() {
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(sauvegarder, 400);
-  }
-
-  function sauvegarder() {
-    if (typeof DataManager === "undefined" || !DataManager.saveParametre) return Promise.resolve();
-    return DataManager.saveParametre({
-      id: PARAM_ID,
-      portee: state.portee === "equipe" ? "equipe" : "individuel",
-      listes: state.listes.map(function (l) {
-        return {
-          id: l.id,
-          nom: l.nom,
-          questions: questionsListe(l),
-        };
-      }),
-    }).catch(function () {
-      montrerMsg("Enregistrement impossible (stockage local indisponible).");
-    });
-  }
-
-  function normaliserListeChargee(l) {
-    return {
-      id: l.id || genererId("liste"),
-      nom: normaliserTexte(l.nom) || "Liste",
-      questions: questionsListe(l).map(normaliserTexte).filter(Boolean),
-    };
-  }
-
-  function charger() {
-    if (typeof DataManager === "undefined" || !DataManager.getParametre) {
-      state.listes = copierListesDefaut();
-      return Promise.resolve();
-    }
-    return DataManager.initDB()
-      .then(function () {
-        return DataManager.getParametre(PARAM_ID);
-      })
-      .then(function (rec) {
-        if (rec && Array.isArray(rec.listes) && rec.listes.length) {
-          state.listes = rec.listes.map(normaliserListeChargee);
-        } else {
-          state.listes = copierListesDefaut();
-        }
-        if (rec && rec.portee === "equipe") state.portee = "equipe";
-        else state.portee = "individuel";
-        fusionnerListesDefautManquantes();
-      })
-      .catch(function () {
-        state.listes = copierListesDefaut();
-      });
-  }
-
-  function creerBlocListe(liste, index) {
-    var details = document.createElement("details");
-    details.className = "inducteur-liste";
-    details.open = index === 0;
-
-    var summary = document.createElement("summary");
-    summary.className = "inducteur-liste__summary";
-
-    var nomInput = document.createElement("input");
-    nomInput.type = "text";
-    nomInput.className = "inducteur-liste__nom-input";
-    nomInput.value = liste.nom;
-    nomInput.setAttribute("aria-label", "Nom du thème");
-    nomInput.addEventListener("click", function (e) {
-      e.stopPropagation();
-    });
-    nomInput.addEventListener("input", function () {
-      liste.nom = normaliserTexte(nomInput.value) || "Liste";
-      planifierSauvegarde();
-    });
-
-    var count = document.createElement("span");
-    count.className = "inducteur-liste__count";
-    count.textContent = questionsListe(liste).length + " question(s)";
-
-    var btnSupprListe = document.createElement("button");
-    btnSupprListe.type = "button";
-    btnSupprListe.className = "inducteur-liste__delete";
-    btnSupprListe.textContent = "Supprimer";
-    btnSupprListe.addEventListener("click", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (state.listes.length <= 1) {
-        montrerMsg("Gardez au moins une liste.");
-        return;
-      }
-      if (!confirm("Supprimer la liste « " + liste.nom + " » ?")) return;
-      state.listes = state.listes.filter(function (l) {
-        return l.id !== liste.id;
-      });
-      planifierSauvegarde();
-      renderEditor();
-    });
-
-    summary.appendChild(nomInput);
-    summary.appendChild(count);
-    summary.appendChild(btnSupprListe);
-    details.appendChild(summary);
-
-    var panel = document.createElement("div");
-    panel.className = "inducteur-liste__panel";
-
-    var hint = document.createElement("p");
-    hint.className = "hint";
-    hint.textContent = "Une question par ligne. Validez pour enregistrer.";
-    panel.appendChild(hint);
-
-    var textarea = document.createElement("textarea");
-    textarea.rows = 6;
-    textarea.className = "inducteur-liste__textarea";
-    textarea.spellcheck = true;
-    textarea.value = questionsListe(liste).join("\n");
-    panel.appendChild(textarea);
-
-    var row = document.createElement("div");
-    row.className = "field-row inducteur-liste__actions";
-
-    var btnValider = document.createElement("button");
-    btnValider.type = "button";
-    btnValider.className = "btn btn--primary btn--labeled";
-    var iconV = document.createElement("span");
-    iconV.className = "btn__icon";
-    iconV.setAttribute("aria-hidden", "true");
-    iconV.textContent = "✓";
-    var textV = document.createElement("span");
-    textV.className = "btn__text";
-    textV.textContent = "Valider les questions";
-    btnValider.appendChild(iconV);
-    btnValider.appendChild(textV);
-    btnValider.addEventListener("click", function () {
-      var lignes = textarea.value
-        .split(/\r?\n/)
-        .map(normaliserTexte)
-        .filter(Boolean);
-      liste.questions = lignes;
-      count.textContent = lignes.length + " question(s)";
-      textarea.value = lignes.join("\n");
-      planifierSauvegarde();
-      montrerMsg(lignes.length + " question(s) enregistrée(s) dans « " + liste.nom + " ».", true);
-    });
-
-    var ul = document.createElement("ul");
-    ul.className = "inducteur-inducteurs";
-    ul.setAttribute("role", "list");
-
-    function renderTags() {
-      ul.innerHTML = "";
-      questionsListe(liste).forEach(function (q) {
-        var li = document.createElement("li");
-        li.className = "inducteur-inducteurs__item debrief-tag";
-        var span = document.createElement("span");
-        span.textContent = q;
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "inducteur-inducteurs__remove";
-        btn.setAttribute("aria-label", "Retirer la question");
-        btn.textContent = "×";
-        btn.addEventListener("click", function () {
-          liste.questions = questionsListe(liste).filter(function (x) {
-            return x !== q;
-          });
-          count.textContent = liste.questions.length + " question(s)";
-          textarea.value = liste.questions.join("\n");
-          renderTags();
-          planifierSauvegarde();
-        });
-        li.appendChild(span);
-        li.appendChild(btn);
-        ul.appendChild(li);
-      });
-      ul.hidden = !questionsListe(liste).length;
-    }
-
-    renderTags();
-    row.appendChild(btnValider);
-    panel.appendChild(row);
-    panel.appendChild(ul);
-    details.appendChild(panel);
-
-    return details;
-  }
-
-  function renderEditor() {
-    if (!editorEl) return;
-    OutilsDom.clear(editorEl);
-    if (!state.listes.length) {
-      editorEl.appendChild(OutilsDom.emptyState("Aucune liste."));
-      return;
-    }
-    state.listes.forEach(function (liste, i) {
-      editorEl.appendChild(creerBlocListe(liste, i));
-    });
-  }
-
-  function nouvelleListe() {
-    var nom = prompt("Nom du thème :", "Nouveau thème");
-    if (nom === null) return;
-    var n = normaliserTexte(nom) || "Nouveau thème";
-    state.listes.push({
-      id: genererId("liste"),
-      nom: n,
-      questions: [],
-    });
-    planifierSauvegarde();
-    renderEditor();
-    montrerMsg("Liste « " + n + " » créée.", true);
-  }
-
-  function resetListes() {
-    if (
-      !confirm(
-        "Réinitialiser toutes les questions par défaut ? Vos listes actuelles seront remplacées."
-      )
-    ) {
-      return;
-    }
-    state.listes = copierListesDefaut();
-    planifierSauvegarde();
-    renderEditor();
-    montrerMsg("Questions réinitialisées.", true);
-  }
-
   function bindListeners() {
     porteeRadios.forEach(function (radio) {
       radio.addEventListener("change", majInterfacePortee);
     });
-
-    var btnNouvelle = document.getElementById("btn-nouvelle-liste");
-    if (btnNouvelle) btnNouvelle.addEventListener("click", nouvelleListe);
-
-    var btnReset = document.getElementById("btn-reset-listes");
-    if (btnReset) btnReset.addEventListener("click", resetListes);
 
     var btnNew = document.getElementById("debrief-btn-new");
     if (btnNew) btnNew.addEventListener("click", createSeance);
@@ -861,6 +663,11 @@
     if (dateInput) {
       dateInput.addEventListener("change", syncSeanceFieldsFromInputs);
     }
+    [eleveNomInput, eleveClasseInput].forEach(function (input) {
+      if (!input) return;
+      input.addEventListener("input", syncSeanceFieldsFromInputs);
+      input.addEventListener("change", syncSeanceFieldsFromInputs);
+    });
 
     if (seancesListEl) {
       seancesListEl.addEventListener("click", function (e) {
@@ -884,11 +691,8 @@
 
   mountQrShare();
   bindListeners();
+  chargerPortee();
   chargerSeances();
-
-  charger().then(function () {
-    renderEditor();
-    renderSessionsList();
-    showList();
-  });
+  renderSessionsList();
+  showList();
 })();

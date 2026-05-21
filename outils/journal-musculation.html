@@ -111,16 +111,39 @@
           <button type="button" class="btn btn--ghost journal-muscu-back" id="journal-btn-back-list">
             ‹ Mes séances
           </button>
-          <div class="journal-muscu-session-fields">
-            <div class="field-group journal-muscu-title-field">
-              <label class="field-label" for="journal-session-title">Nom de la séance</label>
-              <input type="text" id="journal-session-title" maxlength="80" autocomplete="off" />
+          <section class="card journal-muscu-session-info" id="journal-session-info" aria-label="Séance et élève">
+            <div class="journal-muscu-session-info-grid">
+              <div class="field-group journal-muscu-title-field">
+                <label class="field-label" for="journal-session-title">Nom de la séance</label>
+                <input type="text" id="journal-session-title" maxlength="80" autocomplete="off" />
+              </div>
+              <div class="field-group journal-muscu-date-field">
+                <label class="field-label" for="journal-session-date">Date</label>
+                <input type="date" id="journal-session-date" />
+              </div>
+              <hr class="journal-muscu-session-info-sep" aria-hidden="true" />
+              <div class="field-group journal-muscu-identity-nom">
+                <label class="field-label" for="journal-eleve-nom">Nom de l'élève</label>
+                <input
+                  type="text"
+                  id="journal-eleve-nom"
+                  maxlength="120"
+                  autocomplete="name"
+                  placeholder="Prénom et nom"
+                />
+              </div>
+              <div class="field-group journal-muscu-identity-classe">
+                <label class="field-label" for="journal-eleve-classe">Classe (optionnel)</label>
+                <input
+                  type="text"
+                  id="journal-eleve-classe"
+                  maxlength="80"
+                  autocomplete="off"
+                  placeholder="ex. 3eB"
+                />
+              </div>
             </div>
-            <div class="field-group journal-muscu-date-field">
-              <label class="field-label" for="journal-session-date">Date</label>
-              <input type="date" id="journal-session-date" />
-            </div>
-          </div>
+          </section>
         </header>
 
         <details class="card card--accordion journal-muscu-acc" id="journal-acc-session-summary">
@@ -234,7 +257,16 @@
 
         <section class="card journal-muscu-session-footer">
           <label class="field-label" for="journal-session-notes">Notes (optionnel)</label>
-          <textarea id="journal-session-notes" rows="2" maxlength="500" placeholder="Ressenti, consignes…"></textarea>
+          <textarea
+            id="journal-session-notes"
+            rows="2"
+            maxlength="120"
+            placeholder="Ressenti, consignes…"
+            aria-describedby="journal-notes-hint"
+          ></textarea>
+          <p class="hint journal-muscu-notes-hint" id="journal-notes-hint">
+            120 caractères max — pour garder le QR lisible au professeur.
+          </p>
           <div class="eleve-share-bar" id="eleve-share-bar"></div>
           <button type="button" class="btn btn--danger btn--ghost journal-muscu-delete" id="journal-btn-delete-session">
             Supprimer cette séance
@@ -260,6 +292,7 @@
           {
             title: "Côté élève",
             list: [
+              "Dans une séance, renseignez nom, classe, titre et date dans la même carte : ils sont joints au QR pour le professeur.",
               "Créez autant de séances que vous voulez : elles restent sur cet appareil.",
               "Catalogue d’exercices (tri par catégorie, muscle ou partie du corps) + saisie libre.",
               "Séries identiques : nombre de séries + reps et charge communes, ou saisie série par série.",

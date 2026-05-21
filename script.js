@@ -217,7 +217,7 @@
       id: "questions-debrief",
       titre: "Questions débrief",
       description:
-        "Choisissez un bilan individuel ou d’équipe, puis tirez des questions pour faire le point sur la séance.",
+        "Bilan : 4 critères notés de 1 à 5 et 3 questions texte, partageables au professeur via QR.",
       icone: "💬",
       href: "outils/questions-debrief.html",
       categorie: "Réflexion",

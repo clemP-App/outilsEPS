@@ -26,6 +26,8 @@
   var TOOL_ID = "journal-musculation";
   var STORAGE_KEY = "outils_eps_journal_musculation_v1";
   var CATALOG_SORT_KEYS = ["category", "muscle", "bodyPart"];
+  /** Limite notes (export QR + saisie élève). */
+  var NOTES_MAX_LENGTH = 120;
 
   /** Catalogue par défaut : musculation générale + EPS (haltères, poids du corps, machines courantes). */
   var DEFAULT_CATALOG = [
@@ -771,6 +773,43 @@
     };
   }
 
+  /** Décode une ligne compacte (ex. 3×10@50kg ou 8@60;10@50). */
+  function parseSetsCompactLabel(label) {
+    var raw = String(label || "").trim();
+    if (!raw) return { setCount: 0, repCount: 0, volumeKg: 0 };
+
+    var uniform = raw.match(/^(\d+)[×x](\d+)(?:@([\d.]+)kg)?$/i);
+    if (uniform) {
+      var n = parseInt(uniform[1], 10);
+      var r = parseInt(uniform[2], 10);
+      var w = uniform[3] != null ? parseFloat(uniform[3]) : 0;
+      return {
+        setCount: n,
+        repCount: n * r,
+        volumeKg: w ? Math.round(n * r * w) : 0,
+      };
+    }
+
+    var setCount = 0;
+    var repCount = 0;
+    var volumeKg = 0;
+    raw.split(";").forEach(function (part) {
+      part = part.trim();
+      if (!part) return;
+      var m = part.match(/^(\d+)(?:@([\d.]+)(?:kg)?)?$/i);
+      if (!m) return;
+      setCount += 1;
+      var reps = parseInt(m[1], 10);
+      repCount += reps;
+      if (m[2] != null) volumeKg += reps * parseFloat(m[2]);
+    });
+    return {
+      setCount: setCount,
+      repCount: repCount,
+      volumeKg: volumeKg ? Math.round(volumeKg) : 0,
+    };
+  }
+
   function formatSetsCompact(ex) {
     ex = normalizeExercise(ex);
     if (ex.setMode === "uniform") {
@@ -790,9 +829,13 @@
   }
 
   /** Payload court pour QR (noms + séries uniquement). */
+  function normalizeSessionNotes(notes) {
+    return String(notes || "").trim().slice(0, NOTES_MAX_LENGTH);
+  }
+
   function buildSharePayloadCompact(session) {
     if (!session) return { c: 1, t: "", d: "", e: [] };
-    var notes = String(session.notes || "").trim();
+    var notes = normalizeSessionNotes(session.notes);
     var payload = {
       c: 1,
       t: String(session.title || "").trim().slice(0, 80),
@@ -801,7 +844,7 @@
         return [String(ex.name || "").trim().slice(0, 60), formatSetsCompact(ex)];
       }),
     };
-    if (notes) payload.n = notes.slice(0, 200);
+    if (notes) payload.n = notes;
     return payload;
   }
 
@@ -815,26 +858,38 @@
       return payload.session ? payload.session : payload;
     }
     var exercises = (payload.e || []).map(function (row, i) {
+      var setsLabel = row[1] || "";
+      var parsed = parseSetsCompactLabel(setsLabel);
       return {
         id: "ex_" + i,
         name: row[0] || "Exercice",
-        setsLabel: row[1] || "",
-        setMode: "uniform",
+        setsLabel: setsLabel,
+        setMode: setsLabel.indexOf(";") >= 0 ? "individual" : "uniform",
+        setCount: parsed.setCount || null,
         sets: [],
       };
+    });
+    var totalSets = 0;
+    var totalReps = 0;
+    var totalVol = 0;
+    exercises.forEach(function (ex) {
+      var p = parseSetsCompactLabel(ex.setsLabel);
+      totalSets += p.setCount;
+      totalReps += p.repCount;
+      totalVol += p.volumeKg;
     });
     return {
       id: "",
       title: payload.t || "Séance",
       dateIso: payload.d || "",
       dateLabel: formatDateFr(payload.d),
-      notes: payload.n || "",
+      notes: normalizeSessionNotes(payload.n || ""),
       exercises: exercises,
       summary: {
         exerciseCount: exercises.length,
-        setCount: null,
-        repCount: null,
-        volumeKg: null,
+        setCount: totalSets || null,
+        repCount: totalReps || null,
+        volumeKg: totalVol || null,
       },
     };
   }
@@ -859,7 +914,9 @@
   return {
     TOOL_ID: TOOL_ID,
     STORAGE_KEY: STORAGE_KEY,
+    NOTES_MAX_LENGTH: NOTES_MAX_LENGTH,
     CATALOG_SORT_KEYS: CATALOG_SORT_KEYS,
+    normalizeSessionNotes: normalizeSessionNotes,
     DEFAULT_CATALOG: DEFAULT_CATALOG,
     loadState: loadState,
     saveState: saveState,
@@ -898,6 +955,7 @@
     isCompactSharePayload: isCompactSharePayload,
     expandSharePayload: expandSharePayload,
     formatSetsCompact: formatSetsCompact,
+    parseSetsCompactLabel: parseSetsCompactLabel,
     validateSessionForShare: validateSessionForShare,
     participantLabel: participantLabel,
     formatDateFr: formatDateFr,

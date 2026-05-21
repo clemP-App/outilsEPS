@@ -427,21 +427,73 @@ var ImportDetailRender = (function () {
       );
       var rep = el("div", "debrief-preview-reponse");
       rep.appendChild(el("span", "debrief-preview-reponse__label", "Réponse"));
-      rep.appendChild(
-        el(
-          "p",
-          "debrief-preview-reponse__text",
-          row.reponse && String(row.reponse).trim() ? row.reponse : "—"
-        )
-      );
+      var repText =
+        typeof QuestionsDebriefCore !== "undefined" && QuestionsDebriefCore.formatReponseLabel
+          ? QuestionsDebriefCore.formatReponseLabel(
+              row.reponse,
+              QuestionsDebriefCore.questionDef(row, expanded.portee)
+            )
+          : row.reponse && String(row.reponse).trim()
+            ? row.reponse
+            : "—";
+      rep.appendChild(el("p", "debrief-preview-reponse__text", repText));
       card.appendChild(rep);
       wrap.appendChild(card);
     });
     parent.appendChild(wrap);
   }
 
-  function renderJournalMusculation(payload, parent) {
+  function formatRecordDateTime(iso) {
+    if (!iso) return "";
+    return new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
+  }
+
+  function appendJournalPreviewRow(tbody, label, value, valueClass) {
+    var tr = document.createElement("tr");
+    var th = document.createElement("th");
+    th.scope = "row";
+    th.className = "journal-muscu-preview-table__label";
+    th.textContent = label;
+    var td = document.createElement("td");
+    td.className =
+      "journal-muscu-preview-table__value" + (valueClass ? " " + valueClass : "");
+    td.textContent = value != null && value !== "" ? String(value) : "—";
+    tr.appendChild(th);
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return tr;
+  }
+
+  function appendJournalPreviewSection(tbody, title) {
+    var tr = document.createElement("tr");
+    tr.className = "journal-muscu-preview-table__section";
+    var td = document.createElement("td");
+    td.colSpan = 2;
+    td.textContent = title;
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+  }
+
+  function formatExerciseSetsLabel(ex) {
+    if (ex.setsLabel) return ex.setsLabel;
+    if (!ex.sets || !ex.sets.length) return "—";
+    return ex.sets
+      .map(function (set, i) {
+        return (
+          "S" +
+          (i + 1) +
+          " " +
+          (set.reps != null ? set.reps : "—") +
+          "×" +
+          (set.weightKg != null ? set.weightKg + " kg" : "—")
+        );
+      })
+      .join(" · ");
+  }
+
+  function renderJournalMusculation(record, parent) {
     var wrap = el("div", "import-preview import-preview--journal-muscu page-outil--journal-muscu");
+    var payload = record.payload || {};
     var session = payload;
     if (typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.expandSharePayload) {
       session = JournalMusculationCore.expandSharePayload(payload);
@@ -453,66 +505,68 @@ var ImportDetailRender = (function () {
       return;
     }
 
-    var head = el("header", "journal-muscu-preview-head");
-    head.appendChild(el("h3", "journal-muscu-preview-title", session.title || "Séance"));
-    head.appendChild(
-      el("p", "hint journal-muscu-preview-date", session.dateLabel || session.dateIso || "")
-    );
-    wrap.appendChild(head);
-
     var summary = session.summary || {};
-    var sumRow = el("div", "journal-muscu-preview-summary");
-    [
-      ["Exercices", summary.exerciseCount],
-      ["Séries", summary.setCount],
-      ["Répétitions", summary.repCount],
-      ["Volume", summary.volumeKg != null ? summary.volumeKg + " kg" : "—"],
-    ].forEach(function (pair) {
-      var p = el("p");
-      p.appendChild(el("span", null, pair[0]));
-      p.appendChild(el("strong", null, String(pair[1] != null ? pair[1] : "—")));
-      sumRow.appendChild(p);
-    });
-    wrap.appendChild(sumRow);
+    var tableWrap = el("div", "journal-muscu-preview-table-wrap");
+    var table = document.createElement("table");
+    table.className = "journal-muscu-preview-table";
+    var caption = document.createElement("caption");
+    caption.className = "journal-muscu-preview-table__caption";
+    caption.textContent = "Aperçu — journal de musculation";
+    table.appendChild(caption);
+    var tbody = document.createElement("tbody");
 
+    appendJournalPreviewSection(tbody, "Import");
+    appendJournalPreviewRow(
+      tbody,
+      "Outil",
+      typeof QrExchangeCore !== "undefined"
+        ? QrExchangeCore.toolTitle(record.toolId)
+        : record.toolId
+    );
+    appendJournalPreviewRow(tbody, "Classe", record.classeLabel);
+    appendJournalPreviewRow(tbody, "Joueur / Équipe", record.auteurLabel);
+    appendJournalPreviewRow(tbody, "Saisie", formatRecordDateTime(record.createdAt));
+    appendJournalPreviewRow(tbody, "Import", formatRecordDateTime(record.importedAt));
+
+    appendJournalPreviewSection(tbody, "Séance");
+    appendJournalPreviewRow(tbody, "Titre", session.title || "Séance");
+    appendJournalPreviewRow(tbody, "Date", session.dateLabel || session.dateIso || "");
+    appendJournalPreviewRow(
+      tbody,
+      "Exercices",
+      summary.exerciseCount != null ? summary.exerciseCount : "—"
+    );
+    appendJournalPreviewRow(tbody, "Séries", summary.setCount != null ? summary.setCount : "—");
+    appendJournalPreviewRow(
+      tbody,
+      "Répétitions",
+      summary.repCount != null ? summary.repCount : "—"
+    );
+    appendJournalPreviewRow(
+      tbody,
+      "Volume",
+      summary.volumeKg != null ? summary.volumeKg + " kg" : "—"
+    );
     if (session.notes) {
-      var notes = el("p", "journal-muscu-preview-notes");
-      notes.appendChild(el("span", "journal-muscu-preview-notes__label", "Notes : "));
-      notes.appendChild(document.createTextNode(session.notes));
-      wrap.appendChild(notes);
+      appendJournalPreviewRow(tbody, "Notes", session.notes, "journal-muscu-preview-table__notes");
     }
 
-    (session.exercises || []).forEach(function (ex) {
-      var card = el("article", "card journal-muscu-preview-exo");
-      card.appendChild(el("h4", null, ex.name || "Exercice"));
-      if (ex.muscle || ex.bodyPart) {
-        card.appendChild(
-          el(
-            "p",
-            "hint journal-muscu-preview-exo-meta",
-            [ex.bodyPart, ex.muscle].filter(Boolean).join(" · ")
-          )
+    var exercises = session.exercises || [];
+    if (exercises.length) {
+      appendJournalPreviewSection(tbody, "Exercices");
+      exercises.forEach(function (ex) {
+        appendJournalPreviewRow(
+          tbody,
+          ex.name || "Exercice",
+          formatExerciseSetsLabel(ex),
+          "journal-muscu-preview-table__sets"
         );
-      }
-      if (ex.setMode === "uniform" && ex.setsLabel) {
-        card.appendChild(el("p", "journal-muscu-preview-uniform", ex.setsLabel));
-      } else {
-        var table = el("div", "journal-muscu-preview-sets");
-        var h = el("div", "journal-muscu-preview-sets__head");
-        h.innerHTML = "<span>#</span><span>Reps</span><span>kg</span>";
-        table.appendChild(h);
-        (ex.sets || []).forEach(function (set, i) {
-          var row = el("div", "journal-muscu-preview-sets__row");
-          row.appendChild(el("span", null, String(i + 1)));
-          row.appendChild(el("strong", null, set.reps != null ? String(set.reps) : "—"));
-          row.appendChild(el("strong", null, set.weightKg != null ? String(set.weightKg) : "—"));
-          table.appendChild(row);
-        });
-        card.appendChild(table);
-      }
-      wrap.appendChild(card);
-    });
+      });
+    }
 
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    wrap.appendChild(tableWrap);
     parent.appendChild(wrap);
   }
 
@@ -524,7 +578,7 @@ var ImportDetailRender = (function () {
     else if (record.toolId === "compteur-ratio") renderRatio(payload, parent);
     else if (record.toolId === "vitesse-plots") renderVitesse(payload, parent);
     else if (record.toolId === "zone-impact") renderImpact(payload, parent);
-    else if (record.toolId === "journal-musculation") renderJournalMusculation(payload, parent);
+    else if (record.toolId === "journal-musculation") renderJournalMusculation(record, parent);
     else if (record.toolId === "questions-debrief") renderQuestionsDebrief(payload, parent);
     else parent.appendChild(el("p", "empty-state", "Aperçu non disponible pour cet outil."));
   }
@@ -537,8 +591,12 @@ var ImportDetailRender = (function () {
       return;
     }
     var root = el("div", "import-preview-root");
-    renderMeta(record, root);
-    renderPayload(record, root);
+    if (record.toolId === "journal-musculation") {
+      renderPayload(record, root);
+    } else {
+      renderMeta(record, root);
+      renderPayload(record, root);
+    }
     container.appendChild(root);
   }
 
