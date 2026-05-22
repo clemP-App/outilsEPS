@@ -47,17 +47,34 @@ var ToolInfo = (function () {
     form.method = "dialog";
     form.className = "info-dialog__form";
 
+    var entete = document.createElement("header");
+    entete.className = "info-dialog__header";
+
     var titre = document.createElement("h2");
     titre.id = "tool-info-dialog-title";
     titre.className = "info-dialog__title";
     titre.textContent = cfg.title || "Comment utiliser cet outil";
-    form.appendChild(titre);
+    entete.appendChild(titre);
+
+    var btnDismiss = document.createElement("button");
+    btnDismiss.type = "button";
+    btnDismiss.className = "info-dialog__dismiss";
+    btnDismiss.setAttribute("aria-label", "Fermer");
+    btnDismiss.textContent = "×";
+    btnDismiss.addEventListener("click", function () {
+      dialog.close();
+    });
+    entete.appendChild(btnDismiss);
+    form.appendChild(entete);
+
+    var corps = document.createElement("div");
+    corps.className = "info-dialog__body";
 
     if (cfg.intro) {
       var intro = document.createElement("p");
       intro.className = "tool-info-dialog__intro";
       intro.textContent = cfg.intro;
-      form.appendChild(intro);
+      corps.appendChild(intro);
     }
 
     (cfg.sections || []).forEach(function (sec) {
@@ -83,14 +100,19 @@ var ToolInfo = (function () {
         });
         section.appendChild(ul);
       }
-      form.appendChild(section);
+      corps.appendChild(section);
     });
 
+    form.appendChild(corps);
+
+    var pied = document.createElement("footer");
+    pied.className = "info-dialog__footer";
     var btn = document.createElement("button");
     btn.type = "submit";
     btn.className = "btn btn--primary info-dialog__close";
     btn.textContent = "J’ai compris";
-    form.appendChild(btn);
+    pied.appendChild(btn);
+    form.appendChild(pied);
 
     dialog.appendChild(form);
     return dialog;

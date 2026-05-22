@@ -1,0 +1,310 @@
+/**
+ * Catalogue des outils EPS (accueil prof, accueil élèves, recherche).
+ *
+ * POUR AJOUTER UN OUTIL :
+ * 1. Créez la page HTML dans outils/nom-de-votre-outil.html
+ * 2. Ajoutez un objet dans OUTILS ci-dessous.
+ * 3. publicCible : "prof" ou "eleve" — les outils élèves renvoient vers eleves.html.
+ */
+(function (global) {
+  "use strict";
+
+  /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string,publicCible:'prof'|'eleve'}>} */
+  var OUTILS = [
+    {
+      id: "classes",
+      titre: "Classes et groupes",
+      description:
+        "Créer des classes, groupes et listes d'élèves réutilisables dans tous les outils.",
+      icone: "👥",
+      href: "outils/classes.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "tableau-suivi",
+      titre: "Appel et notes",
+      description:
+        "Appel, notes et colonnes datées : liste d’élèves, synthèse, tri et export CSV/PDF.",
+      icone: "📒",
+      href: "outils/tableau-suivi.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
+      id: "dispenses-eps",
+      titre: "Dispenses / Inaptitudes",
+      description:
+        "Enregistrez et suivez les dispenses, avec filtres et dates de fin calculées.",
+      icone: "📋",
+      href: "outils/dispenses-eps.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
+      id: "oubli-materiel",
+      titre: "Oubli de matériel",
+      description:
+        "Notez les oublis d’affaires et retrouvez automatiquement l’oubli n°1, n°2, etc. par élève.",
+      icone: "👟",
+      href: "outils/oubli-materiel.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
+      id: "donnees-eleves",
+      titre: "Données élèves",
+      description:
+        "Scannez les QR des élèves, consultez leurs résultats (aperçu identique à chaque outil) et gérez les imports.",
+      icone: "📲",
+      href: "outils/donnees-eleves.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "composition-equipes",
+      titre: "Composition d’équipes homogènes",
+      description:
+        "Liste prénom ou nom (optionnel ;niveau 1–5), équipes équilibrées par niveau et déplacements manuels.",
+      icone: "⚖️",
+      href: "outils/composition-equipes.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "championnat-poule",
+      titre: "Championnat à poule unique",
+      description:
+        "Créer un championnat, gérer les équipes, saisir les résultats et afficher le classement.",
+      icone: "🏆",
+      href: "outils/championnat-poule.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "tournoi-elimination",
+      titre: "Tournoi éliminatoire",
+      description:
+        "Créer un tableau type tennis : quarts, demies, finale, avec progression automatique des gagnants.",
+      icone: "🎾",
+      href: "outils/tournoi-elimination.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "video-retard",
+      titre: "Vidéo avec retard",
+      description:
+        "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
+      icone: "📹",
+      href: "outils/video-retard.html",
+      categorie: "Observation",
+      publicCible: "prof",
+    },
+    {
+      id: "pyramide-victoires",
+      titre: "Pyramide de victoires",
+      description:
+        "Tournoi par paliers : une victoire fait monter, une défaite ne fait pas descendre. Classement et matchs entre joueurs du même palier.",
+      icone: "📶",
+      href: "outils/pyramide-victoires.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "timer-hiit-tabata",
+      titre: "Timer HIIT / Tabata",
+      description:
+        "Travail / pause en boucle, raccourcis Tabata et HIIT, bips et décompte au départ.",
+      icone: "⏱️",
+      href: "outils/timer-hiit-tabata.html",
+      categorie: "Course à pied",
+      publicCible: "prof",
+    },
+    {
+      id: "maxi-timer",
+      titre: "Maxi timer",
+      description:
+        "Grand chrono descendant ou croissant, lisible de loin, avec bips de fin.",
+      icone: "⏲️",
+      href: "outils/maxi-timer.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "tirage-au-sort",
+      titre: "Tirage au sort",
+      description:
+        "Importez une classe ou saisissez une liste, puis tirez un nom au hasard parmi les participants.",
+      icone: "🎲",
+      href: "outils/tirage-au-sort.html",
+      categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "inducteur-danse",
+      titre: "Inducteur danse",
+      description:
+        "Tirez au hasard des inducteurs (espace, objet, contraintes corporelles…) pour l’improvisation ou la composition en danse APSA.",
+      icone: "💃",
+      href: "outils/inducteur-danse.html",
+      categorie: "Danse APSA",
+      publicCible: "prof",
+    },
+    {
+      id: "test-vma",
+      titre: "Test VMA",
+      description:
+        "Chronomètre avec bips, voix, paliers et repères plots pour Gacon, Luc Léger, VAMEVAL et demi-Cooper.",
+      icone: "📣",
+      href: "outils/test-vma.html",
+      categorie: "Course à pied",
+      publicCible: "prof",
+    },
+    {
+      id: "radar",
+      titre: "Radar vitesse",
+      description:
+        "Chronométrez un élève sur une distance : à l’arrivée, vitesse (km/h) et allure (min/km), performances enregistrées par classe.",
+      icone: "📡",
+      href: "outils/radar.html",
+      categorie: "Course à pied",
+      publicCible: "prof",
+    },
+    {
+      id: "table-marque",
+      titre: "Table de marque",
+      description:
+        "Deux scores, timer de match, noms et couleurs d’équipes personnalisables.",
+      icone: "🏀",
+      href: "outils/table-marque.html",
+      categorie: "Sports collectifs",
+      publicCible: "eleve",
+    },
+    {
+      id: "compteur-ptb",
+      titre: "Compteur PTB",
+      description:
+        "Observer pertes, tirs et buts pour deux équipes, avec statistiques comparatives en direct.",
+      icone: "🧮",
+      href: "outils/compteur-ptb.html",
+      categorie: "Sports collectifs",
+      publicCible: "eleve",
+    },
+    {
+      id: "compteur-bonus",
+      titre: "Compteur bonus",
+      description:
+        "Deux joueurs en direct : bonus, points et malus en un clic, score et pourcentages par type d’action.",
+      icone: "👍",
+      href: "outils/compteur-bonus.html",
+      categorie: "Organisation EPS",
+      publicCible: "eleve",
+    },
+    {
+      id: "vitesse-plots",
+      titre: "Vitesse aux plots",
+      description:
+        "Chronométrez les passages aux plots pour connaître la vitesse du dernier intervalle et la moyenne.",
+      icone: "📍",
+      href: "outils/vitesse-plots.html",
+      categorie: "Course à pied",
+      publicCible: "eleve",
+    },
+    {
+      id: "compteur-ratio",
+      titre: "Compteur ratio",
+      description:
+        "Deux compteurs réussite/échec avec total de tentatives et ratio de réussite.",
+      icone: "📊",
+      href: "outils/compteur-ratio.html",
+      categorie: "Observation",
+      publicCible: "eleve",
+    },
+    {
+      id: "questions-debrief",
+      titre: "Questions débrief",
+      description:
+        "Bilan : 4 critères notés de 1 à 5 et 3 questions texte, partageables au professeur via QR.",
+      icone: "💬",
+      href: "outils/questions-debrief.html",
+      categorie: "Réflexion",
+      publicCible: "eleve",
+    },
+    {
+      id: "zone-impact",
+      titre: "Zone d’impact",
+      description:
+        "Cliquez les zones visées ou touchées selon l’activité : badminton, tennis de table, volley ou boxe.",
+      icone: "⭕",
+      href: "outils/impact-badminton.html",
+      categorie: "Observation",
+      publicCible: "eleve",
+    },
+    {
+      id: "convertisseur-allure",
+      titre: "Convertisseur km/h ↔ min/km",
+      description:
+        "Passez de la vitesse à l’allure, ou l’inverse, avec des champs dédiés et mise à jour automatique.",
+      icone: "⏱️",
+      href: "outils/convertisseur-allure.html",
+      categorie: "Course à pied",
+      publicCible: "eleve",
+    },
+    {
+      id: "distance-vma",
+      titre: "Distance VMA",
+      description:
+        "Convertisseur distance–temps à partir de la VMA, avec tableau de passages et chronomètre de suivi.",
+      icone: "🎯",
+      href: "outils/distance-vma.html",
+      categorie: "Course à pied",
+      publicCible: "eleve",
+    },
+    {
+      id: "calcul-1rm",
+      titre: "Calcul du 1RM",
+      description:
+        "Estimez votre charge max (1RM) à partir du poids et du nombre de répétitions, formules Epley ou Brzycki.",
+      icone: "🏋️",
+      href: "outils/calcul-1rm.html",
+      categorie: "Musculation",
+      publicCible: "eleve",
+    },
+    {
+      id: "journal-musculation",
+      titre: "Journal de musculation",
+      description:
+        "Enregistrez vos séances (exercices, séries, charges) et partagez une séance à la fois au prof via QR.",
+      icone: "📓",
+      href: "outils/journal-musculation.html",
+      categorie: "Musculation",
+      publicCible: "eleve",
+    },
+    {
+      id: "vitesse-course",
+      titre: "Vitesse de course",
+      description:
+        "Calculez la vitesse (km/h, m/s) et l’allure (min/km) à partir d’une distance et d’un temps.",
+      icone: "🏃",
+      href: "outils/vitesse-course.html",
+      categorie: "Course à pied",
+      publicCible: "eleve",
+    },
+    {
+      id: "ecartement-plots",
+      titre: "Écartement des plots",
+      description:
+        "Calcule la distance entre deux plots pour que 1 km/h corresponde à 1 plot selon la durée du demi-fond.",
+      icone: "📐",
+      href: "outils/ecartement-plots.html",
+      categorie: "Course à pied",
+      publicCible: "prof",
+    },
+  ];
+
+  global.OutilsEPS = global.OutilsEPS || {};
+  global.OutilsEPS.OUTILS = OUTILS;
+  global.OutilsEPS.ACCUEIL_PROF = "index.html";
+  global.OutilsEPS.ACCUEIL_ELEVE = "eleves.html";
+})(typeof window !== "undefined" ? window : globalThis);

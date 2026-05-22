@@ -149,22 +149,90 @@
       </form>
     </dialog>
 
-    <dialog class="share-dialog card" id="dialog-share-app" aria-labelledby="share-dialog-title">
+    <dialog
+      class="share-dialog card share-dialog--dual"
+      id="dialog-share-app"
+      aria-labelledby="share-dialog-title"
+    >
       <form method="dialog" class="share-dialog__form">
-        <h2 id="share-dialog-title" class="share-dialog__title">Partager Outils EPS</h2>
-        <p class="share-dialog__hint">
-          Envoyez le lien ou affichez ce QR code pour ouvrir l’application sur un autre appareil.
+        <header class="share-dialog__header">
+          <h2 id="share-dialog-title" class="share-dialog__title">Partager Outils EPS</h2>
+          <button
+            type="button"
+            class="share-dialog__dismiss"
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+        </header>
+
+        <div class="share-dialog__body">
+        <p class="share-dialog__intro">
+          Deux liens distincts : l’un pour l’application complète, l’autre réservé aux élèves en séance.
         </p>
-        <div class="share-dialog__qr-wrap">
-          <img id="share-qr-code" class="share-dialog__qr" alt="QR code de partage" />
-        </div>
-        <label class="field-label" for="share-link">Lien de partage</label>
-        <input id="share-link" class="share-dialog__link" type="url" readonly />
+
+        <section
+          class="share-dialog__block share-dialog__block--app"
+          aria-labelledby="share-app-heading"
+        >
+          <div class="share-dialog__block-head">
+            <h3 id="share-app-heading" class="share-dialog__block-title">Application complète</h3>
+            <span class="share-dialog__badge">Outils Profs + Eleves</span>
+          </div>
+          <p class="share-dialog__hint">
+            Accueil enseignant, outils de gestion de classe et outils élèves.
+          </p>
+          <div class="share-dialog__qr-wrap">
+            <img
+              id="share-qr-code"
+              class="share-dialog__qr"
+              alt="QR code — application complète Outils EPS"
+            />
+          </div>
+          <label class="field-label" for="share-link">Lien — application complète</label>
+          <input id="share-link" class="share-dialog__link" type="url" readonly />
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-copy-share-link">
+            Copier ce lien
+          </button>
+          <button type="button" class="btn btn--primary btn--sm" id="btn-native-share-app">
+            Partager Outils EPS complet
+          </button>
+        </section>
+
+        <div class="share-dialog__sep" role="separator" aria-hidden="true"></div>
+
+        <section
+          class="share-dialog__block share-dialog__block--eleves"
+          aria-labelledby="share-eleves-heading"
+        >
+          <div class="share-dialog__block-head">
+            <h3 id="share-eleves-heading" class="share-dialog__block-title">Page élèves</h3>
+            <span class="share-dialog__badge share-dialog__badge--eleve">Uniquement Outils Élèves</span>
+          </div>
+          <p class="share-dialog__hint">
+            Compteurs, vitesse, débrief, musculation… sans les outils réservés au professeur.
+          </p>
+          <div class="share-dialog__qr-wrap share-dialog__qr-wrap--eleves">
+            <img
+              id="share-qr-eleves"
+              class="share-dialog__qr"
+              alt="QR code — page élèves Outils EPS"
+            />
+          </div>
+          <label class="field-label" for="share-link-eleves">Lien — page élèves</label>
+          <input id="share-link-eleves" class="share-dialog__link" type="url" readonly />
+          <button type="button" class="btn btn--ghost btn--sm" id="btn-copy-share-link-eleves">
+            Copier ce lien
+          </button>
+        </section>
+
         <p class="msg-ok share-dialog__msg" id="share-msg" hidden aria-live="polite"></p>
-        <div class="share-dialog__actions">
-          <button type="button" class="btn btn--ghost" id="btn-copy-share-link">Copier le lien</button>
-          <button type="button" class="btn btn--primary" id="btn-native-share">Partager</button>
+        <div class="share-dialog__actions share-dialog__actions--bottom">
+          <button type="button" class="btn btn--primary" id="btn-native-share-eleves">
+            Partager Outils EPS Élèves
+          </button>
           <button type="submit" class="btn btn--ghost">Fermer</button>
+        </div>
         </div>
       </form>
     </dialog>
@@ -172,6 +240,7 @@
     <script src="goatcounter.js"></script>
     <script src="dom-utils.js"></script>
     <script src="data-manager.js"></script>
+    <script src="shared/outils-catalog.js"></script>
     <script src="script.js"></script>
     <script src="pwa-register.js" data-sw="sw.js"></script>
   </body>

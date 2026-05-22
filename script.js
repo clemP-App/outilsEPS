@@ -1,12 +1,8 @@
 /**
  * Page d’accueil — liste des outils EPS, recherche et favoris (localStorage).
  *
- * POUR AJOUTER UN OUTIL :
- * 1. Créez la page HTML dans outils/nom-de-votre-outil.html
- * 2. Ajoutez un objet dans le tableau OUTILS ci-dessous avec :
- *    - id : identifiant unique (chaîne)
- *    - titre, description, icone (emoji ou caractère), href, categorie, publicCible
- * 3. C’est tout : la liste et la recherche s’adaptent automatiquement.
+ * POUR AJOUTER UN OUTIL : voir shared/outils-catalog.js
+ * Pages d’accueil : index.html (prof) · eleves.html (élèves uniquement, data-audience="eleve")
  */
 
 (function () {
@@ -25,295 +21,27 @@
   var VIEW_KEY = "outils_eps_view_v1";
   var PROF_VIEW_KEY = "outils_eps_prof_view_v1";
   var MAX_OUTILS_PAR_SECTION = 5;
-  var MAX_ICONES_GRAND_ECRAN = 8;
   var MAX_ICONES_AUTRE_ECRAN = 6;
-  var sectionsOuvertes = { prof: false, eleve: false };
+  var AUDIENCE = (document.body && document.body.dataset.audience) || "all";
+  var OUTILS_ALL =
+    window.OutilsEPS && window.OutilsEPS.OUTILS ? window.OutilsEPS.OUTILS : [];
+  if (!OUTILS_ALL.length) {
+    console.error("Outils EPS : chargez shared/outils-catalog.js avant script.js.");
+  }
+  var OUTILS =
+    AUDIENCE === "eleve"
+      ? OUTILS_ALL.filter(function (o) {
+          return o.publicCible === "eleve";
+        })
+      : AUDIENCE === "prof"
+        ? OUTILS_ALL.filter(function (o) {
+            return o.publicCible === "prof";
+          })
+        : OUTILS_ALL.slice();
+
+  var sectionsOuvertes = { prof: false, eleve: AUDIENCE === "eleve" };
   var viewMode = chargerModeOutils();
 
-  /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string,publicCible:'prof'|'eleve'}>} */
-  /** Du plus au moins utilisé au quotidien (hors sauvegarde, accessible via l’en-tête). */
-  var OUTILS = [
-    {
-      id: "classes",
-      titre: "Classes et groupes",
-      description:
-        "Créer des classes, groupes et listes d'élèves réutilisables dans tous les outils.",
-      icone: "👥",
-      href: "outils/classes.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "dispenses-eps",
-      titre: "Dispenses / Inaptitudes",
-      description:
-        "Enregistrez et suivez les dispenses, avec filtres et dates de fin calculées.",
-      icone: "📋",
-      href: "outils/dispenses-eps.html",
-      categorie: "Gestion de classe",
-      publicCible: "prof",
-    },
-    {
-      id: "oubli-materiel",
-      titre: "Oubli de matériel",
-      description:
-        "Notez les oublis d’affaires et retrouvez automatiquement l’oubli n°1, n°2, etc. par élève.",
-      icone: "👟",
-      href: "outils/oubli-materiel.html",
-      categorie: "Gestion de classe",
-      publicCible: "prof",
-    },
-    {
-      id: "donnees-eleves",
-      titre: "Données élèves",
-      description:
-        "Scannez les QR des élèves, consultez leurs résultats (aperçu identique à chaque outil) et gérez les imports.",
-      icone: "📲",
-      href: "outils/donnees-eleves.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "composition-equipes",
-      titre: "Composition d’équipes homogènes",
-      description:
-        "Liste prénom ou nom (optionnel ;niveau 1–5), équipes équilibrées par niveau et déplacements manuels.",
-      icone: "⚖️",
-      href: "outils/composition-equipes.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "championnat-poule",
-      titre: "Championnat à poule unique",
-      description:
-        "Créer un championnat, gérer les équipes, saisir les résultats et afficher le classement.",
-      icone: "🏆",
-      href: "outils/championnat-poule.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "tournoi-elimination",
-      titre: "Tournoi éliminatoire",
-      description:
-        "Créer un tableau type tennis : quarts, demies, finale, avec progression automatique des gagnants.",
-      icone: "🎾",
-      href: "outils/tournoi-elimination.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "video-retard",
-      titre: "Vidéo avec retard",
-      description:
-        "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
-      icone: "📹",
-      href: "outils/video-retard.html",
-      categorie: "Observation",
-      publicCible: "prof",
-    },
-    {
-      id: "pyramide-victoires",
-      titre: "Pyramide de victoires",
-      description:
-        "Tournoi par paliers : une victoire fait monter, une défaite ne fait pas descendre. Classement et matchs entre joueurs du même palier.",
-      icone: "📶",
-      href: "outils/pyramide-victoires.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "timer-hiit-tabata",
-      titre: "Timer HIIT / Tabata",
-      description:
-        "Travail / pause en boucle, raccourcis Tabata et HIIT, bips et décompte au départ.",
-      icone: "⏱️",
-      href: "outils/timer-hiit-tabata.html",
-      categorie: "Course à pied",
-      publicCible: "prof",
-    },
-    {
-      id: "maxi-timer",
-      titre: "Maxi timer",
-      description:
-        "Grand chrono descendant ou croissant, lisible de loin, avec bips de fin.",
-      icone: "⏲️",
-      href: "outils/maxi-timer.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "tirage-au-sort",
-      titre: "Tirage au sort",
-      description:
-        "Importez une classe ou saisissez une liste, puis tirez un nom au hasard parmi les participants.",
-      icone: "🎲",
-      href: "outils/tirage-au-sort.html",
-      categorie: "Organisation EPS",
-      publicCible: "prof",
-    },
-    {
-      id: "inducteur-danse",
-      titre: "Inducteur danse",
-      description:
-        "Tirez au hasard des inducteurs (espace, objet, contraintes corporelles…) pour l’improvisation ou la composition en danse APSA.",
-      icone: "💃",
-      href: "outils/inducteur-danse.html",
-      categorie: "Danse APSA",
-      publicCible: "prof",
-    },
-    {
-      id: "test-vma",
-      titre: "Test VMA",
-      description:
-        "Chronomètre avec bips, voix, paliers et repères plots pour Gacon, Luc Léger, VAMEVAL et demi-Cooper.",
-      icone: "📣",
-      href: "outils/test-vma.html",
-      categorie: "Course à pied",
-      publicCible: "prof",
-    },
-    {
-      id: "radar",
-      titre: "Radar vitesse",
-      description:
-        "Chronométrez un élève sur une distance : à l’arrivée, vitesse (km/h) et allure (min/km), performances enregistrées par classe.",
-      icone: "📡",
-      href: "outils/radar.html",
-      categorie: "Course à pied",
-      publicCible: "prof",
-    },
-    {
-      id: "table-marque",
-      titre: "Table de marque",
-      description:
-        "Deux scores, timer de match, noms et couleurs d’équipes personnalisables.",
-      icone: "🏀",
-      href: "outils/table-marque.html",
-      categorie: "Sports collectifs",
-      publicCible: "eleve",
-    },
-    {
-      id: "compteur-ptb",
-      titre: "Compteur PTB",
-      description:
-        "Observer pertes, tirs et buts pour deux équipes, avec statistiques comparatives en direct.",
-      icone: "🧮",
-      href: "outils/compteur-ptb.html",
-      categorie: "Sports collectifs",
-      publicCible: "eleve",
-    },
-    {
-      id: "compteur-bonus",
-      titre: "Compteur bonus",
-      description:
-        "Deux joueurs en direct : bonus, points et malus en un clic, score et pourcentages par type d’action.",
-      icone: "👍",
-      href: "outils/compteur-bonus.html",
-      categorie: "Organisation EPS",
-      publicCible: "eleve",
-    },
-    {
-      id: "vitesse-plots",
-      titre: "Vitesse aux plots",
-      description:
-        "Chronométrez les passages aux plots pour connaître la vitesse du dernier intervalle et la moyenne.",
-      icone: "📍",
-      href: "outils/vitesse-plots.html",
-      categorie: "Course à pied",
-      publicCible: "eleve",
-    },
-    {
-      id: "compteur-ratio",
-      titre: "Compteur ratio",
-      description:
-        "Deux compteurs réussite/échec avec total de tentatives et ratio de réussite.",
-      icone: "📊",
-      href: "outils/compteur-ratio.html",
-      categorie: "Observation",
-      publicCible: "eleve",
-    },
-    {
-      id: "questions-debrief",
-      titre: "Questions débrief",
-      description:
-        "Bilan : 4 critères notés de 1 à 5 et 3 questions texte, partageables au professeur via QR.",
-      icone: "💬",
-      href: "outils/questions-debrief.html",
-      categorie: "Réflexion",
-      publicCible: "eleve",
-    },
-    {
-      id: "zone-impact",
-      titre: "Zone d’impact",
-      description:
-        "Cliquez les zones visées ou touchées selon l’activité : badminton, tennis de table, volley ou boxe.",
-      icone: "⭕",
-      href: "outils/impact-badminton.html",
-      categorie: "Observation",
-      publicCible: "eleve",
-    },
-    {
-      id: "convertisseur-allure",
-      titre: "Convertisseur km/h ↔ min/km",
-      description:
-        "Passez de la vitesse à l’allure, ou l’inverse, avec des champs dédiés et mise à jour automatique.",
-      icone: "⏱️",
-      href: "outils/convertisseur-allure.html",
-      categorie: "Course à pied",
-      publicCible: "eleve",
-    },
-    {
-      id: "distance-vma",
-      titre: "Distance VMA",
-      description:
-        "Convertisseur distance–temps à partir de la VMA, avec tableau de passages et chronomètre de suivi.",
-      icone: "🎯",
-      href: "outils/distance-vma.html",
-      categorie: "Course à pied",
-      publicCible: "eleve",
-    },
-    {
-      id: "calcul-1rm",
-      titre: "Calcul du 1RM",
-      description:
-        "Estimez votre charge max (1RM) à partir du poids et du nombre de répétitions, formules Epley ou Brzycki.",
-      icone: "🏋️",
-      href: "outils/calcul-1rm.html",
-      categorie: "Musculation",
-      publicCible: "eleve",
-    },
-    {
-      id: "journal-musculation",
-      titre: "Journal de musculation",
-      description:
-        "Enregistrez vos séances (exercices, séries, charges) et partagez une séance à la fois au prof via QR.",
-      icone: "📓",
-      href: "outils/journal-musculation.html",
-      categorie: "Musculation",
-      publicCible: "eleve",
-    },
-    {
-      id: "vitesse-course",
-      titre: "Vitesse de course",
-      description:
-        "Calculez la vitesse (km/h, m/s) et l’allure (min/km) à partir d’une distance et d’un temps.",
-      icone: "🏃",
-      href: "outils/vitesse-course.html",
-      categorie: "Course à pied",
-      publicCible: "eleve",
-    },
-    {
-      id: "ecartement-plots",
-      titre: "Écartement des plots",
-      description:
-        "Calcule la distance entre deux plots pour que 1 km/h corresponde à 1 plot selon la durée du demi-fond.",
-      icone: "📐",
-      href: "outils/ecartement-plots.html",
-      categorie: "Course à pied",
-      publicCible: "prof",
-    },
-  ];
 
   var listEl = document.getElementById("tools-list");
   var emptyEl = document.getElementById("tools-empty");
@@ -380,11 +108,19 @@
     }
   }
 
+  function affichageQuatreColonnesOuPlus() {
+    return (
+      viewMode === "icons" &&
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 900px)").matches
+    );
+  }
+
   function limiteVisibleParSection() {
-    if (viewMode !== "icons") return MAX_OUTILS_PAR_SECTION;
-    if (typeof window !== "undefined" && window.matchMedia("(min-width: 900px)").matches) {
-      return MAX_ICONES_GRAND_ECRAN;
+    if (affichageQuatreColonnesOuPlus()) {
+      return Number.MAX_SAFE_INTEGER;
     }
+    if (viewMode !== "icons") return MAX_OUTILS_PAR_SECTION;
     return MAX_ICONES_AUTRE_ECRAN;
   }
 
@@ -411,10 +147,14 @@
   }
 
   function publicLabel(publicCible) {
+    if (AUDIENCE === "eleve") return "Outils de séance";
     return publicCible === "eleve" ? "Outils pour les élèves" : "Outils pour le prof";
   }
 
   function publicDescription(publicCible) {
+    if (AUDIENCE === "eleve") {
+      return "À utiliser en cours, en autonomie ou par binôme.";
+    }
     return publicCible === "eleve"
       ? "À utiliser directement par les élèves ou en autonomie."
       : "Pour organiser, gérer ou piloter la séance.";
@@ -564,7 +304,13 @@
     listEl.hidden = false;
 
     var favoris = chargerFavoris();
-    ["prof", "eleve"].forEach(function (publicCible) {
+    var publicCibles =
+      AUDIENCE === "eleve"
+        ? ["eleve"]
+        : AUDIENCE === "prof"
+          ? ["prof"]
+          : ["prof", "eleve"];
+    publicCibles.forEach(function (publicCible) {
       var groupe = liste.filter(function (o) {
         return o.publicCible === publicCible;
       });
@@ -606,7 +352,7 @@
   }
   if (typeof window !== "undefined") {
     window.addEventListener("resize", function () {
-      if (viewMode === "icons") renderListe(filtreOutils(searchInput ? searchInput.value : ""));
+      renderListe(filtreOutils(searchInput ? searchInput.value : ""));
     });
   }
 
@@ -622,18 +368,66 @@
   var dialogShare = document.getElementById("dialog-share-app");
   var shareLink = document.getElementById("share-link");
   var shareQr = document.getElementById("share-qr-code");
+  var shareLinkEleves = document.getElementById("share-link-eleves");
+  var shareQrEleves = document.getElementById("share-qr-eleves");
   var btnCopyShare = document.getElementById("btn-copy-share-link");
-  var btnNativeShare = document.getElementById("btn-native-share");
+  var btnCopyShareEleves = document.getElementById("btn-copy-share-link-eleves");
+  var btnNativeShareApp = document.getElementById("btn-native-share-app");
+  var btnNativeShareEleves = document.getElementById("btn-native-share-eleves");
   var shareMsg = document.getElementById("share-msg");
+  var shareDual = !!(shareLinkEleves && shareQrEleves);
 
-  function shareUrl() {
+  function normalizeBasePath(pathname) {
+    if (pathname.endsWith("/index.html")) return pathname.slice(0, -10) || "/";
+    if (pathname.endsWith("/eleves.html")) return pathname.slice(0, -11) || "/";
+    return pathname;
+  }
+
+  function shareUrlApp() {
     var url = new URL(window.location.href);
     url.hash = "";
     url.search = "";
-    if (url.pathname.endsWith("/index.html")) {
-      url.pathname = url.pathname.slice(0, -10);
-    }
+    url.pathname = normalizeBasePath(url.pathname);
     return url.href;
+  }
+
+  function shareUrlEleves() {
+    var url = new URL(window.location.href);
+    url.hash = "";
+    url.search = "";
+    var base = normalizeBasePath(url.pathname);
+    if (!base.endsWith("/")) base += "/";
+    url.pathname = base + "eleves.html";
+    return url.href;
+  }
+
+  function shareUrl() {
+    return AUDIENCE === "eleve" ? shareUrlEleves() : shareUrlApp();
+  }
+
+  function qrCodeSrc(targetUrl) {
+    return (
+      "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
+      encodeURIComponent(targetUrl)
+    );
+  }
+
+  function shareMetaForTarget(target) {
+    var body = document.body;
+    if (target === "eleve") {
+      return {
+        title: (body && body.dataset.shareTitle) || "Outils EPS — Élèves",
+        text:
+          (body && body.dataset.shareText) ||
+          "Outils EPS : outils de séance pour les cours d’EPS (élèves).",
+        url: shareUrlEleves(),
+      };
+    }
+    return {
+      title: "Outils EPS",
+      text: "Outils EPS : petits outils pratiques pour les cours d’EPS.",
+      url: shareUrlApp(),
+    };
   }
 
   function setShareMsg(text) {
@@ -643,44 +437,59 @@
   }
 
   function prepareShareDialog() {
-    var url = shareUrl();
-    if (shareLink) shareLink.value = url;
-    if (shareQr) {
-      shareQr.src =
-        "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" +
-        encodeURIComponent(url);
+    var appUrl = shareUrlApp();
+    var elevesUrl = shareUrlEleves();
+    if (shareDual) {
+      if (shareLink) shareLink.value = appUrl;
+      if (shareQr) shareQr.src = qrCodeSrc(appUrl);
+      if (shareLinkEleves) shareLinkEleves.value = elevesUrl;
+      if (shareQrEleves) shareQrEleves.src = qrCodeSrc(elevesUrl);
+    } else {
+      var url = shareUrl();
+      if (shareLink) shareLink.value = url;
+      if (shareQr) shareQr.src = qrCodeSrc(url);
     }
-    if (btnNativeShare) btnNativeShare.hidden = !navigator.share;
+    var canShare = !!navigator.share;
+    if (btnNativeShareApp) btnNativeShareApp.hidden = !canShare;
+    if (btnNativeShareEleves) btnNativeShareEleves.hidden = !canShare;
     setShareMsg("");
   }
 
-  function nativeShare() {
-    var data = {
-      title: "Outils EPS",
-      text: "Outils EPS : petits outils pratiques pour les cours d’EPS.",
-      url: shareUrl(),
-    };
+  function nativeShareTarget(target) {
+    var meta = shareMetaForTarget(target);
     if (!navigator.share) return Promise.reject(new Error("Partage natif indisponible"));
-    return navigator.share(data);
+    return navigator.share({
+      title: meta.title,
+      text: meta.text,
+      url: meta.url,
+    });
   }
 
-  function copyShareLink() {
-    var url = shareUrl();
+  function copyShareLink(url, inputEl, successLabel) {
+    function onSuccess() {
+      setShareMsg(successLabel || "Lien copié.");
+    }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(function () {
-        setShareMsg("Lien copié.");
-      });
+      navigator.clipboard.writeText(url).then(onSuccess);
       return;
     }
-    if (!shareLink) return;
-    shareLink.focus();
-    shareLink.select();
+    if (!inputEl) return;
+    inputEl.focus();
+    inputEl.select();
     try {
       document.execCommand("copy");
-      setShareMsg("Lien copié.");
+      onSuccess();
     } catch (e) {
       setShareMsg("Copie impossible : sélectionnez le lien.");
     }
+  }
+
+  if (dialogShare) {
+    dialogShare.querySelectorAll(".share-dialog__dismiss").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        dialogShare.close();
+      });
+    });
   }
 
   if (btnShare) {
@@ -689,14 +498,34 @@
       if (dialogShare && dialogShare.showModal) {
         dialogShare.showModal();
       } else {
-        nativeShare().catch(copyShareLink);
+        nativeShareTarget(AUDIENCE === "eleve" ? "eleve" : "app").catch(function () {
+          copyShareLink(shareUrl(), shareLink, "Lien copié");
+        });
       }
     });
   }
-  if (btnNativeShare) {
-    btnNativeShare.addEventListener("click", function () {
-      nativeShare().catch(function () {});
+  if (btnNativeShareApp) {
+    btnNativeShareApp.addEventListener("click", function () {
+      nativeShareTarget("app").catch(function () {});
     });
   }
-  if (btnCopyShare) btnCopyShare.addEventListener("click", copyShareLink);
+  if (btnNativeShareEleves) {
+    btnNativeShareEleves.addEventListener("click", function () {
+      nativeShareTarget("eleve").catch(function () {});
+    });
+  }
+  if (btnCopyShare) {
+    btnCopyShare.addEventListener("click", function () {
+      copyShareLink(shareUrlApp(), shareLink, "Lien application complète copié");
+    });
+  }
+  if (btnCopyShareEleves) {
+    btnCopyShareEleves.addEventListener("click", function () {
+      copyShareLink(
+        shareUrlEleves(),
+        shareLinkEleves,
+        "Lien page élèves copié"
+      );
+    });
+  }
 })();

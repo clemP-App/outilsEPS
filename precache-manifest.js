@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "41";
+var APP_CACHE_VERSION = "42";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -12,6 +12,7 @@ var PRECACHE = [
   "./class-import.js",
   "./data-manager.js",
   "./dom-utils.js",
+  "./eleves.html",
   "./goatcounter.js",
   "./index.html",
   "./manifest.webmanifest",
@@ -58,6 +59,8 @@ var PRECACHE = [
   "./outils/sauvegarde.js",
   "./outils/table-marque.html",
   "./outils/table-marque.js",
+  "./outils/tableau-suivi.html",
+  "./outils/tableau-suivi.js",
   "./outils/test-vma.html",
   "./outils/test-vma.js",
   "./outils/timer-hiit-tabata.html",
@@ -86,6 +89,7 @@ var PRECACHE = [
   "./shared/imports-eleves-ui.js",
   "./shared/journal-musculation-body.js",
   "./shared/journal-musculation-core.js",
+  "./shared/outils-catalog.js",
   "./shared/outils-dom.js",
   "./shared/qr-exchange-core.js",
   "./shared/qr-share-ui.js",

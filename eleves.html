@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Outils EPS pour les élèves : compteurs, vitesse, débrief, musculation…"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Outils EPS — Élèves</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body
+    class="app app--home app--home-eleves"
+    data-audience="eleve"
+    data-share-title="Outils EPS — Élèves"
+    data-share-text="Outils EPS : outils de séance pour les cours d’EPS (élèves)."
+  >
+    <header class="site-header">
+      <nav class="site-header__toolbar" aria-label="Actions principales">
+        <button
+          type="button"
+          class="site-header__toolbar-btn"
+          id="btn-info-app"
+        >
+          <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" />
+            <path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
+          </svg>
+          <span>Info</span>
+        </button>
+        <button type="button" class="site-header__toolbar-btn" id="btn-share-app">
+          <span class="btn-icon-emoji" aria-hidden="true">🔗</span>
+          <span>Partager</span>
+        </button>
+      </nav>
+      <div class="site-header__inner">
+        <h1>Outils EPS</h1>
+        <p>Outils de séance pour les élèves — choisissez un outil ci-dessous</p>
+      </div>
+    </header>
+
+    <div class="search-wrap">
+      <label for="search-outils">Rechercher un outil</label>
+      <input
+        type="search"
+        id="search-outils"
+        name="q"
+        placeholder="Rechercher par nom, catégorie…"
+        autocomplete="off"
+      />
+    </div>
+
+    <main class="container">
+      <p id="outils-count" aria-live="polite"></p>
+      <p id="tools-empty" class="empty-state" hidden>
+        Aucun outil ne correspond à votre recherche. Essayez un autre mot-clé.
+      </p>
+      <ul id="tools-list" class="tools-list" role="list"></ul>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        Créé avec soin par <strong>ClemP</strong> pour les cours d’EPS.
+        <a href="https://www.instagram.com/clemp_eps2.0/" target="_blank" rel="noopener noreferrer"
+          >@clemp_eps2.0</a
+        >
+      </p>
+    </footer>
+
+    <dialog class="info-dialog card" id="dialog-info-app" aria-labelledby="info-dialog-title">
+      <form method="dialog" class="info-dialog__form">
+        <h2 id="info-dialog-title" class="info-dialog__title">Outils EPS — Élèves</h2>
+
+        <section class="info-dialog__section">
+          <h3>Page élèves</h3>
+          <p>
+            Cette page ne liste que les <strong>outils utilisables par les élèves</strong> en séance
+            (compteurs, vitesse, débrief, etc.). Votre professeur peut vous envoyer le lien ou un QR code
+            pour y accéder directement.
+          </p>
+          <p>
+            Les données saisies dans un outil restent sur <strong>votre appareil</strong>, sauf si vous
+            partagez un résultat au prof via QR (débrief, journal de musculation…).
+          </p>
+        </section>
+
+        <section class="info-dialog__section">
+          <h3>Installer sur l’écran d’accueil</h3>
+          <ul class="info-dialog__list">
+            <li><strong>iPhone (Safari)</strong> : Partager → « Sur l’écran d’accueil ».</li>
+            <li><strong>Android (Chrome)</strong> : menu → « Ajouter à l’écran d’accueil ».</li>
+          </ul>
+        </section>
+
+        <button type="submit" class="btn btn--primary info-dialog__close">Fermer</button>
+      </form>
+    </dialog>
+
+    <dialog class="share-dialog card" id="dialog-share-app" aria-labelledby="share-dialog-title">
+      <form method="dialog" class="share-dialog__form">
+        <header class="share-dialog__header">
+          <h2 id="share-dialog-title" class="share-dialog__title">Partager aux élèves</h2>
+          <button
+            type="button"
+            class="share-dialog__dismiss"
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+        </header>
+        <div class="share-dialog__body">
+        <p class="share-dialog__hint">
+          Affichez ce QR code ou copiez le lien : les élèves arrivent sur cette page, sans les outils
+          réservés au professeur.
+        </p>
+        <div class="share-dialog__qr-wrap">
+          <img id="share-qr-code" class="share-dialog__qr" alt="QR code page élèves" />
+        </div>
+        <label class="field-label" for="share-link">Lien page élèves</label>
+        <input id="share-link" class="share-dialog__link" type="url" readonly />
+        <p class="msg-ok share-dialog__msg" id="share-msg" hidden aria-live="polite"></p>
+        <div class="share-dialog__actions">
+          <button type="button" class="btn btn--ghost" id="btn-copy-share-link">Copier le lien</button>
+          <button type="button" class="btn btn--primary" id="btn-native-share-eleves">
+            Partager Outils EPS Élèves
+          </button>
+          <button type="submit" class="btn btn--ghost">Fermer</button>
+        </div>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="goatcounter.js"></script>
+    <script src="dom-utils.js"></script>
+    <script src="data-manager.js"></script>
+    <script src="shared/outils-catalog.js"></script>
+    <script src="script.js"></script>
+    <script src="pwa-register.js" data-sw="sw.js"></script>
+  </body>
+</html>

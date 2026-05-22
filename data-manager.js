@@ -6,7 +6,7 @@ var DataManager = (function () {
   "use strict";
 
   var DB_NAME = "outilsEPSDB";
-  var DB_VERSION = 6;
+  var DB_VERSION = 7;
   var APP_NAME = "OutilsEPS";
   var BACKUP_VERSION = "1.0";
   var BACKUP_FILENAME = "outilsEPS-backup.json";
@@ -59,6 +59,7 @@ var DataManager = (function () {
     "tournoisElimination",
     "parametres",
     "importsEleves",
+    "tableauxSuivi",
   ];
 
   var INDEXED_STORES = ["championnats", "tournoisElimination"];
@@ -410,6 +411,7 @@ var DataManager = (function () {
       tournoisElimination: [],
       parametres: [],
       importsEleves: [],
+      tableauxSuivi: [],
     };
     var i;
     for (i = 0; i < sources.length; i++) {
@@ -559,7 +561,8 @@ var DataManager = (function () {
       payload.championnats.length +
       payload.tournoisElimination.length +
       payload.parametres.length +
-      (payload.importsEleves || []).length;
+      (payload.importsEleves || []).length +
+      (payload.tableauxSuivi || []).length;
     if (total === 0) {
       return "Aucune donnée à importer dans ce fichier.";
     }
@@ -610,6 +613,7 @@ var DataManager = (function () {
       tournoisElimination: data.tournoisElimination || [],
       parametres: Array.isArray(parametres) ? parametres : [],
       importsEleves: data.importsEleves || [],
+      tableauxSuivi: data.tableauxSuivi || [],
     };
   }
 
@@ -625,6 +629,7 @@ var DataManager = (function () {
       getAll("tournoisElimination"),
       getAll("parametres"),
       getAll("importsEleves"),
+      getAll("tableauxSuivi"),
     ]).then(function (arrays) {
       return {
         metadata: {
@@ -642,6 +647,7 @@ var DataManager = (function () {
         tournoisElimination: arrays[7],
         parametres: arrays[8],
         importsEleves: arrays[9],
+        tableauxSuivi: arrays[10],
       };
     });
   }
@@ -931,6 +937,18 @@ var DataManager = (function () {
           return deleteParametre("radar-perfs");
         });
       });
+    });
+  }
+
+  function getTableauxSuivi() {
+    return getAll("tableauxSuivi");
+  }
+
+  function saveTableauxSuivi(liste) {
+    return clearStore("tableauxSuivi").then(function () {
+      var items = Array.isArray(liste) ? liste : [];
+      if (!items.length) return;
+      return bulkPut("tableauxSuivi", items);
     });
   }
 
@@ -1420,16 +1438,22 @@ var DataManager = (function () {
       });
   }
 
+  /** Outils qui enregistrent des données IndexedDB (liste affichée seulement si non vide). */
   var STORAGE_CATEGORIES = [
     {
-      id: "sessions",
-      label: "Séances (championnats, tournois…)",
-      stores: ["sessions"],
+      id: "classes",
+      label: "Classes et élèves",
+      stores: ["classes", "eleves"],
     },
     {
-      id: "classes",
-      label: "Classes & niveau",
-      stores: ["classes", "eleves"],
+      id: "tableau-suivi",
+      label: "Appel et notes",
+      stores: ["tableauxSuivi"],
+    },
+    {
+      id: "imports-eleves",
+      label: "Imports élèves (QR)",
+      stores: ["importsEleves"],
     },
     {
       id: "dispenses",
@@ -1444,24 +1468,41 @@ var DataManager = (function () {
     },
     {
       id: "radar",
-      label: "Radar vitesse (performances course)",
+      label: "Radar vitesse",
       stores: ["radarPerfs"],
       paramIds: ["radar-session", "radar-settings"],
     },
     {
+      id: "sessions",
+      label: "Séances actives",
+      stores: ["sessions"],
+      paramPrefix: "active-session__",
+    },
+    {
       id: "championnat",
-      label: "Championnat poule",
+      label: "Championnat à poule",
       stores: ["championnats"],
+    },
+    {
+      id: "tournoi-elimination",
+      label: "Tournoi éliminatoire",
+      stores: ["tournoisElimination"],
+      storeFilter: function (r) {
+        return r && r.kind === "tournoi-elimination";
+      },
     },
     {
       id: "pyramide-victoires",
       label: "Pyramide de victoires",
       stores: ["tournoisElimination"],
+      storeFilter: function (r) {
+        return r && r.kind === "pyramide-victoires";
+      },
     },
     {
       id: "composition",
-      label: "Composition équipes",
-      paramIds: ["composition-equipes"],
+      label: "Composition d’équipes",
+      paramPrefix: "composition-equipes",
     },
     {
       id: "compteur-bonus",
@@ -1478,17 +1519,49 @@ var DataManager = (function () {
       label: "Inducteur danse",
       paramIds: ["inducteur-danse"],
     },
-    {
-      id: "questions-debrief",
-      label: "Questions débrief",
-      paramIds: ["questions-debrief"],
-    },
-    {
-      id: "imports-eleves",
-      label: "Imports élèves (QR)",
-      stores: ["importsEleves"],
-    },
   ];
+
+  function storeItemsForCategory(cat, storeName, storeData) {
+    var items = storeData[storeName] || [];
+    if (typeof cat.storeFilter === "function") {
+      return items.filter(cat.storeFilter);
+    }
+    return items;
+  }
+
+  function paramsForCategory(cat, parametres) {
+    var list = parametres || [];
+    var out = [];
+    var seen = {};
+    (cat.paramIds || []).forEach(function (pid) {
+      list.forEach(function (p) {
+        if (p && p.id === pid && !seen[p.id]) {
+          seen[p.id] = true;
+          out.push(p);
+        }
+      });
+    });
+    if (cat.paramPrefix) {
+      list.forEach(function (p) {
+        if (p && p.id && p.id.indexOf(cat.paramPrefix) === 0 && !seen[p.id]) {
+          seen[p.id] = true;
+          out.push(p);
+        }
+      });
+    }
+    return out;
+  }
+
+  function isParamAssignedToStorageCategories(p, categories) {
+    if (!p || !p.id) return false;
+    var i;
+    for (i = 0; i < categories.length; i++) {
+      var cat = categories[i];
+      if ((cat.paramIds || []).indexOf(p.id) >= 0) return true;
+      if (cat.paramPrefix && p.id.indexOf(cat.paramPrefix) === 0) return true;
+    }
+    return false;
+  }
 
   function jsonByteSize(data) {
     try {
@@ -1509,7 +1582,7 @@ var DataManager = (function () {
   function countLabelForCategory(cat, storeData) {
     var parts = [];
     (cat.stores || []).forEach(function (store) {
-      var n = (storeData[store] || []).length;
+      var n = storeItemsForCategory(cat, store, storeData).length;
       if (store === "classes") {
         parts.push(n + " classe" + (n !== 1 ? "s" : ""));
       } else if (store === "eleves") {
@@ -1519,30 +1592,37 @@ var DataManager = (function () {
       } else if (store === "oublisMateriel") {
         parts.push(n + " oubli" + (n !== 1 ? "s" : ""));
       } else if (store === "radarPerfs") {
-        parts.push(n + " perf" + (n !== 1 ? "s" : "") + " Radar vitesse");
+        parts.push(n + " perf" + (n !== 1 ? "s" : ""));
       } else if (store === "sessions") {
         parts.push(n + " séance" + (n !== 1 ? "s" : ""));
       } else if (store === "championnats") {
         parts.push(n + " championnat" + (n !== 1 ? "s" : ""));
-      } else if (store === "tournoisElimination") {
-        parts.push(n + " tournoi" + (n !== 1 ? "s" : ""));
+      } else if (cat.id === "tournoi-elimination") {
+        parts.push(n + " tournoi éliminatoire" + (n !== 1 ? "s" : ""));
+      } else if (cat.id === "pyramide-victoires") {
+        parts.push(n + " pyramide" + (n !== 1 ? "s" : ""));
       } else if (store === "importsEleves") {
         parts.push(n + " import" + (n !== 1 ? "s" : "") + " QR");
+      } else if (store === "tableauxSuivi") {
+        parts.push(n + " feuille" + (n !== 1 ? "s" : "") + " de suivi");
       }
     });
-    (cat.paramIds || []).forEach(function (pid) {
-      var entries = (storeData.parametres || []).filter(function (p) {
-        return p.id === pid;
+    var paramEntries = paramsForCategory(cat, storeData.parametres);
+    if (cat.id === "composition" && paramEntries.length) {
+      parts.push(paramEntries.length + " composition" + (paramEntries.length !== 1 ? "s" : ""));
+    } else if (cat.id === "sessions" && paramEntries.length) {
+      parts.push(paramEntries.length + " outil" + (paramEntries.length !== 1 ? "s" : "") + " avec séance active");
+    } else {
+      paramEntries.forEach(function (entry) {
+        if (entry.id === PARAM_HIIT_PRESETS_ID) {
+          var presets = entry.presets;
+          var n = Array.isArray(presets) ? presets.length : 0;
+          if (n) parts.push(n + " raccourci" + (n !== 1 ? "s" : "") + " HIIT");
+        } else {
+          parts.push("réglages enregistrés");
+        }
       });
-      if (!entries.length) return;
-      if (pid === PARAM_HIIT_PRESETS_ID) {
-        var presets = entries[0].presets;
-        var n = Array.isArray(presets) ? presets.length : 0;
-        if (n) parts.push(n + " raccourci" + (n !== 1 ? "s" : ""));
-      } else {
-        parts.push("réglages enregistrés");
-      }
-    });
+    }
     return parts.length ? parts.join(", ") : "Aucune donnée";
   }
 
@@ -1553,24 +1633,12 @@ var DataManager = (function () {
         storeData[name] = arrays[i];
       });
 
-      var assignedParamIds = {};
-      STORAGE_CATEGORIES.forEach(function (cat) {
-        (cat.paramIds || []).forEach(function (id) {
-          assignedParamIds[id] = true;
-        });
-      });
-
       var categories = STORAGE_CATEGORIES.map(function (cat) {
         var bytes = 0;
         (cat.stores || []).forEach(function (store) {
-          bytes += jsonByteSize(storeData[store] || []);
+          bytes += jsonByteSize(storeItemsForCategory(cat, store, storeData));
         });
-        (cat.paramIds || []).forEach(function (pid) {
-          var found = (storeData.parametres || []).filter(function (p) {
-            return p.id === pid;
-          });
-          if (found.length) bytes += jsonByteSize(found);
-        });
+        bytes += jsonByteSize(paramsForCategory(cat, storeData.parametres));
         return {
           id: cat.id,
           label: cat.label,
@@ -1581,7 +1649,7 @@ var DataManager = (function () {
       });
 
       var otherParams = (storeData.parametres || []).filter(function (p) {
-        return p && p.id && !assignedParamIds[p.id];
+        return p && p.id && !isParamAssignedToStorageCategories(p, STORAGE_CATEGORIES);
       });
       if (otherParams.length) {
         categories.push({
@@ -1592,6 +1660,10 @@ var DataManager = (function () {
           empty: false,
         });
       }
+
+      categories = categories.filter(function (c) {
+        return !c.empty;
+      });
 
       var totalBytes = categories.reduce(function (sum, c) {
         return sum + c.bytes;
@@ -1697,15 +1769,9 @@ var DataManager = (function () {
 
     if (categoryId === "autres") {
       return getAll("parametres").then(function (all) {
-        var assigned = {};
-        STORAGE_CATEGORIES.forEach(function (c) {
-          (c.paramIds || []).forEach(function (id) {
-            assigned[id] = true;
-          });
-        });
         var ops = all
           .filter(function (p) {
-            return p && p.id && !assigned[p.id];
+            return p && p.id && !isParamAssignedToStorageCategories(p, STORAGE_CATEGORIES);
           })
           .map(function (p) {
             return deleteParametre(p.id);
@@ -1716,25 +1782,29 @@ var DataManager = (function () {
 
     var ops = [];
     (cat.stores || []).forEach(function (store) {
-      ops.push(clearStore(store));
+      if (typeof cat.storeFilter === "function") {
+        ops.push(
+          getAll(store).then(function (all) {
+            return Promise.all(
+              all.filter(cat.storeFilter).map(function (item) {
+                return deleteItem(store, item.id);
+              })
+            );
+          })
+        );
+      } else {
+        ops.push(clearStore(store));
+      }
     });
-    if (cat.paramIds && cat.paramIds.length) {
-      ops.push(
-        getAll("parametres").then(function (all) {
-          return Promise.all(
-            cat.paramIds
-              .filter(function (pid) {
-                return all.some(function (p) {
-                  return p.id === pid;
-                });
-              })
-              .map(function (pid) {
-                return deleteParametre(pid);
-              })
-          );
-        })
-      );
-    }
+    ops.push(
+      getAll("parametres").then(function (all) {
+        return Promise.all(
+          paramsForCategory(cat, all).map(function (p) {
+            return deleteParametre(p.id);
+          })
+        );
+      })
+    );
     return Promise.all(ops);
   }
 
@@ -1890,6 +1960,8 @@ var DataManager = (function () {
     getRadarPerfs: getRadarPerfs,
     saveRadarPerfs: saveRadarPerfs,
     migrateRadarPerfsFromParametres: migrateRadarPerfsFromParametres,
+    getTableauxSuivi: getTableauxSuivi,
+    saveTableauxSuivi: saveTableauxSuivi,
     SESSION_TOOLS: SC.SESSION_TOOLS,
     SessionsCore: SC,
     getSessionById: getSessionById,

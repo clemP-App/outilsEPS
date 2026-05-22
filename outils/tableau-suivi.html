@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Appel et notes — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--tableau-suivi">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Appel et notes</h1>
+      </header>
+
+      <p id="tab-suivi-msg" class="msg-error tab-suivi-msg" role="alert" hidden></p>
+      <p id="tab-suivi-ok" class="msg-ok tab-suivi-msg" role="status" hidden></p>
+
+      <details class="card card--accordion tab-suivi-acc" id="acc-tableaux">
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="lbl-tableaux">Mes appels</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <div class="field-row tab-suivi-tableaux-row">
+            <div class="field-group tab-suivi-tableaux-select">
+              <label class="field-label" for="select-tableau">Feuille active</label>
+              <select id="select-tableau"></select>
+            </div>
+            <button type="button" class="btn btn--primary btn--labeled" id="btn-nouveau-tableau">
+              <span class="btn__icon" aria-hidden="true">＋</span>
+              <span class="btn__text">Nouveau</span>
+            </button>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="titre-tableau">Titre</label>
+            <input type="text" id="titre-tableau" maxlength="120" autocomplete="off" />
+          </div>
+          <button type="button" class="btn btn--danger btn--ghost btn--labeled" id="btn-supprimer-tableau">
+            <span class="btn__icon" aria-hidden="true">🗑️</span>
+            <span class="btn__text">Supprimer cette feuille</span>
+          </button>
+        </div>
+      </details>
+
+      <details class="card card--accordion tab-suivi-acc" id="acc-eleves">
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="lbl-eleves">Liste d’élèves</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel tab-suivi-panel-eleves">
+          <button type="button" class="btn btn--ghost btn--labeled tab-suivi-btn-import" id="btn-import-classe-tab">
+            <span class="btn__icon" aria-hidden="true">👥</span>
+            <span class="btn__text">Importer depuis une classe</span>
+          </button>
+          <p class="hint">
+            Importez toute la classe ou seulement les élèves cochés. Vous pouvez aussi saisir des noms
+            manuellement (un par ligne).
+          </p>
+          <div class="field-group">
+            <label class="field-label" for="liste-brute-tab">Saisie manuelle</label>
+            <textarea
+              id="liste-brute-tab"
+              rows="5"
+              placeholder="Martin&#10;Léa Dupont&#10;Paul&#10;…"
+              spellcheck="false"
+            ></textarea>
+          </div>
+          <div class="field-row tab-suivi-eleves-actions">
+            <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste-tab">
+              <span class="btn__icon" aria-hidden="true">✓</span>
+              <span class="btn__text">Ajouter à la liste</span>
+            </button>
+            <span id="tab-suivi-nb-eleves" class="tab-suivi-nb" aria-live="polite">0 élève</span>
+          </div>
+        </div>
+      </details>
+
+      <section class="card tab-suivi-grid-card" aria-labelledby="lbl-grille">
+        <div class="tab-suivi-grid-head">
+          <h2 id="lbl-grille">Grille</h2>
+          <div class="tab-suivi-grid-actions">
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-gestion-cols">
+              <span class="btn__icon" aria-hidden="true">＋</span>
+              <span class="btn__text">Nouvelle colonne</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-tri-eleves">
+              <span class="btn__icon" aria-hidden="true">↕</span>
+              <span class="btn__text">Tri</span>
+            </button>
+            <div class="tab-suivi-grid-actions-export">
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-export-csv-tab">
+                <span class="btn__text">CSV</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-export-pdf-tab">
+                <span class="btn__text">PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="tab-suivi-scroll" class="tab-suivi-scroll" hidden>
+          <table class="tab-suivi-table" id="tab-suivi-table">
+            <thead id="tab-suivi-thead"></thead>
+            <tbody id="tab-suivi-tbody"></tbody>
+          </table>
+        </div>
+        <p id="tab-suivi-empty" class="empty-state">
+          Ajoutez des élèves puis créez des colonnes (bouton Nouvelle colonne).
+        </p>
+      </section>
+    </div>
+
+    <dialog id="dialog-tab-suivi-gestion" class="tab-suivi-dialog tab-suivi-dialog--gestion">
+      <form id="form-tab-suivi-gestion" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title">Nouvelle colonne</h2>
+            <p class="tab-suivi-dialog__intro">Choisissez le type de colonne à ajouter au tableau.</p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-gestion-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+
+        <div class="tab-suivi-dialog__body">
+          <section class="tab-suivi-dialog__block" aria-labelledby="dlg-ajout">
+            <h3 id="dlg-ajout" class="tab-suivi-dialog__block-title">Type de colonne</h3>
+            <div class="tab-suivi-dialog-type-grid">
+              <button type="button" class="tab-suivi-type-card" data-dlg-col-type="check">
+                <span class="tab-suivi-type-card__icon tab-suivi-type-card__icon--check" aria-hidden="true"
+                  >✓</span
+                >
+                <span class="tab-suivi-type-card__text">
+                  <span class="tab-suivi-type-card__label">Présence / rendu</span>
+                  <span class="tab-suivi-type-card__hint">Cases ✓ et ✗</span>
+                </span>
+              </button>
+              <button type="button" class="tab-suivi-type-card" data-dlg-col-type="number">
+                <span class="tab-suivi-type-card__icon tab-suivi-type-card__icon--number" aria-hidden="true"
+                  >#</span
+                >
+                <span class="tab-suivi-type-card__text">
+                  <span class="tab-suivi-type-card__label">Note / nombre</span>
+                  <span class="tab-suivi-type-card__hint">Chiffre par élève</span>
+                </span>
+              </button>
+              <button type="button" class="tab-suivi-type-card" data-dlg-col-type="calc">
+                <span class="tab-suivi-type-card__icon tab-suivi-type-card__icon--calc" aria-hidden="true"
+                  >ƒ</span
+                >
+                <span class="tab-suivi-type-card__text">
+                  <span class="tab-suivi-type-card__label">Somme ou moyenne</span>
+                  <span class="tab-suivi-type-card__hint">À partir d’autres colonnes chiffres</span>
+                </span>
+              </button>
+            </div>
+          </section>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="dialog-tab-suivi-tri" class="tab-suivi-dialog tab-suivi-dialog--tri">
+      <form id="form-tab-suivi-tri" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title">Trier les élèves</h2>
+            <p class="tab-suivi-dialog__intro">Choisissez un critère puis l’ordre d’affichage.</p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-tri-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body">
+          <div class="field-group">
+            <label class="field-label" for="dlg-tri-par">Trier par</label>
+            <select id="dlg-tri-par">
+              <option value="nom">Nom</option>
+              <option value="prenom">Prénom</option>
+              <option value="colonne">Colonne spécifique</option>
+            </select>
+          </div>
+          <div class="field-group tab-suivi-tri-colonne-wrap" id="dlg-tri-colonne-wrap" hidden>
+            <label class="field-label" for="dlg-tri-colonne">Colonne</label>
+            <select id="dlg-tri-colonne"></select>
+            <p id="dlg-tri-colonne-empty" class="tab-suivi-dialog__empty" hidden>
+              Aucune colonne — créez-en une d’abord.
+            </p>
+          </div>
+          <div class="field-group">
+            <span class="field-label" id="lbl-tri-sens">Ordre</span>
+            <button
+              type="button"
+              class="btn btn--ghost tab-suivi-tri-sens-btn"
+              id="btn-tri-sens"
+              aria-labelledby="lbl-tri-sens"
+            >
+              Croissant (A → Z)
+            </button>
+          </div>
+        </div>
+        <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
+          <button type="button" class="btn btn--ghost" id="btn-tri-annuler">Annuler</button>
+          <button type="submit" class="btn btn--primary" id="btn-tri-appliquer">Appliquer le tri</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="dialog-tab-suivi-calc" class="tab-suivi-dialog tab-suivi-dialog--calc">
+      <form id="form-tab-suivi-calc" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title">Colonne calculée</h2>
+            <p class="tab-suivi-dialog__intro">Somme ou moyenne d’une ou plusieurs colonnes chiffres.</p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-calc-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body">
+          <div class="field-group">
+            <span class="field-label" id="lbl-calc-op">Calcul</span>
+            <div class="tab-suivi-calc-op-row" role="radiogroup" aria-labelledby="lbl-calc-op">
+              <label class="tab-suivi-calc-op">
+                <input type="radio" name="calc-op" value="sum" checked />
+                <span>Somme (Σ)</span>
+              </label>
+              <label class="tab-suivi-calc-op">
+                <input type="radio" name="calc-op" value="avg" />
+                <span>Moyenne</span>
+              </label>
+            </div>
+          </div>
+          <div class="field-group">
+            <span class="field-label" id="lbl-calc-sources">Colonnes à inclure</span>
+            <div id="dlg-calc-sources" class="tab-suivi-calc-sources" role="group" aria-labelledby="lbl-calc-sources"></div>
+            <p id="dlg-calc-sources-empty" class="tab-suivi-dialog__empty" hidden>
+              Ajoutez d’abord au moins une colonne « Note / nombre ».
+            </p>
+          </div>
+        </div>
+        <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
+          <button type="button" class="btn btn--ghost" id="btn-calc-annuler">Annuler</button>
+          <button type="submit" class="btn btn--primary" id="btn-calc-valider">Créer la colonne</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="dialog-tab-suivi-icone" class="tab-suivi-dialog tab-suivi-dialog--icone">
+      <form id="form-tab-suivi-icone" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title" id="dlg-icone-titre">Icône élève</h2>
+            <p class="tab-suivi-dialog__intro" id="dlg-icone-hint">PAI, PAP, repère ou alerte.</p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-icone-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body">
+          <div id="dlg-icone-grid" class="tab-suivi-icone-grid" role="list"></div>
+        </div>
+        <footer class="tab-suivi-dialog__footer">
+          <button type="button" class="btn btn--ghost" id="btn-icone-annuler">Fermer</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="dialog-tab-suivi-colonne" class="tab-suivi-dialog tab-suivi-dialog--colonne">
+      <form id="form-tab-suivi-colonne" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title" id="dlg-col-titre">Modifier la colonne</h2>
+            <p class="tab-suivi-dialog__intro" id="dlg-col-type-hint"></p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-colonne-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body">
+          <div class="field-group">
+            <label class="field-label" for="dlg-col-nom">Nom de la colonne</label>
+            <input type="text" id="dlg-col-nom" class="tab-suivi-col-dlg-nom" maxlength="24" autocomplete="off" />
+          </div>
+          <section class="tab-suivi-col-dlg-block" aria-labelledby="dlg-col-lbl-position">
+            <h3 id="dlg-col-lbl-position" class="tab-suivi-dialog__block-title">Position</h3>
+            <div class="tab-suivi-col-dlg-move">
+              <button type="button" class="btn btn--ghost tab-suivi-col-dlg-move-btn" id="btn-col-gauche">
+                ← Gauche
+              </button>
+              <button type="button" class="btn btn--ghost tab-suivi-col-dlg-move-btn" id="btn-col-droite">
+                Droite →
+              </button>
+            </div>
+          </section>
+          <section
+            class="tab-suivi-col-dlg-block"
+            id="dlg-col-remplir-section"
+            aria-labelledby="dlg-col-lbl-remplir"
+            hidden
+          >
+            <h3 id="dlg-col-lbl-remplir" class="tab-suivi-dialog__block-title">Remplir pour tous les élèves</h3>
+            <div id="dlg-col-remplir-body" class="tab-suivi-col-dlg-remplir"></div>
+          </section>
+          <p id="dlg-col-calc-hint" class="tab-suivi-dialog__empty" hidden>
+            Colonne calculée automatiquement — les valeurs ne peuvent pas être remplies à la main.
+          </p>
+          <button type="button" class="btn btn--danger btn--ghost tab-suivi-col-dlg-del" id="btn-col-supprimer">
+            Supprimer cette colonne
+          </button>
+        </div>
+        <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
+          <button type="button" class="btn btn--ghost" id="btn-col-annuler">Annuler</button>
+          <button type="submit" class="btn btn--primary" id="btn-col-enregistrer">Enregistrer</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <script src="../data-manager.js"></script>
+    <script src="../shared/eleve-display.js"></script>
+    <script src="../class-import.js"></script>
+    <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="tableau-suivi.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro:
+          "Faites l’appel, saisissez des notes et suivez une classe sur la séance avec des colonnes datées.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Un seul outil pour suivre une classe sur la séance : cochez les présences, notez un chiffre, exportez en CSV ou PDF.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Importez une classe entière, une sélection d’élèves, ou saisissez les noms à la main.",
+              "Icône à gauche du nom : PAI, PAP, alerte ou repère 1 à 5.",
+              "Dans une case nombre, touche Entrée pour passer à l’élève suivant.",
+              "Le bouton ▼ au-dessus d’une colonne permet de la renommer, la déplacer ou la remplir.",
+              "« Nouvelle colonne » ajoute une colonne ; « Tri » réordonne les élèves.",
+              "Exportez le tableau en CSV ou PDF pour le conserver ou le partager.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../goatcounter.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>
