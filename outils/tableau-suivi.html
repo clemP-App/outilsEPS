@@ -257,6 +257,87 @@
       </form>
     </dialog>
 
+    <dialog id="dialog-tab-suivi-eleves" class="tab-suivi-dialog tab-suivi-dialog--eleves">
+      <form id="form-tab-suivi-eleves" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title">Élèves de la feuille</h2>
+            <p class="tab-suivi-dialog__intro">
+              Choisissez un élève dans le menu, puis modifiez son nom ou retirez-le de la feuille.
+            </p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-eleves-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body tab-suivi-eleves-dlg">
+          <div class="field-group tab-suivi-eleves-dlg__select-wrap">
+            <label class="field-label" for="dlg-eleves-select">Élève à modifier</label>
+            <select id="dlg-eleves-select"></select>
+          </div>
+
+          <section
+            id="dlg-eleves-detail"
+            class="tab-suivi-eleves-detail"
+            aria-labelledby="dlg-eleves-detail-title"
+            hidden
+          >
+            <h3 id="dlg-eleves-detail-title" class="tab-suivi-eleves-detail__title">Fiche élève</h3>
+            <div class="tab-suivi-eleves-detail__fields">
+              <div class="field-group">
+                <label class="field-label" for="dlg-eleves-nom">Nom</label>
+                <input type="text" id="dlg-eleves-nom" autocomplete="family-name" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="dlg-eleves-prenom">Prénom</label>
+                <input type="text" id="dlg-eleves-prenom" autocomplete="given-name" />
+              </div>
+            </div>
+            <button type="button" class="btn btn--danger btn--ghost tab-suivi-eleves-detail__del" id="btn-eleves-retirer">
+              Retirer de la feuille
+            </button>
+          </section>
+
+          <p id="dlg-eleves-empty" class="tab-suivi-dialog__empty" hidden>Aucun élève sur cette feuille.</p>
+        </div>
+        <footer class="tab-suivi-dialog__footer">
+          <button type="button" class="btn btn--primary" id="btn-eleves-fermer">Fermer</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="dialog-tab-suivi-oubli" class="tab-suivi-dialog tab-suivi-dialog--oubli">
+      <form id="form-tab-suivi-oubli" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact tab-suivi-dialog__header--oubli">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title">Oubli de tenue</h2>
+            <p class="tab-suivi-oubli-eleve" id="dlg-oubli-eleve"></p>
+            <p class="tab-suivi-dialog__intro" id="dlg-oubli-intro">Historique des oublis pour cet élève.</p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-oubli-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body tab-suivi-oubli-dlg">
+          <p id="dlg-oubli-count" class="tab-suivi-oubli-stat" aria-live="polite">
+            <span class="tab-suivi-oubli-stat__num">0</span>
+            <span class="tab-suivi-oubli-stat__lbl">oubli de matériel</span>
+          </p>
+          <ul id="dlg-oubli-list" class="tab-suivi-oubli-list" role="list"></ul>
+          <p id="dlg-oubli-empty" class="tab-suivi-oubli-empty" hidden>
+            <span class="tab-suivi-oubli-empty__icon" aria-hidden="true">👟</span>
+            Aucun oubli de tenue enregistré pour cet élève.
+          </p>
+        </div>
+        <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
+          <button type="button" class="btn btn--ghost" id="btn-oubli-annuler">Annuler</button>
+          <button type="button" class="btn btn--primary" id="btn-oubli-ajouter">
+            Ajouter un oubli
+          </button>
+        </footer>
+      </form>
+    </dialog>
+
     <dialog id="dialog-tab-suivi-icone" class="tab-suivi-dialog tab-suivi-dialog--icone">
       <form id="form-tab-suivi-icone" method="dialog" class="tab-suivi-dialog__form">
         <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
@@ -348,6 +429,8 @@
             list: [
               "Importez une classe entière, une sélection d’élèves, ou saisissez les noms à la main.",
               "Icône à gauche du nom : PAI, PAP, alerte ou repère 1 à 5.",
+              "Bouton ⚙ à côté de « Élève » : menu déroulant pour modifier un élève ou le retirer.",
+              "Bouton 👟 : historique des oublis de tenue et ajout d’un nouvel oubli.",
               "Dans une case nombre, touche Entrée pour passer à l’élève suivant.",
               "Le bouton ▼ au-dessus d’une colonne permet de la renommer, la déplacer ou la remplir.",
               "« Nouvelle colonne » ajoute une colonne ; « Tri » réordonne les élèves.",
@@ -357,6 +440,7 @@
         ],
       });
     </script>
+    <script src="../shared/tool-accueil.js"></script>
     <script src="../goatcounter.js"></script>
     <script src="../pwa-register.js" data-sw="../sw.js"></script>
   </body>

@@ -9402,6 +9402,270 @@ dialog.tab-suivi-dialog .tab-suivi-remplir-input {
   background: #ecfdf5;
 }
 
+.page-outil--tableau-suivi .tab-suivi-eleve-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  min-width: 5.5rem;
+}
+
+.page-outil--tableau-suivi .tab-suivi-eleve-head__label {
+  flex: 1 1 auto;
+}
+
+.page-outil--tableau-suivi .tab-suivi-eleve-params {
+  flex-shrink: 0;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  border: 1px solid rgba(13, 148, 136, 0.35);
+  border-radius: 0.35rem;
+  background: #fff;
+  color: var(--accent-deep);
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-outil--tableau-suivi .tab-suivi-eleve-params:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* Dialogues hors .page-outil — sélecteurs sur <dialog> */
+dialog.tab-suivi-dialog--eleves .tab-suivi-eleves-dlg__select-wrap {
+  margin-bottom: 0.85rem;
+}
+
+dialog.tab-suivi-dialog--eleves .tab-suivi-eleves-detail {
+  margin-top: 0.15rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(13, 148, 136, 0.22);
+  background: linear-gradient(165deg, #ecfdf5 0%, #f8fafc 100%);
+  transition: opacity 0.2s ease;
+}
+
+dialog.tab-suivi-dialog--eleves .tab-suivi-eleves-detail__title {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent-deep);
+  line-height: 1.25;
+}
+
+dialog.tab-suivi-dialog--eleves .tab-suivi-eleves-detail__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (max-width: 420px) {
+  dialog.tab-suivi-dialog--eleves .tab-suivi-eleves-detail__fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+dialog.tab-suivi-dialog--eleves .tab-suivi-eleves-detail__del {
+  width: 100%;
+}
+
+dialog.tab-suivi-dialog--oubli {
+  width: min(26rem, calc(100vw - 1.25rem));
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-dialog__header--oubli {
+  background: linear-gradient(135deg, #c2410c 0%, #ea580c 42%, #f97316 100%);
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-eleve {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.25;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-dlg {
+  gap: 0.65rem;
+  scroll-behavior: smooth;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.65rem;
+  background: #fff;
+  border: 1px solid rgba(234, 88, 12, 0.2);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  line-height: 1.2;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-stat--zero {
+  opacity: 0.85;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-stat__num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #c2410c;
+  font-variant-numeric: tabular-nums;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-stat__lbl {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #9a3412;
+}
+
+@keyframes tab-suivi-oubli-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: min(46vh, 18rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-list > li {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card {
+  display: flex;
+  align-items: stretch;
+  gap: 0.6rem;
+  animation: tab-suivi-oubli-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card__index {
+  flex-shrink: 0;
+  width: 2.1rem;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(160deg, #ea580c, #c2410c);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgba(194, 65, 12, 0.25);
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.65rem;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card:hover .tab-suivi-oubli-card__main {
+  border-color: rgba(234, 88, 12, 0.28);
+  box-shadow: 0 6px 16px rgba(194, 65, 12, 0.12);
+  transform: translateY(-1px);
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+  margin-bottom: 0.35rem;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card__emoji {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card__date {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card__classe {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9a3412;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #ffedd5;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-card__type {
+  margin: 0;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #64748b;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.4rem;
+  background: #f8fafc;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-empty {
+  margin: 0;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  border-radius: 0.65rem;
+  border: 1px dashed rgba(234, 88, 12, 0.35);
+  background: #fff7ed;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-oubli-empty__icon {
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
+  opacity: 0.9;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-dialog__footer .btn--primary {
+  background: linear-gradient(160deg, #ea580c 0%, #c2410c 100%);
+  border-color: #c2410c;
+}
+
+dialog.tab-suivi-dialog--oubli .tab-suivi-dialog__footer .btn--primary:hover {
+  filter: brightness(1.05);
+}
+
 .page-outil--tableau-suivi .tab-suivi-head-stats .tab-suivi-th--nom-vide {
   padding: 0.1rem 0.35rem;
   min-height: 0;
@@ -9427,6 +9691,36 @@ dialog.tab-suivi-dialog .tab-suivi-remplir-input {
 .page-outil--tableau-suivi .tab-suivi-row-icone:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+.page-outil--tableau-suivi .tab-suivi-row-oubli {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.45rem;
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-outil--tableau-suivi .tab-suivi-row-oubli:hover {
+  border-color: #b45309;
+  background: #fff7ed;
+}
+
+.page-outil--tableau-suivi .tab-suivi-row-oubli:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.page-outil--tableau-suivi .tab-suivi-row-oubli__icon {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .page-outil--tableau-suivi .tab-suivi-row-icone--vide {
@@ -9627,22 +9921,18 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   color: #b91c1c;
 }
 
-.page-outil--tableau-suivi .tab-suivi-nom-input {
+.page-outil--tableau-suivi .tab-suivi-nom-label {
   flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
-  border: 1px solid transparent;
-  border-radius: 0.25rem;
-  padding: 0.35rem 0.4rem;
+  padding: 0.35rem 0.15rem;
   font: inherit;
   font-weight: 600;
-  background: transparent;
-}
-
-.page-outil--tableau-suivi .tab-suivi-nom-input:focus {
-  outline: 2px solid var(--accent);
-  border-color: rgba(13, 148, 136, 0.35);
-  background: #fff;
+  line-height: 1.25;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .page-outil--tableau-suivi .tab-suivi-td--cell {

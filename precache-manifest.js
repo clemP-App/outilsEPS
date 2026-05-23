@@ -96,6 +96,7 @@ var PRECACHE = [
   "./shared/questions-debrief-core.js",
   "./shared/rm-formulas.js",
   "./shared/sessions-core.js",
+  "./shared/tool-accueil.js",
   "./style.css",
   "./tool-info.js",
   "./vendor/html5-qrcode.min.js",

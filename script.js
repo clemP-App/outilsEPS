@@ -528,4 +528,14 @@
       );
     });
   }
+
+  if (window.OutilsAccueil) {
+    OutilsAccueil.setAccueil(AUDIENCE === "eleve" ? "eleves" : "index");
+    if (listEl) {
+      listEl.addEventListener("click", function (e) {
+        if (!e.target.closest("a.tool-list__link")) return;
+        OutilsAccueil.setAccueil(AUDIENCE === "eleve" ? "eleves" : "index");
+      });
+    }
+  }
 })();

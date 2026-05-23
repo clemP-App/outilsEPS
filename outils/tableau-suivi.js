@@ -43,7 +43,22 @@
   var btnColDroite = document.getElementById("btn-col-droite");
   var btnColSupprimer = document.getElementById("btn-col-supprimer");
   var colonneDialogId = null;
+  var dialogEleves = document.getElementById("dialog-tab-suivi-eleves");
+  var dlgElevesSelect = document.getElementById("dlg-eleves-select");
+  var dlgElevesDetail = document.getElementById("dlg-eleves-detail");
+  var dlgElevesNom = document.getElementById("dlg-eleves-nom");
+  var dlgElevesPrenom = document.getElementById("dlg-eleves-prenom");
+  var btnElevesRetirer = document.getElementById("btn-eleves-retirer");
+  var dlgElevesEmpty = document.getElementById("dlg-eleves-empty");
+  var elevesDialogRowId = null;
+  var dialogOubli = document.getElementById("dialog-tab-suivi-oubli");
+  var dlgOubliEleve = document.getElementById("dlg-oubli-eleve");
+  var dlgOubliIntro = document.getElementById("dlg-oubli-intro");
+  var dlgOubliCount = document.getElementById("dlg-oubli-count");
+  var dlgOubliList = document.getElementById("dlg-oubli-list");
+  var dlgOubliEmpty = document.getElementById("dlg-oubli-empty");
   var dialogIcone = document.getElementById("dialog-tab-suivi-icone");
+  var oubliRowId = null;
   var dlgIconeGrid = document.getElementById("dlg-icone-grid");
   var dlgIconeTitre = document.getElementById("dlg-icone-titre");
   var iconeEleveRowId = null;
@@ -130,13 +145,475 @@
     return normaliserNom([e.nom, e.prenom].filter(Boolean).join(" "));
   }
 
-  function metaDepuisEleve(e, classeNom) {
+  function metaDepuisEleve(e, classeNom, classeId) {
     return {
       classe: classeNom || "",
+      classeId: classeId || "",
       nom: (e.nom || "").trim(),
       prenom: (e.prenom || "").trim(),
       eleveId: e.id || "",
     };
+  }
+
+  function aujourdhuiIso() {
+    var d = new Date();
+    var mo = String(d.getMonth() + 1).padStart(2, "0");
+    var da = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + mo + "-" + da;
+  }
+
+  function genererIdOubli() {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return "om_" + Date.now() + "_" + Math.random().toString(36).slice(2, 9);
+  }
+
+  function cleEleveOubli(o) {
+    if (o.eleveId) return "id:" + o.eleveId;
+    return [o.classe, o.nom, o.prenom]
+      .join("|")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  function numeroOubliApresAjout(liste, entree) {
+    var key = cleEleveOubli(entree);
+    var n = 0;
+    liste.forEach(function (o) {
+      if (cleEleveOubli(o) === key) n++;
+    });
+    return n;
+  }
+
+  function isoVersFr(iso) {
+    if (!iso || typeof iso !== "string") return "";
+    var p = iso.split("-");
+    if (p.length !== 3) return iso;
+    return p[2] + "/" + p[1] + "/" + p[0];
+  }
+
+  function labelEleveRow(row) {
+    var noms = nomsDepuisRow(row);
+    if (typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe) {
+      return EleveDisplay.formatEleveListe(
+        { nom: noms.nom, prenom: noms.prenom },
+        row.label || "Sans nom"
+      );
+    }
+    return row.label || "Sans nom";
+  }
+
+  function synchroniserLabelRow(row, nom, prenom) {
+    if (!row.meta) row.meta = {};
+    row.meta.nom = normaliserNom(nom);
+    row.meta.prenom = normaliserNom(prenom);
+    row.label = labelEleveRow(row);
+  }
+
+  function oublisPourRow(liste, row) {
+    var noms = nomsDepuisRow(row);
+    var eleveId = row.meta && row.meta.eleveId ? row.meta.eleveId : "";
+    return (liste || [])
+      .filter(function (o) {
+        if (!o) return false;
+        if (eleveId && o.eleveId) return o.eleveId === eleveId;
+        return (
+          normaliserNom(o.nom).toLowerCase() === noms.nom.toLowerCase() &&
+          normaliserNom(o.prenom).toLowerCase() === noms.prenom.toLowerCase()
+        );
+      })
+      .sort(function (a, b) {
+        if (a.dateOubli !== b.dateOubli) return a.dateOubli < b.dateOubli ? -1 : 1;
+        return (a.createdAt || "") < (b.createdAt || "") ? -1 : 1;
+      });
+  }
+
+  function supprimerRowDuTableau(t, rowId) {
+    t.rows = t.rows.filter(function (r) {
+      return r.id !== rowId;
+    });
+    Object.keys(t.cells).forEach(function (k) {
+      if (k.indexOf(rowId + ":") === 0) delete t.cells[k];
+    });
+  }
+
+  function creerEnteteEleve() {
+    var th = document.createElement("th");
+    th.className = "tab-suivi-th tab-suivi-th--nom tab-suivi-th--eleve-label";
+    th.scope = "col";
+    var wrap = document.createElement("div");
+    wrap.className = "tab-suivi-eleve-head";
+    var label = document.createElement("span");
+    label.className = "tab-suivi-eleve-head__label";
+    label.textContent = "Élève";
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tab-suivi-eleve-params";
+    btn.setAttribute("aria-label", "Paramètres des élèves (noms, suppression)");
+    btn.title = "Paramètres élèves";
+    btn.innerHTML = '<span aria-hidden="true">⚙</span>';
+    btn.addEventListener("click", ouvrirDialogEleves);
+    wrap.appendChild(label);
+    wrap.appendChild(btn);
+    th.appendChild(wrap);
+    return th;
+  }
+
+  function getRowParId(t, rowId) {
+    if (!t || !rowId) return null;
+    return (
+      t.rows.filter(function (r) {
+        return r.id === rowId;
+      })[0] || null
+    );
+  }
+
+  function sauverEleveDialogCourant() {
+    var t = getActif();
+    if (!t || !elevesDialogRowId || !dlgElevesNom || !dlgElevesPrenom) return;
+    var row = getRowParId(t, elevesDialogRowId);
+    if (!row) return;
+    synchroniserLabelRow(row, dlgElevesNom.value, dlgElevesPrenom.value);
+  }
+
+  function remplirDetailEleve(row) {
+    if (!row || !dlgElevesDetail) return;
+    var noms = nomsDepuisRow(row);
+    if (dlgElevesNom) dlgElevesNom.value = noms.nom;
+    if (dlgElevesPrenom) dlgElevesPrenom.value = noms.prenom;
+    var titre = document.getElementById("dlg-eleves-detail-title");
+    if (titre) titre.textContent = labelEleveRow(row);
+    dlgElevesDetail.hidden = false;
+  }
+
+  function selectionnerEleveDialog(rowId, options) {
+    var t = getActif();
+    if (!t || !rowId) return;
+    options = options || {};
+    if (!options.skipSave && elevesDialogRowId && elevesDialogRowId !== rowId) {
+      sauverEleveDialogCourant();
+    }
+    var row = getRowParId(t, rowId);
+    if (!row) return;
+    elevesDialogRowId = rowId;
+    if (dlgElevesSelect) dlgElevesSelect.value = rowId;
+    remplirDetailEleve(row);
+    if (!options.skipSave) planifierSauvegarde();
+  }
+
+  function initDialogEleves() {
+    var t = getActif();
+    var selectWrap = document.querySelector(".tab-suivi-eleves-dlg__select-wrap");
+    if (!t || !t.rows.length) {
+      if (dlgElevesEmpty) dlgElevesEmpty.hidden = false;
+      if (selectWrap) selectWrap.hidden = true;
+      if (dlgElevesDetail) dlgElevesDetail.hidden = true;
+      elevesDialogRowId = null;
+      return;
+    }
+    if (dlgElevesEmpty) dlgElevesEmpty.hidden = true;
+    if (selectWrap) selectWrap.hidden = false;
+
+    if (dlgElevesSelect) {
+      dlgElevesSelect.innerHTML = "";
+      t.rows.forEach(function (row) {
+        var opt = document.createElement("option");
+        opt.value = row.id;
+        opt.textContent = labelEleveRow(row);
+        dlgElevesSelect.appendChild(opt);
+      });
+    }
+
+    var cible =
+      elevesDialogRowId && getRowParId(t, elevesDialogRowId)
+        ? elevesDialogRowId
+        : t.rows[0].id;
+    selectionnerEleveDialog(cible, { skipSave: true });
+  }
+
+  function retirerEleveDialog() {
+    var t = getActif();
+    if (!t || !elevesDialogRowId) return;
+    var row = getRowParId(t, elevesDialogRowId);
+    if (!row) return;
+    if (!confirm("Retirer « " + (row.label || "") + " » de cette feuille ?")) return;
+    var idx = t.rows.findIndex(function (r) {
+      return r.id === elevesDialogRowId;
+    });
+    supprimerRowDuTableau(t, elevesDialogRowId);
+    elevesDialogRowId = null;
+    rendreGrille();
+    planifierSauvegarde();
+    if (!t.rows.length) {
+      fermerDialogEleves();
+      return;
+    }
+    var next = t.rows[Math.min(idx, t.rows.length - 1)];
+    initDialogEleves();
+    if (next) selectionnerEleveDialog(next.id, { skipSave: true });
+  }
+
+  function ouvrirDialogEleves() {
+    var t = getActif();
+    if (!t || !dialogEleves || !dialogEleves.showModal) return;
+    if (!t.rows.length) {
+      montrerMsg("Ajoutez des élèves avant d’ouvrir les paramètres.");
+      return;
+    }
+    montrerMsg("");
+    elevesDialogRowId = null;
+    initDialogEleves();
+    dialogEleves.showModal();
+  }
+
+  function fermerDialogEleves() {
+    if (dialogEleves && dialogEleves.open) {
+      sauverEleveDialogCourant();
+      elevesDialogRowId = null;
+      dialogEleves.close();
+      rendreGrille();
+      planifierSauvegarde();
+    }
+  }
+
+  function libelleNbOublisMateriel(n) {
+    if (n === 0) return "Aucun oubli de matériel";
+    if (n === 1) return "1 oubli de matériel";
+    return n + " oublis de matériel";
+  }
+
+  function majCompteurOubliPopup(n) {
+    var numEl = dlgOubliCount ? dlgOubliCount.querySelector(".tab-suivi-oubli-stat__num") : null;
+    var lblEl = dlgOubliCount ? dlgOubliCount.querySelector(".tab-suivi-oubli-stat__lbl") : null;
+    if (numEl) numEl.textContent = String(n);
+    if (lblEl) lblEl.textContent = n === 1 ? "oubli de matériel" : "oublis de matériel";
+    if (dlgOubliCount) {
+      dlgOubliCount.setAttribute("aria-label", libelleNbOublisMateriel(n));
+      dlgOubliCount.classList.toggle("tab-suivi-oubli-stat--zero", n === 0);
+    }
+    if (dlgOubliIntro) {
+      dlgOubliIntro.textContent =
+        n === 0
+          ? "Aucun oubli enregistré pour cet élève. Vous pouvez en ajouter un premier."
+          : n === 1
+            ? "1 oubli enregistré. Le prochain sera le n°2."
+            : n + " oublis enregistrés. Le prochain sera le n°" + (n + 1) + ".";
+    }
+  }
+
+  function rendreListeDialogOubli(oublis) {
+    if (!dlgOubliList) return;
+    dlgOubliList.innerHTML = "";
+    var n = oublis.length;
+    majCompteurOubliPopup(n);
+    if (!n) {
+      if (dlgOubliEmpty) dlgOubliEmpty.hidden = false;
+      if (dlgOubliList) dlgOubliList.hidden = true;
+      return;
+    }
+    if (dlgOubliEmpty) dlgOubliEmpty.hidden = true;
+    dlgOubliList.hidden = false;
+
+    var numeros = {};
+    oublis.forEach(function (o, i) {
+      numeros[o.id] = i + 1;
+    });
+
+    oublis
+      .slice()
+      .reverse()
+      .forEach(function (o, index) {
+        var num = numeros[o.id] || "?";
+        var li = document.createElement("li");
+        li.className = "tab-suivi-oubli-card";
+        li.setAttribute("role", "listitem");
+        li.style.animationDelay = index * 50 + "ms";
+
+        var indexEl = document.createElement("span");
+        indexEl.className = "tab-suivi-oubli-card__index";
+        indexEl.setAttribute("aria-hidden", "true");
+        indexEl.textContent = String(num);
+
+        var main = document.createElement("div");
+        main.className = "tab-suivi-oubli-card__main";
+
+        var row = document.createElement("div");
+        row.className = "tab-suivi-oubli-card__row";
+        var icon = document.createElement("span");
+        icon.className = "tab-suivi-oubli-card__emoji";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "👟";
+        var date = document.createElement("time");
+        date.className = "tab-suivi-oubli-card__date";
+        date.dateTime = o.dateOubli || "";
+        date.textContent = isoVersFr(o.dateOubli);
+        row.appendChild(icon);
+        row.appendChild(date);
+        if (o.classe) {
+          var classe = document.createElement("span");
+          classe.className = "tab-suivi-oubli-card__classe";
+          classe.textContent = o.classe;
+          row.appendChild(classe);
+        }
+        main.appendChild(row);
+
+        var type = document.createElement("p");
+        type.className = "tab-suivi-oubli-card__type";
+        type.textContent = o.commentaire ? o.commentaire : "Tenue";
+        main.appendChild(type);
+
+        li.appendChild(indexEl);
+        li.appendChild(main);
+        dlgOubliList.appendChild(li);
+      });
+  }
+
+  function ouvrirDialogOubliTenue(row) {
+    if (!row || !dialogOubli || !dialogOubli.showModal) return;
+    var noms = nomsDepuisRow(row);
+    if (!noms.nom) {
+      montrerMsg("Nom de l’élève requis.");
+      return;
+    }
+    if (!noms.prenom) {
+      montrerMsg("Prénom requis : utilisez les paramètres élèves (⚙) ou importez une classe.");
+      return;
+    }
+    oubliRowId = row.id;
+    if (dlgOubliEleve) dlgOubliEleve.textContent = labelEleveRow(row);
+    majCompteurOubliPopup(0);
+    montrerMsg("");
+    if (typeof DataManager === "undefined" || !DataManager.getOublisMateriel) {
+      rendreListeDialogOubli([]);
+      dialogOubli.showModal();
+      return;
+    }
+    DataManager.getOublisMateriel()
+      .then(function (liste) {
+        rendreListeDialogOubli(oublisPourRow(liste, row));
+        dialogOubli.showModal();
+      })
+      .catch(function () {
+        rendreListeDialogOubli([]);
+        dialogOubli.showModal();
+      });
+  }
+
+  function fermerDialogOubli() {
+    oubliRowId = null;
+    if (dialogOubli && dialogOubli.open) dialogOubli.close();
+  }
+
+  function getRowOubliActive() {
+    if (!oubliRowId) return null;
+    var t = getActif();
+    if (!t) return null;
+    return (
+      t.rows.filter(function (r) {
+        return r.id === oubliRowId;
+      })[0] || null
+    );
+  }
+
+  function rafraichirDialogOubli() {
+    var row = getRowOubliActive();
+    if (!row || !dialogOubli || !dialogOubli.open) return;
+    if (typeof DataManager === "undefined" || !DataManager.getOublisMateriel) return;
+    DataManager.getOublisMateriel().then(function (liste) {
+      rendreListeDialogOubli(oublisPourRow(liste, row));
+    });
+  }
+
+  function enregistrerOubliTenue(row) {
+    if (!pret || typeof DataManager === "undefined" || !DataManager.getOublisMateriel) {
+      montrerMsg("Enregistrement des oublis indisponible.");
+      return Promise.resolve();
+    }
+    var noms = nomsDepuisRow(row);
+    if (!noms.nom) {
+      montrerMsg("Saisissez le nom de l’élève.");
+      return Promise.resolve();
+    }
+    if (!noms.prenom) {
+      montrerMsg(
+        "Prénom requis pour l’oubli : utilisez « Nom Prénom » ou importez depuis une classe."
+      );
+      return Promise.resolve();
+    }
+    var meta = row.meta || {};
+    var classe = (meta.classe || "").trim();
+    if (!classe) {
+      var t = getActif();
+      classe = t && t.titre ? normaliserNom(t.titre) : "";
+    }
+    if (!classe) {
+      montrerMsg(
+        "Classe requise : importez depuis une classe ou donnez un nom de classe à la feuille."
+      );
+      return Promise.resolve();
+    }
+
+    var now = new Date().toISOString();
+    var entree = {
+      id: genererIdOubli(),
+      eleveId: meta.eleveId || "",
+      classeId: meta.classeId || "",
+      nom: noms.nom,
+      prenom: noms.prenom,
+      classe: classe,
+      dateOubli: aujourdhuiIso(),
+      commentaire: "Tenue",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    return DataManager.getOublisMateriel()
+      .then(function (liste) {
+        var arr = Array.isArray(liste) ? liste.slice() : [];
+        arr.push(entree);
+        return DataManager.saveOublisMateriel(arr).then(function () {
+          return numeroOubliApresAjout(arr, entree);
+        });
+      })
+      .then(function (num) {
+        var label = labelEleveRow(row);
+        if (dialogOubli && dialogOubli.open) {
+          rafraichirDialogOubli();
+          montrerMsg("");
+          montrerOk("Oubli n°" + num + " enregistré pour " + label + ".");
+          return;
+        }
+        montrerMsg("");
+        montrerOk(
+          "Oubli de tenue enregistré pour " +
+            label +
+            " (oubli n°" +
+            num +
+            "). Consultez l’outil Oubli de matériel."
+        );
+      })
+      .catch(function (err) {
+        montrerMsg((err && err.message) || "Impossible d’enregistrer l’oubli de tenue.");
+      });
+  }
+
+  function creerBoutonOubliTenue(row) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "tab-suivi-row-oubli";
+    btn.setAttribute(
+      "aria-label",
+      "Oubli de tenue pour " + (row.label || "cet élève")
+    );
+    btn.title = "Oubli de tenue";
+    btn.innerHTML = '<span class="tab-suivi-row-oubli__icon" aria-hidden="true">👟</span>';
+    btn.addEventListener("click", function () {
+      ouvrirDialogOubliTenue(row);
+    });
+    return btn;
   }
 
   function nomsDepuisRow(row) {
@@ -656,11 +1133,7 @@
     if (!t.cols.length) {
       var trSeul = document.createElement("tr");
       trSeul.className = "tab-suivi-head-labels";
-      var thSeul = document.createElement("th");
-      thSeul.className = "tab-suivi-th tab-suivi-th--nom tab-suivi-th--eleve-label";
-      thSeul.scope = "col";
-      thSeul.textContent = "Élève";
-      trSeul.appendChild(thSeul);
+      trSeul.appendChild(creerEnteteEleve());
       theadEl.appendChild(trSeul);
     }
 
@@ -668,11 +1141,7 @@
       var trHead = document.createElement("tr");
       trHead.className = "tab-suivi-head-main";
 
-      var thHeadNom = document.createElement("th");
-      thHeadNom.className = "tab-suivi-th tab-suivi-th--nom tab-suivi-th--eleve-label";
-      thHeadNom.scope = "col";
-      thHeadNom.textContent = "Élève";
-      trHead.appendChild(thHeadNom);
+      trHead.appendChild(creerEnteteEleve());
 
       t.cols.forEach(function (col) {
         var th = document.createElement("th");
@@ -736,36 +1205,13 @@
       nomWrap.className = "tab-suivi-nom-wrap";
 
       nomWrap.appendChild(creerBoutonIconeEleve(t, row));
+      nomWrap.appendChild(creerBoutonOubliTenue(row));
 
-      var nomInp = document.createElement("input");
-      nomInp.type = "text";
-      nomInp.className = "tab-suivi-nom-input";
-      nomInp.value = row.label || "";
-      nomInp.setAttribute("aria-label", "Nom de l’élève");
-      nomInp.maxLength = 120;
-      nomInp.addEventListener("change", function () {
-        row.label = normaliserNom(nomInp.value) || row.label;
-        planifierSauvegarde();
-      });
-      nomWrap.appendChild(nomInp);
+      var nomLabel = document.createElement("span");
+      nomLabel.className = "tab-suivi-nom-label";
+      nomLabel.textContent = labelEleveRow(row);
+      nomWrap.appendChild(nomLabel);
 
-      var btnDelRow = document.createElement("button");
-      btnDelRow.type = "button";
-      btnDelRow.className = "tab-suivi-row-del";
-      btnDelRow.setAttribute("aria-label", "Retirer " + (row.label || "cette ligne"));
-      btnDelRow.textContent = "×";
-      btnDelRow.addEventListener("click", function () {
-        if (!confirm("Retirer « " + (row.label || "") + " » du tableau ?")) return;
-        t.rows = t.rows.filter(function (r) {
-          return r.id !== row.id;
-        });
-        Object.keys(t.cells).forEach(function (k) {
-          if (k.indexOf(row.id + ":") === 0) delete t.cells[k];
-        });
-        rendreGrille();
-        planifierSauvegarde();
-      });
-      nomWrap.appendChild(btnDelRow);
       tdNom.appendChild(nomWrap);
       tr.appendChild(tdNom);
 
@@ -1457,7 +1903,7 @@
         var entrees = [];
         eleves.forEach(function (e) {
           var l = eleveVersLabel(e);
-          if (l) entrees.push({ label: l, meta: metaDepuisEleve(e, classe.nom) });
+          if (l) entrees.push({ label: l, meta: metaDepuisEleve(e, classe.nom, classe.id) });
         });
         var ajoutes = ajouterLignes(t, entrees);
         rendreGrille();
@@ -1713,6 +2159,86 @@
     formIcone.addEventListener("submit", function (e) {
       e.preventDefault();
       if (dialogIcone && dialogIcone.open) dialogIcone.close();
+    });
+  }
+
+  var btnDialogElevesClose = document.getElementById("btn-dialog-eleves-close");
+  if (btnDialogElevesClose) btnDialogElevesClose.addEventListener("click", fermerDialogEleves);
+
+  var btnElevesFermer = document.getElementById("btn-eleves-fermer");
+  if (btnElevesFermer) btnElevesFermer.addEventListener("click", fermerDialogEleves);
+
+  function rafraichirLibellesEleveCourant() {
+    var t = getActif();
+    if (!t || !elevesDialogRowId) return;
+    var row = getRowParId(t, elevesDialogRowId);
+    if (!row || !dlgElevesNom || !dlgElevesPrenom) return;
+    synchroniserLabelRow(row, dlgElevesNom.value, dlgElevesPrenom.value);
+    var label = labelEleveRow(row);
+    if (dlgElevesSelect) {
+      var opt = null;
+      var opts = dlgElevesSelect.options;
+      for (var i = 0; i < opts.length; i++) {
+        if (opts[i].value === elevesDialogRowId) {
+          opt = opts[i];
+          break;
+        }
+      }
+      if (opt) opt.textContent = label;
+    }
+    var titre = document.getElementById("dlg-eleves-detail-title");
+    if (titre) titre.textContent = label;
+    planifierSauvegarde();
+  }
+
+  if (dlgElevesSelect) {
+    dlgElevesSelect.addEventListener("change", function () {
+      if (dlgElevesSelect.value) selectionnerEleveDialog(dlgElevesSelect.value);
+    });
+  }
+
+  if (dlgElevesNom) dlgElevesNom.addEventListener("change", rafraichirLibellesEleveCourant);
+  if (dlgElevesPrenom) dlgElevesPrenom.addEventListener("change", rafraichirLibellesEleveCourant);
+
+  if (btnElevesRetirer) {
+    btnElevesRetirer.addEventListener("click", retirerEleveDialog);
+  }
+
+  var formEleves = document.getElementById("form-tab-suivi-eleves");
+  if (formEleves) {
+    formEleves.addEventListener("submit", function (e) {
+      e.preventDefault();
+      fermerDialogEleves();
+    });
+  }
+
+  var btnDialogOubliClose = document.getElementById("btn-dialog-oubli-close");
+  if (btnDialogOubliClose) btnDialogOubliClose.addEventListener("click", fermerDialogOubli);
+
+  var btnOubliAnnuler = document.getElementById("btn-oubli-annuler");
+  if (btnOubliAnnuler) btnOubliAnnuler.addEventListener("click", fermerDialogOubli);
+
+  var btnOubliAjouter = document.getElementById("btn-oubli-ajouter");
+  if (btnOubliAjouter) {
+    btnOubliAjouter.addEventListener("click", function () {
+      var row = getRowOubliActive();
+      if (!row) return;
+      btnOubliAjouter.disabled = true;
+      enregistrerOubliTenue(row).then(
+        function () {
+          btnOubliAjouter.disabled = false;
+        },
+        function () {
+          btnOubliAjouter.disabled = false;
+        }
+      );
+    });
+  }
+
+  var formOubli = document.getElementById("form-tab-suivi-oubli");
+  if (formOubli) {
+    formOubli.addEventListener("submit", function (e) {
+      e.preventDefault();
     });
   }
 
