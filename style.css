@@ -11027,6 +11027,31 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   gap: 0.65rem;
 }
 
+.orient-temps-split {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.orient-temps-split__part {
+  min-width: 0;
+  text-align: center;
+}
+
+.orient-temps-split__sep {
+  flex: 0 0 auto;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.65);
+  user-select: none;
+}
+
+.orient-mode-pro .orient-temps-split__sep {
+  color: var(--orient-muted);
+}
+
 .orient-input,
 .orient-select,
 .orient-textarea {

@@ -62,6 +62,16 @@
       publicCible: "prof",
     },
     {
+      id: "video-retard",
+      titre: "Vidéo avec retard",
+      description:
+        "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
+      icone: "📹",
+      href: "outils/video-retard.html",
+      categorie: "Observation",
+      publicCible: "prof",
+    },
+    {
       id: "composition-equipes",
       titre: "Composition d’équipes homogènes",
       description:
@@ -92,16 +102,6 @@
       publicCible: "prof",
     },
     {
-      id: "video-retard",
-      titre: "Vidéo avec retard",
-      description:
-        "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
-      icone: "📹",
-      href: "outils/video-retard.html",
-      categorie: "Observation",
-      publicCible: "prof",
-    },
-    {
       id: "pyramide-victoires",
       titre: "Pyramide de victoires",
       description:
@@ -109,6 +109,16 @@
       icone: "📶",
       href: "outils/pyramide-victoires.html",
       categorie: "Organisation EPS",
+      publicCible: "prof",
+    },
+    {
+      id: "course-orientation",
+      titre: "Course d’orientation",
+      description:
+        "Plusieurs parcours en parallèle, chronos et balises par élève, grille couleur, classement live et départs groupés.",
+      icone: "🧭",
+      href: "outils/course-orientation.html",
+      categorie: "Course à pied",
       publicCible: "prof",
     },
     {
@@ -298,16 +308,6 @@
         "Calcule la distance entre deux plots pour que 1 km/h corresponde à 1 plot selon la durée du demi-fond.",
       icone: "📐",
       href: "outils/ecartement-plots.html",
-      categorie: "Course à pied",
-      publicCible: "prof",
-    },
-    {
-      id: "course-orientation",
-      titre: "Course d’orientation",
-      description:
-        "Plusieurs parcours en parallèle, chronos et balises par élève, grille couleur, classement live et départs groupés.",
-      icone: "🧭",
-      href: "outils/course-orientation.html",
       categorie: "Course à pied",
       publicCible: "prof",
     },

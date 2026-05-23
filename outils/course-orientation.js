@@ -317,6 +317,47 @@
     return (m * 60 + s) * 1000;
   }
 
+  function remplirEditTemps(ms) {
+    var minEl = document.getElementById("orient-edit-temps-min");
+    var secEl = document.getElementById("orient-edit-temps-sec");
+    if (!minEl || !secEl) return;
+    if (ms == null || isNaN(ms)) {
+      minEl.value = "";
+      secEl.value = "";
+      return;
+    }
+    var totalSec = Math.max(0, Math.floor(ms / 1000));
+    minEl.value = String(Math.floor(totalSec / 60));
+    secEl.value = String(totalSec % 60).padStart(2, "0");
+  }
+
+  function lireEditTempsMs() {
+    var minEl = document.getElementById("orient-edit-temps-min");
+    var secEl = document.getElementById("orient-edit-temps-sec");
+    if (!minEl || !secEl) return null;
+    var minStr = minEl.value.trim();
+    var secStr = secEl.value.trim();
+    if (!minStr && !secStr) return null;
+    var m = parseInt(minStr, 10);
+    var s = secStr === "" ? 0 : parseInt(secStr, 10);
+    if (isNaN(m) || m < 0) return null;
+    if (isNaN(s) || s < 0 || s > 59) return null;
+    return (m * 60 + s) * 1000;
+  }
+
+  function normaliserEditTempsSec() {
+    var secEl = document.getElementById("orient-edit-temps-sec");
+    if (!secEl || secEl.value.trim() === "") return;
+    var s = parseInt(secEl.value, 10);
+    if (isNaN(s)) {
+      secEl.value = "";
+      return;
+    }
+    if (s > 59) s = 59;
+    if (s < 0) s = 0;
+    secEl.value = String(s).padStart(2, "0");
+  }
+
   function seuilRetardMinutes() {
     var m = parseInt(state.settings.retardMinutes, 10);
     return m > 0 ? m : 10;
@@ -1432,17 +1473,16 @@
     var selR = document.getElementById("orient-edit-run");
     var btnDel = document.getElementById("orient-edit-delete");
     var btnSave = document.getElementById("orient-edit-save");
-    var inp = document.getElementById("orient-edit-temps");
     if (!selR) return;
     var parsed = parseEditParcoursVal(selR.value);
     if (!parsed) {
       if (btnDel) btnDel.disabled = true;
       if (btnSave) btnSave.disabled = true;
-      if (inp) inp.value = "";
+      remplirEditTemps(null);
       return;
     }
     if (parsed.mode === "new") {
-      if (inp) inp.value = "";
+      remplirEditTemps(null);
       if (btnDel) btnDel.disabled = true;
       if (btnSave) btnSave.disabled = false;
       return;
@@ -1450,7 +1490,8 @@
     var run = state.runs.filter(function (x) {
       return x.id === parsed.runId;
     })[0];
-    if (inp && run) inp.value = formatMs(adjustedMs(run));
+    if (run) remplirEditTemps(adjustedMs(run));
+    else remplirEditTemps(null);
     if (btnDel) btnDel.disabled = !run || run.endAt == null;
     if (btnSave) btnSave.disabled = !run;
   }
@@ -1530,9 +1571,10 @@
     if (!selC || !selR) return;
     var parsed = parseEditParcoursVal(selR.value);
     if (!parsed) return;
-    var ms = parseTimeInput(document.getElementById("orient-edit-temps").value);
+    normaliserEditTempsSec();
+    var ms = lireEditTempsMs();
     if (ms == null) {
-      montrerMsg("Temps invalide (mm:ss).", true);
+      montrerMsg("Temps invalide (minutes et secondes 0–59).", true);
       return;
     }
     if (parsed.mode === "new") {
@@ -2457,6 +2499,10 @@
     document.getElementById("orient-edit-run").addEventListener("change", majEditTempsForm);
     document.getElementById("orient-edit-delete").addEventListener("click", supprimerTempsEdit);
     document.getElementById("orient-edit-save").addEventListener("click", enregistrerTempsEdit);
+    var editSecEl = document.getElementById("orient-edit-temps-sec");
+    if (editSecEl) {
+      editSecEl.addEventListener("blur", normaliserEditTempsSec);
+    }
     document.body.addEventListener(
       "click",
       function () {

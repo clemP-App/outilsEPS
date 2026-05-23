@@ -247,8 +247,32 @@
                   </p>
                 </div>
                 <div class="orient-field">
-                  <label class="orient-field__label" for="orient-edit-temps">Temps ajusté (mm:ss)</label>
-                  <input type="text" class="orient-input" id="orient-edit-temps" placeholder="12:34" inputmode="numeric" />
+                  <span class="orient-field__label" id="orient-edit-temps-lbl">Temps ajusté (mm:ss)</span>
+                  <div class="orient-temps-split" role="group" aria-labelledby="orient-edit-temps-lbl">
+                    <input
+                      type="text"
+                      class="orient-input orient-temps-split__part"
+                      id="orient-edit-temps-min"
+                      inputmode="numeric"
+                      pattern="[0-9]*"
+                      maxlength="4"
+                      placeholder="min"
+                      aria-label="Minutes"
+                      autocomplete="off"
+                    />
+                    <span class="orient-temps-split__sep" aria-hidden="true">:</span>
+                    <input
+                      type="text"
+                      class="orient-input orient-temps-split__part"
+                      id="orient-edit-temps-sec"
+                      inputmode="numeric"
+                      pattern="[0-9]*"
+                      maxlength="2"
+                      placeholder="ss"
+                      aria-label="Secondes"
+                      autocomplete="off"
+                    />
+                  </div>
                 </div>
                 <div class="orient-actions-row orient-actions-row--stack">
                   <button type="button" class="orient-btn orient-btn--primary orient-btn--block" id="orient-edit-save">
