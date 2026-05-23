@@ -10397,9 +10397,12 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   --orient-grid-rows: 2;
   --orient-grid-gap: 10px;
   --orient-grille-cell: 3.75rem;
-  --orient-grille-font-nom: 0.9rem;
-  --orient-grille-font-meta: 0.75rem;
+  --orient-grille-cell-w: 5rem;
+  --orient-grille-font-nom: 0.75rem;
+  --orient-grille-font-meta: 0.65rem;
   display: grid;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   grid-template-columns: repeat(var(--orient-grid-cols), minmax(0, 1fr));
   grid-template-rows: repeat(var(--orient-grid-rows), minmax(0, 1fr));
   gap: var(--orient-grid-gap);
@@ -10446,12 +10449,12 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   flex-direction: column;
   align-items: stretch;
   justify-content: center;
-  gap: 0.15rem;
+  gap: 0.1rem;
   width: 100%;
   height: 100%;
   min-width: 0;
   min-height: 0;
-  padding: 0.35rem 0.3rem;
+  padding: 0.28rem 0.22rem;
   border: none;
   border-radius: 0.75rem;
   font: inherit;
@@ -10465,6 +10468,8 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   overflow: hidden;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .orient-grille.orient-grille--scroll .orient-grille__btn {
@@ -10482,35 +10487,59 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   line-clamp: 2;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
-  font-size: var(--orient-grille-font-nom, 0.9rem);
-  font-weight: 800;
-  line-height: 1.12;
-  letter-spacing: -0.01em;
+  hyphens: none;
+  font-size: min(var(--orient-grille-font-nom, 0.75rem), calc(var(--orient-grille-cell-w, 5rem) * 0.2));
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0;
 }
 
 .orient-grille__btn:has(.orient-grille__meta) .orient-grille__nom {
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .orient-grille__meta {
-  display: block;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   margin-top: 0.05rem;
-  padding-top: 0.2rem;
+  padding-top: 0.12rem;
   border-top: 1px solid rgba(15, 23, 42, 0.14);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--orient-grille-font-meta, 0.75rem);
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  font-size: min(var(--orient-grille-font-meta, 0.65rem), calc(var(--orient-grille-cell-w, 5rem) * 0.16));
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 500px) {
+  .orient-grille__btn {
+    padding: 0.22rem 0.18rem;
+    gap: 0.06rem;
+  }
+
+  .orient-grille__nom {
+    font-size: min(var(--orient-grille-font-nom, 12px), calc(var(--orient-grille-cell-w, 5rem) * 0.19));
+  }
+
+  .orient-grille__meta {
+    font-size: min(var(--orient-grille-font-meta, 10px), calc(var(--orient-grille-cell-w, 5rem) * 0.15));
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+  }
 }
 
 .orient-grille__btn--attente {

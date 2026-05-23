@@ -39,8 +39,10 @@
   var eventsLies = false;
   var GRILLE_GAP_PX = 10;
   var GRILLE_MIN_TOUCH_PX = 60;
-  var GRILLE_MIN_FONT_NOM_PX = 14;
-  var GRILLE_MAX_FONT_NOM_PX = 18;
+  var GRILLE_MIN_FONT_NOM_PX = 11;
+  var GRILLE_MAX_FONT_NOM_PX = 17;
+  var GRILLE_MAX_FONT_NOM_MOBILE_PX = 12;
+  var GRILLE_MAX_FONT_META_MOBILE_PX = 10;
   var GRILLE_BP_MOYEN = 600;
   var GRILLE_BP_GRAND = 900;
   var GRILLE_BP_TRES_GRAND = 1400;
@@ -622,9 +624,28 @@
     return 3;
   }
 
+  function fontTailleGrille(cellW, cellH) {
+    var mobile = window.innerWidth < 500;
+    var maxNom = mobile ? GRILLE_MAX_FONT_NOM_MOBILE_PX : GRILLE_MAX_FONT_NOM_PX;
+    var maxMeta = mobile ? GRILLE_MAX_FONT_META_MOBILE_PX : 12;
+    var nom = Math.min(cellW / 10.5, cellH * 0.2, maxNom);
+    var meta = Math.min(cellW / 12.5, cellH * 0.15, maxMeta);
+    return {
+      nom: Math.round(Math.max(GRILLE_MIN_FONT_NOM_PX, nom)),
+      meta: Math.round(Math.max(9, meta)),
+    };
+  }
+
   function calculerLayoutGrille(n, width, height) {
     if (n <= 0) {
-      return { cols: 1, rows: 1, cell: GRILLE_MIN_TOUCH_PX, scroll: false };
+      return {
+        cols: 1,
+        rows: 1,
+        cell: GRILLE_MIN_TOUCH_PX,
+        cellW: width,
+        cellH: GRILLE_MIN_TOUCH_PX,
+        scroll: false,
+      };
     }
     var gap = GRILLE_GAP_PX;
     var minTouch = GRILLE_MIN_TOUCH_PX;
@@ -640,6 +661,8 @@
         cols: cols,
         rows: rows,
         cell: Math.max(minTouch, Math.min(cellW, cellH)),
+        cellW: cellW,
+        cellH: cellH,
         scroll: false,
       };
     }
@@ -648,6 +671,8 @@
       cols: cols,
       rows: rows,
       cell: Math.max(minTouch, Math.min(cellW, cellHScroll)),
+      cellW: cellW,
+      cellH: cellHScroll,
       scroll: true,
     };
   }
@@ -660,16 +685,13 @@
     var h = grilleEl.clientHeight;
     if (w < 20 || h < 20) return;
     var layout = calculerLayoutGrille(n, w, h);
-    var cell = layout.cell;
-    var fontNom = Math.round(
-      Math.max(GRILLE_MIN_FONT_NOM_PX, Math.min(GRILLE_MAX_FONT_NOM_PX, cell * 0.26))
-    );
-    var fontMeta = Math.round(Math.max(11, Math.min(14, cell * 0.19)));
+    var fonts = fontTailleGrille(layout.cellW, layout.cellH);
     grilleEl.style.setProperty("--orient-grid-cols", String(layout.cols));
     grilleEl.style.setProperty("--orient-grid-rows", String(layout.rows));
-    grilleEl.style.setProperty("--orient-grille-cell", cell.toFixed(1) + "px");
-    grilleEl.style.setProperty("--orient-grille-font-nom", fontNom + "px");
-    grilleEl.style.setProperty("--orient-grille-font-meta", fontMeta + "px");
+    grilleEl.style.setProperty("--orient-grille-cell", layout.cell.toFixed(1) + "px");
+    grilleEl.style.setProperty("--orient-grille-cell-w", layout.cellW.toFixed(1) + "px");
+    grilleEl.style.setProperty("--orient-grille-font-nom", fonts.nom + "px");
+    grilleEl.style.setProperty("--orient-grille-font-meta", fonts.meta + "px");
     grilleEl.classList.toggle("orient-grille--scroll", layout.scroll);
   }
 
