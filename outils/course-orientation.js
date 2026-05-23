@@ -455,7 +455,7 @@
         vb = 0;
     }
     if (va !== vb) return va < vb ? -1 : 1;
-    return a.nom.localeCompare(b.nom, "fr");
+    return 0;
   }
 
   function classementCoureurs(parcoursId) {
