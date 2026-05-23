@@ -1496,54 +1496,65 @@ var DataManager = (function () {
       });
   }
 
+  /** Ordre des groupes dans la page Sauvegarde (aligné sur l’accueil prof). */
+  var STORAGE_GROUP_ORDER = ["Gestion de classe", "Séance", "Activités"];
+
   /** Outils qui enregistrent des données IndexedDB (liste affichée seulement si non vide). */
   var STORAGE_CATEGORIES = [
     {
       id: "classes",
       label: "Classes et élèves",
+      groupe: "Gestion de classe",
       stores: ["classes", "eleves"],
     },
     {
       id: "tableau-suivi",
       label: "Appel et notes",
+      groupe: "Gestion de classe",
       stores: ["tableauxSuivi"],
+    },
+    {
+      id: "cahier-texte",
+      label: "Cahier de texte",
+      groupe: "Gestion de classe",
+      paramIds: ["cahier-texte-data"],
     },
     {
       id: "imports-eleves",
       label: "Imports élèves (QR)",
+      groupe: "Gestion de classe",
       stores: ["importsEleves"],
     },
     {
       id: "dispenses",
       label: "Dispenses / Inaptitudes",
+      groupe: "Gestion de classe",
       stores: ["dispenses"],
       paramIds: ["dispenses-masquer-terminees"],
     },
     {
       id: "oublis-materiel",
       label: "Oubli de matériel",
+      groupe: "Gestion de classe",
       stores: ["oublisMateriel"],
-    },
-    {
-      id: "radar",
-      label: "Radar vitesse",
-      stores: ["radarPerfs"],
-      paramIds: ["radar-session", "radar-settings"],
     },
     {
       id: "sessions",
       label: "Séances actives",
+      groupe: "Séance",
       stores: ["sessions"],
       paramPrefix: "active-session__",
     },
     {
       id: "championnat",
       label: "Championnat à poule",
+      groupe: "Séance",
       stores: ["championnats"],
     },
     {
       id: "tournoi-elimination",
       label: "Tournoi éliminatoire",
+      groupe: "Séance",
       stores: ["tournoisElimination"],
       storeFilter: function (r) {
         return r && r.kind === "tournoi-elimination";
@@ -1552,6 +1563,7 @@ var DataManager = (function () {
     {
       id: "pyramide-victoires",
       label: "Pyramide de victoires",
+      groupe: "Séance",
       stores: ["tournoisElimination"],
       storeFilter: function (r) {
         return r && r.kind === "pyramide-victoires";
@@ -1560,21 +1572,32 @@ var DataManager = (function () {
     {
       id: "composition",
       label: "Composition d’équipes",
+      groupe: "Séance",
       paramPrefix: "composition-equipes",
-    },
-    {
-      id: "compteur-bonus",
-      label: "Compteur bonus",
-      paramIds: ["compteur-bonus-settings"],
     },
     {
       id: "timer-hiit",
       label: "Timer HIIT / Tabata",
+      groupe: "Séance",
       paramIds: [PARAM_HIIT_PRESETS_ID],
+    },
+    {
+      id: "compteur-bonus",
+      label: "Compteur bonus",
+      groupe: "Séance",
+      paramIds: ["compteur-bonus-settings"],
+    },
+    {
+      id: "radar",
+      label: "Radar vitesse",
+      groupe: "Activités",
+      stores: ["radarPerfs"],
+      paramIds: ["radar-session", "radar-settings"],
     },
     {
       id: "inducteur-danse",
       label: "Inducteur danse",
+      groupe: "Activités",
       paramIds: ["inducteur-danse"],
     },
   ];
@@ -1668,6 +1691,15 @@ var DataManager = (function () {
     var paramEntries = paramsForCategory(cat, storeData.parametres);
     if (cat.id === "composition" && paramEntries.length) {
       parts.push(paramEntries.length + " composition" + (paramEntries.length !== 1 ? "s" : ""));
+    } else if (cat.id === "cahier-texte" && paramEntries.length) {
+      var cahierRec = paramEntries[0];
+      var seqs = Array.isArray(cahierRec.sequences) ? cahierRec.sequences : [];
+      var nSeq = seqs.length;
+      var nSeances = seqs.reduce(function (sum, seq) {
+        return sum + (Array.isArray(seq.seances) ? seq.seances.length : 0);
+      }, 0);
+      if (nSeq) parts.push(nSeq + " séquence" + (nSeq !== 1 ? "s" : ""));
+      if (nSeances) parts.push(nSeances + " séance" + (nSeances !== 1 ? "s" : ""));
     } else if (cat.id === "sessions" && paramEntries.length) {
       parts.push(paramEntries.length + " outil" + (paramEntries.length !== 1 ? "s" : "") + " avec séance active");
     } else {
@@ -1700,6 +1732,7 @@ var DataManager = (function () {
         return {
           id: cat.id,
           label: cat.label,
+          groupe: cat.groupe || null,
           bytes: bytes,
           countLabel: countLabelForCategory(cat, storeData),
           empty: bytes === 0,
@@ -1713,6 +1746,7 @@ var DataManager = (function () {
         categories.push({
           id: "autres",
           label: "Autres données",
+          groupe: null,
           bytes: jsonByteSize(otherParams),
           countLabel: otherParams.length + " entrée" + (otherParams.length !== 1 ? "s" : ""),
           empty: false,
@@ -2054,6 +2088,7 @@ var DataManager = (function () {
     saveParametre: saveParametre,
     deleteParametre: deleteParametre,
     STORAGE_CATEGORIES: STORAGE_CATEGORIES,
+    STORAGE_GROUP_ORDER: STORAGE_GROUP_ORDER,
     formatBytes: formatBytes,
     getStorageBreakdown: getStorageBreakdown,
     getStorageEstimate: getStorageEstimate,

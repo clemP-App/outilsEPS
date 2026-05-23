@@ -6764,6 +6764,28 @@ body.video-retard-body-fs {
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 1.25rem;
+}
+
+.stockage-groupe {
+  list-style: none;
+}
+
+.stockage-groupe__titre {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stockage-groupe__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
 }
 

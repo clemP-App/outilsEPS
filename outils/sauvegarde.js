@@ -21,6 +21,8 @@
       "Supprimer tous les imports QR élèves enregistrés ?\n\nLes données saisies par les élèves ne seront plus consultables ici.\n\nCette action est irréversible.",
     classes:
       "Supprimer toutes les classes et tous les élèves ?\n\nLes autres outils qui s’appuient sur les classes ne pourront plus importer d’élèves tant que vous n’aurez pas recréé des classes.\n\nCette action est irréversible.",
+    "cahier-texte":
+      "Supprimer toutes les séquences et fiches de séance du cahier de texte ?\n\nCette action est irréversible.",
     dispenses: "Supprimer toutes les dispenses / inaptitudes et leurs réglages d’affichage ?\n\nCette action est irréversible.",
     "oublis-materiel": "Supprimer tous les oublis de matériel enregistrés ?\n\nCette action est irréversible.",
     championnat: "Supprimer le championnat en cours (équipes et matchs) ?\n\nCette action est irréversible.",
@@ -37,6 +39,8 @@
     "compteur-bonus": "Supprimer les réglages du Compteur bonus ?\n\nLes scores en cours ne sont pas conservés ailleurs.",
     "timer-hiit":
       "Supprimer les raccourcis personnalisés du Timer HIIT / Tabata ?\n\nLes raccourcis intégrés (Tabata, etc.) restent disponibles.",
+    "inducteur-danse":
+      "Supprimer les listes personnalisées de l’inducteur danse ?\n\nLes listes intégrées restent disponibles.",
     autres: "Supprimer les autres données paramétrées non reconnues ?\n\nCette action est irréversible.",
   };
 
@@ -121,6 +125,36 @@
     }
   }
 
+  function creerItemStockage(cat) {
+    var li = document.createElement("li");
+    li.className = "stockage-item";
+
+    var main = document.createElement("div");
+    main.className = "stockage-item__main";
+
+    var titre = document.createElement("span");
+    titre.className = "stockage-item__titre";
+    titre.textContent = cat.label;
+
+    var meta = document.createElement("span");
+    meta.className = "stockage-item__meta";
+    meta.textContent = DataManager.formatBytes(cat.bytes) + " · " + cat.countLabel;
+
+    main.appendChild(titre);
+    main.appendChild(meta);
+    li.appendChild(main);
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn--ghost btn--small stockage-item__delete";
+    btn.textContent = "Supprimer";
+    btn.setAttribute("data-category", cat.id);
+    btn.setAttribute("aria-label", "Supprimer les données de " + cat.label);
+    li.appendChild(btn);
+
+    return li;
+  }
+
   function renderStockage() {
     if (!stockageListEl) return Promise.resolve();
     var load =
@@ -142,34 +176,39 @@
         var hasData = breakdown.totalBytes > 0;
         if (stockageVideEl) stockageVideEl.hidden = hasData;
 
+        var groupOrder =
+          typeof DataManager.STORAGE_GROUP_ORDER !== "undefined"
+            ? DataManager.STORAGE_GROUP_ORDER.slice()
+            : ["Gestion de classe", "Séance", "Activités"];
+        groupOrder.push("Autres");
+
+        var byGroup = {};
         breakdown.categories.forEach(function (cat) {
-          var li = document.createElement("li");
-          li.className = "stockage-item";
+          var key = cat.groupe || "Autres";
+          if (!byGroup[key]) byGroup[key] = [];
+          byGroup[key].push(cat);
+        });
 
-          var main = document.createElement("div");
-          main.className = "stockage-item__main";
+        groupOrder.forEach(function (groupLabel) {
+          var items = byGroup[groupLabel];
+          if (!items || !items.length) return;
 
-          var titre = document.createElement("span");
-          titre.className = "stockage-item__titre";
-          titre.textContent = cat.label;
+          var section = document.createElement("li");
+          section.className = "stockage-groupe";
 
-          var meta = document.createElement("span");
-          meta.className = "stockage-item__meta";
-          meta.textContent = DataManager.formatBytes(cat.bytes) + " · " + cat.countLabel;
+          var heading = document.createElement("h3");
+          heading.className = "stockage-groupe__titre";
+          heading.textContent = groupLabel;
+          section.appendChild(heading);
 
-          main.appendChild(titre);
-          main.appendChild(meta);
-          li.appendChild(main);
+          var sublist = document.createElement("ul");
+          sublist.className = "stockage-groupe__list";
+          items.forEach(function (cat) {
+            sublist.appendChild(creerItemStockage(cat));
+          });
+          section.appendChild(sublist);
 
-          var btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "btn btn--ghost btn--small stockage-item__delete";
-          btn.textContent = "Supprimer";
-          btn.setAttribute("data-category", cat.id);
-          btn.setAttribute("aria-label", "Supprimer les données de " + cat.label);
-          li.appendChild(btn);
-
-          stockageListEl.appendChild(li);
+          stockageListEl.appendChild(section);
         });
       })
       .catch(function (e) {
