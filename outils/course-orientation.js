@@ -1135,7 +1135,6 @@
           return x.coureurId === c.id && x.parcoursId === parcoursId && x.endAt;
         })[0];
         finaliserRun(r);
-        ajouterStatClassement(stats, "Temps", formatMs(adjustedMs(r)), "temps");
         ajouterStatClassement(stats, "Balises OK", String(r.balisesOk || 0), "ok");
         ajouterStatClassement(stats, "Erreurs", String(r.balisesFaux || 0), "err");
       } else {
