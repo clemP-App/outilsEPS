@@ -16,6 +16,8 @@ var PRECACHE = [
   "./goatcounter.js",
   "./index.html",
   "./manifest.webmanifest",
+  "./outils/cahier-texte.html",
+  "./outils/cahier-texte.js",
   "./outils/calcul-1rm.html",
   "./outils/calcul-1rm.js",
   "./outils/championnat-poule.html",

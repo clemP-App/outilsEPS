@@ -605,6 +605,28 @@ main.container {
   color: var(--text-muted);
 }
 
+.tools-list__category {
+  width: 100%;
+  margin: 0.9rem 0 0.1rem;
+  padding: 0 0.15rem;
+}
+
+.tools-list__category-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.tools-list--icons .tools-list__category,
+.tools-list--icons .tools-list__section,
+.tools-list--icons .tools-list__more {
+  flex: 0 0 100%;
+  width: 100%;
+}
+
 .tools-view-toggle {
   display: inline-flex;
   flex-shrink: 0;
@@ -12122,4 +12144,790 @@ body.orient-arrivee-modal-open {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   margin: 0 0 2rem;
+}
+
+/* —— Cahier de texte —— */
+.page-outil--cahier .page-outil__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.35;
+}
+
+.cahier-msg {
+  margin: 0 0 0.75rem;
+}
+
+.cahier-meta__row {
+  align-items: flex-end;
+}
+
+.cahier-meta__classe {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.cahier-meta__date {
+  flex: 0 1 9rem;
+  min-width: 0;
+}
+
+.cahier-repeat {
+  width: 100%;
+  margin-top: 0.65rem;
+}
+
+.cahier-quick__hint {
+  margin-top: 0;
+}
+
+.cahier-chips-block {
+  margin-bottom: 0.85rem;
+}
+
+.cahier-apsa-autre {
+  margin-top: 0.65rem;
+  margin-bottom: 0;
+}
+
+.cahier-champ-resume {
+  margin: 0.5rem 0 0;
+  line-height: 1.4;
+}
+
+.cahier-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cahier-section-title__icon {
+  font-size: 1.05em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cahier-section-title__text {
+  min-width: 0;
+}
+
+.page-outil--cahier .field-label.cahier-section-title {
+  display: inline-flex;
+}
+
+.page-outil--cahier .card--accordion__title.cahier-section-title {
+  display: inline-flex;
+}
+
+.page-outil--cahier .cahier-acc__summary-title.cahier-section-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--accent-deep, #1a2744);
+}
+
+.cahier-copie h3.cahier-section-title,
+.cahier-dialog__title.cahier-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cahier-chips-block__label {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #64748b);
+}
+
+.cahier-chips-block__label.cahier-section-title {
+  display: flex;
+}
+
+.cahier-seq-objectif-source {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.cahier-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cahier-chips--champ {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.cahier-chips--champ .cahier-chip {
+  width: 100%;
+  max-width: none;
+  flex: 0 0 auto;
+  justify-content: flex-start;
+  text-align: left;
+  line-height: 1.25;
+  border-radius: 0.65rem;
+  min-height: 2.6rem;
+}
+
+.cahier-chips--champ .cahier-chip__code {
+  flex: 0 0 2.75rem;
+  text-align: left;
+  font-weight: 750;
+}
+
+.cahier-chips--champ .cahier-chip__libelle {
+  flex: 1 1 auto;
+  text-align: left;
+}
+
+.cahier-chips--champ .cahier-chip--active {
+  background: #1a2744;
+  border-color: #1a2744;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(26, 39, 68, 0.28);
+}
+
+.cahier-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cahier-chip:active {
+  transform: scale(0.98);
+}
+
+.cahier-chip--active {
+  background: #1a2744;
+  border-color: #1a2744;
+  color: #fff;
+}
+
+.cahier-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.35rem 0;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  color: #334155;
+}
+
+.cahier-opt input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.cahier-plus__panel {
+  padding-top: 0.25rem;
+}
+
+.cahier-edit-zone {
+  margin-bottom: 0.85rem;
+}
+
+.cahier-edit-zone__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.cahier-edit-zone__head .field-label {
+  margin: 0;
+}
+
+.cahier-field-with-clear {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.cahier-field-with-clear .cahier-textarea {
+  width: 100%;
+}
+
+.cahier-field-with-clear .btn {
+  margin: 0;
+}
+
+.cahier-textarea {
+  width: 100%;
+  min-height: 4rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 0.65rem;
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.cahier-dictate--active {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: #3b82f6;
+}
+
+.cahier-zone {
+  margin-bottom: 1rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.85);
+}
+
+.cahier-zone--perso {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: #fffbeb;
+}
+
+.cahier-zone__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.cahier-zone__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.cahier-zone__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cahier-zone__badge--warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.cahier-zone__preview {
+  margin: 0 0 0.65rem;
+  padding: 0.65rem 0.7rem;
+  border-radius: 0.55rem;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #0f172a;
+}
+
+.cahier-zone__preview--muted {
+  color: #64748b;
+}
+
+.cahier-copy-all {
+  margin: 0.5rem 0 0.65rem;
+}
+
+.cahier-save {
+  width: 100%;
+}
+
+.cahier-mode {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.cahier-mode__btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  border-radius: 0.65rem;
+  background: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.cahier-mode__btn--active {
+  background: #1a2744;
+  border-color: #1a2744;
+  color: #fff;
+}
+
+.cahier-panel-resume {
+  margin-bottom: 0.75rem;
+}
+
+.cahier-actions-pair {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.cahier-actions-pair .btn {
+  flex: 1 1 calc(50% - 0.25rem);
+  min-width: 0;
+  margin: 0;
+}
+
+.cahier-actions-pair .btn:only-child {
+  flex: 1 1 100%;
+}
+
+.cahier-seq-form > .cahier-actions-pair {
+  margin-top: 1.35rem;
+}
+
+.cahier-seq-actions--resume {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.cahier-seq-actions--resume .btn {
+  flex: 1 1 10rem;
+  margin: 0;
+}
+
+.cahier-seance-fields {
+  margin-top: 0.5rem;
+}
+
+.cahier-seance-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.cahier-seance-actions .cahier-actions-pair {
+  margin-top: 0;
+}
+
+.cahier-acc__summary-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--text, #0f172a);
+  text-align: left;
+  overflow: hidden;
+}
+
+.cahier-acc__summary-title.cahier-section-title {
+  display: flex;
+}
+
+.cahier-acc__summary-title .cahier-section-title__text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cahier-seq-active-bar {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.cahier-hr {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.38);
+}
+
+.cahier-hr[hidden] {
+  display: none;
+}
+
+.cahier-hr--compact {
+  margin: 0.75rem 0;
+}
+
+.cahier-seq-active-bar__meta {
+  margin: 0 0 0.5rem;
+}
+
+.cahier-seq-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.cahier-seq-changer {
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.cahier-seq-picker {
+  margin-bottom: 0.85rem;
+}
+
+.cahier-seq-picker:last-child {
+  margin-bottom: 0;
+}
+
+.cahier-seance__date-wrap {
+  padding-top: 0.85rem;
+}
+
+.cahier-seance__date.field-group--inline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.cahier-seance__date.field-group--inline .field-label {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.cahier-seance__date.field-group--inline input[type="date"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 11.5rem;
+}
+
+.cahier-acc-seance .card--accordion__panel > .hint:first-child {
+  margin-top: 0;
+}
+
+.cahier-copie {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0.65rem;
+}
+
+.cahier-copie h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.cahier-copie__hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.cahier-edit-zone .cahier-chips-block__label {
+  margin-top: 0;
+}
+
+.cahier-export {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-start;
+}
+
+.cahier-acc__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.4rem;
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  background: #1a2744;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.cahier-acc__badge--inline {
+  margin: 0;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.cahier-acc__title-seances {
+  text-transform: none;
+  letter-spacing: -0.01em;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.cahier-acc__title-seances .cahier-section-title__icon {
+  margin-right: 0.1rem;
+}
+
+.cahier-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.cahier-new-seance {
+  width: 100%;
+  margin-top: 0.65rem;
+  margin-bottom: 0.65rem;
+}
+
+.cahier-seances-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cahier-seances-list__item {
+  display: grid;
+  grid-template-columns: 2.35rem 1fr;
+  gap: 0.6rem;
+  align-items: stretch;
+  position: relative;
+  padding-bottom: 0.55rem;
+}
+
+.cahier-seances-list__item:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 1.175rem;
+  top: 2.35rem;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 1px;
+}
+
+.cahier-seances-list__num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+  background: #1a2744;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.cahier-seances-list__btn {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.65rem;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cahier-seances-list__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.cahier-seances-list__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  width: 100%;
+}
+
+.cahier-seances-list__title strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.cahier-seances-list__date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.cahier-seances-list__tag {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 0.35rem;
+  background: rgba(26, 39, 68, 0.08);
+  color: #1a2744;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.cahier-seances-list__resume {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cahier-seances-list__item--active .cahier-seances-list__num {
+  background: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.cahier-seances-list__item--active .cahier-seances-list__btn {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.cahier-seance__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.65rem;
+  margin-bottom: 0.5rem;
+}
+
+.cahier-seance__head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.cahier-seance__date {
+  flex: 0 1 auto;
+  margin: 0;
+}
+
+.cahier-duplicate-seance {
+  flex: 1 1 100%;
+  width: 100%;
+  margin-top: 0;
+  margin-bottom: 0.15rem;
+}
+
+.cahier-dialog {
+  width: min(22rem, calc(100vw - 2rem));
+  max-width: none;
+  padding: 1rem 1.1rem;
+  border: none;
+  border-radius: 0.75rem;
+}
+
+.cahier-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.cahier-dialog__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.cahier-dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.cahier-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+}
+
+.cahier-seq-delete-wrap {
+  margin-top: 0;
+}
+
+.cahier-seq-delete-wrap .btn {
+  width: 100%;
+  margin: 0;
+}
+
+.cahier-delete-seance {
+  margin-top: 0;
+  width: auto;
+}
+
+.cahier-pronote h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+@media (max-width: 559px) {
+  .cahier-chip {
+    min-height: 2.5rem;
+    font-size: 0.9rem;
+  }
+
+  .cahier-meta__row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cahier-meta__date {
+    flex: 1 1 auto;
+  }
 }

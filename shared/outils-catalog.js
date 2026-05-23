@@ -5,9 +5,17 @@
  * 1. Créez la page HTML dans outils/nom-de-votre-outil.html
  * 2. Ajoutez un objet dans OUTILS ci-dessous.
  * 3. publicCible : "prof" ou "eleve" — les outils élèves renvoient vers eleves.html.
+ * 4. Outils prof : categorie (voir ACCUEIL_CATEGORIES_PROF pour l’ordre d’affichage).
  */
 (function (global) {
   "use strict";
+
+  /** Ordre d’affichage sur l’accueil prof — 3 groupes (libellé = champ categorie de l’outil). */
+  var ACCUEIL_CATEGORIES_PROF = [
+    { label: "Gestion de classe" },
+    { label: "Séance" },
+    { label: "Activités" },
+  ];
 
   /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string,publicCible:'prof'|'eleve'}>} */
   var OUTILS = [
@@ -18,7 +26,7 @@
         "Créer des classes, groupes et listes d'élèves réutilisables dans tous les outils.",
       icone: "👥",
       href: "outils/classes.html",
-      categorie: "Organisation EPS",
+      categorie: "Gestion de classe",
       publicCible: "prof",
     },
     {
@@ -28,6 +36,16 @@
         "Appel, notes et colonnes datées : liste d’élèves, synthèse, tri et export CSV/PDF.",
       icone: "📒",
       href: "outils/tableau-suivi.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
+      id: "cahier-texte",
+      titre: "Cahier de texte",
+      description:
+        "Séquence (CA, APSA) et fiches de séance : prévu, réalisé et points pour la prochaine fois.",
+      icone: "📝",
+      href: "outils/cahier-texte.html",
       categorie: "Gestion de classe",
       publicCible: "prof",
     },
@@ -58,7 +76,7 @@
         "Scannez les QR des élèves, consultez leurs résultats (aperçu identique à chaque outil) et gérez les imports.",
       icone: "📲",
       href: "outils/donnees-eleves.html",
-      categorie: "Organisation EPS",
+      categorie: "Gestion de classe",
       publicCible: "prof",
     },
     {
@@ -68,7 +86,7 @@
         "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
       icone: "📹",
       href: "outils/video-retard.html",
-      categorie: "Observation",
+      categorie: "Séance",
       publicCible: "prof",
     },
     {
@@ -78,7 +96,7 @@
         "Liste prénom ou nom (optionnel ;niveau 1–5), équipes équilibrées par niveau et déplacements manuels.",
       icone: "⚖️",
       href: "outils/composition-equipes.html",
-      categorie: "Organisation EPS",
+      categorie: "Séance",
       publicCible: "prof",
     },
     {
@@ -88,7 +106,7 @@
         "Créer un championnat, gérer les équipes, saisir les résultats et afficher le classement.",
       icone: "🏆",
       href: "outils/championnat-poule.html",
-      categorie: "Organisation EPS",
+      categorie: "Séance",
       publicCible: "prof",
     },
     {
@@ -98,7 +116,7 @@
         "Créer un tableau type tennis : quarts, demies, finale, avec progression automatique des gagnants.",
       icone: "🎾",
       href: "outils/tournoi-elimination.html",
-      categorie: "Organisation EPS",
+      categorie: "Séance",
       publicCible: "prof",
     },
     {
@@ -108,7 +126,7 @@
         "Tournoi par paliers : une victoire fait monter, une défaite ne fait pas descendre. Classement et matchs entre joueurs du même palier.",
       icone: "📶",
       href: "outils/pyramide-victoires.html",
-      categorie: "Organisation EPS",
+      categorie: "Séance",
       publicCible: "prof",
     },
     {
@@ -118,7 +136,7 @@
         "Plusieurs parcours en parallèle, chronos et balises par élève, grille couleur, classement live et départs groupés.",
       icone: "🧭",
       href: "outils/course-orientation.html",
-      categorie: "Course à pied",
+      categorie: "Activités",
       publicCible: "prof",
     },
     {
@@ -128,7 +146,7 @@
         "Travail / pause en boucle, raccourcis Tabata et HIIT, bips et décompte au départ.",
       icone: "⏱️",
       href: "outils/timer-hiit-tabata.html",
-      categorie: "Course à pied",
+      categorie: "Séance",
       publicCible: "prof",
     },
     {
@@ -138,7 +156,7 @@
         "Grand chrono descendant ou croissant, lisible de loin, avec bips de fin.",
       icone: "⏲️",
       href: "outils/maxi-timer.html",
-      categorie: "Organisation EPS",
+      categorie: "Séance",
       publicCible: "prof",
     },
     {
@@ -148,7 +166,7 @@
         "Importez une classe ou saisissez une liste, puis tirez un nom au hasard parmi les participants.",
       icone: "🎲",
       href: "outils/tirage-au-sort.html",
-      categorie: "Organisation EPS",
+      categorie: "Séance",
       publicCible: "prof",
     },
     {
@@ -158,7 +176,7 @@
         "Tirez au hasard des inducteurs (espace, objet, contraintes corporelles…) pour l’improvisation ou la composition en danse APSA.",
       icone: "💃",
       href: "outils/inducteur-danse.html",
-      categorie: "Danse APSA",
+      categorie: "Activités",
       publicCible: "prof",
     },
     {
@@ -168,7 +186,7 @@
         "Chronomètre avec bips, voix, paliers et repères plots pour Gacon, Luc Léger, VAMEVAL et demi-Cooper.",
       icone: "📣",
       href: "outils/test-vma.html",
-      categorie: "Course à pied",
+      categorie: "Activités",
       publicCible: "prof",
     },
     {
@@ -178,7 +196,7 @@
         "Chronométrez un élève sur une distance : à l’arrivée, vitesse (km/h) et allure (min/km), performances enregistrées par classe.",
       icone: "📡",
       href: "outils/radar.html",
-      categorie: "Course à pied",
+      categorie: "Activités",
       publicCible: "prof",
     },
     {
@@ -308,13 +326,14 @@
         "Calcule la distance entre deux plots pour que 1 km/h corresponde à 1 plot selon la durée du demi-fond.",
       icone: "📐",
       href: "outils/ecartement-plots.html",
-      categorie: "Course à pied",
+      categorie: "Activités",
       publicCible: "prof",
     },
   ];
 
   global.OutilsEPS = global.OutilsEPS || {};
   global.OutilsEPS.OUTILS = OUTILS;
+  global.OutilsEPS.ACCUEIL_CATEGORIES_PROF = ACCUEIL_CATEGORIES_PROF;
   global.OutilsEPS.ACCUEIL_PROF = "index.html";
   global.OutilsEPS.ACCUEIL_ELEVE = "eleves.html";
 })(typeof window !== "undefined" ? window : globalThis);

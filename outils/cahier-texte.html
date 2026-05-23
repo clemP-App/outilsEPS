@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Cahier de texte — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--cahier">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Cahier de texte</h1>
+      </header>
+
+      <p id="cahier-msg" class="msg-error cahier-msg" role="alert" hidden></p>
+      <p id="cahier-ok" class="msg-ok cahier-msg" role="status" hidden></p>
+
+      <details class="card card--accordion cahier-acc" id="cahier-acc-sequence" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title cahier-section-title">
+            <span class="cahier-section-title__icon" aria-hidden="true">📚</span>
+            <span class="cahier-section-title__text">Séquence</span>
+          </span>
+          <span class="cahier-acc__summary-title cahier-section-title" id="cahier-seq-summary-title" hidden>
+            <span class="cahier-section-title__icon" aria-hidden="true">📌</span>
+            <span class="cahier-section-title__text" id="cahier-seq-summary-title-text"></span>
+          </span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <div id="cahier-seq-active-bar" class="cahier-seq-active-bar" hidden>
+            <p class="hint cahier-seq-active-bar__meta" id="cahier-seq-active-meta"></p>
+            <div class="cahier-seq-toolbar">
+              <div class="cahier-export">
+                <button type="button" class="btn btn--ghost btn--small btn--labeled" id="cahier-export-csv">
+                  <span class="btn__text">Export CSV</span>
+                </button>
+                <button type="button" class="btn btn--ghost btn--small btn--labeled" id="cahier-export-pdf">
+                  <span class="btn__text">Export PDF</span>
+                </button>
+              </div>
+              <button type="button" class="btn btn--ghost btn--small" id="cahier-duplicate-sequence" hidden>
+                Dupliquer la séquence
+              </button>
+              <button type="button" class="btn btn--ghost btn--small" id="cahier-archive-sequence" hidden>
+                Archiver la séquence
+              </button>
+              <button type="button" class="btn btn--ghost btn--small" id="cahier-unarchive-sequence" hidden>
+                Désarchiver la séquence
+              </button>
+              <button type="button" class="btn btn--primary btn--small btn--labeled cahier-seq-changer" id="cahier-seq-changer">
+                <span class="btn__icon" aria-hidden="true">↔</span>
+                <span class="btn__text">Changer de séquence</span>
+              </button>
+            </div>
+          </div>
+
+          <hr class="cahier-hr" id="cahier-hr-after-active" hidden />
+
+          <div id="cahier-seq-picker" class="cahier-seq-picker">
+          <div class="cahier-mode" role="tablist" aria-label="Mode séquence">
+            <button type="button" class="cahier-mode__btn cahier-mode__btn--active" id="cahier-mode-new" role="tab" aria-selected="true">
+              Nouvelle séquence
+            </button>
+            <button type="button" class="cahier-mode__btn" id="cahier-mode-resume" role="tab" aria-selected="false">
+              Reprendre une séquence
+            </button>
+          </div>
+
+          <div id="cahier-panel-resume" class="cahier-panel-resume" hidden>
+            <div class="field-group">
+              <label class="field-label cahier-section-title" for="cahier-seq-select">
+                <span class="cahier-section-title__icon" aria-hidden="true">📂</span>
+                <span class="cahier-section-title__text">Séquences enregistrées</span>
+              </label>
+              <select id="cahier-seq-select"></select>
+            </div>
+            <div class="cahier-seq-actions cahier-seq-actions--resume">
+              <button type="button" class="btn btn--primary btn--labeled" id="cahier-seq-open">
+                <span class="btn__text">Ouvrir cette séquence</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="cahier-unarchive-selected" hidden>
+                <span class="btn__text">Désarchiver</span>
+              </button>
+            </div>
+          </div>
+          </div>
+
+          <hr class="cahier-hr" id="cahier-hr--seq-form" />
+
+          <div id="cahier-panel-seq-form" class="cahier-seq-form">
+            <div class="field-group">
+              <label class="field-label cahier-section-title" for="cahier-seq-classe">
+                <span class="cahier-section-title__icon" aria-hidden="true">🏫</span>
+                <span class="cahier-section-title__text">Classe</span>
+              </label>
+              <select id="cahier-seq-classe"></select>
+            </div>
+
+            <hr class="cahier-hr" />
+
+            <div class="cahier-chips-block">
+              <p class="cahier-chips-block__label cahier-section-title">
+                <span class="cahier-section-title__icon" aria-hidden="true">🎯</span>
+                <span class="cahier-section-title__text">Champ d’apprentissage</span>
+              </p>
+              <div class="cahier-chips cahier-chips--champ" id="cahier-seq-chips-champ" role="group" aria-label="Champ d’apprentissage"></div>
+              <p id="cahier-champ-resume" class="hint cahier-champ-resume" hidden></p>
+            </div>
+
+            <div class="cahier-chips-block" id="cahier-seq-apsa-block" hidden>
+              <p class="cahier-chips-block__label cahier-section-title">
+                <span class="cahier-section-title__icon" aria-hidden="true">⚽</span>
+                <span class="cahier-section-title__text">APSA de la séquence</span>
+              </p>
+              <div class="cahier-chips" id="cahier-seq-chips-apsa" role="group" aria-label="Activité APSA"></div>
+              <div class="field-group cahier-apsa-autre" id="cahier-seq-apsa-autre-block" hidden>
+                <label class="field-label cahier-section-title" for="cahier-seq-apsa-autre">
+                  <span class="cahier-section-title__icon" aria-hidden="true">✏️</span>
+                  <span class="cahier-section-title__text">Précisez l’APSA</span>
+                </label>
+                <input
+                  type="text"
+                  id="cahier-seq-apsa-autre"
+                  placeholder="Ex. Ultimate, Canoë-kayak…"
+                  autocomplete="off"
+                />
+              </div>
+            </div>
+
+            <hr class="cahier-hr cahier-hr--seq-objectifs" id="cahier-hr-seq-objectifs" hidden />
+
+            <div class="cahier-chips-block" id="cahier-seq-objectif-block" hidden>
+              <p class="cahier-chips-block__label cahier-section-title">
+                <span class="cahier-section-title__icon" aria-hidden="true">💡</span>
+                <span class="cahier-section-title__text">Objectifs de la séquence — propositions</span>
+              </p>
+              <p class="hint cahier-seq-objectif-source">
+                Formulations inspirées des attendus de fin de cycle et des compétences générales EPS (Eduscol, cycle 4).
+              </p>
+              <div
+                class="cahier-chips cahier-chips--multi"
+                id="cahier-chips-seq-objectif"
+                role="group"
+                aria-label="Propositions d’objectifs de la séquence"
+              ></div>
+              <p id="cahier-seq-objectif-hint" class="hint cahier-format-hint" hidden></p>
+            </div>
+
+            <hr class="cahier-hr" id="cahier-hr-objectifs-text" hidden />
+
+            <div class="field-group">
+              <label class="field-label cahier-section-title" for="cahier-seq-objectifs">
+                <span class="cahier-section-title__icon" aria-hidden="true">🎯</span>
+                <span class="cahier-section-title__text">Objectifs de la séquence</span>
+              </label>
+              <div class="cahier-field-with-clear">
+                <textarea
+                  id="cahier-seq-objectifs"
+                  class="cahier-textarea"
+                  rows="3"
+                  spellcheck="true"
+                  placeholder="Sélectionnez des propositions ci-dessus ou rédigez librement…"
+                ></textarea>
+                <button type="button" class="btn btn--ghost btn--small" id="cahier-reset-seq-objectif">Effacer</button>
+              </div>
+            </div>
+
+            <hr class="cahier-hr" />
+
+            <div class="cahier-seq-delete-wrap">
+              <button type="button" class="btn btn--danger btn--labeled" id="cahier-seq-delete" hidden>
+                <span class="btn__text">Supprimer la séquence</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <div id="cahier-workspace" class="cahier-workspace" hidden>
+        <details class="card card--accordion cahier-acc" id="cahier-acc-seances" open>
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title cahier-section-title cahier-acc__title-seances">
+              <span class="cahier-section-title__icon" aria-hidden="true">📅</span>
+              <span class="cahier-acc__badge cahier-acc__badge--inline" id="cahier-seances-count">0</span>
+              <span class="cahier-section-title__text">séances dans la séquence</span>
+            </span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel">
+            <button type="button" class="btn btn--primary btn--labeled cahier-new-seance" id="cahier-new-seance">
+              <span class="btn__icon" aria-hidden="true">➕</span>
+              <span class="btn__text">Nouvelle séance</span>
+            </button>
+            <hr class="cahier-hr" />
+            <ul class="cahier-seances-list" id="cahier-seances-list" role="list"></ul>
+            <p id="cahier-seances-empty" class="empty-state">Aucune séance enregistrée pour l’instant.</p>
+          </div>
+        </details>
+
+        <details class="card card--accordion cahier-acc cahier-acc-seance" id="cahier-acc-seance" hidden>
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title cahier-section-title" id="cahier-seance-title">
+              <span class="cahier-section-title__icon" aria-hidden="true">📝</span>
+              <span class="cahier-section-title__text" id="cahier-seance-title-text">Séance</span>
+            </span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel cahier-seance">
+            <div class="cahier-seance__date-wrap">
+            <div class="field-group cahier-seance__date field-group--inline">
+              <label class="field-label cahier-section-title" for="cahier-date">
+                <span class="cahier-section-title__icon" aria-hidden="true">📅</span>
+                <span class="cahier-section-title__text">Date</span>
+              </label>
+              <input type="date" id="cahier-date" />
+            </div>
+            </div>
+
+          <p class="hint">
+            Le CA et l’APSA viennent de la séquence. Formulez ce que les élèves doivent <strong>apprendre</strong> : sélectionnez des
+            propositions ou complétez les zones ci-dessous.
+          </p>
+
+          <hr class="cahier-hr" />
+
+          <div class="cahier-seance-fields">
+            <div class="cahier-edit-zone">
+              <p class="cahier-chips-block__label cahier-section-title">
+                <span class="cahier-section-title__icon" aria-hidden="true">💡</span>
+                <span class="cahier-section-title__text">Objectif de la séance — propositions</span>
+              </p>
+              <div
+                class="cahier-chips cahier-chips--multi"
+                id="cahier-chips-objectif"
+                role="group"
+                aria-label="Propositions d’objectif de la séance"
+              ></div>
+              <p id="cahier-objectif-hint" class="hint cahier-format-hint" hidden>Choisissez l’APSA dans la séquence.</p>
+              <div class="cahier-edit-zone__head">
+                <label class="field-label cahier-section-title" for="cahier-edit-objectif">
+                  <span class="cahier-section-title__icon" aria-hidden="true">🎯</span>
+                  <span class="cahier-section-title__text">Objectif de la séance</span>
+                </label>
+                <button type="button" class="btn btn--ghost btn--small cahier-dictate" data-target="cahier-edit-objectif" aria-label="Dicter l’objectif">🎤</button>
+              </div>
+              <div class="cahier-field-with-clear">
+                <textarea
+                  id="cahier-edit-objectif"
+                  class="cahier-textarea"
+                  rows="3"
+                  spellcheck="true"
+                  placeholder="Une puce par apprentissage (• …)"
+                ></textarea>
+                <button type="button" class="btn btn--ghost btn--small" id="cahier-reset-objectif">Effacer</button>
+              </div>
+            </div>
+
+            <hr class="cahier-hr" />
+
+            <div class="cahier-edit-zone">
+              <p class="cahier-chips-block__label cahier-section-title">
+                <span class="cahier-section-title__icon" aria-hidden="true">📋</span>
+                <span class="cahier-section-title__text">Contenu — propositions de déroulé (plusieurs choix possibles)</span>
+              </p>
+              <div class="cahier-chips cahier-chips--multi" id="cahier-chips-format" role="group" aria-label="Propositions de contenu"></div>
+              <p id="cahier-format-hint" class="hint cahier-format-hint" hidden>Choisissez l’APSA dans la séquence.</p>
+              <div class="cahier-edit-zone__head">
+                <label class="field-label cahier-section-title" for="cahier-edit-contenu">
+                  <span class="cahier-section-title__icon" aria-hidden="true">📄</span>
+                  <span class="cahier-section-title__text">Contenu</span>
+                </label>
+                <button type="button" class="btn btn--ghost btn--small cahier-dictate" data-target="cahier-edit-contenu" aria-label="Dicter le contenu">🎤</button>
+              </div>
+              <div class="cahier-field-with-clear">
+                <textarea
+                  id="cahier-edit-contenu"
+                  class="cahier-textarea"
+                  rows="4"
+                  spellcheck="true"
+                  placeholder="Une puce par étape du déroulé (• échauffement, • …)"
+                ></textarea>
+                <button type="button" class="btn btn--ghost btn--small" id="cahier-reset-contenu">Effacer</button>
+              </div>
+            </div>
+
+            <hr class="cahier-hr" />
+
+            <div class="cahier-edit-zone">
+              <div class="cahier-edit-zone__head">
+                <label class="field-label cahier-section-title" for="cahier-edit-attention">
+                  <span class="cahier-section-title__icon" aria-hidden="true">⚠️</span>
+                  <span class="cahier-section-title__text">Points d’attention (pour l’enseignant)</span>
+                </label>
+                <button type="button" class="btn btn--ghost btn--small cahier-dictate" data-target="cahier-edit-attention" aria-label="Dicter les points d’attention">🎤</button>
+              </div>
+              <textarea
+                id="cahier-edit-attention"
+                class="cahier-textarea"
+                rows="3"
+                spellcheck="true"
+                placeholder="Notes privées : groupe, matériel, sécurité, élèves à suivre…"
+              ></textarea>
+            </div>
+          </div>
+
+          <hr class="cahier-hr" />
+
+          <section class="cahier-copie card" aria-labelledby="cahier-copie-title">
+            <h3 id="cahier-copie-title" class="cahier-section-title">
+              <span class="cahier-section-title__icon" aria-hidden="true">📋</span>
+              <span class="cahier-section-title__text">Copier pour Pronote (ou autre cahier de texte)</span>
+            </h3>
+            <p class="hint cahier-copie__hint">
+              Le bouton ci-dessous copie l’<strong>objectif de la séance</strong> et le <strong>contenu</strong> avec leurs titres
+              (<em>Objectif :</em>, <em>Contenu :</em>) dans le presse-papiers. Collez-les ensuite dans Pronote, École Directe ou tout autre
+              outil de cahier de texte. Les points d’attention ne sont pas copiés (notes privées).
+            </p>
+            <pre class="cahier-zone__preview" id="cahier-preview-copie" aria-live="polite"></pre>
+            <button type="button" class="btn btn--primary btn--labeled btn--block" id="cahier-copy-pronote">
+              <span class="btn__icon" aria-hidden="true">📋</span>
+              <span class="btn__text">Copier pour coller dans Pronote</span>
+            </button>
+          </section>
+
+          <hr class="cahier-hr" />
+
+          <div class="cahier-seance-actions">
+            <button
+              type="button"
+              class="btn btn--ghost btn--small cahier-duplicate-seance"
+              id="cahier-duplicate-seance"
+              hidden
+            >
+              Dupliquer la séance…
+            </button>
+            <button type="button" class="btn btn--danger btn--ghost cahier-delete-seance" id="cahier-delete-seance" hidden>
+              Supprimer cette séance
+            </button>
+          </div>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <dialog class="card cahier-dialog" id="cahier-dialog-dupliquer" aria-labelledby="cahier-dialog-dupliquer-title">
+      <form class="cahier-dialog__form" id="cahier-dialog-dupliquer-form">
+        <h2 id="cahier-dialog-dupliquer-title" class="cahier-dialog__title cahier-section-title">
+          <span class="cahier-section-title__icon" aria-hidden="true">📋</span>
+          <span class="cahier-section-title__text">Dupliquer la séance</span>
+        </h2>
+        <p class="hint">
+          Copiez le contenu de cette séance (objectif, déroulé, points d’attention) vers la séquence ouverte, une autre
+          séquence enregistrée, ou une autre classe (même APSA — la séquence sera reprise ou créée).
+        </p>
+        <div class="field-group">
+          <label class="field-label cahier-section-title" for="cahier-dupliquer-cible">
+            <span class="cahier-section-title__icon" aria-hidden="true">➡️</span>
+            <span class="cahier-section-title__text">Destination</span>
+          </label>
+          <select id="cahier-dupliquer-cible" required></select>
+        </div>
+        <div class="cahier-dialog__actions">
+          <button type="button" class="btn btn--ghost" id="cahier-dupliquer-annuler">Annuler</button>
+          <button type="submit" class="btn btn--primary btn--labeled" id="cahier-dupliquer-confirmer">
+            <span class="btn__text">Dupliquer</span>
+          </button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="../data-manager.js"></script>
+    <script src="../dom-utils.js"></script>
+    <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="cahier-texte.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Organisez une séquence (CA, APSA, objectifs) puis rédigez chaque séance et copiez le texte dans Pronote.",
+        sections: [
+          {
+            title: "Séquence",
+            text: "Créez ou reprenez une séquence : classe, champ d’apprentissage (CA1 à CA5), APSA et objectifs (propositions Eduscol ou texte libre). Le titre (classe — APSA) apparaît dans l’en-tête de l’accordéon lorsque la séquence est ouverte.",
+          },
+          {
+            title: "Séances",
+            list: [
+              "Objectifs de la séquence et objectif de la séance : puces (•) par proposition, plusieurs choix possibles.",
+              "Contenu : plusieurs propositions de déroulé (échauffement, bilan…), une puce par élément.",
+              "Copier pour Pronote : titres Objectif / Contenu + texte à coller.",
+              "Points d’attention : notes privées, non copiées.",
+              "Dupliquer la séquence (barre active) ou une séance (cette séquence, une autre séquence ou une autre classe, même APSA).",
+              "Export CSV ou PDF en portrait.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../shared/tool-accueil.js"></script>
+    <script src="../goatcounter.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

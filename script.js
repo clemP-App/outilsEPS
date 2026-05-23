@@ -66,6 +66,42 @@
     });
   }
 
+  function categoriesProf() {
+    return window.OutilsEPS && window.OutilsEPS.ACCUEIL_CATEGORIES_PROF
+      ? window.OutilsEPS.ACCUEIL_CATEGORIES_PROF
+      : [];
+  }
+
+  function grouperOutilsProf(outils, favoris) {
+    var schema = categoriesProf();
+    if (!schema.length) return null;
+
+    var groupes = [];
+    var deja = new Set();
+
+    schema.forEach(function (cat) {
+      var bloc = outils.filter(function (o) {
+        return o.categorie === cat.label;
+      });
+      bloc = trierAvecFavoris(bloc, favoris);
+      bloc.forEach(function (o) {
+        deja.add(o.id);
+      });
+      if (bloc.length) {
+        groupes.push({ label: cat.label, outils: bloc });
+      }
+    });
+
+    var reste = outils.filter(function (o) {
+      return !deja.has(o.id);
+    });
+    if (reste.length) {
+      groupes.push({ label: "Autres", outils: trierAvecFavoris(reste, favoris) });
+    }
+
+    return groupes.length ? groupes : null;
+  }
+
   function chargerFavoris() {
     try {
       var raw = localStorage.getItem(FAVORIS_KEY);
@@ -210,6 +246,18 @@
     return wrap;
   }
 
+  function creerEnteteCategorie(label) {
+    var li = document.createElement("li");
+    li.className = "tools-list__category";
+    li.setAttribute("role", "presentation");
+
+    var title = document.createElement("h3");
+    title.className = "tools-list__category-title";
+    title.textContent = label;
+    li.appendChild(title);
+    return li;
+  }
+
   function creerBoutonVoirPlus(publicCible, restants) {
     var li = document.createElement("li");
     li.className = "tools-list__more";
@@ -228,7 +276,8 @@
     return li;
   }
 
-  function creerItemOutil(o, favoris) {
+  function creerItemOutil(o, favoris, options) {
+    options = options || {};
     var isFav = favoris.has(o.id);
     var li = document.createElement("li");
     li.className = "tool-list__item" + (isFav ? " tool-list__item--fav" : "");
@@ -254,7 +303,9 @@
 
     var meta = document.createElement("span");
     meta.className = "tool-list__meta";
-    meta.textContent = o.categorie + " — " + o.description;
+    meta.textContent = options.metaDescriptionOnly
+      ? o.description
+      : o.categorie + " — " + o.description;
 
     main.appendChild(title);
     main.appendChild(meta);
@@ -288,6 +339,38 @@
     return li;
   }
 
+  function renderBlocPublic(publicCible, groupe, favoris) {
+    if (!groupe.length) return;
+
+    var isSearch = !!(searchInput && normalise(searchInput.value).trim());
+    var groupesProf =
+      publicCible === "prof" && !isSearch ? grouperOutilsProf(groupe, favoris) : null;
+    var itemOptions = groupesProf ? { metaDescriptionOnly: true } : {};
+
+    listEl.appendChild(creerEnteteSection(publicCible, groupe.length));
+
+    if (groupesProf) {
+      groupesProf.forEach(function (cat) {
+        listEl.appendChild(creerEnteteCategorie(cat.label));
+        cat.outils.forEach(function (o) {
+          listEl.appendChild(creerItemOutil(o, favoris, itemOptions));
+        });
+      });
+      return;
+    }
+
+    var sorted = trierAvecFavoris(groupe, favoris);
+    var ouvert = sectionsOuvertes[publicCible] || isSearch;
+    var limite = limiteVisibleParSection();
+    var visibles = ouvert ? sorted : sorted.slice(0, limite);
+    visibles.forEach(function (o) {
+      listEl.appendChild(creerItemOutil(o, favoris, itemOptions));
+    });
+    if (!ouvert && sorted.length > limite) {
+      listEl.appendChild(creerBoutonVoirPlus(publicCible, sorted.length - limite));
+    }
+  }
+
   function renderListe(liste) {
     if (!listEl || !emptyEl) return;
     OutilsDom.clear(listEl);
@@ -314,20 +397,7 @@
       var groupe = liste.filter(function (o) {
         return o.publicCible === publicCible;
       });
-      if (!groupe.length) return;
-
-      var sorted = trierAvecFavoris(groupe, favoris);
-      listEl.appendChild(creerEnteteSection(publicCible, sorted.length));
-      var isSearch = !!(searchInput && normalise(searchInput.value).trim());
-      var ouvert = sectionsOuvertes[publicCible] || isSearch;
-      var limite = limiteVisibleParSection();
-      var visibles = ouvert ? sorted : sorted.slice(0, limite);
-      visibles.forEach(function (o) {
-        listEl.appendChild(creerItemOutil(o, favoris));
-      });
-      if (!ouvert && sorted.length > limite) {
-        listEl.appendChild(creerBoutonVoirPlus(publicCible, sorted.length - limite));
-      }
+      renderBlocPublic(publicCible, groupe, favoris);
     });
 
     if (countEl) {
