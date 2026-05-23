@@ -20,6 +20,10 @@ var DataManager = (function () {
             TOURNOI: "tournoi-elimination",
             PYRAMIDE: "pyramide-victoires",
             CHAMPIONNAT: "championnat-poule",
+            ORIENTATION: "course-orientation",
+          },
+          courseOrientationDataId: function (sid) {
+            return "course-orientation__" + sid;
           },
           MIGRATION_FLAG_ID: "migration-sessions-v1",
           LEGACY_TOURNOI_LS_KEY: "outils_eps_tournoi_elimination_v1",
@@ -1281,6 +1285,60 @@ var DataManager = (function () {
     });
   }
 
+  var ORIENTATION_DEFAULT_STATE = {
+    parcours: [],
+    coureurs: [],
+    runs: [],
+    settings: {
+      penaliteFausseSec: 30,
+      bonusCorrecteSec: 0,
+      retardMinutes: 10,
+      allowDeleteTime: false,
+      classementCriteres: [
+        { key: "parcoursFaits", order: "desc" },
+        { key: "tempsMoyen", order: "asc" },
+        { key: "tempsTotal", order: "asc" },
+        { key: "erreurs", order: "asc" },
+        { key: "validations", order: "desc" },
+      ],
+    },
+  };
+
+  function normalizeOrientationState(raw) {
+    var base = cloneData(ORIENTATION_DEFAULT_STATE);
+    if (!raw || typeof raw !== "object") return base;
+    base.parcours = Array.isArray(raw.parcours) ? raw.parcours.slice() : [];
+    base.coureurs = Array.isArray(raw.coureurs) ? raw.coureurs.slice() : [];
+    base.runs = Array.isArray(raw.runs) ? raw.runs.slice() : [];
+    if (raw.settings && typeof raw.settings === "object") {
+      base.settings = Object.assign({}, base.settings, raw.settings);
+      if (Array.isArray(raw.settings.classementCriteres)) {
+        base.settings.classementCriteres = raw.settings.classementCriteres.slice();
+      }
+    }
+    return base;
+  }
+
+  function getCourseOrientationForSession(sessionId) {
+    return getParametre(SC.courseOrientationDataId(sessionId)).then(function (rec) {
+      if (!rec) return normalizeOrientationState(null);
+      return normalizeOrientationState(rec);
+    });
+  }
+
+  function saveCourseOrientationForSession(sessionId, state) {
+    if (!sessionId) return Promise.reject(new Error("Aucune séance active."));
+    var record = Object.assign({}, normalizeOrientationState(state), {
+      id: SC.courseOrientationDataId(sessionId),
+      sessionId: sessionId,
+      toolId: SC.SESSION_TOOLS.ORIENTATION,
+      updatedAt: new Date().toISOString(),
+    });
+    return saveParametre(record).then(function () {
+      return touchSession(sessionId);
+    });
+  }
+
   function readLegacyTournoiLocalStorage() {
     try {
       var raw = localStorage.getItem(SC.LEGACY_TOURNOI_LS_KEY);
@@ -1989,6 +2047,8 @@ var DataManager = (function () {
     savePyramideForSession: savePyramideForSession,
     getPyramideVictoires: getPyramideVictoires,
     savePyramideVictoires: savePyramideVictoires,
+    getCourseOrientationForSession: getCourseOrientationForSession,
+    saveCourseOrientationForSession: saveCourseOrientationForSession,
     PYRAMIDE_VICTOIRES_ID: PYRAMIDE_VICTOIRES_ID,
     getParametre: getParametre,
     saveParametre: saveParametre,

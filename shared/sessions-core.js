@@ -16,6 +16,7 @@
     TOURNOI: "tournoi-elimination",
     PYRAMIDE: "pyramide-victoires",
     CHAMPIONNAT: "championnat-poule",
+    ORIENTATION: "course-orientation",
   };
 
   var TOOL_LABELS = {
@@ -23,6 +24,7 @@
     "tournoi-elimination": "Tournoi éliminatoire",
     "pyramide-victoires": "Pyramide de victoires",
     "championnat-poule": "Championnat à poule",
+    "course-orientation": "Course d’orientation",
   };
 
   var SESSION_TOOL_IDS = Object.keys(TOOL_LABELS);
@@ -44,6 +46,10 @@
 
   function compositionDataId(sessionId) {
     return "composition-equipes__" + sessionId;
+  }
+
+  function courseOrientationDataId(sessionId) {
+    return "course-orientation__" + sessionId;
   }
 
   function legacySessionName(toolId, dateIso) {
@@ -115,6 +121,7 @@
     toolLabel: toolLabel,
     activeSessionParamId: activeSessionParamId,
     compositionDataId: compositionDataId,
+    courseOrientationDataId: courseOrientationDataId,
     legacySessionName: legacySessionName,
     validateSession: validateSession,
     normalizeSession: normalizeSession,

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Course d’orientation — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--orientation orient-mode-eleve" id="orient-root">
+      <header class="page-outil__header page-outil__header--orient orient-pro-only" hidden>
+        <a class="tool-back" href="../index.html" id="orient-link-accueil"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Course d’orientation</h1>
+      </header>
+
+      <div class="tool-session-gated orient-shell" hidden>
+        <div class="orient-pro-top orient-pro-only" hidden>
+          <div id="session-manager-mount"></div>
+          <p id="orient-msg" class="msg-error" role="alert" hidden></p>
+          <nav class="orient-pro-menu" aria-label="Espace enseignant">
+            <p class="orient-pro-menu__label">Enseignant</p>
+            <div class="orient-pro-tabs--nav" role="tablist">
+              <button
+                type="button"
+                class="orient-pro-tabs__btn orient-pro-tabs__btn--active"
+                id="orient-tab-gestion"
+                data-view="gestion"
+                role="tab"
+              >
+                <span class="orient-pro-tabs__icon" aria-hidden="true">📋</span>
+                <span class="orient-pro-tabs__text">Gestion</span>
+              </button>
+              <button
+                type="button"
+                class="orient-pro-tabs__btn"
+                id="orient-tab-reglages"
+                data-view="reglages"
+                role="tab"
+              >
+                <span class="orient-pro-tabs__icon" aria-hidden="true">⚙️</span>
+                <span class="orient-pro-tabs__text">Réglages</span>
+              </button>
+              <button
+                type="button"
+                class="orient-pro-tabs__btn"
+                id="orient-tab-departs"
+                data-view="departs"
+                role="tab"
+              >
+                <span class="orient-pro-tabs__icon" aria-hidden="true">🚀</span>
+                <span class="orient-pro-tabs__text">Départs groupés</span>
+              </button>
+            </div>
+            <div class="orient-pro-export">
+              <span class="orient-pro-export__label">Exporter le classement</span>
+              <div class="orient-pro-export__btns">
+                <button type="button" class="orient-btn orient-btn--soft orient-pro-export__btn" id="orient-btn-export-csv">
+                  CSV
+                </button>
+                <button type="button" class="orient-btn orient-btn--soft orient-pro-export__btn" id="orient-btn-export-pdf">
+                  PDF
+                </button>
+              </div>
+            </div>
+            <div class="orient-pro-course-cta">
+              <button
+                type="button"
+                class="orient-pro-course-cta__btn"
+                id="orient-retour-eleve"
+              >
+                <span class="orient-pro-course-cta__icon" aria-hidden="true">🏃</span>
+                <span class="orient-pro-course-cta__text">Accéder à la course</span>
+              </button>
+            </div>
+          </nav>
+        </div>
+
+        <div class="orient-main">
+          <div
+            id="orient-panel-course"
+            class="orient-view orient-view--eleve"
+            role="tabpanel"
+            aria-labelledby="orient-tab-course"
+          >
+            <div class="orient-legende" aria-label="Légende des couleurs">
+              <span class="orient-legende__item orient-legende__item--attente">En attente</span>
+              <span class="orient-legende__item orient-legende__item--course">En course</span>
+              <span class="orient-legende__item orient-legende__item--retard" id="orient-legende-retard">En retard</span>
+              <span class="orient-legende__item orient-legende__item--termine">Terminé</span>
+            </div>
+            <div id="orient-grille" class="orient-grille" aria-live="polite"></div>
+            <p id="orient-grille-vide" class="orient-empty orient-grille-vide" hidden>
+              L’enseignant doit configurer la séance (bouton Enseignant).
+            </p>
+          </div>
+
+          <div
+            id="orient-panel-classement"
+            class="orient-view orient-view--eleve"
+            role="tabpanel"
+            aria-labelledby="orient-tab-classement"
+            hidden
+          >
+            <div class="orient-panel-head orient-panel-head--classement">
+              <h2 class="orient-panel-head__title">
+                <span class="orient-ico" aria-hidden="true">🏆</span> Classement
+              </h2>
+              <div class="orient-field orient-field--inline orient-field--on-dark orient-classement-filter">
+                <label class="orient-field__label" for="orient-classement-parcours"
+                  ><span class="orient-ico" aria-hidden="true">🧭</span> Parcours</label
+                >
+                <select id="orient-classement-parcours" class="orient-select orient-select--on-dark"></select>
+              </div>
+            </div>
+            <ol class="orient-leaderboard" id="orient-classement-list" aria-live="polite"></ol>
+            <p id="orient-classement-vide" class="orient-empty" hidden>Aucun résultat pour l’instant.</p>
+          </div>
+
+          <div
+            id="orient-panel-departs"
+            class="orient-view orient-view--pro"
+            role="tabpanel"
+            hidden
+          >
+            <section class="orient-card">
+              <h2 class="orient-card__title">Départs groupés</h2>
+              <p class="orient-card__hint">
+                Cochez les coureurs, choisissez un parcours chacun, puis lancez le départ commun.
+              </p>
+              <button
+                type="button"
+                class="orient-btn orient-btn--primary orient-btn--block orient-btn--lg orient-depart-go"
+                id="orient-depart-go"
+                disabled
+              >
+                🚀 <span id="orient-depart-go-label">Départ des coureurs sélectionnés</span>
+              </button>
+              <div class="orient-chip-row orient-depart-chips">
+                <button type="button" class="orient-chip" id="orient-depart-tout">Tout cocher</button>
+                <button type="button" class="orient-chip" id="orient-depart-rien">Tout décocher</button>
+              </div>
+              <ul class="orient-list" id="orient-depart-list"></ul>
+            </section>
+          </div>
+
+          <div id="orient-panel-gestion" class="orient-view orient-view--pro" role="tabpanel">
+            <details class="card card--accordion orient-acc" id="orient-acc-parcours">
+              <summary class="card--accordion__summary orient-acc__summary">
+                <span class="card--accordion__title">Parcours</span>
+                <span class="orient-acc__badge" id="orient-acc-parcours-count" aria-live="polite">0</span>
+                <span class="card--accordion__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="card--accordion__panel orient-acc__panel">
+                <p class="orient-card__hint orient-acc__lead">Un parcours ne peut être réalisé qu’une fois par coureur.</p>
+                <ul class="orient-list orient-list--editable" id="orient-parcours-list"></ul>
+                <button type="button" class="orient-btn orient-btn--primary orient-btn--block" id="orient-add-parcours">
+                  ➕ Ajouter un parcours
+                </button>
+              </div>
+            </details>
+            <details class="card card--accordion orient-acc" id="orient-acc-coureurs">
+              <summary class="card--accordion__summary orient-acc__summary">
+                <span class="card--accordion__title">Coureurs</span>
+                <span class="orient-acc__badge" id="orient-acc-coureurs-count" aria-live="polite">0</span>
+                <span class="card--accordion__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="card--accordion__panel orient-acc__panel">
+                <button type="button" class="orient-btn orient-btn--soft orient-btn--block orient-acc__lead" id="orient-import-classe">
+                  👥 Importer une classe
+                </button>
+                <div class="orient-field">
+                  <label class="orient-field__label" for="orient-liste-brute">Liste (un nom par ligne)</label>
+                  <textarea id="orient-liste-brute" class="orient-textarea" rows="5" placeholder="Martin&#10;Léa Dupont" spellcheck="false"></textarea>
+                </div>
+                <div class="orient-actions-row">
+                  <button type="button" class="orient-btn orient-btn--primary" id="orient-valider-liste">Valider la liste</button>
+                </div>
+                <p id="orient-nb-coureurs" class="orient-meta" aria-live="polite">0 coureur</p>
+                <ul class="orient-list orient-list--editable" id="orient-coureurs-gestion"></ul>
+              </div>
+            </details>
+          </div>
+
+          <div id="orient-panel-reglages" class="orient-view orient-view--pro" role="tabpanel" hidden>
+            <details class="card card--accordion orient-acc" id="orient-acc-balises">
+              <summary class="card--accordion__summary orient-acc__summary">
+                <span class="card--accordion__title">Balises et chrono</span>
+                <span class="card--accordion__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="card--accordion__panel orient-acc__panel">
+                <div class="orient-field-row">
+                  <div class="orient-field">
+                    <label class="orient-field__label" for="orient-penalite">Pénalité balise fausse (s)</label>
+                    <input type="number" class="orient-input" id="orient-penalite" min="0" step="1" value="30" />
+                  </div>
+                  <div class="orient-field">
+                    <label class="orient-field__label" for="orient-bonus">Bonus balise correcte (s)</label>
+                    <input type="number" class="orient-input" id="orient-bonus" min="0" step="1" value="0" />
+                  </div>
+                </div>
+                <div class="orient-field">
+                  <label class="orient-field__label" for="orient-retard">Seuil retard (minutes)</label>
+                  <input type="number" class="orient-input" id="orient-retard" min="1" step="1" value="10" />
+                </div>
+                <label class="orient-toggle">
+                  <input type="checkbox" id="orient-allow-delete" />
+                  <span>Autoriser la suppression d’un temps depuis la fiche coureur</span>
+                </label>
+              </div>
+            </details>
+            <details class="card card--accordion orient-acc" id="orient-acc-classement">
+              <summary class="card--accordion__summary orient-acc__summary">
+                <span class="card--accordion__title">Ordre du classement</span>
+                <span class="card--accordion__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="card--accordion__panel orient-acc__panel">
+                <ol class="orient-list orient-list--sortable" id="orient-criteres"></ol>
+              </div>
+            </details>
+            <details class="card card--accordion orient-acc" id="orient-acc-edit-temps">
+              <summary class="card--accordion__summary orient-acc__summary">
+                <span class="card--accordion__title">Modifier un temps</span>
+                <span class="card--accordion__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="card--accordion__panel orient-acc__panel">
+                <div class="orient-field">
+                  <label class="orient-field__label" for="orient-edit-coureur">Coureur</label>
+                  <select id="orient-edit-coureur" class="orient-select"></select>
+                </div>
+                <div class="orient-field">
+                  <label class="orient-field__label" for="orient-edit-run">Parcours</label>
+                  <select id="orient-edit-run" class="orient-select"></select>
+                  <p class="orient-card__hint orient-edit-hint">
+                    Les parcours non réalisés permettent d’ajouter un temps manuellement.
+                  </p>
+                </div>
+                <div class="orient-field">
+                  <label class="orient-field__label" for="orient-edit-temps">Temps ajusté (mm:ss)</label>
+                  <input type="text" class="orient-input" id="orient-edit-temps" placeholder="12:34" inputmode="numeric" />
+                </div>
+                <div class="orient-actions-row orient-actions-row--stack">
+                  <button type="button" class="orient-btn orient-btn--primary orient-btn--block" id="orient-edit-save">
+                    Enregistrer
+                  </button>
+                  <button
+                    type="button"
+                    class="orient-btn orient-btn--danger-soft orient-btn--block"
+                    id="orient-edit-delete"
+                    disabled
+                  >
+                    Supprimer ce temps
+                  </button>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <nav class="orient-dock orient-dock--eleve" aria-label="Navigation coureurs">
+          <button
+            type="button"
+            class="orient-dock__btn orient-dock__btn--active"
+            id="orient-tab-course"
+            data-view="course"
+            role="tab"
+            aria-selected="true"
+          >
+            <span class="orient-dock__icon" aria-hidden="true">🏃</span>
+            <span class="orient-dock__label">Course</span>
+          </button>
+          <button
+            type="button"
+            class="orient-dock__btn"
+            id="orient-tab-classement"
+            data-view="classement"
+            role="tab"
+            aria-selected="false"
+          >
+            <span class="orient-dock__icon" aria-hidden="true">🏆</span>
+            <span class="orient-dock__label">Classement</span>
+          </button>
+          <button type="button" class="orient-dock__btn orient-dock__btn--pro" id="orient-open-pro" title="Espace enseignant">
+            <span class="orient-dock__icon" aria-hidden="true">🎓</span>
+            <span class="orient-dock__label">Prof</span>
+          </button>
+        </nav>
+      </div>
+
+      <div id="orient-fiche" class="orient-fiche" hidden>
+        <header class="orient-fiche__header">
+          <button type="button" class="orient-fiche__back" id="orient-fiche-back" aria-label="Retour">‹</button>
+          <h2 id="orient-fiche-nom">—</h2>
+        </header>
+        <div class="orient-fiche__body">
+          <div class="orient-stats" id="orient-dash" aria-live="polite"></div>
+          <p id="orient-fiche-termine-depuis" class="orient-fiche-termine-depuis" hidden aria-live="polite"></p>
+          <div class="orient-card orient-card--compact orient-fiche-card--action">
+            <div class="orient-field orient-fiche-field--parcours">
+              <span class="orient-field__label" id="orient-fiche-parcours-lbl"
+                ><span class="orient-ico" aria-hidden="true">🧭</span> Parcours</span
+              >
+              <div class="orient-parcours-pick" id="orient-fiche-parcours-wrap">
+                <input type="hidden" id="orient-fiche-parcours" value="" />
+                <button
+                  type="button"
+                  class="orient-parcours-pick__btn orient-select"
+                  id="orient-fiche-parcours-btn"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-labelledby="orient-fiche-parcours-lbl orient-fiche-parcours-value"
+                >
+                  <span
+                    class="orient-parcours-pick__value orient-parcours-pick__value--placeholder"
+                    id="orient-fiche-parcours-value"
+                    >Choisir un parcours</span
+                  >
+                  <span class="orient-parcours-pick__chev" aria-hidden="true">▾</span>
+                </button>
+                <ul
+                  class="orient-parcours-pick__menu"
+                  id="orient-fiche-parcours-menu"
+                  role="listbox"
+                  aria-labelledby="orient-fiche-parcours-lbl"
+                  hidden
+                ></ul>
+              </div>
+            </div>
+            <p class="orient-record orient-fiche-record" id="orient-fiche-record" hidden></p>
+            <div id="orient-fiche-actions-attente" class="orient-fiche-actions">
+              <button
+                type="button"
+                class="orient-btn orient-btn--primary orient-btn--block orient-btn--xl"
+                id="orient-btn-start"
+                hidden
+              >
+                ▶ Démarrer le chrono
+              </button>
+            </div>
+            <div id="orient-fiche-actions-course" class="orient-fiche-actions" hidden>
+              <div class="orient-chrono-panel">
+                <p class="orient-chrono-panel__label"><span class="orient-ico" aria-hidden="true">⏱️</span> En course</p>
+                <p class="orient-chrono-live" id="orient-chrono-live">00:00</p>
+              </div>
+              <div class="orient-fiche-actions-course__cancel">
+                <button type="button" class="orient-btn orient-btn--annuler-depart" id="orient-btn-annuler-depart">
+                  Annuler le départ
+                </button>
+              </div>
+              <button type="button" class="orient-btn orient-btn--primary orient-btn--block orient-btn--xl" id="orient-btn-arrivee">
+                🏁 Arrivée
+              </button>
+            </div>
+          </div>
+          <section class="orient-card orient-fiche-card--hist">
+            <h3 class="orient-card__title orient-fiche-card__title">
+              <span class="orient-ico" aria-hidden="true">📋</span> Parcours réalisés
+            </h3>
+            <div id="orient-fiche-historique" class="orient-list orient-list--hist"></div>
+          </section>
+        </div>
+      </div>
+
+      <div
+        id="orient-arrivee-modal"
+        class="orient-arrivee-modal"
+        hidden
+        aria-hidden="true"
+      >
+        <div class="orient-arrivee-modal__backdrop" id="orient-arrivee-backdrop" tabindex="-1"></div>
+        <div
+          class="orient-arrivee-modal__dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="orient-arrivee-titre"
+        >
+          <span class="orient-arrivee-modal__badge" id="orient-arrivee-badge" hidden>Record</span>
+          <h2 class="orient-arrivee-modal__titre" id="orient-arrivee-titre">Arrivée</h2>
+          <p class="orient-arrivee-modal__nom" id="orient-arrivee-nom"></p>
+          <p class="orient-arrivee-modal__parcours" id="orient-arrivee-parcours"></p>
+          <p class="orient-arrivee-modal__temps" id="orient-arrivee-temps">—</p>
+          <div class="orient-arrivee-modal__classement" id="orient-arrivee-classement" hidden>
+            <p class="orient-arrivee-modal__rang-pos" id="orient-arrivee-rang-pos"></p>
+            <p class="orient-arrivee-modal__rang-nb" id="orient-arrivee-rang-nb"></p>
+          </div>
+          <p class="orient-arrivee-modal__record" id="orient-arrivee-record" hidden></p>
+          <p class="orient-arrivee-modal__ecart" id="orient-arrivee-ecart" hidden></p>
+          <button
+            type="button"
+            class="orient-btn orient-btn--primary orient-btn--block orient-btn--lg orient-arrivee-modal__btn"
+            id="orient-arrivee-ok"
+          >
+            Continuer
+          </button>
+        </div>
+      </div>
+
+      <div id="orient-parti" class="orient-parti" hidden aria-live="polite">
+        <p class="orient-parti__titre">C’est parti !</p>
+        <p class="orient-parti__nom" id="orient-parti-nom"></p>
+        <p class="orient-parti__chrono" id="orient-parti-chrono">00:00</p>
+        <button type="button" class="orient-btn orient-btn--glass" id="orient-parti-ok">OK</button>
+      </div>
+    </div>
+
+    <script src="../dom-utils.js"></script>
+    <script src="../shared/sessions-core.js"></script>
+    <script src="../data-manager.js"></script>
+    <script src="../session-manager.js"></script>
+    <script src="../shared/outils-dom.js"></script>
+    <script src="../shared/eleve-display.js"></script>
+    <script src="../shared/tool-accueil.js"></script>
+    <script src="../class-import.js"></script>
+    <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="course-orientation.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro:
+          "Gérez une séance de course d’orientation avec plusieurs parcours en parallèle : chronos par élève, balises bonus ou pénalité, classement en direct et espace enseignant à part.",
+        sections: [
+          {
+            title: "L’intérêt pour la séance",
+            text:
+              "Vous faites courir plusieurs parcours en même temps sans feuilles ni tableur. Chaque coureur a son chrono ; les temps s’ajustent selon les balises trouvées ou ratées. La grille indique qui attend, qui court, qui est en retard ou a tout terminé. Le classement se met à jour tout seul, avec records par parcours et export pour le bilan de séance.",
+          },
+          {
+            title: "Côté élèves (tablette ou téléphone)",
+            list: [
+              "Vue Course : grille plein écran avec code couleur (en attente, en course, retard, terminé).",
+              "Toucher un nom ouvre sa fiche : choix du parcours, départ, arrivée, ou annulation d’un départ lancé par erreur.",
+              "Vue Classement : temps moyen, totaux, balises et erreurs ; toucher une ligne pour revoir le détail d’un coureur.",
+              "Le bouton Prof est réservé à l’enseignant (mot de passe de la séance).",
+            ],
+          },
+          {
+            title: "Côté enseignant",
+            list: [
+              "Gestion : créer les parcours (un parcours ne peut être fait qu’une fois par coureur) et la liste des coureurs, avec import d’une classe.",
+              "Départs groupés : cocher plusieurs élèves, leur attribuer un parcours chacun, puis lancer un départ commun.",
+              "Réglages : pénalité par balise fausse, bonus par balise correcte, seuil de retard, ordre des critères de classement, correction ou suppression d’un temps.",
+              "Exporter le classement en CSV ou PDF (filtre par parcours ou général).",
+            ],
+          },
+          {
+            title: "Déroulement type",
+            list: [
+              "Préparer la séance (parcours + coureurs), puis afficher la vue Course sur les appareils des élèves.",
+              "Au départ : l’élève (ou vous en départ groupé) lance le chrono ; l’écran « C’est parti ! » confirme le départ.",
+              "À l’arrivée : saisir l’arrivée sur la fiche ; les balises se comptent ensuite sur chaque parcours terminé.",
+              "Quand tous les parcours sont faits, la fiche indique depuis combien de temps le coureur a terminé la séance.",
+            ],
+          },
+        ],
+      });
+    </script>
+  </body>
+</html>

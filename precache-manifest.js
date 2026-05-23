@@ -31,6 +31,8 @@ var PRECACHE = [
   "./outils/compteur-ratio.html",
   "./outils/compteur-ratio.js",
   "./outils/convertisseur-allure.html",
+  "./outils/course-orientation.html",
+  "./outils/course-orientation.js",
   "./outils/dispenses-eps.html",
   "./outils/dispenses-eps.js",
   "./outils/distance-vma.html",

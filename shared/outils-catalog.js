@@ -301,6 +301,16 @@
       categorie: "Course à pied",
       publicCible: "prof",
     },
+    {
+      id: "course-orientation",
+      titre: "Course d’orientation",
+      description:
+        "Plusieurs parcours en parallèle, chronos et balises par élève, grille couleur, classement live et départs groupés.",
+      icone: "🧭",
+      href: "outils/course-orientation.html",
+      categorie: "Course à pied",
+      publicCible: "prof",
+    },
   ];
 
   global.OutilsEPS = global.OutilsEPS || {};
