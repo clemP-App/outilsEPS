@@ -7,12 +7,36 @@
   var PARAM_DATA = "cahier-texte-data";
   var APSA_ID_AUTRE = "autre";
 
+  /** Accès au référentiel pédagogique (cahier-texte-referentiel.js). */
+  function refModule() {
+    return typeof CahierTexteReferentiel !== "undefined" ? CahierTexteReferentiel : null;
+  }
+
+  var NIVEAUX = [
+    { id: "c3", label: "Cycle 3", resume: "6e — 5e : formulations simplifiées, progressivité renforcée." },
+    { id: "c4", label: "Cycle 4", resume: "4e — 3e : attendus Eduscol cycle 4." },
+    { id: "lycee", label: "Lycée", resume: "2de — Terminale : vocabulaire et exigences adaptés au lycée." },
+  ];
+
+  var COLLECTIFS_APSA = {
+    hand: 1,
+    basket: 1,
+    foot: 1,
+    rugby: 1,
+    volley: 1,
+    hockey: 1,
+  };
+
+  var RAQUETTES_APSA = { badminton: 1, tennis: 1 };
+  var COMBAT_APSA = { boxe: 1, judo: 1, lutte: 1 };
+  var CA5_APSA = { cross: 1, "course-duree": 1, "nat-duree": 1 };
+
   var CHAMPS = [
     {
       id: "perf",
       label: "CA1 — Produire une performance optimale",
       resume:
-        "Viser une performance maximale mesurable à une échéance donnée (athlétisme, natation, gymnastique…).",
+        "Viser une performance maximale mesurable à une échéance donnée (athlétisme, natation…).",
     },
     {
       id: "adapt",
@@ -44,7 +68,6 @@
     perf: [
       { id: "athle", label: "Athlétisme", intro: "Séance d’athlétisme" },
       { id: "natation", label: "Natation", intro: "Séance de natation" },
-      { id: "gym", label: "Gymnastique", intro: "Séance de gymnastique" },
     ],
     adapt: [
       { id: "orient", label: "Course d’orientation", intro: "Séance de course d’orientation" },
@@ -54,6 +77,7 @@
     ],
     expr: [
       { id: "danse", label: "Danse", intro: "Séance de danse" },
+      { id: "gym", label: "Gymnastique", intro: "Séance de gymnastique" },
       { id: "cirque", label: "Arts du cirque", intro: "Séance d’arts du cirque" },
       { id: "acrosport", label: "Acrosport", intro: "Séance d’acrosport" },
     ],
@@ -121,30 +145,88 @@
         id: "vma",
         label: "VMA / fractionné",
         phrase:
-          "Séries par intervalles (VMA) : consignes d’allure, temps de travail et de récupération, auto-évaluation de l’effort.",
+          "Séries par intervalles (VMA) : consignes d’allure, temps de travail et de récupération, auto-évaluation de l’effort (RPE).",
+        phraseC3:
+          "Fractionné simple : courses courtes avec récupération marchée, consignes d’allure et ressenti de l’effort.",
+        phraseLycee:
+          "Travail VMA / fractionné : allures cibles, temps de récupération, auto-évaluation (RPE) et analyse de la séance.",
       },
       {
         id: "fond",
         label: "Course continue",
         phrase: "Course continue : gestion de l’allure, respiration et régularité sur la durée imposée.",
+        phraseC3: "Course continue en endurance fondamentale : allure modérée, respiration régulière, reprise progressive.",
+      },
+      {
+        id: "demi-fond",
+        label: "Demi-fond",
+        phrase:
+          "Travail de demi-fond : répartition de l’effort sur la distance, gestion de l’allure et passage au chronomètre.",
+        phraseC3: "Course de demi-fond adaptée : tenir une allure régulière sur une distance intermédiaire.",
+      },
+      {
+        id: "sprint",
+        label: "Sprint",
+        phrase:
+          "Travail de vitesse (sprint) : départs, accélérations, technique de course et récupération complète entre essais.",
+        phraseC3: "Courses courtes de vitesse : départs, accélérations et récupération complète entre les essais.",
+      },
+      {
+        id: "relais",
+        label: "Relais",
+        phrase: "Relais : transmissions, placement en couloir, chronométrage d’équipe et consignes de sécurité.",
+        phraseC3: "Relais par équipes : transmission de témoin, placement et enchaînement en sécurité.",
+      },
+      {
+        id: "lancers",
+        label: "Lancers",
+        phrase:
+          "Ateliers lancers (poids, disque, javelot selon matériel) : coordination, zone de sécurité, mesure et progression.",
+        phraseC3: "Initiation aux lancers : geste coordonné, zone de sécurité et mesure de la performance.",
       },
       {
         id: "tests",
         label: "Tests / perf.",
         phrase:
           "Tests de performance (chronométrage ou mesure) : protocole expliqué, deux essais possibles, exploitation des résultats.",
+        phraseC3: "Tests de performance : protocole expliqué, essais encadrés et exploitation simple des résultats.",
       },
       {
         id: "fondamentaux",
         label: "Fondamentaux",
         phrase:
           "Ateliers techniques (départ, foulée, relais…) : démonstration, essais guidés puis enchaînement autonome.",
+        phraseC3: "Ateliers techniques de course : démonstration, essais guidés puis pratique en autonomie encadrée.",
       },
     ],
     natation: [
       {
+        id: "sns",
+        label: "Savoir-nager sécurité",
+        phrase:
+          "Savoir-nager sécurité : entrée dans l’eau, immersion, flottaison ventrale/dorsale, déplacement et sortie en sécurité.",
+        phraseC3:
+          "Apprentissages de sécurité aquatique : entrée, immersion, flottaison, déplacement élémentaire et sortie du bassin.",
+      },
+      {
+        id: "crawl",
+        label: "Crawl",
+        phrase: "Travail du crawl : respiration latérale, battements, roulis et glisse ; séries par couloirs.",
+        phraseC3: "Initiation ou consolidation du crawl : respiration, battements et déplacements guidés par couloirs.",
+      },
+      {
+        id: "dos",
+        label: "Dos",
+        phrase: "Travail du dos crawlé : position du corps, balancement des bras, orientation et respiration.",
+      },
+      {
+        id: "brasse",
+        label: "Brasse",
+        phrase: "Travail de la brasse : coordination bras-jambes, glisse et respiration ; séries techniques.",
+      },
+      {
         id: "technique",
-        label: "Technique",
+        label: "Technique (multi-nages)",
         phrase: "Travail technique par couloirs : consignes ciblées, allers-retours avec reprise des points à améliorer.",
       },
       {
@@ -160,14 +242,25 @@
     ],
     gym: [
       {
+        id: "gym-art",
+        label: "Gym artistique",
+        phrase:
+          "Gymnastique artistique au sol ou aux agrès : figures imposées, enchaînements, critères esthétiques et sécurité.",
+      },
+      {
+        id: "gym-agres",
+        label: "Agrès",
+        phrase: "Travail aux agrès (poutre, barres, anneaux selon matériel) : montées, figures, descentes et sécurisation.",
+      },
+      {
+        id: "gym-acro",
+        label: "Acro / portés",
+        phrase: "Travail acrobatique et portés en binôme : progressivité, confiance, communication et sécurité.",
+      },
+      {
         id: "stations",
         label: "Stations",
         phrase: "Circuit par stations : figures ou actions imposées, consignes de sécurité et critères de réussite.",
-      },
-      {
-        id: "acrosport",
-        label: "Acrosport",
-        phrase: "Travail d’équilibre et de portés en binôme : progressivité, confiance et communication.",
       },
       {
         id: "apprentissage",
@@ -175,14 +268,29 @@
         phrase: "Apprentissage progressif de figures imposées : décomposition, assistance, enchaînement.",
       },
     ],
-    muscu: [
-      { id: "circuit", label: "Circuit", phrase: "Circuit training : fiches d’exercices, charges adaptées, récupération entre stations." },
-      { id: "force", label: "Force", phrase: "Travail de force : séries, répétitions, technique et récupération." },
-    ],
     orient: [
       {
+        id: "parcours-guide",
+        label: "Parcours guidé",
+        phrase:
+          "Parcours guidé : balises visibles ou fil conducteur, lecture de carte simplifiée, validation en binôme.",
+        phraseC3: "Parcours guidé : balises visibles, consignes pas à pas et validation en binôme encadré.",
+      },
+      {
+        id: "parcours-etoile",
+        label: "Parcours étoile",
+        phrase:
+          "Parcours en étoile : départ commun, choix d’ordre de balises, lecture de carte et gestion du temps.",
+      },
+      {
+        id: "parcours-score",
+        label: "Parcours score",
+        phrase:
+          "Parcours score : balises à valeurs variables, stratégie d’itinéraire et chronométrage.",
+      },
+      {
         id: "parcours",
-        label: "Parcours",
+        label: "Parcours libre",
         phrase: "Parcours d’orientation : lecture de carte, choix d’itinéraire, validation des balises.",
       },
       {
@@ -193,9 +301,26 @@
     ],
     escalade: [
       {
+        id: "moulinette",
+        label: "Moulinette",
+        phrase:
+          "Ascensions en moulinette : consignes d’assurage, communication grimpeur-assureur, relais et sécurité.",
+      },
+      {
+        id: "bloc",
+        label: "Bloc",
+        phrase: "Séance de bloc : problèmes de faible hauteur, réception, échauffement spécifique et respect des zones.",
+      },
+      {
         id: "voies",
-        label: "Voies / blocs",
-        phrase: "Ascensions en voies ou blocs : consignes, relais, objectifs par niveau.",
+        label: "Voies",
+        phrase: "Ascensions en voies : consignes, relais, objectifs par niveau et sécurisation des assurages.",
+      },
+      {
+        id: "assureur",
+        label: "Validation assureur",
+        phrase:
+          "Validation des compétences d’assureur : nœuds, vérifications, communication et prise en charge du grimpeur.",
       },
       {
         id: "technique",
@@ -204,13 +329,36 @@
       },
     ],
     kayak: [
-      { id: "technique", label: "Technique", phrase: "Travail technique (pagaie, équilibre) et consignes de sécurité sur l’eau." },
-      { id: "parcours", label: "Parcours", phrase: "Parcours en kayak : lecture du milieu, coopération et gestion de l’effort." },
+      {
+        id: "technique",
+        label: "Technique",
+        phrase: "Travail technique (pagaie, équilibre) et consignes de sécurité sur l’eau.",
+      },
+      {
+        id: "parcours",
+        label: "Parcours",
+        phrase: "Parcours en kayak : lecture du milieu, coopération et gestion de l’effort.",
+      },
+      {
+        id: "meteo",
+        label: "Conditions météo",
+        phrase:
+          "Adaptation à la météo du jour (vent, courant, visibilité) : choix du parcours, consignes renforcées et sécurité.",
+      },
     ],
     voile: [
-      { id: "nav", label: "Navigation", phrase: "Initiation ou perfectionnement à la navigation : rôles à bord et consignes de sécurité." },
+      {
+        id: "nav",
+        label: "Navigation",
+        phrase: "Initiation ou perfectionnement à la navigation : rôles à bord et consignes de sécurité.",
+      },
+      {
+        id: "meteo",
+        label: "Conditions météo",
+        phrase:
+          "Navigation en tenant compte des conditions (vent, houle, météo) : réglages, trajectoire et consignes de sécurité.",
+      },
     ],
-    ski: [{ id: "piste", label: "Piste", phrase: "Séance sur piste ou espace adapté : technique et sécurité." }],
     hand: [
       {
         id: "mini",
@@ -228,6 +376,21 @@
         phrase: "Ateliers techniques (gestes, déplacements) puis application en situation de jeu.",
       },
       {
+        id: "tactique-conserver",
+        label: "Tactique : conserver",
+        phrase: "Situations orientées conservation du ballon : appuis, passes, jeu vers l’avant.",
+      },
+      {
+        id: "tactique-progresser",
+        label: "Tactique : progresser",
+        phrase: "Situations orientées progression vers le but : appels, démarquages, jeu combiné.",
+      },
+      {
+        id: "roles",
+        label: "Rôles sociaux",
+        phrase: "Rotation des rôles : joueur, arbitre, observateur ou coach selon les consignes.",
+      },
+      {
         id: "championnat",
         label: "Championnat",
         phrase: "Poursuite du championnat de classe : règles, classement et fair-play.",
@@ -237,6 +400,17 @@
       { id: "mini", label: "Mini-jeux", phrase: "Mini-jeux et situations réduites (2c2, 3c3) avec consignes ciblées." },
       { id: "situations", label: "Situations", phrase: "Situations d’opposition en demi-terrain : fondamentaux et prise de décision." },
       { id: "technique", label: "Technique", phrase: "Ateliers techniques (tir, dribble, passe) puis oppositions." },
+      {
+        id: "tactique-monter",
+        label: "Tactique : monter",
+        phrase: "Consigne tactique du jour : monter vite au tir, appuis et jeu intérieur/extérieur.",
+      },
+      {
+        id: "tactique-recuperer",
+        label: "Tactique : récupérer",
+        phrase: "Consigne tactique du jour : récupérer le ballon, replis défensifs et relance.",
+      },
+      { id: "roles", label: "Rôles sociaux", phrase: "Rotation des rôles : joueur, arbitre, observateur ou coach selon les consignes." },
     ],
     foot: [
       { id: "mini", label: "Mini-jeux", phrase: "Mini-jeux et jeux collectifs adaptés au nombre de joueurs et à l’espace." },
@@ -246,31 +420,90 @@
         phrase: "Situations d’opposition pour appliquer les fondamentaux (passe, conduite, tir).",
       },
       { id: "technique", label: "Technique", phrase: "Ateliers techniques puis mise en situation avec opposition." },
+      {
+        id: "tactique-conserver",
+        label: "Tactique : conserver",
+        phrase: "Consigne tactique : conserver le ballon, créer des espaces et progresser collectivement.",
+      },
+      {
+        id: "tactique-marquer",
+        label: "Tactique : marquer",
+        phrase: "Consigne tactique : marquer le but, finitions et jeu vers l’avant.",
+      },
+      { id: "roles", label: "Rôles sociaux", phrase: "Rotation des rôles : joueur, arbitre, observateur ou coach selon les consignes." },
     ],
     rugby: [
       { id: "mini", label: "Mini-jeux", phrase: "Mini-jeux de toucher ou opposition adaptée (effectifs et règles)." },
       { id: "situations", label: "Situations", phrase: "Situations d’opposition avec règles adaptées et objectifs tactiques simples." },
+      {
+        id: "tactique-progresser",
+        label: "Tactique : progresser",
+        phrase: "Consigne tactique : progresser vers l’en-but, appuis et passes après contact.",
+      },
+      { id: "roles", label: "Rôles sociaux", phrase: "Rotation des rôles : joueur, arbitre, observateur ou coach selon les consignes." },
     ],
     volley: [
       { id: "mini", label: "Mini-jeux", phrase: "Mini-jeux et situations 3c3 / 4c4 : service, relance, placement." },
       { id: "technique", label: "Technique", phrase: "Travail des fondamentaux (passe, attaque, service) puis jeu." },
+      {
+        id: "tactique-organiser",
+        label: "Tactique : organiser",
+        phrase: "Consigne tactique : organiser la réception et la construction vers l’attaque.",
+      },
+      { id: "roles", label: "Rôles sociaux", phrase: "Rotation des rôles : joueur, arbitre, observateur ou coach selon les consignes." },
     ],
     badminton: [
       { id: "mini", label: "Mini-jeux", phrase: "Mini-jeux et situations ludiques pour travailler les déplacements." },
       { id: "situations", label: "Situations", phrase: "Situations de jeu en simple ou double : tactique et gestion de l’effort." },
       { id: "tournoi", label: "Tournoi", phrase: "Tournoi par poules ou tableau : règles, arbitrage élève, classement." },
+      {
+        id: "tactique-long",
+        label: "Tactique : jouer long",
+        phrase: "Intention tactique : jouer long pour pousser l’adversaire au fond de court.",
+      },
+      {
+        id: "tactique-deplacer",
+        label: "Tactique : déplacer",
+        phrase: "Intention tactique : déplacer l’adversaire (court/long, changements de rythme).",
+      },
     ],
     tennis: [
       { id: "technique", label: "Technique", phrase: "Ateliers techniques (coup droit, revers, service) puis échanges ou jeux." },
       { id: "tournoi", label: "Tournoi", phrase: "Organisation d’un tournoi : poules, consignes et fair-play." },
+      {
+        id: "tactique-zones",
+        label: "Tactique : zones",
+        phrase: "Intention tactique : viser des zones (croisé, décroisé) pour construire le point.",
+      },
+      {
+        id: "tactique-deplacer",
+        label: "Tactique : déplacer",
+        phrase: "Intention tactique : déplacer l’adversaire avant de conclure le point.",
+      },
     ],
     hockey: [
       { id: "mini", label: "Mini-jeux", phrase: "Mini-jeux et situations adaptées (effectifs, espace, matériel)." },
       { id: "situations", label: "Situations", phrase: "Situations d’opposition avec consignes tactiques et sécurité." },
+      {
+        id: "tactique-conserver",
+        label: "Tactique : conserver",
+        phrase: "Consigne tactique : conserver le ballon et progresser en équipe.",
+      },
+      { id: "roles", label: "Rôles sociaux", phrase: "Rotation des rôles : joueur, arbitre, observateur ou coach selon les consignes." },
     ],
     boxe: [
       { id: "technique", label: "Technique", phrase: "Ateliers techniques (gardes, déplacements) puis mises en situation encadrées." },
-      { id: "opposition", label: "Opposition", phrase: "Oppositions adaptées : consignes de sécurité, respect du partenaire." },
+      {
+        id: "opposition-cooperatif",
+        label: "Opposition coopérative",
+        phrase: "Opposition coopérative : partenaire à distance imposée, respect des consignes et sécurité.",
+      },
+      {
+        id: "opposition-semi",
+        label: "Opposition semi-opposée",
+        phrase: "Opposition semi-opposée : contraintes de vitesse ou de zones, fair-play et sécurité.",
+      },
+      { id: "opposition", label: "Opposition libre", phrase: "Oppositions adaptées : consignes de sécurité, respect du partenaire.", phraseLycee: "Oppositions libres encadrées : application des règles, gestion de l’intensité et fair-play." },
     ],
     judo: [
       {
@@ -278,27 +511,68 @@
         label: "Technique",
         phrase: "Apprentissage des projections et contrôles au sol : démonstration, pratique guidée.",
       },
-      { id: "opposition", label: "Opposition", phrase: "Combats adaptés : application des règles et fair-play." },
+      {
+        id: "kumi-kata",
+        label: "Kumi-kata",
+        phrase: "Travail du kumi-kata : prise, déséquilibre et préparation de la projection.",
+      },
+      {
+        id: "opposition-cooperatif",
+        label: "Opposition coopérative",
+        phrase: "Opposition coopérative : réalisation guidée de la projection sur partenaire consentant.",
+      },
+      {
+        id: "opposition-semi",
+        label: "Opposition semi-opposée",
+        phrase: "Opposition semi-opposée : randori avec contraintes (prise imposée, zone limitée).",
+      },
+      { id: "opposition", label: "Opposition libre", phrase: "Combats adaptés : application des règles et fair-play." },
     ],
     lutte: [
       { id: "technique", label: "Technique", phrase: "Travail des actions de lutte et du règlement en situation maîtrisée." },
-      { id: "opposition", label: "Opposition", phrase: "Duels et situations d’opposition encadrés." },
+      {
+        id: "opposition-cooperatif",
+        label: "Opposition coopérative",
+        phrase: "Opposition coopérative : actions guidées, respect du partenaire et sécurité.",
+      },
+      {
+        id: "opposition-semi",
+        label: "Opposition semi-opposée",
+        phrase: "Opposition semi-opposée : duels avec contraintes (prise, zone, durée).",
+      },
+      { id: "opposition", label: "Opposition libre", phrase: "Duels et situations d’opposition encadrés." },
     ],
     danse: [
       { id: "impro", label: "Improvisation", phrase: "Improvisation guidée par contraintes (rythme, espace, thème)." },
       { id: "chor", label: "Chorégraphie", phrase: "Construction, répétition et restitution d’une chorégraphie." },
+      {
+        id: "eval-lisibilite",
+        label: "Critère : lisibilité",
+        phrase: "Travail sur la lisibilité de la prestation : amplitude, direction, regard du public.",
+      },
+      {
+        id: "eval-synchro",
+        label: "Critère : synchronisation",
+        phrase: "Travail sur la synchronisation et la coordination au sein du groupe.",
+      },
     ],
     cirque: [
       { id: "creatif", label: "Création", phrase: "Création et restitution d’une séquence : répétition et sécurité des figures." },
       { id: "technique", label: "Technique", phrase: "Travail technique progressif et sécurisation des figures." },
+      {
+        id: "eval-composition",
+        label: "Critère : composition",
+        phrase: "Travail sur la composition de la séquence : enchaînements, transitions, équilibre du tout.",
+      },
     ],
     acrosport: [
       { id: "portes", label: "Portés", phrase: "Travail des portés et de l’équilibre en binôme, avec progressivité." },
       { id: "creatif", label: "Création", phrase: "Création d’enchaînements et restitution devant le groupe." },
-    ],
-    "gym-expr": [
-      { id: "creatif", label: "Création", phrase: "Création d’enchaînements ou de figures en groupe." },
-      { id: "apprentissage", label: "Apprentissage", phrase: "Apprentissage progressif de figures imposées." },
+      {
+        id: "eval-intention",
+        label: "Critère : intention",
+        phrase: "Travail sur l’intention et l’expressivité du mouvement dans la prestation.",
+      },
     ],
     cross: [
       {
@@ -307,14 +581,37 @@
         phrase: "Circuit training en autonomie : fiches d’exercices, intensité adaptée, bilan individuel.",
       },
       { id: "projet", label: "Projet perso", phrase: "Séance en lien avec le projet personnel d’entraînement de chaque élève." },
+      {
+        id: "params-effort",
+        label: "Paramètres d’effort",
+        phrase: "Séance avec paramètres d’effort précis (RPE, FC cible, temps de récupération) renseignés ci-dessous.",
+      },
     ],
     "course-duree": [
-      { id: "fond", label: "Course continue", phrase: "Course en durée : gestion de l’allure, effort et hydratation si besoin." },
-      { id: "fractionne", label: "Fractionné", phrase: "Travail par intervalles : consignes de vitesse et temps de récupération." },
+      {
+        id: "fond",
+        label: "Course continue",
+        phrase: "Course en durée : gestion de l’allure, effort et hydratation si besoin.",
+      },
+      {
+        id: "fractionne",
+        label: "Fractionné",
+        phrase: "Travail par intervalles : consignes de vitesse et temps de récupération.",
+      },
+      {
+        id: "params-effort",
+        label: "Paramètres d’effort",
+        phrase: "Séance avec paramètres d’effort précis (RPE, FC cible, temps de récupération) renseignés ci-dessous.",
+      },
     ],
     "nat-duree": [
       { id: "endurance", label: "Endurance", phrase: "Natation en durée : gestion de l’allure et régularité." },
       { id: "technique", label: "Technique", phrase: "Travail technique puis série d’endurance." },
+      {
+        id: "params-effort",
+        label: "Paramètres d’effort",
+        phrase: "Séance avec paramètres d’effort précis (RPE, FC cible, temps de récupération) renseignés ci-dessous.",
+      },
     ],
     autre: [
       { id: "seance", label: "Séance type", phrase: "Déroulé conforme au projet de la séquence (activités et consignes)." },
@@ -363,17 +660,109 @@
       },
     ],
     athle: [
-      { id: "perf", label: "Performance", phrase: "Apprendre à améliorer une performance mesurée (technique, régularité, gestion de l’effort)." },
-      { id: "technique-course", label: "Technique", phrase: "Apprendre les fondamentaux techniques de la course (départ, foulée, relais…)." },
-      { id: "endurance", label: "Endurance", phrase: "Apprendre à gérer l’effort sur la durée (allure, respiration, régularité)." },
+      {
+        id: "perf",
+        label: "Performance",
+        phrase: "Apprendre à améliorer une performance mesurée (technique, régularité, gestion de l’effort).",
+        phraseC3: "Apprendre à améliorer une performance simple (régularité, technique de base).",
+      },
+      {
+        id: "technique-course",
+        label: "Technique",
+        phrase: "Apprendre les fondamentaux techniques de la course (départ, foulée, relais…).",
+      },
+      {
+        id: "technique-lancers",
+        label: "Lancers",
+        phrase: "Apprendre les fondamentaux des lancers (coordination, sécurité, mesure).",
+      },
+      {
+        id: "endurance",
+        label: "Endurance",
+        phrase: "Apprendre à gérer l’effort sur la durée (allure, respiration, régularité).",
+      },
+      {
+        id: "vitesse",
+        label: "Vitesse",
+        phrase: "Apprendre à produire une accélération ou un sprint en sécurité.",
+      },
     ],
     natation: [
-      { id: "technique-eau", label: "Technique", phrase: "Apprendre à améliorer la technique de nage (gestes, respiration, glisse)." },
+      {
+        id: "sns-obj",
+        label: "Savoir-nager sécurité",
+        phrase: "Apprendre les réflexes de sécurité aquatique (entrée, flottaison, déplacement, sortie).",
+      },
+      {
+        id: "technique-eau",
+        label: "Technique",
+        phrase: "Apprendre à améliorer la technique de nage (gestes, respiration, glisse).",
+      },
+      {
+        id: "crawl-obj",
+        label: "Crawl",
+        phrase: "Apprendre ou consolider le crawl (respiration, battements, glisse).",
+      },
+      {
+        id: "dos-obj",
+        label: "Dos",
+        phrase: "Apprendre ou consolider le dos crawlé (équilibre, orientation, respiration).",
+      },
+      {
+        id: "brasse-obj",
+        label: "Brasse",
+        phrase: "Apprendre ou consolider la brasse (coordination, glisse).",
+      },
       { id: "endurance-eau", label: "Endurance", phrase: "Apprendre à maintenir un effort en milieu aquatique." },
     ],
     gym: [
       { id: "figures", label: "Figures", phrase: "Apprendre à réaliser des figures ou enchaînements imposés." },
       { id: "equilibre", label: "Équilibre", phrase: "Apprendre à maîtriser l’équilibre et la posture en situation." },
+      { id: "agres-obj", label: "Agrès", phrase: "Apprendre à réaliser des actions aux agrès en sécurité." },
+      { id: "acro-obj", label: "Acro", phrase: "Apprendre à réaliser des portés ou actions acrobatiques en binôme." },
+    ],
+    _coop: [
+      {
+        id: "tactique-jour",
+        label: "Tactique du jour",
+        phrase: "Apprendre à appliquer la consigne tactique du jour en situation de jeu.",
+      },
+      {
+        id: "role-arbitre",
+        label: "Rôle arbitre",
+        phrase: "Apprendre à arbitrer une situation en respectant les règles.",
+      },
+      {
+        id: "role-observateur",
+        label: "Rôle observateur",
+        phrase: "Apprendre à observer et analyser le jeu (critères annoncés).",
+      },
+      {
+        id: "role-coach",
+        label: "Rôle coach",
+        phrase: "Apprendre à conseiller les partenaires et proposer des solutions tactiques.",
+      },
+    ],
+    _raquette: [
+      {
+        id: "tactique-raquette",
+        label: "Intention tactique",
+        phrase: "Apprendre à appliquer une intention tactique (long/court, zones, déplacements).",
+      },
+    ],
+    _combat: [
+      {
+        id: "opposition-niveau",
+        label: "Niveau d’opposition",
+        phrase: "Apprendre à s’opposer au niveau adapté (coopératif, semi-opposé ou opposé).",
+      },
+    ],
+    _expr: [
+      {
+        id: "eval-prestation",
+        label: "Critères de prestation",
+        phrase: "Apprendre à améliorer sa prestation (lisibilité, synchronisation, intention, composition).",
+      },
     ],
     hand: [
       { id: "fondamentaux-hand", label: "Fondamentaux", phrase: "Apprendre à utiliser les fondamentaux en situation de jeu." },
@@ -387,27 +776,70 @@
       { id: "fondamentaux-basket", label: "Fondamentaux", phrase: "Apprendre à utiliser les fondamentaux en opposition." },
       { id: "tactique", label: "Tactique", phrase: "Apprendre à comprendre et appliquer une consigne tactique simple." },
     ],
+    rugby: [
+      { id: "fondamentaux-rugby", label: "Fondamentaux", phrase: "Apprendre à utiliser les fondamentaux en situation de toucher ou de jeu." },
+      { id: "opposition-rugby", label: "Opposition", phrase: "Apprendre à s’opposer en respectant les règles et le fair-play." },
+    ],
+    volley: [
+      { id: "fondamentaux-volley", label: "Fondamentaux", phrase: "Apprendre les fondamentaux (service, relance, attaque) en situation." },
+    ],
+    badminton: [
+      { id: "fondamentaux-badminton", label: "Fondamentaux", phrase: "Apprendre à échanger et se déplacer efficacement." },
+      { id: "tactique-badminton", label: "Tactique", phrase: "Apprendre à construire le point (déplacements, choix de frappe)." },
+    ],
+    tennis: [
+      { id: "fondamentaux-tennis", label: "Fondamentaux", phrase: "Apprendre les coups de base et les échanges en situation." },
+      { id: "tactique-tennis", label: "Tactique", phrase: "Apprendre à construire le point (zones, déplacements)." },
+    ],
+    boxe: [
+      { id: "technique-boxe", label: "Technique", phrase: "Apprendre les gestes techniques et les déplacements en sécurité." },
+      { id: "fair-play-boxe", label: "Fair-play", phrase: "Apprendre à s’opposer en respectant le partenaire et les consignes." },
+    ],
+    lutte: [
+      { id: "technique-lutte", label: "Technique", phrase: "Apprendre une action de lutte et l’appliquer en sécurité." },
+    ],
     danse: [
       { id: "expression", label: "Expression", phrase: "Apprendre à exprimer une intention par le mouvement." },
       { id: "chor", label: "Chorégraphie", phrase: "Apprendre à construire ou enrichir une chorégraphie." },
     ],
-    muscu: [
-      { id: "charge", label: "Charge", phrase: "Apprendre à adapter la charge et le volume d’entraînement à son niveau." },
-      { id: "projet-perso", label: "Projet", phrase: "Apprendre à progresser dans son projet personnel d’entraînement." },
+    cirque: [
+      { id: "figures-cirque", label: "Figures", phrase: "Apprendre à réaliser des figures en sécurité." },
+      { id: "creation-cirque", label: "Création", phrase: "Apprendre à construire une séquence créative." },
+    ],
+    acrosport: [
+      { id: "portes-obj", label: "Portés", phrase: "Apprendre à réaliser des portés et actions acrobatiques en binôme." },
     ],
     cross: [
       { id: "circuit-obj", label: "Circuit", phrase: "Apprendre à réaliser un circuit adapté à son niveau." },
-      { id: "intensite", label: "Intensité", phrase: "Apprendre à gérer l’intensité de l’effort." },
+      { id: "intensite", label: "Intensité", phrase: "Apprendre à gérer l’intensité de l’effort (RPE, ressenti)." },
+      { id: "parametres-ca5", label: "Paramètres", phrase: "Apprendre à moduler ses paramètres d’entraînement (intensité, récupération)." },
+    ],
+    "course-duree": [
+      { id: "endurance-course", label: "Endurance", phrase: "Apprendre à gérer l’allure et l’effort sur la durée." },
+      { id: "parametres-ca5", label: "Paramètres", phrase: "Apprendre à réguler l’effort à partir de repères (RPE, FC, récupération)." },
+    ],
+    "nat-duree": [
+      { id: "endurance-nat-duree", label: "Endurance", phrase: "Apprendre à maintenir un effort régulier en natation." },
     ],
     orient: [
       { id: "lecture", label: "Lecture", phrase: "Apprendre à lire le terrain et les consignes de parcours." },
       { id: "autonomie-orient", label: "Autonomie", phrase: "Apprendre à progresser en autonomie sur le parcours." },
+      { id: "strategie-co", label: "Stratégie", phrase: "Apprendre à choisir un itinéraire adapté au type de parcours." },
     ],
     escalade: [
       { id: "grimpe", label: "Grimpe", phrase: "Apprendre à grimper en sécurité (gestes, assurage, communication)." },
+      { id: "assureur-obj", label: "Assureur", phrase: "Apprendre à assurer un grimpeur (vérifications, communication)." },
     ],
     judo: [
       { id: "projection", label: "Projection", phrase: "Apprendre une projection ou un contrôle au sol." },
+      { id: "kumi-kata-obj", label: "Kumi-kata", phrase: "Apprendre à prendre, déséquilibrer et préparer une projection." },
+      { id: "desequilibre-obj", label: "Déséquilibre", phrase: "Apprendre à créer un déséquilibre avant la projection." },
+    ],
+    kayak: [
+      { id: "technique-kayak", label: "Technique", phrase: "Apprendre les gestes techniques de pagaie et d’équilibre." },
+    ],
+    voile: [
+      { id: "navigation-obj", label: "Navigation", phrase: "Apprendre les rôles à bord et les bases de la navigation." },
     ],
     autre: [
       { id: "objectif-apsa", label: "Séquence", phrase: "Atteindre les apprentissages visés pour cette APSA dans la séquence." },
@@ -577,6 +1009,16 @@
         label: "Demi-fond / VMA",
         phrase: "Produire et répartir intentionnellement ses efforts pour progresser ou se classer (allure, VMA, records).",
       },
+      {
+        id: "apsa-athle-sprint",
+        label: "Sprint / vitesse",
+        phrase: "Produire une performance de vitesse (sprint, accélérations) en sécurité.",
+      },
+      {
+        id: "apsa-athle-lancers",
+        label: "Lancers",
+        phrase: "Réaliser une performance de lancer (coordination, force, précision) en sécurité.",
+      },
     ],
     natation: [
       {
@@ -584,12 +1026,22 @@
         label: "Technique de nage",
         phrase: "Améliorer la technique de nage (gestes, respiration, glisse) sur plusieurs styles.",
       },
+      {
+        id: "apsa-nat-sns",
+        label: "Savoir-nager sécurité",
+        phrase: "Maîtriser les réflexes de sécurité aquatique (entrée, immersion, flottaison, déplacement).",
+      },
     ],
     orient: [
       {
         id: "apsa-orient-parcours",
         label: "Parcours CO",
         phrase: "Lire le terrain, choisir un itinéraire et réaliser un parcours d’orientation en autonomie.",
+      },
+      {
+        id: "apsa-orient-difficulte",
+        label: "Difficulté parcours",
+        phrase: "Adapter sa stratégie au type de parcours (guidé, étoile ou score).",
       },
     ],
     hand: [
@@ -654,7 +1106,7 @@
     athle: "perf",
     natation: "perf",
     muscu: "perf",
-    gym: "perf",
+    gym: "expr",
     nature: "adapt",
     collectif: "coop",
     raquette: "coop",
@@ -670,15 +1122,23 @@
   var seanceUi = {
     formatIds: [],
     objectifIds: [],
+    typeSeanceId: null,
+    manualTypeSeance: false,
+    ca5Rpe: "",
+    ca5Fc: "",
+    ca5Recup: "",
     manual: { objectif: false, contenu: false, attention: false },
   };
 
   var seqDraft = {
     id: null,
     classeId: "",
+    niveauId: null,
+    manualNiveau: false,
     champId: null,
     apsaId: null,
     apsaAutre: "",
+    athleFamilleIds: [],
     objectifs: "",
     objectifIds: [],
     manualObjectifs: false,
@@ -735,7 +1195,7 @@
   }
 
   function sequenceValidePourSauvegarde() {
-    if (!seqDraft.classeId || !seqDraft.champId || !seqDraft.apsaId) return false;
+    if (!seqDraft.classeId || !seqDraft.niveauId || !seqDraft.champId || !seqDraft.apsaId) return false;
     if (seqDraft.apsaId === APSA_ID_AUTRE && !seqDraft.apsaAutre) return false;
     return true;
   }
@@ -752,9 +1212,14 @@
       ),
       classeId: seqDraft.classeId,
       classeNom: nomClasse(seqDraft.classeId),
+      niveauId: seqDraft.niveauId,
       champId: seqDraft.champId,
       apsaId: seqDraft.apsaId,
       apsaAutre: seqDraft.apsaId === APSA_ID_AUTRE ? seqDraft.apsaAutre : "",
+      athleFamilleIds:
+        seqDraft.apsaId === "athle" && seqDraft.athleFamilleIds.length
+          ? seqDraft.athleFamilleIds.slice()
+          : null,
       objectifs: seqDraft.objectifs,
       objectifIds: seqDraft.objectifIds.slice(),
       seances: existing && existing.seances ? existing.seances : [],
@@ -882,6 +1347,7 @@
       formatIds: (source.formatIds || []).slice(),
       formatId: source.formatId || null,
       objectifIds: (source.objectifIds || []).slice(),
+      typeSeanceId: source.typeSeanceId || null,
       objectif: source.objectif || "",
       contenu: source.contenu || "",
       attention: source.attention || "",
@@ -905,9 +1371,14 @@
       titre: titre,
       classeId: source.classeId,
       classeNom: source.classeNom || nomClasse(source.classeId),
+      niveauId: source.niveauId || null,
       champId: source.champId,
       apsaId: source.apsaId,
       apsaAutre: source.apsaAutre || "",
+      athleFamilleIds:
+        source.apsaId === "athle"
+          ? (source.athleFamilleIds || (source.athleFamilleId ? [source.athleFamilleId] : [])).slice()
+          : null,
       objectifs: source.objectifs || "",
       objectifIds: (source.objectifIds || []).slice(),
       seances: (source.seances || []).map(copierSeance),
@@ -1220,6 +1691,81 @@
     return c ? c.nom : "";
   }
 
+  /** Infère le niveau depuis le nom de classe (suggestion automatique). */
+  function infererNiveauDepuisClasse(classeId, classeNom) {
+    var nom = (classeNom || nomClasse(classeId) || "").toLowerCase();
+    if (!nom) return null;
+    if (/2\s*de|seconde|\b1\s*re\b|1re|première|premiere|terminale|\btle\b|\b1\s*ère\b/.test(nom)) return "lycee";
+    if (/6[eè]|5[eè]|\b6\s*e|\b5\s*e/.test(nom)) return "c3";
+    if (/4[eè]|3[eè]|\b4\s*e|\b3\s*e/.test(nom)) return "c4";
+    return null;
+  }
+
+  function niveauById(id) {
+    return NIVEAUX.filter(function (n) {
+      return n.id === id;
+    })[0];
+  }
+
+  function libelleNiveau(id) {
+    var n = niveauById(id);
+    return n ? n.label : "";
+  }
+
+  function cycleDepuisDraft() {
+    return seqDraft.niveauId || infererNiveauDepuisClasse(seqDraft.classeId) || "c4";
+  }
+
+  function cycleDepuisSequence(seq) {
+    if (!seq) return "c4";
+    if (seqDraft.id && seq.id === seqDraft.id && seqDraft.niveauId) return seqDraft.niveauId;
+    if (seq.niveauId) return seq.niveauId;
+    return infererNiveauDepuisClasse(seq.classeId, seq.classeNom) || "c4";
+  }
+
+  /** CA5 réservé au lycée (cycle 3 et 4 : CA1 à CA4 uniquement). */
+  function champsAutorisesPourCycle(cycleId) {
+    var ref = refModule();
+    if (ref) {
+      var fromRef = ref.getChampsDisponibles(cycleId);
+      if (fromRef && fromRef.length) return fromRef;
+    }
+    if (cycleId === "lycee") return ["perf", "adapt", "expr", "coop", "ca5"];
+    return ["perf", "adapt", "expr", "coop"];
+  }
+
+  function ajusterChampSelonCycle(cycleId) {
+    var allowed = champsAutorisesPourCycle(cycleId);
+    if (seqDraft.champId && allowed.indexOf(seqDraft.champId) < 0) {
+      seqDraft.champId = null;
+      seqDraft.apsaId = null;
+      seqDraft.apsaAutre = "";
+      seqDraft.athleFamilleIds = [];
+      seqDraft.objectifIds = [];
+    }
+  }
+
+  function phraseEffective(item, cycle) {
+    if (!item) return "";
+    if (cycle === "c3" && item.phraseC3) return item.phraseC3;
+    if (cycle === "c4" && item.phraseC4) return item.phraseC4;
+    if (cycle === "lycee" && item.phraseLycee) return item.phraseLycee;
+    return item.phrase || "";
+  }
+
+  function ligneParametresCa5() {
+    var parts = [];
+    if (seanceUi.ca5Rpe) parts.push("RPE cible " + seanceUi.ca5Rpe);
+    if (seanceUi.ca5Fc) parts.push("FC cible " + seanceUi.ca5Fc);
+    if (seanceUi.ca5Recup) parts.push("récupération " + seanceUi.ca5Recup);
+    if (!parts.length) return "";
+    return "Paramètres de séance : " + parts.join(", ") + ".";
+  }
+
+  function estCa5Apsa(apsaId) {
+    return !!(apsaId && CA5_APSA[apsaId]);
+  }
+
   function libelleApsa(champId, apsaId, apsaAutre) {
     if (apsaId === APSA_ID_AUTRE) {
       var custom = (apsaAutre || "").trim();
@@ -1316,26 +1862,164 @@
     }
     if (seq.apsaId === "muscu") {
       if (seq.champId === "ca5") seq.apsaId = "cross";
-      else if (seq.champId === "perf") seq.apsaId = "gym";
+      else if (seq.champId === "perf") {
+        seq.champId = "expr";
+        seq.apsaId = "gym";
+      }
     }
     if (seq.classeId && seq.apsaId) {
       seq.titre = titreSequenceAuto(seq.classeId, seq.champId, seq.apsaId, seq.apsaAutre);
     }
     if (!Array.isArray(seq.objectifIds)) seq.objectifIds = [];
+    if (seq.apsaId === "gym" && seq.champId === "perf") seq.champId = "expr";
+    if (seq.apsaId !== "athle") {
+      seq.athleFamilleIds = null;
+      delete seq.athleFamilleId;
+    } else {
+      if (seq.athleFamilleId && !Array.isArray(seq.athleFamilleIds)) {
+        seq.athleFamilleIds = [seq.athleFamilleId];
+      }
+      if (!Array.isArray(seq.athleFamilleIds)) seq.athleFamilleIds = [];
+      delete seq.athleFamilleId;
+    }
+    if (!seq.niveauId) {
+      seq.niveauId = infererNiveauDepuisClasse(seq.classeId, seq.classeNom) || "c4";
+    }
     seq.archivee = !!seq.archivee;
     return seq;
   }
 
-  function propositionsObjectifSequencePourDraft() {
+  function objectifSequenceIdsEffectifs(seq) {
+    if (seq && seqDraft.id && seq.id === seqDraft.id && seqDraft.objectifIds && seqDraft.objectifIds.length) {
+      return seqDraft.objectifIds.slice();
+    }
+    return seq && Array.isArray(seq.objectifIds) ? seq.objectifIds.slice() : [];
+  }
+
+  function ctxReferentielSequence() {
+    return {
+      cycleId: cycleDepuisDraft(),
+      champId: seqDraft.champId,
+      apsaId: seqDraft.apsaId,
+      athleFamilleIds: seqDraft.apsaId === "athle" ? seqDraft.athleFamilleIds.slice() : null,
+    };
+  }
+
+  function athleFamillesDepuisSequence(seq) {
+    if (!seq || seq.apsaId !== "athle") return [];
+    if (seqDraft.id && seq.id === seqDraft.id && Array.isArray(seqDraft.athleFamilleIds)) {
+      return seqDraft.athleFamilleIds.slice();
+    }
+    if (Array.isArray(seq.athleFamilleIds)) return seq.athleFamilleIds.slice();
+    if (seq.athleFamilleId) return [seq.athleFamilleId];
+    return [];
+  }
+
+  function ctxReferentielSeance(seq) {
+    var ref = refModule();
+    return {
+      cycleId: cycleDepuisSequence(seq),
+      champId: seq.champId,
+      apsaId: seq.apsaId,
+      athleFamilleIds: athleFamillesDepuisSequence(seq),
+      objectifSequenceIds: objectifSequenceIdsEffectifs(seq),
+      objectifSeanceIds: seanceUi.objectifIds || [],
+      typeSeance: seanceUi.typeSeanceId,
+      numeroSeance: ref ? ref.numeroSeanceDansSequence(seq, store.activeSeanceId) : 1,
+    };
+  }
+
+  /** Fallback legacy — objectifs de séquence génériques (APSA sans référentiel détaillé). */
+  function propositionsObjectifSequenceLegacy() {
     if (!seqDraft.champId) return [];
-    var list = PROPOSITIONS_OBJECTIF_SEQUENCE._commun.slice();
+    var list = [];
     if (PROPOSITIONS_OBJECTIF_SEQUENCE[seqDraft.champId]) {
       list = list.concat(PROPOSITIONS_OBJECTIF_SEQUENCE[seqDraft.champId]);
     }
     if (seqDraft.apsaId && PROPOSITIONS_OBJECTIF_SEQUENCE_APSA[seqDraft.apsaId]) {
       list = list.concat(PROPOSITIONS_OBJECTIF_SEQUENCE_APSA[seqDraft.apsaId]);
     }
-    return list;
+    var cycle = cycleDepuisDraft();
+    return list.slice(0, refModule() ? refModule().MAX : 8).map(function (p) {
+      return { id: p.id, label: p.label, phrase: phraseEffective(p, cycle) };
+    });
+  }
+
+  function propositionsObjectifSequencePourDraft() {
+    if (!seqDraft.champId || !seqDraft.apsaId) return [];
+    var ref = refModule();
+    var ctx = ctxReferentielSequence();
+    if (ref && ref.hasReferentiel(ctx.cycleId, ctx.champId, ctx.apsaId)) {
+      var modernes = ref.getObjectifsSequence(ctx);
+      if (modernes && modernes.length) return modernes;
+    }
+    return propositionsObjectifSequenceLegacy();
+  }
+
+  function propositionsObjectifSeancePourSeq(seq) {
+    var ref = refModule();
+    var ctx = ctxReferentielSeance(seq);
+    var list = [];
+    if (ref && ref.hasReferentiel(ctx.cycleId, ctx.champId, ctx.apsaId)) {
+      list = list.concat([
+        { id: ID_OBJECTIF_IDEM, label: "Idem séance préc.", phrase: "Reprendre les apprentissages visés à la séance précédente." },
+      ]);
+      var modernes = ref.getObjectifsSeance(ctx);
+      if (modernes && modernes.length) list = list.concat(modernes);
+    } else {
+      list = propositionsObjectifPourSeqLegacy(seq);
+    }
+    if (seq && seq.objectifs && objectifSequenceIdsEffectifs(seq).length === 0) {
+      list.unshift({ id: "_seq", label: "Objectifs de la séquence", phrase: seq.objectifs });
+    }
+    var max = ref ? ref.MAX : 8;
+    return list.slice(0, max + 1);
+  }
+
+  function propositionsContenuPourSeq(seq) {
+    var ref = refModule();
+    var ctx = ctxReferentielSeance(seq);
+    var list = [];
+    if (ref && ref.hasReferentiel(ctx.cycleId, ctx.champId, ctx.apsaId)) {
+      list.push({ id: ID_CONTENU_IDEM, label: "Idem séance préc.", phrase: null });
+      var modernes = ref.getContenusSeance(ctx);
+      if (modernes && modernes.length) list = list.concat(modernes);
+    } else {
+      list = deroulePourApsa(seq.apsaId);
+    }
+    var max = ref ? ref.MAX + 1 : 20;
+    return list.slice(0, max);
+  }
+
+  function rafraichirPropositionsSeance() {
+    if (!store.activeSeanceId || !getActiveSequence()) return;
+    filtrerObjectifIdsSeance();
+    filtrerFormatIdsSeance();
+    majSeanceTout();
+  }
+
+  function filtrerObjectifIdsSeance() {
+    var seq = getActiveSequence();
+    if (!seq) return;
+    var valid = {};
+    propositionsObjectifSeancePourSeq(seq).forEach(function (p) {
+      valid[p.id] = true;
+    });
+    seanceUi.objectifIds = seanceUi.objectifIds.filter(function (id) {
+      return valid[id];
+    });
+  }
+
+  function filtrerFormatIdsSeance() {
+    var seq = getActiveSequence();
+    if (!seq) return;
+    var valid = {};
+    propositionsContenuPourSeq(seq).forEach(function (p) {
+      valid[p.id] = true;
+    });
+    seanceUi.formatIds = seanceUi.formatIds.filter(function (id) {
+      return valid[id];
+    });
   }
 
   function propositionObjectifSequenceById(propId) {
@@ -1344,6 +2028,26 @@
       if (list[i].id === propId) return list[i];
     }
     return null;
+  }
+
+  function propositionsObjectifPourSeqLegacy(seq) {
+    var list = PROPOSITIONS_OBJECTIF._commun.slice();
+    if (seq && seq.apsaId && COLLECTIFS_APSA[seq.apsaId] && PROPOSITIONS_OBJECTIF._coop) {
+      list = list.concat(PROPOSITIONS_OBJECTIF._coop);
+    }
+    if (seq && seq.apsaId && RAQUETTES_APSA[seq.apsaId] && PROPOSITIONS_OBJECTIF._raquette) {
+      list = list.concat(PROPOSITIONS_OBJECTIF._raquette);
+    }
+    if (seq && seq.apsaId && COMBAT_APSA[seq.apsaId] && PROPOSITIONS_OBJECTIF._combat) {
+      list = list.concat(PROPOSITIONS_OBJECTIF._combat);
+    }
+    if (seq && seq.champId === "expr" && PROPOSITIONS_OBJECTIF._expr) {
+      list = list.concat(PROPOSITIONS_OBJECTIF._expr);
+    }
+    if (seq && seq.apsaId && PROPOSITIONS_OBJECTIF[seq.apsaId]) {
+      list = list.concat(PROPOSITIONS_OBJECTIF[seq.apsaId]);
+    }
+    return list.slice(0, 8);
   }
 
   function filtrerObjectifIdsSequence() {
@@ -1378,7 +2082,7 @@
     var block = $("cahier-seq-objectif-block");
     if (!wrap) return;
     OutilsDom.clear(wrap);
-    if (!seqDraft.champId) {
+    if (!seqDraft.champId || !seqDraft.apsaId) {
       if (block) block.hidden = true;
       var hrObj = $("cahier-hr-seq-objectifs");
       var hrText = $("cahier-hr-objectifs-text");
@@ -1386,7 +2090,9 @@
       if (hrText) hrText.hidden = true;
       if (hint) {
         hint.hidden = false;
-        hint.textContent = "Choisissez un champ d’apprentissage.";
+        hint.textContent = !seqDraft.champId
+          ? "Choisissez un champ d’apprentissage."
+          : "Choisissez une APSA pour afficher les objectifs de séquence.";
       }
       return;
     }
@@ -1406,6 +2112,8 @@
           seqDraft.manualObjectifs = false;
           renderSeqObjectifChips();
           syncSeqObjectifsTextarea();
+          rafraichirPropositionsSeance();
+          planifierSauvegardeSequence();
         })
       );
     });
@@ -1415,18 +2123,12 @@
     filtrerObjectifIdsSequence();
     renderSeqObjectifChips();
     syncSeqObjectifsTextarea();
+    rafraichirPropositionsSeance();
     planifierSauvegardeSequence();
   }
 
   function propositionsObjectifPourSeq(seq) {
-    var list = PROPOSITIONS_OBJECTIF._commun.slice();
-    if (seq && seq.apsaId && PROPOSITIONS_OBJECTIF[seq.apsaId]) {
-      list = list.concat(PROPOSITIONS_OBJECTIF[seq.apsaId]);
-    }
-    if (seq && seq.objectifs) {
-      list.unshift({ id: "_seq", label: "Objectifs de la séquence", phrase: seq.objectifs });
-    }
-    return list;
+    return propositionsObjectifSeancePourSeq(seq);
   }
 
   function propositionObjectifById(seq, propId) {
@@ -1469,6 +2171,11 @@
     return first;
   }
 
+  function migrerTypeSeanceId(s) {
+    if (s && s.typeSeanceId === "reinvestissement") s.typeSeanceId = "reinves";
+    return s;
+  }
+
   function normaliserSeance(s) {
     if (!s) return s;
     if (s.objectif !== undefined) {
@@ -1476,10 +2183,11 @@
       if (!Array.isArray(s.formatIds)) {
         s.formatIds = s.formatId ? [s.formatId] : [];
       }
-      return s;
+      if (!s.typeSeanceId) s.typeSeanceId = null;
+      return migrerTypeSeanceId(s);
     }
     if (s.prevu !== undefined) {
-      return {
+      return migrerTypeSeanceId({
         id: s.id,
         date: s.date,
         formatId: s.formatId,
@@ -1488,13 +2196,14 @@
         contenu: s.fait || "",
         attention: s.suivant || "",
         objectifIds: s.objectifIds || [],
+        typeSeanceId: s.typeSeanceId || null,
         manual: {
           objectif: !!(s.manual && s.manual.prevu),
           contenu: !!(s.manual && s.manual.fait),
           attention: !!(s.manual && s.manual.suivant),
         },
         updatedAt: s.updatedAt,
-      };
+      });
     }
     var objectifParts = [];
     if (s.contenu) objectifParts.push(s.contenu);
@@ -1508,6 +2217,7 @@
       contenu: "",
       attention: s.obs || "",
       objectifIds: [],
+      typeSeanceId: null,
       manual: { objectif: true, contenu: false, attention: !!s.obs },
       updatedAt: s.updatedAt,
     };
@@ -1579,11 +2289,71 @@
     el.hidden = false;
   }
 
+  function majNiveauHint() {
+    var el = $("cahier-niveau-hint");
+    if (!el) return;
+    var n = niveauById(seqDraft.niveauId);
+    if (!n) {
+      el.hidden = false;
+      el.textContent = "Choisissez le niveau pour adapter toutes les propositions (séquence et séances).";
+      return;
+    }
+    el.textContent = n.resume;
+    el.hidden = false;
+  }
+
+  function majNiveauSourceHint() {
+    var el = $("cahier-seq-objectif-source");
+    if (!el) return;
+    el.textContent =
+      "Choisissez 1 ou 2 objectifs de séquence : ils pilotent les propositions de chaque séance (objectifs, déroulé, type suggéré).";
+  }
+
+  function appliquerAdaptationNiveau() {
+    majNiveauHint();
+    majNiveauSourceHint();
+    if (!seqDraft.manualObjectifs) syncSeqObjectifsTextarea();
+    if (store.activeSeanceId && getActiveSequence()) {
+      syncEditeursSeance();
+      renderObjectifChips();
+      renderFormatChips();
+    }
+  }
+
+  function renderNiveauChips() {
+    var wrap = $("cahier-seq-chips-niveau");
+    if (!wrap) return;
+    OutilsDom.clear(wrap);
+    NIVEAUX.forEach(function (n) {
+      wrap.appendChild(
+        creerChip(n.label, seqDraft.niveauId === n.id, function () {
+          if (seqDraft.niveauId === n.id) return;
+          seqDraft.niveauId = n.id;
+          seqDraft.manualNiveau = true;
+          ajusterChampSelonCycle(seqDraft.niveauId);
+          renderNiveauChips();
+          renderChampChips();
+          majBlocApsaVisible();
+          renderApsaChips();
+          renderAthleFamilleChips();
+          majPropositionsObjectifSequence();
+          appliquerAdaptationNiveau();
+          planifierSauvegardeSequence();
+        })
+      );
+    });
+    majNiveauHint();
+    majNiveauSourceHint();
+  }
+
   function renderChampChips() {
     var wrap = $("cahier-seq-chips-champ");
     if (!wrap) return;
     OutilsDom.clear(wrap);
+    var cycle = seqDraft.niveauId || cycleDepuisDraft();
+    var champsDispo = champsAutorisesPourCycle(cycle);
     CHAMPS.forEach(function (c) {
+      if (champsDispo.indexOf(c.id) < 0) return;
       wrap.appendChild(
         creerChipChamp(c.label, seqDraft.champId === c.id, function () {
           var was = seqDraft.champId;
@@ -1591,6 +2361,7 @@
           if (was !== seqDraft.champId) {
             seqDraft.apsaId = null;
             seqDraft.apsaAutre = "";
+            seqDraft.athleFamilleIds = [];
           }
           renderChampChips();
           majBlocApsaVisible();
@@ -1620,6 +2391,48 @@
     }
   }
 
+  function majBlocAthleFamille() {
+    var block = $("cahier-seq-athle-famille-block");
+    if (!block) return;
+    block.hidden = seqDraft.apsaId !== "athle";
+  }
+
+  function renderAthleFamilleChips() {
+    var wrap = $("cahier-seq-chips-athle-famille");
+    if (!wrap) return;
+    OutilsDom.clear(wrap);
+    if (seqDraft.apsaId !== "athle") {
+      majBlocAthleFamille();
+      return;
+    }
+    var ref = refModule();
+    var familles = ref ? ref.getFamillesApsa("athle") : [];
+    if (!familles.length) {
+      familles = [
+        { id: "sprint", label: "Course / sprint" },
+        { id: "demiFond", label: "Demi-fond" },
+        { id: "saut", label: "Saut" },
+        { id: "lancer", label: "Lancer" },
+      ];
+    }
+    if (!Array.isArray(seqDraft.athleFamilleIds)) seqDraft.athleFamilleIds = [];
+    familles.forEach(function (f) {
+      var on = seqDraft.athleFamilleIds.indexOf(f.id) >= 0;
+      wrap.appendChild(
+        creerChip(f.label, on, function () {
+          var i = seqDraft.athleFamilleIds.indexOf(f.id);
+          if (i >= 0) seqDraft.athleFamilleIds.splice(i, 1);
+          else seqDraft.athleFamilleIds.push(f.id);
+          seqDraft.objectifIds = [];
+          renderAthleFamilleChips();
+          majPropositionsObjectifSequence();
+          planifierSauvegardeSequence();
+        })
+      );
+    });
+    majBlocAthleFamille();
+  }
+
   function renderApsaChips() {
     var wrap = $("cahier-seq-chips-apsa");
     if (!wrap) return;
@@ -1628,11 +2441,22 @@
       majBlocApsaAutre();
       return;
     }
-    APSA_PAR_CHAMP[seqDraft.champId].forEach(function (a) {
+    var ref = refModule();
+    var cycle = seqDraft.niveauId || cycleDepuisDraft();
+    var listApsa = ref
+      ? ref.getApsaDisponibles(cycle, seqDraft.champId, APSA_PAR_CHAMP)
+      : APSA_PAR_CHAMP[seqDraft.champId];
+    listApsa.forEach(function (a) {
       wrap.appendChild(
         creerChip(a.label, seqDraft.apsaId === a.id, function () {
+          var was = seqDraft.apsaId;
           seqDraft.apsaId = seqDraft.apsaId === a.id ? null : a.id;
+          if (was !== seqDraft.apsaId) {
+            seqDraft.athleFamilleIds = seqDraft.apsaId === "athle" ? [] : [];
+            seqDraft.objectifIds = [];
+          }
           renderApsaChips();
+          renderAthleFamilleChips();
           majBlocApsaAutre();
           majPropositionsObjectifSequence();
         })
@@ -1653,6 +2477,44 @@
     majWorkspaceHead();
   }
 
+  function renderTypeSeanceChips() {
+    var wrap = $("cahier-chips-type-seance");
+    var hint = $("cahier-type-seance-hint");
+    if (!wrap) return;
+    OutilsDom.clear(wrap);
+    var ref = refModule();
+    var types = ref ? ref.TYPE_SEANCE : [];
+    if (!types.length) {
+      if (hint) hint.textContent = "Référentiel non chargé.";
+      return;
+    }
+    types.forEach(function (t) {
+      wrap.appendChild(
+        creerChip(t.label, seanceUi.typeSeanceId === t.id, function () {
+          if (seanceUi.typeSeanceId === t.id) return;
+          seanceUi.typeSeanceId = t.id;
+          seanceUi.manualTypeSeance = true;
+          renderTypeSeanceChips();
+          filtrerObjectifIdsSeance();
+          filtrerFormatIdsSeance();
+          syncEditeursSeance();
+          renderObjectifChips();
+          renderFormatChips();
+          planifierSauvegardeSeance();
+        })
+      );
+    });
+    if (hint) {
+      var label =
+        types.filter(function (t) {
+          return t.id === seanceUi.typeSeanceId;
+        })[0];
+      hint.textContent = label
+        ? "Type « " + label.label + " » — les propositions sont filtrées selon l’objectif de séquence."
+        : "Choisissez un type de séance pour affiner les propositions.";
+    }
+  }
+
   function renderObjectifChips() {
     var wrap = $("cahier-chips-objectif");
     var hint = $("cahier-objectif-hint");
@@ -1662,11 +2524,17 @@
     if (!seq || !seq.apsaId) {
       if (hint) {
         hint.hidden = false;
-        hint.textContent = "Choisissez l’APSA dans la séquence.";
+        hint.textContent = "Complétez la séquence (APSA et objectifs de séquence).";
       }
       return;
     }
-    if (hint) hint.hidden = true;
+    var hasObjSeq = objectifSequenceIdsEffectifs(seq).length > 0 || !!(seq.objectifs && seq.objectifs.trim());
+    if (!hasObjSeq) {
+      if (hint) {
+        hint.hidden = false;
+        hint.textContent = "Sélectionnez au moins un objectif de séquence pour affiner les propositions.";
+      }
+    } else if (hint) hint.hidden = true;
     propositionsObjectifPourSeq(seq).forEach(function (p) {
       var on = seanceUi.objectifIds.indexOf(p.id) >= 0;
       wrap.appendChild(
@@ -1675,7 +2543,9 @@
           if (i >= 0) seanceUi.objectifIds.splice(i, 1);
           else seanceUi.objectifIds.push(p.id);
           seanceUi.manual.objectif = false;
+          filtrerFormatIdsSeance();
           renderObjectifChips();
+          renderFormatChips();
           syncEditeursSeance();
           planifierSauvegardeSeance();
         })
@@ -1697,7 +2567,7 @@
       return;
     }
     if (hint) hint.hidden = true;
-    deroulePourApsa(seq.apsaId).forEach(function (f) {
+    propositionsContenuPourSeq(seq).forEach(function (f) {
       var on = seanceUi.formatIds.indexOf(f.id) >= 0;
       wrap.appendChild(
         creerChip(f.label, on, function () {
@@ -1711,6 +2581,7 @@
         })
       );
     });
+    majBlocCa5Params();
   }
 
   function lireSeqForm() {
@@ -1726,25 +2597,41 @@
     if (seq) normaliserSequence(seq);
     seqDraft.id = seq ? seq.id : null;
     seqDraft.classeId = seq ? seq.classeId || "" : "";
+    seqDraft.niveauId = seq ? seq.niveauId || null : null;
+    if (seq && !seqDraft.niveauId && seqDraft.classeId) {
+      seqDraft.niveauId = infererNiveauDepuisClasse(seqDraft.classeId) || null;
+    }
+    seqDraft.manualNiveau = !!(seq && seq.niveauId);
     seqDraft.champId = seq ? seq.champId || null : null;
     seqDraft.apsaId = seq ? seq.apsaId || null : null;
     seqDraft.apsaAutre = seq ? seq.apsaAutre || "" : "";
+    if (seq && seq.apsaId === "athle") {
+      if (Array.isArray(seq.athleFamilleIds)) seqDraft.athleFamilleIds = seq.athleFamilleIds.slice();
+      else if (seq.athleFamilleId) seqDraft.athleFamilleIds = [seq.athleFamilleId];
+      else seqDraft.athleFamilleIds = [];
+    } else {
+      seqDraft.athleFamilleIds = [];
+    }
     seqDraft.objectifs = seq ? seq.objectifs || "" : "";
     seqDraft.objectifIds = seq && Array.isArray(seq.objectifIds) ? seq.objectifIds.slice() : [];
     seqDraft.manualObjectifs = false;
+    ajusterChampSelonCycle(seqDraft.niveauId || cycleDepuisDraft());
     $("cahier-seq-classe").value = seqDraft.classeId;
     $("cahier-seq-objectifs").value = seqDraft.objectifs;
     if ($("cahier-seq-apsa-autre")) $("cahier-seq-apsa-autre").value = seqDraft.apsaAutre;
     $("cahier-seq-delete").hidden = !seq;
+    renderNiveauChips();
     renderChampChips();
     majBlocApsaVisible();
     renderApsaChips();
+    renderAthleFamilleChips();
     renderSeqObjectifChips();
     suspendreSauvegardeAuto = false;
   }
 
   function genererObjectifSeance(seq) {
     var parts = [];
+    var cycle = cycleDepuisSequence(seq);
     seanceUi.objectifIds.forEach(function (propId) {
       if (propId === ID_OBJECTIF_IDEM) {
         var prevObj = seancePrecedente(seq, store.activeSeanceId);
@@ -1758,20 +2645,33 @@
         return;
       }
       var p = propositionObjectifById(seq, propId);
-      if (!p || !p.phrase) return;
+      if (!p) return;
+      var phrase = phraseEffective(p, cycle);
+      if (!phrase) return;
       if (p.id === "_seq") {
-        decouperEnElements(p.phrase).forEach(function (line) {
+        decouperEnElements(phrase).forEach(function (line) {
           parts.push(line);
         });
       } else {
-        parts.push(p.phrase);
+        parts.push(phrase);
       }
     });
     return texteEnPuces(parts);
   }
 
+  function contenuById(seq, formatId) {
+    if (!formatId || !seq) return null;
+    var list = propositionsContenuPourSeq(seq);
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === formatId) return list[i];
+    }
+    return derouleById(seq.apsaId, formatId);
+  }
+
   function genererContenuSeance(seq) {
     var parts = [];
+    var cycle = cycleDepuisSequence(seq);
+    var inclureParamsCa5 = false;
     seanceUi.formatIds.forEach(function (fid) {
       if (fid === ID_CONTENU_IDEM) {
         var prevCont = seancePrecedente(seq, store.activeSeanceId);
@@ -1784,10 +2684,37 @@
         }
         return;
       }
-      var der = derouleById(seq.apsaId, fid);
-      if (der && der.phrase) parts.push(der.phrase);
+      if (fid === "params-effort") inclureParamsCa5 = true;
+      var der = contenuById(seq, fid);
+      var phrase = der ? (der.phrase || phraseEffective(der, cycle)) : "";
+      if (phrase) parts.push(phrase);
     });
+    if (inclureParamsCa5 || (estCa5Apsa(seq.apsaId) && (seanceUi.ca5Rpe || seanceUi.ca5Fc || seanceUi.ca5Recup))) {
+      var ligneCa5 = ligneParametresCa5();
+      if (ligneCa5) parts.push(ligneCa5);
+    }
     return texteEnPuces(parts);
+  }
+
+  function majBlocCa5Params() {
+    var block = $("cahier-ca5-params");
+    if (!block) return;
+    var seq = getActiveSequence();
+    var show = !!(seq && estCa5Apsa(seq.apsaId));
+    block.hidden = !show;
+  }
+
+  function lireCa5ParamsForm() {
+    if ($("cahier-ca5-rpe")) seanceUi.ca5Rpe = $("cahier-ca5-rpe").value.trim();
+    if ($("cahier-ca5-fc")) seanceUi.ca5Fc = $("cahier-ca5-fc").value.trim();
+    if ($("cahier-ca5-recup")) seanceUi.ca5Recup = $("cahier-ca5-recup").value.trim();
+  }
+
+  function remplirCa5ParamsForm() {
+    if ($("cahier-ca5-rpe")) $("cahier-ca5-rpe").value = seanceUi.ca5Rpe || "";
+    if ($("cahier-ca5-fc")) $("cahier-ca5-fc").value = seanceUi.ca5Fc || "";
+    if ($("cahier-ca5-recup")) $("cahier-ca5-recup").value = seanceUi.ca5Recup || "";
+    majBlocCa5Params();
   }
 
   function texteCopieObjectifContenu() {
@@ -1815,18 +2742,25 @@
   }
 
   function majSeanceTout() {
+    majBlocCa5Params();
+    renderTypeSeanceChips();
     syncEditeursSeance();
     renderObjectifChips();
     renderFormatChips();
   }
 
   function snapshotSeance() {
+    lireCa5ParamsForm();
     return {
       id: store.activeSeanceId || genererId("seance"),
       date: $("cahier-date").value || aujourdhuiIso(),
       formatIds: seanceUi.formatIds.slice(),
       formatId: seanceUi.formatIds[0] || null,
       objectifIds: seanceUi.objectifIds.slice(),
+      typeSeanceId: seanceUi.typeSeanceId,
+      ca5Rpe: seanceUi.ca5Rpe,
+      ca5Fc: seanceUi.ca5Fc,
+      ca5Recup: seanceUi.ca5Recup,
       objectif: $("cahier-edit-objectif").value.trim(),
       contenu: $("cahier-edit-contenu").value.trim(),
       attention: $("cahier-edit-attention").value.trim(),
@@ -1846,11 +2780,24 @@
     store.activeSeanceId = s.id;
     seanceUi.formatIds = Array.isArray(s.formatIds) ? s.formatIds.slice() : s.formatId ? [s.formatId] : [];
     seanceUi.objectifIds = Array.isArray(s.objectifIds) ? s.objectifIds.slice() : [];
+    seanceUi.typeSeanceId = s.typeSeanceId || null;
+    if (!seanceUi.typeSeanceId) {
+      var refAp = refModule();
+      var seqAp = getActiveSequence();
+      if (refAp && seqAp) {
+        seanceUi.typeSeanceId = refAp.suggestTypeSeance(refAp.numeroSeanceDansSequence(seqAp, s.id));
+      }
+    }
+    seanceUi.manualTypeSeance = !!s.typeSeanceId;
+    seanceUi.ca5Rpe = s.ca5Rpe || "";
+    seanceUi.ca5Fc = s.ca5Fc || "";
+    seanceUi.ca5Recup = s.ca5Recup || "";
     seanceUi.manual = s.manual || { objectif: false, contenu: false, attention: false };
     $("cahier-date").value = s.date || aujourdhuiIso();
     $("cahier-edit-objectif").value = s.objectif || "";
     $("cahier-edit-contenu").value = s.contenu || "";
     $("cahier-edit-attention").value = s.attention || "";
+    remplirCa5ParamsForm();
     majBoutonsSeanceActions();
     afficherAccordeonSeance(true);
     majSeanceTout();
@@ -1868,11 +2815,19 @@
     store.activeSeanceId = genererId("seance");
     seanceUi.formatIds = [];
     seanceUi.objectifIds = [];
+    var ref = refModule();
+    var num = ref ? ref.numeroSeanceDansSequence(seq, null) : (seq.seances ? seq.seances.length : 0) + 1;
+    seanceUi.typeSeanceId = ref ? ref.suggestTypeSeance(num) : "apprentissage";
+    seanceUi.manualTypeSeance = false;
+    seanceUi.ca5Rpe = "";
+    seanceUi.ca5Fc = "";
+    seanceUi.ca5Recup = "";
     seanceUi.manual = { objectif: false, contenu: false, attention: false };
     $("cahier-date").value = aujourdhuiIso();
     $("cahier-edit-objectif").value = "";
     $("cahier-edit-contenu").value = "";
     $("cahier-edit-attention").value = "";
+    remplirCa5ParamsForm();
     majBoutonsSeanceActions();
     afficherAccordeonSeance(true);
     renderFormatChips();
@@ -2001,8 +2956,10 @@
     if (!seq) return "";
     var champ = champById(seq.champId);
     var labelApsa = libelleApsa(seq.champId, seq.apsaId, seq.apsaAutre);
+    var labelNiveau = libelleNiveau(seq.niveauId || cycleDepuisSequence(seq));
     return (
       (seq.classeNom || nomClasse(seq.classeId)) +
+      (labelNiveau ? " · " + labelNiveau : "") +
       (labelApsa ? " · " + labelApsa : champ ? " · " + champ.label : "") +
       " · " +
       (seq.seances ? seq.seances.length : 0) +
@@ -2541,10 +3498,17 @@
     $("cahier-seq-delete").addEventListener("click", supprimerSequence);
     $("cahier-seq-classe").addEventListener("change", function () {
       lireSeqForm();
+      if (!seqDraft.manualNiveau) {
+        var sug = infererNiveauDepuisClasse(seqDraft.classeId);
+        if (sug) seqDraft.niveauId = sug;
+      }
+      ajusterChampSelonCycle(seqDraft.niveauId || cycleDepuisDraft());
+      renderNiveauChips();
       renderChampChips();
       majBlocApsaVisible();
       renderApsaChips();
       majPropositionsObjectifSequence();
+      appliquerAdaptationNiveau();
     });
     if ($("cahier-seq-apsa-autre")) {
       $("cahier-seq-apsa-autre").addEventListener("input", function (e) {
@@ -2611,10 +3575,24 @@
     $("cahier-reset-contenu").addEventListener("click", function () {
       seanceUi.manual.contenu = false;
       seanceUi.formatIds = [];
+      seanceUi.ca5Rpe = "";
+      seanceUi.ca5Fc = "";
+      seanceUi.ca5Recup = "";
+      remplirCa5ParamsForm();
       renderFormatChips();
       syncEditeursSeance();
       planifierSauvegardeSeance();
       montrerOk("Contenu effacé.");
+    });
+    ["cahier-ca5-rpe", "cahier-ca5-fc", "cahier-ca5-recup"].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      el.addEventListener("input", function () {
+        lireCa5ParamsForm();
+        seanceUi.manual.contenu = false;
+        syncEditeursSeance();
+        planifierSauvegardeSeance();
+      });
     });
     $("cahier-copy-pronote").addEventListener("click", copierObjectifContenu);
     $("cahier-export-csv").addEventListener("click", exporterCsv);
@@ -2640,9 +3618,11 @@
     initDictation();
     setModeSequence("new");
     remplirSeqForm(null);
+    renderNiveauChips();
     renderChampChips();
     majBlocApsaVisible();
     renderApsaChips();
+    renderAthleFamilleChips();
     renderSeqObjectifChips();
     var prom = Promise.resolve();
     if (typeof DataManager !== "undefined") {

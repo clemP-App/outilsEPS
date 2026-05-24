@@ -114,6 +114,17 @@
 
             <div class="cahier-chips-block">
               <p class="cahier-chips-block__label cahier-section-title">
+                <span class="cahier-section-title__icon" aria-hidden="true">📊</span>
+                <span class="cahier-section-title__text">Niveau</span>
+              </p>
+              <div class="cahier-chips" id="cahier-seq-chips-niveau" role="group" aria-label="Niveau scolaire"></div>
+              <p id="cahier-niveau-hint" class="hint cahier-niveau-hint">Choisissez le niveau pour adapter toutes les propositions (séquence et séances).</p>
+            </div>
+
+            <hr class="cahier-hr" />
+
+            <div class="cahier-chips-block">
+              <p class="cahier-chips-block__label cahier-section-title">
                 <span class="cahier-section-title__icon" aria-hidden="true">🎯</span>
                 <span class="cahier-section-title__text">Champ d’apprentissage</span>
               </p>
@@ -127,6 +138,19 @@
                 <span class="cahier-section-title__text">APSA de la séquence</span>
               </p>
               <div class="cahier-chips" id="cahier-seq-chips-apsa" role="group" aria-label="Activité APSA"></div>
+              <div class="cahier-chips-block" id="cahier-seq-athle-famille-block" hidden>
+                <p class="cahier-chips-block__label cahier-section-title">
+                  <span class="cahier-section-title__icon" aria-hidden="true">🏃</span>
+                  <span class="cahier-section-title__text">Familles athlétisme</span>
+                </p>
+                <p class="hint">Sélectionnez une ou plusieurs familles (ex. saut et lancer dans la même séquence).</p>
+                <div
+                  class="cahier-chips cahier-chips--multi"
+                  id="cahier-seq-chips-athle-famille"
+                  role="group"
+                  aria-label="Familles athlétisme"
+                ></div>
+              </div>
               <div class="field-group cahier-apsa-autre" id="cahier-seq-apsa-autre-block" hidden>
                 <label class="field-label cahier-section-title" for="cahier-seq-apsa-autre">
                   <span class="cahier-section-title__icon" aria-hidden="true">✏️</span>
@@ -148,8 +172,8 @@
                 <span class="cahier-section-title__icon" aria-hidden="true">💡</span>
                 <span class="cahier-section-title__text">Objectifs de la séquence — propositions</span>
               </p>
-              <p class="hint cahier-seq-objectif-source">
-                Formulations inspirées des attendus de fin de cycle et des compétences générales EPS (Eduscol, cycle 4).
+              <p id="cahier-seq-objectif-source" class="hint cahier-seq-objectif-source">
+                Choisissez 1 ou 2 objectifs de séquence : ils pilotent les propositions de chaque séance (objectifs, déroulé, type suggéré).
               </p>
               <div
                 class="cahier-chips cahier-chips--multi"
@@ -163,10 +187,20 @@
             <hr class="cahier-hr" id="cahier-hr-objectifs-text" hidden />
 
             <div class="field-group">
-              <label class="field-label cahier-section-title" for="cahier-seq-objectifs">
-                <span class="cahier-section-title__icon" aria-hidden="true">🎯</span>
-                <span class="cahier-section-title__text">Objectifs de la séquence</span>
-              </label>
+              <div class="cahier-edit-zone__head">
+                <label class="field-label cahier-section-title" for="cahier-seq-objectifs">
+                  <span class="cahier-section-title__icon" aria-hidden="true">🎯</span>
+                  <span class="cahier-section-title__text">Objectifs de la séquence</span>
+                </label>
+                <button
+                  type="button"
+                  class="btn btn--small cahier-dictate cahier-dictate--prominent"
+                  data-target="cahier-seq-objectifs"
+                  aria-label="Dicter les objectifs de la séquence"
+                >
+                  <span aria-hidden="true">🎤</span> Dicter
+                </button>
+              </div>
               <div class="cahier-field-with-clear">
                 <textarea
                   id="cahier-seq-objectifs"
@@ -230,9 +264,17 @@
             </div>
             </div>
 
+            <div class="cahier-chips-block cahier-type-seance-block">
+              <p class="cahier-chips-block__label cahier-section-title">
+                <span class="cahier-section-title__icon" aria-hidden="true">🏷️</span>
+                <span class="cahier-section-title__text">Type de séance</span>
+              </p>
+              <div class="cahier-chips" id="cahier-chips-type-seance" role="group" aria-label="Type de séance"></div>
+              <p id="cahier-type-seance-hint" class="hint cahier-type-seance-hint">Le type filtre les propositions selon l’objectif de séquence choisi.</p>
+            </div>
+
           <p class="hint">
-            Le CA et l’APSA viennent de la séquence. Formulez ce que les élèves doivent <strong>apprendre</strong> : sélectionnez des
-            propositions ou complétez les zones ci-dessous.
+            L’objectif de séquence pilote les propositions ci-dessous. Sélectionnez un <strong>type de séance</strong>, puis des puces ou rédigez librement.
           </p>
 
           <hr class="cahier-hr" />
@@ -255,7 +297,9 @@
                   <span class="cahier-section-title__icon" aria-hidden="true">🎯</span>
                   <span class="cahier-section-title__text">Objectif de la séance</span>
                 </label>
-                <button type="button" class="btn btn--ghost btn--small cahier-dictate" data-target="cahier-edit-objectif" aria-label="Dicter l’objectif">🎤</button>
+                <button type="button" class="btn btn--small cahier-dictate cahier-dictate--prominent" data-target="cahier-edit-objectif" aria-label="Dicter l’objectif">
+                  <span aria-hidden="true">🎤</span> Dicter
+                </button>
               </div>
               <div class="cahier-field-with-clear">
                 <textarea
@@ -278,14 +322,17 @@
               </p>
               <div class="cahier-chips cahier-chips--multi" id="cahier-chips-format" role="group" aria-label="Propositions de contenu"></div>
               <p id="cahier-format-hint" class="hint cahier-format-hint" hidden>Choisissez l’APSA dans la séquence.</p>
-              <div class="cahier-edit-zone__head">
+              <p class="hint cahier-deroule-hint">Sélectionnez des propositions ci-dessus — le texte se génère automatiquement. Complétez ou modifiez ci-dessous, ou utilisez le micro.</p>
+              <div class="cahier-edit-zone__head cahier-deroule-text__head">
                 <label class="field-label cahier-section-title" for="cahier-edit-contenu">
                   <span class="cahier-section-title__icon" aria-hidden="true">📄</span>
-                  <span class="cahier-section-title__text">Contenu</span>
+                  <span class="cahier-section-title__text">Déroulé de la séance</span>
                 </label>
-                <button type="button" class="btn btn--ghost btn--small cahier-dictate" data-target="cahier-edit-contenu" aria-label="Dicter le contenu">🎤</button>
+                <button type="button" class="btn btn--small cahier-dictate cahier-dictate--prominent" data-target="cahier-edit-contenu" aria-label="Dicter le contenu">
+                  <span aria-hidden="true">🎤</span> Dicter
+                </button>
               </div>
-              <div class="cahier-field-with-clear">
+              <div class="cahier-field-with-clear cahier-deroule-text">
                 <textarea
                   id="cahier-edit-contenu"
                   class="cahier-textarea"
@@ -294,6 +341,27 @@
                   placeholder="Une puce par étape du déroulé (• échauffement, • …)"
                 ></textarea>
                 <button type="button" class="btn btn--ghost btn--small" id="cahier-reset-contenu">Effacer</button>
+              </div>
+              <div id="cahier-ca5-params" class="cahier-ca5-params field-group" hidden>
+                <p class="cahier-chips-block__label cahier-section-title">
+                  <span class="cahier-section-title__icon" aria-hidden="true">💪</span>
+                  <span class="cahier-section-title__text">Paramètres d’effort (optionnel — CA5)</span>
+                </p>
+                <p class="hint">Renseignez les valeurs cibles pour les intégrer automatiquement au contenu de la séance.</p>
+                <div class="cahier-ca5-params__grid">
+                  <div class="field-group">
+                    <label class="field-label" for="cahier-ca5-rpe">RPE cible</label>
+                    <input type="text" id="cahier-ca5-rpe" placeholder="Ex. 6/10" autocomplete="off" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="cahier-ca5-fc">FC cible</label>
+                    <input type="text" id="cahier-ca5-fc" placeholder="Ex. 140 bpm" autocomplete="off" />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="cahier-ca5-recup">Récupération</label>
+                    <input type="text" id="cahier-ca5-recup" placeholder="Ex. 1 min30" autocomplete="off" />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -305,7 +373,9 @@
                   <span class="cahier-section-title__icon" aria-hidden="true">⚠️</span>
                   <span class="cahier-section-title__text">Points d’attention (pour l’enseignant)</span>
                 </label>
-                <button type="button" class="btn btn--ghost btn--small cahier-dictate" data-target="cahier-edit-attention" aria-label="Dicter les points d’attention">🎤</button>
+                <button type="button" class="btn btn--small cahier-dictate cahier-dictate--prominent" data-target="cahier-edit-attention" aria-label="Dicter les points d’attention">
+                  <span aria-hidden="true">🎤</span> Dicter
+                </button>
               </div>
               <textarea
                 id="cahier-edit-attention"
@@ -385,6 +455,9 @@
     <script src="../data-manager.js"></script>
     <script src="../dom-utils.js"></script>
     <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="eps-referentiel-data.js"></script>
+    <script src="eps-referentiel-cycles.js"></script>
+    <script src="cahier-texte-referentiel.js"></script>
     <script src="cahier-texte.js"></script>
     <script src="../tool-info.js"></script>
     <script>
