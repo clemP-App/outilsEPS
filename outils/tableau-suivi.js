@@ -48,6 +48,7 @@
   var dlgElevesDetail = document.getElementById("dlg-eleves-detail");
   var dlgElevesNom = document.getElementById("dlg-eleves-nom");
   var dlgElevesPrenom = document.getElementById("dlg-eleves-prenom");
+  var dlgElevesNaissance = document.getElementById("dlg-eleves-naissance");
   var btnElevesRetirer = document.getElementById("btn-eleves-retirer");
   var dlgElevesEmpty = document.getElementById("dlg-eleves-empty");
   var elevesDialogRowId = null;
@@ -151,6 +152,7 @@
       classeId: classeId || "",
       nom: (e.nom || "").trim(),
       prenom: (e.prenom || "").trim(),
+      dateNaissance: (e.dateNaissance || "").trim(),
       eleveId: e.id || "",
     };
   }
@@ -206,10 +208,18 @@
     return row.label || "Sans nom";
   }
 
-  function synchroniserLabelRow(row, nom, prenom) {
+  function synchroniserLabelRow(row, nom, prenom, dateNaissance) {
     if (!row.meta) row.meta = {};
     row.meta.nom = normaliserNom(nom);
     row.meta.prenom = normaliserNom(prenom);
+    if (dateNaissance !== undefined) {
+      if (typeof EleveDisplay !== "undefined" && EleveDisplay.normaliserDateNaissance) {
+        var dn = EleveDisplay.normaliserDateNaissance(dateNaissance);
+        row.meta.dateNaissance = dn === null ? row.meta.dateNaissance || "" : dn || "";
+      } else {
+        row.meta.dateNaissance = String(dateNaissance || "").trim();
+      }
+    }
     row.label = labelEleveRow(row);
   }
 
@@ -276,7 +286,12 @@
     if (!t || !elevesDialogRowId || !dlgElevesNom || !dlgElevesPrenom) return;
     var row = getRowParId(t, elevesDialogRowId);
     if (!row) return;
-    synchroniserLabelRow(row, dlgElevesNom.value, dlgElevesPrenom.value);
+    synchroniserLabelRow(
+      row,
+      dlgElevesNom.value,
+      dlgElevesPrenom.value,
+      dlgElevesNaissance ? dlgElevesNaissance.value : undefined
+    );
   }
 
   function remplirDetailEleve(row) {
@@ -284,6 +299,10 @@
     var noms = nomsDepuisRow(row);
     if (dlgElevesNom) dlgElevesNom.value = noms.nom;
     if (dlgElevesPrenom) dlgElevesPrenom.value = noms.prenom;
+    if (dlgElevesNaissance) {
+      dlgElevesNaissance.value =
+        row.meta && row.meta.dateNaissance ? row.meta.dateNaissance : "";
+    }
     var titre = document.getElementById("dlg-eleves-detail-title");
     if (titre) titre.textContent = labelEleveRow(row);
     dlgElevesDetail.hidden = false;
@@ -2173,7 +2192,12 @@
     if (!t || !elevesDialogRowId) return;
     var row = getRowParId(t, elevesDialogRowId);
     if (!row || !dlgElevesNom || !dlgElevesPrenom) return;
-    synchroniserLabelRow(row, dlgElevesNom.value, dlgElevesPrenom.value);
+    synchroniserLabelRow(
+      row,
+      dlgElevesNom.value,
+      dlgElevesPrenom.value,
+      dlgElevesNaissance ? dlgElevesNaissance.value : undefined
+    );
     var label = labelEleveRow(row);
     if (dlgElevesSelect) {
       var opt = null;

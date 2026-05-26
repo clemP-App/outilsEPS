@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "42";
+var APP_CACHE_VERSION = "43";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -16,6 +16,7 @@ var PRECACHE = [
   "./goatcounter.js",
   "./index.html",
   "./manifest.webmanifest",
+  "./outils/cahier-texte-referentiel.js",
   "./outils/cahier-texte.html",
   "./outils/cahier-texte.js",
   "./outils/calcul-1rm.html",
@@ -42,6 +43,8 @@ var PRECACHE = [
   "./outils/donnees-eleves.html",
   "./outils/donnees-eleves.js",
   "./outils/ecartement-plots.html",
+  "./outils/eps-referentiel-cycles.js",
+  "./outils/eps-referentiel-data.js",
   "./outils/impact-badminton.html",
   "./outils/impact-badminton.js",
   "./outils/inducteur-danse.html",
@@ -63,6 +66,9 @@ var PRECACHE = [
   "./outils/sauvegarde.js",
   "./outils/table-marque.html",
   "./outils/table-marque.js",
+  "./outils/tableau-noir-fields.js",
+  "./outils/tableau-noir.html",
+  "./outils/tableau-noir.js",
   "./outils/tableau-suivi.html",
   "./outils/tableau-suivi.js",
   "./outils/test-vma.html",
@@ -73,6 +79,8 @@ var PRECACHE = [
   "./outils/tirage-au-sort.js",
   "./outils/tournoi-elimination.html",
   "./outils/tournoi-elimination.js",
+  "./outils/validation-asns.html",
+  "./outils/validation-asns.js",
   "./outils/video-retard.html",
   "./outils/video-retard.js",
   "./outils/visualisation-donnees.html",
@@ -101,6 +109,8 @@ var PRECACHE = [
   "./shared/rm-formulas.js",
   "./shared/sessions-core.js",
   "./shared/tool-accueil.js",
+  "./shared/validation-asns-core.js",
+  "./shared/validation-asns-pdf.js",
   "./style.css",
   "./tool-info.js",
   "./vendor/html5-qrcode.min.js",

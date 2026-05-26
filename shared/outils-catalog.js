@@ -50,6 +50,16 @@
       publicCible: "prof",
     },
     {
+      id: "validation-asns",
+      titre: "Validation ASNS",
+      description:
+        "Valider le savoir-nager au bord du bassin : suivi par élève, étapes du parcours officiel, attestations PDF et signature.",
+      icone: "🏊",
+      href: "outils/validation-asns.html",
+      categorie: "Activités",
+      publicCible: "prof",
+    },
+    {
       id: "dispenses-eps",
       titre: "Dispenses / Inaptitudes",
       description:
@@ -86,6 +96,16 @@
         "Filmez une action et affichez-la avec 5 à 60 s de décalage pour l’auto-correction en direct.",
       icone: "📹",
       href: "outils/video-retard.html",
+      categorie: "Séance",
+      publicCible: "prof",
+    },
+    {
+      id: "tableau-noir",
+      titre: "Tableau Noir",
+      description:
+        "Schémas tactiques sur terrains sportifs : dessin, joueurs, animation, export PNG/PDF, mode présentation.",
+      icone: "👨‍🏫",
+      href: "outils/tableau-noir.html",
       categorie: "Séance",
       publicCible: "prof",
     },

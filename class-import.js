@@ -198,11 +198,16 @@ var ClassImport = (function () {
       if (!nom) nom = "Sans nom";
     }
     if (!nom) nom = "Sans nom";
-    var extra = [];
-    if (e.sexe) extra.push(e.sexe);
-    if (e.niveau) {
-      var n = parseInt(String(e.niveau), 10);
-      if (!isNaN(n) && n >= 1 && n <= 5) extra.push("niv. " + n);
+    var extra =
+      typeof EleveDisplay !== "undefined" && EleveDisplay.metaEleveParts
+        ? EleveDisplay.metaEleveParts(e)
+        : [];
+    if (!extra.length) {
+      if (e.sexe) extra.push(e.sexe);
+      if (e.niveau) {
+        var n = parseInt(String(e.niveau), 10);
+        if (!isNaN(n) && n >= 1 && n <= 5) extra.push("niv. " + n);
+      }
     }
     if (extra.length) nom += " (" + extra.join(", ") + ")";
     return nom;

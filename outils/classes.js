@@ -114,7 +114,19 @@
 
   function eleveCorrespondRecherche(e, q) {
     if (!q) return true;
-    var hay = normaliseRecherche([e.nom, e.prenom, e.commentaire, e.niveau, e.sexe].join(" "));
+    var hay = normaliseRecherche(
+      [
+        e.nom,
+        e.prenom,
+        e.commentaire,
+        e.niveau,
+        e.sexe,
+        e.dateNaissance,
+        typeof EleveDisplay !== "undefined" && EleveDisplay.formatDateNaissanceFR
+          ? EleveDisplay.formatDateNaissanceFR(e.dateNaissance)
+          : "",
+      ].join(" ")
+    );
     return hay.indexOf(q) !== -1;
   }
 
@@ -147,11 +159,16 @@
           : [e.nom, e.prenom].filter(Boolean).join(" ") || "Sans nom";
       var meta = document.createElement("span");
       meta.className = "classes-eleve-item__meta";
-      var parts = [];
-      if (e.sexe) parts.push(e.sexe);
-      var nv = normaliserNiveau(e.niveau);
-      if (nv) parts.push("niv. " + nv);
-      if (e.commentaire) parts.push(e.commentaire);
+      var parts =
+        typeof EleveDisplay !== "undefined" && EleveDisplay.metaEleveParts
+          ? EleveDisplay.metaEleveParts(e)
+          : [];
+      if (!parts.length) {
+        if (e.sexe) parts.push(e.sexe);
+        var nv = normaliserNiveau(e.niveau);
+        if (nv) parts.push("niv. " + nv);
+        if (e.commentaire) parts.push(e.commentaire);
+      }
       meta.textContent = parts.join(" · ");
       main.appendChild(nom);
       if (parts.length) main.appendChild(meta);
@@ -255,6 +272,7 @@
 
   function ouvrirDialogEleve(eleveId) {
     editingEleveId = eleveId || null;
+    var naissanceEl = document.getElementById("eleve-naissance");
     var titre = document.getElementById("dialog-eleve-title");
     if (titre) titre.textContent = editingEleveId ? "Modifier l'élève" : "Ajouter un élève";
     document.getElementById("eleve-nom").value = "";
@@ -262,6 +280,7 @@
     document.getElementById("eleve-sexe").value = "";
     document.getElementById("eleve-niveau").value = "";
     document.getElementById("eleve-commentaire").value = "";
+    if (naissanceEl) naissanceEl.value = "";
     var fill = getClasseCourante().then(function (classe) {
       if (!editingEleveId || !classe) return;
       var e = null;
@@ -278,6 +297,7 @@
         document.getElementById("eleve-sexe").value = e.sexe || "";
         document.getElementById("eleve-niveau").value = e.niveau || "";
         document.getElementById("eleve-commentaire").value = e.commentaire || "";
+        if (naissanceEl) naissanceEl.value = e.dateNaissance || "";
       }
     });
     return fill.then(function () {
@@ -287,6 +307,7 @@
 
   function enregistrerEleve(e) {
     e.preventDefault();
+    var naissanceEl = document.getElementById("eleve-naissance");
     run(
       getClasseCourante().then(function (classe) {
         if (!classe) return;
@@ -302,10 +323,23 @@
           montrerErreur("Le niveau doit être un nombre entre 1 et 5 (ou laissé vide).");
           return;
         }
+        var naissanceBrut = naissanceEl ? naissanceEl.value : "";
+        var dateNaissance = "";
+        if (typeof EleveDisplay !== "undefined" && EleveDisplay.normaliserDateNaissance) {
+          dateNaissance = EleveDisplay.normaliserDateNaissance(naissanceBrut);
+          if (naissanceBrut && dateNaissance === null) {
+            montrerErreur("Date de naissance invalide (AAAA-MM-JJ ou laissez vide).");
+            return;
+          }
+          dateNaissance = dateNaissance || "";
+        } else {
+          dateNaissance = naissanceBrut;
+        }
         var eleve = {
           id: editingEleveId || DataManager.genererId("eleve"),
           nom: nom,
           prenom: prenom,
+          dateNaissance: dateNaissance,
           sexe: document.getElementById("eleve-sexe").value || "",
           niveau: niveau,
           commentaire: document.getElementById("eleve-commentaire").value.trim() || "",
@@ -329,23 +363,14 @@
   }
 
   function parserLigneImport(ligne) {
-    var s = (ligne || "").trim();
-    if (!s) return null;
-    var sep = s.indexOf(";") >= 0 ? ";" : ",";
-    var parts = s.split(sep).map(function (p) {
-      return p.trim();
-    });
-    if (parts.length < 2) return null;
-    var niveau = parts.length > 3 ? normaliserNiveau(parts[3]) : "";
-    if (parts.length > 3 && parts[3] !== "" && niveau === null) return null;
-    return {
-      id: DataManager.genererId("eleve"),
-      nom: parts[0] || "",
-      prenom: parts[1] || "",
-      sexe: parts[2] || "",
-      niveau: niveau,
-      commentaire: parts[4] || "",
-    };
+    if (typeof EleveDisplay !== "undefined" && EleveDisplay.parserLigneImportClasse) {
+      return EleveDisplay.parserLigneImportClasse(ligne, {
+        genererId: function () {
+          return DataManager.genererId("eleve");
+        },
+      });
+    }
+    return null;
   }
 
   function importerListe(e) {
@@ -383,10 +408,10 @@
     run(
       getClasseCourante().then(function (classe) {
         if (!classe) return;
-        var lines = ["nom;prenom;sexe;niveau;commentaire"];
+        var lines = ["nom;prenom;dateNaissance;sexe;niveau;commentaire"];
         classe.eleves.forEach(function (e) {
           lines.push(
-            [e.nom, e.prenom, e.sexe, e.niveau, e.commentaire]
+            [e.nom, e.prenom, e.dateNaissance, e.sexe, e.niveau, e.commentaire]
               .map(function (c) {
                 var s = String(c || "");
                 return /[;\r\n"]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;

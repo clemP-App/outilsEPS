@@ -93,6 +93,10 @@
           <label class="field-label" for="eleve-prenom">Prénom</label>
           <input type="text" id="eleve-prenom" required autocomplete="given-name" />
         </div>
+        <div class="field-group">
+          <label class="field-label" for="eleve-naissance">Date de naissance (facultatif)</label>
+          <input type="date" id="eleve-naissance" autocomplete="bday" />
+        </div>
         <div class="field-row field-row--eleve-opt">
           <div class="field-group">
             <label class="field-label" for="eleve-sexe">Sexe (facultatif)</label>
@@ -125,13 +129,23 @@
     <dialog class="classes-dialog card" id="dialog-import">
       <form id="form-import" method="dialog">
         <h2 class="classes-dialog-title">Importer une liste</h2>
-        <p class="hint">
-          Une ligne par élève. Formats : <strong>nom;prénom</strong> ou
-          <strong>nom;prénom;sexe;niveau;commentaire</strong> — le niveau doit être entre <strong>1 et 5</strong> (CSV avec virgule ou point-virgule).
-        </p>
+        <div class="import-format-hint">
+          <p class="hint import-format-hint__lead">Une ligne par élève · séparateur <strong>;</strong> ou <strong>,</strong></p>
+          <ul class="import-format-hint__list">
+            <li><span class="import-format-hint__ex">nom;prénom</span></li>
+            <li>
+              <span class="import-format-hint__ex">nom;prénom;dateNaissance</span>
+              <span class="import-format-hint__note">facultatif (2012-05-14 ou 14/05/2012)</span>
+            </li>
+            <li>
+              <span class="import-format-hint__ex">nom;prénom;dateNaissance;sexe;niveau;commentaire</span>
+              <span class="import-format-hint__note">sexe F/M · niveau 1–5 · tout est optionnel après le prénom</span>
+            </li>
+          </ul>
+        </div>
         <div class="field-group">
           <label class="field-label" for="import-texte">Liste à coller</label>
-          <textarea id="import-texte" rows="10" spellcheck="false" placeholder="Dupont;Léa;F;4&#10;Martin;Paul"></textarea>
+          <textarea id="import-texte" rows="10" spellcheck="false" placeholder="Dupont;Léa;2012-05-14;F;4&#10;Martin;Paul"></textarea>
         </div>
         <div class="field-row classes-dialog-actions">
           <button type="submit" class="btn btn--primary btn--labeled">

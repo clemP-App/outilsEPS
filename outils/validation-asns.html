@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Validation ASNS — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--asns">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Validation ASNS</h1>
+      </header>
+
+      <p id="asns-msg" class="msg-error" role="alert" hidden></p>
+      <p id="asns-ok" class="msg-ok" role="status" hidden></p>
+      <p id="asns-offline" class="hint asns-offline-hint" hidden>
+        Hors ligne — les données sont enregistrées sur cet appareil.
+      </p>
+
+      <section class="card asns-ref-card" aria-labelledby="lbl-ref-officiel">
+        <h2 id="lbl-ref-officiel">Texte officiel</h2>
+        <p class="hint">Consultation en ligne — connexion Internet nécessaire.</p>
+        <a
+          class="btn btn--ghost btn--labeled asns-ref-link"
+          href="https://www.education.gouv.fr/bo/15/Hebdo30/MENE1514345A.htm"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="btn__icon" aria-hidden="true">🔗</span>
+          <span class="btn__text">Arrêté du 8 juillet 2015 — savoir-nager (Bulletin officiel)</span>
+        </a>
+      </section>
+
+      <details class="card card--accordion asns-acc-classes" id="asns-acc-classes">
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="lbl-classes">Classes</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <p class="hint">Créez une classe, importez une liste ou liez une classe « Classes et groupes ».</p>
+          <div class="classes-layout asns-classes-layout">
+            <div class="classes-sidebar">
+              <div class="classes-sidebar-head">
+                <h3 class="classes-subtitle">Mes classes</h3>
+                <button type="button" class="btn btn--primary btn--small btn--labeled" id="asns-btn-new-classe">
+                  <span class="btn__icon" aria-hidden="true">＋</span>
+                  <span class="btn__text">Nouvelle</span>
+                </button>
+              </div>
+              <ul id="asns-classes-list" class="classes-list" role="list"></ul>
+              <button type="button" class="btn btn--ghost btn--labeled asns-import-global" id="asns-btn-import-global">
+                <span class="btn__icon" aria-hidden="true">👥</span>
+                <span class="btn__text">Importer depuis Classes et groupes</span>
+              </button>
+            </div>
+            <div class="classes-detail" id="asns-classes-detail" hidden>
+              <div class="field-group classes-nom-wrap">
+                <label class="field-label" for="asns-classe-nom">Nom de la classe</label>
+                <input type="text" id="asns-classe-nom" maxlength="80" autocomplete="off" />
+              </div>
+              <div class="field-group asns-import-liste">
+                <label class="field-label" for="asns-import-texte">Importer des élèves — liste à coller</label>
+                <div class="import-format-hint">
+                  <p class="hint import-format-hint__lead">Une ligne par élève · séparateur <strong>;</strong> ou <strong>,</strong></p>
+                  <ul class="import-format-hint__list">
+                    <li><span class="import-format-hint__ex">nom;prénom</span></li>
+                    <li>
+                      <span class="import-format-hint__ex">nom;prénom;dateNaissance;groupe</span>
+                      <span class="import-format-hint__note">dateNaissance et groupe facultatifs</span>
+                    </li>
+                  </ul>
+                </div>
+                <textarea
+                  id="asns-import-texte"
+                  rows="8"
+                  spellcheck="false"
+                  placeholder="Dupont;Léa;2012-05-14;A&#10;Martin;Paul"
+                ></textarea>
+              </div>
+              <button type="button" class="btn btn--primary btn--labeled" id="asns-import-submit">
+                <span class="btn__icon" aria-hidden="true">📋</span>
+                <span class="btn__text">Importer la liste</span>
+              </button>
+              <button type="button" class="btn btn--danger btn--ghost btn--labeled" id="asns-btn-del-classe">
+                <span class="btn__text">Supprimer la classe</span>
+              </button>
+            </div>
+            <p id="asns-classes-hint" class="empty-state classes-select-hint">
+              Sélectionnez une classe ou créez-en une nouvelle.
+            </p>
+          </div>
+        </div>
+      </details>
+
+      <div class="dispense-nav dispense-nav--asns" role="tablist" aria-label="Sections ASNS">
+        <button
+          type="button"
+          class="dispense-nav__btn dispense-nav__btn--active"
+          role="tab"
+          data-view="eleves"
+          aria-selected="true"
+        >
+          Élèves
+        </button>
+        <button type="button" class="dispense-nav__btn" role="tab" data-view="parcours" aria-selected="false">
+          Parcours
+        </button>
+        <button type="button" class="dispense-nav__btn" role="tab" data-view="parametres" aria-selected="false">
+          Paramètres
+        </button>
+        <button type="button" class="dispense-nav__btn" role="tab" data-view="attestations" aria-selected="false">
+          Attestations
+        </button>
+      </div>
+
+      <!-- Élèves (suivi + validation) -->
+      <div id="asns-view-eleves" class="dispense-view" role="tabpanel" data-view-panel="eleves">
+        <section class="card" aria-labelledby="lbl-eleves">
+          <h2 id="lbl-eleves">Suivi des élèves</h2>
+          <p class="hint">
+            Consultez l'avancement, validez les étapes du parcours officiel, modifiez ou supprimez un élève.
+          </p>
+
+          <div class="asns-stat-grid" id="asns-stats"></div>
+
+          <div class="field-row asns-dash-filters">
+            <button type="button" class="btn btn--ghost btn--small asns-dash-filter" data-filter="">
+              Tous
+            </button>
+            <button type="button" class="btn btn--ghost btn--small asns-dash-filter" data-filter="valide">
+              Validés
+            </button>
+            <button type="button" class="btn btn--ghost btn--small asns-dash-filter" data-filter="en_cours">
+              En cours
+            </button>
+            <button type="button" class="btn btn--ghost btn--small asns-dash-filter" data-filter="non_valide">
+              Non validés
+            </button>
+            <button type="button" class="btn btn--ghost btn--small asns-dash-filter" data-filter="a_revoir">
+              À revoir
+            </button>
+          </div>
+
+          <div class="filter-bar field-group">
+            <label class="field-label" for="asns-search-eleves">Rechercher</label>
+            <input
+              type="search"
+              id="asns-search-eleves"
+              placeholder="Nom, prénom, groupe…"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="field-row field-row--actions">
+            <button type="button" class="btn btn--primary btn--labeled" id="asns-btn-add-eleve">
+              <span class="btn__icon" aria-hidden="true">＋</span>
+              <span class="btn__text">Ajouter un élève</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="asns-btn-valider-groupe">
+              <span class="btn__icon" aria-hidden="true">✓</span>
+              <span class="btn__text">Tout valider (affichés)</span>
+            </button>
+          </div>
+
+          <div id="asns-liste-eleves" class="asns-liste" aria-live="polite"></div>
+          <p id="asns-liste-empty" class="empty-state" hidden>
+            Aucun élève. Créez une classe ou ajoutez un élève.
+          </p>
+        </section>
+      </div>
+
+      <!-- Parcours (référence) -->
+      <div id="asns-view-parcours" class="dispense-view" role="tabpanel" data-view-panel="parcours" hidden>
+        <section class="card asns-parcours-card" aria-labelledby="lbl-parcours">
+          <h2 id="lbl-parcours">Parcours à réaliser</h2>
+          <p class="hint">
+            Les 13 étapes validées en séance —
+            <a
+              href="https://www.education.gouv.fr/bo/15/Hebdo30/MENE1514345A.htm"
+              target="_blank"
+              rel="noopener noreferrer"
+              >texte officiel complet</a
+            >.
+          </p>
+          <p class="asns-parcours-notice">
+            <strong>En continuité</strong> · sans reprise d'appuis au bord · <strong>sans lunettes</strong>
+          </p>
+          <div id="asns-parcours-parcours" class="asns-parcours-ref" aria-label="Étapes du parcours"></div>
+          <h3 class="asns-parcours-ref-title">Connaissances et attitudes</h3>
+          <div
+            id="asns-parcours-conn"
+            class="asns-parcours-ref asns-parcours-ref--conn"
+            aria-label="Connaissances et attitudes"
+          ></div>
+        </section>
+      </div>
+
+      <!-- Paramètres -->
+      <div id="asns-view-parametres" class="dispense-view" role="tabpanel" data-view-panel="parametres" hidden>
+        <section class="card" aria-labelledby="lbl-params-etab">
+          <h2 id="lbl-params-etab">Informations pour les attestations</h2>
+          <p class="hint">
+            Ces champs sont repris sur les attestations PDF (académie, établissement, enseignant validateur).
+          </p>
+          <div class="field-group">
+            <label class="field-label" for="asns-academie">Académie</label>
+            <input type="text" id="asns-academie" autocomplete="organization" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="asns-etablissement">École / collège</label>
+            <input type="text" id="asns-etablissement" autocomplete="organization" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="asns-enseignant">Nom de l'enseignant validateur</label>
+            <input type="text" id="asns-enseignant" autocomplete="name" />
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="asns-profil">Profil</label>
+            <select id="asns-profil">
+              <option value="eps">Professeur EPS</option>
+              <option value="ecole">Professeur des écoles</option>
+            </select>
+          </div>
+        </section>
+        <section class="card" aria-labelledby="lbl-signature">
+          <h2 id="lbl-signature">Signature numérique</h2>
+          <p class="hint">
+            Dessinez votre signature au doigt ou au stylet. Elle sera insérée sur l'attestation (verso).
+          </p>
+          <canvas id="asns-signature-canvas" width="400" height="120" aria-label="Zone de signature"></canvas>
+          <div class="field-row field-row--actions">
+            <button type="button" class="btn btn--ghost" id="asns-signature-clear">Effacer</button>
+            <button type="button" class="btn btn--primary" id="asns-signature-save">Enregistrer la signature</button>
+          </div>
+        </section>
+        <button type="button" class="btn btn--primary btn--labeled" id="asns-btn-save-settings">
+          <span class="btn__icon" aria-hidden="true">💾</span>
+          <span class="btn__text">Enregistrer les paramètres</span>
+        </button>
+      </div>
+
+      <!-- Attestations -->
+      <div id="asns-view-attestations" class="dispense-view" role="tabpanel" data-view-panel="attestations" hidden>
+        <section class="card" aria-labelledby="lbl-attest">
+          <h2 id="lbl-attest">Attestations</h2>
+          <p class="hint">
+            Générez les attestations officielles pour les élèves au statut « Validé » (recto + verso PDF).
+            Renseignez d'abord les informations d'établissement dans Paramètres.
+          </p>
+          <div class="field-row field-row--actions asns-attest-actions">
+            <button type="button" class="btn btn--primary btn--labeled" id="asns-btn-pdf-classe">
+              <span class="btn__icon" aria-hidden="true">📄</span>
+              <span class="btn__text">PDF — classe (validés)</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="asns-btn-print-info">
+              <span class="btn__text">Imprimer</span>
+            </button>
+          </div>
+          <div id="asns-attest-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <dialog class="classes-dialog asns-dialog-eleve" id="asns-dialog-eleve">
+      <form id="asns-form-eleve">
+        <header class="asns-dialog-eleve__header">
+          <h2 class="classes-dialog-title" id="asns-dialog-eleve-title">Fiche élève</h2>
+          <button
+            type="button"
+            class="asns-dialog-eleve__close"
+            id="asns-eleve-close"
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+        </header>
+        <div class="field-group">
+          <label class="field-label" for="asns-eleve-nom">Nom</label>
+          <input type="text" id="asns-eleve-nom" required maxlength="80" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="asns-eleve-prenom">Prénom</label>
+          <input type="text" id="asns-eleve-prenom" required maxlength="80" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="asns-eleve-naissance">Date de naissance</label>
+          <input type="date" id="asns-eleve-naissance" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="asns-eleve-commentaires">Commentaires</label>
+          <textarea id="asns-eleve-commentaires" rows="3" maxlength="500"></textarea>
+        </div>
+        <div id="asns-eleve-historique" class="asns-historique"></div>
+        <div class="field-row field-row--actions classes-dialog-actions">
+          <button type="button" class="btn btn--danger" id="asns-eleve-delete">Supprimer</button>
+          <button type="submit" class="btn btn--primary">Enregistrer</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="asns-dialog-validation" id="asns-dialog-validation">
+      <div class="asns-val-dialog">
+        <header class="asns-val-header">
+          <div class="asns-val-header__row">
+            <div class="asns-val-header__intro">
+              <p class="asns-val-header__kicker">Validation ASNS</p>
+              <h2 class="asns-val-header__title" id="asns-validation-title">Élève</h2>
+            </div>
+            <div class="asns-val-header__tools">
+              <div class="asns-val-header__badge" aria-hidden="true">
+                <span class="asns-val-header__pct" id="asns-validation-pct">0%</span>
+              </div>
+              <button
+                type="button"
+                class="asns-val-header__close"
+                id="asns-val-close"
+                aria-label="Fermer"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+          <div class="asns-val-progress">
+            <p class="asns-val-progress__text" id="asns-validation-progress"></p>
+            <div
+              class="asns-val-progress__track"
+              role="progressbar"
+              aria-labelledby="asns-validation-progress"
+              id="asns-validation-progressbar"
+            >
+              <div class="asns-val-progress__fill" id="asns-validation-progress-fill"></div>
+            </div>
+          </div>
+        </header>
+
+        <div class="asns-val-toolbar" aria-label="Raccourcis de validation">
+          <span class="asns-val-toolbar__label">Tout valider</span>
+          <div class="asns-val-toolbar__btns">
+            <button type="button" class="asns-val-chip" id="asns-val-tout-parcours">Parcours</button>
+            <button type="button" class="asns-val-chip" id="asns-val-tout-conn">Connaissances</button>
+            <button type="button" class="asns-val-chip asns-val-chip--accent" id="asns-val-tout">
+              13 étapes
+            </button>
+          </div>
+        </div>
+
+        <div id="asns-validation-grille" class="asns-val-body"></div>
+
+        <footer class="asns-val-footer">
+          <div class="field-group asns-val-footer__remarques">
+            <label class="field-label" for="asns-validation-remarques">Remarques</label>
+            <textarea id="asns-validation-remarques" rows="2" maxlength="400"></textarea>
+          </div>
+          <div class="asns-val-footer__actions">
+            <button type="button" class="btn btn--primary btn--labeled" id="asns-val-enregistrer">
+              <span class="btn__text">Enregistrer</span>
+            </button>
+          </div>
+        </footer>
+      </div>
+    </dialog>
+
+    <script src="../shared/outils-dom.js"></script>
+    <script src="../shared/eleve-display.js"></script>
+    <script src="../data-manager.js"></script>
+    <script src="../class-import.js"></script>
+    <script src="../shared/validation-asns-core.js"></script>
+    <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="../shared/validation-asns-pdf.js"></script>
+    <script src="validation-asns.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Validez le savoir-nager en sécurité au bord du bassin.",
+        sections: [
+          {
+            title: "En pratique",
+            list: [
+              "Créez une classe ou importez depuis « Classes et groupes ».",
+              "Sur chaque élève : « Valider » ouvre la grille des étapes du parcours officiel.",
+              "L'avancement (étapes validées) est visible sur la fiche de chaque élève.",
+              "Générez l'attestation PDF lorsque toutes les étapes sont validées.",
+              "L'onglet Parcours rappelle le texte officiel à réaliser.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../shared/tool-accueil.js"></script>
+    <script src="../goatcounter.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

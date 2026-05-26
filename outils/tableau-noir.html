@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Tableau Noir" />
+    <title>Tableau Noir — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app tn-body">
+    <div id="tn-app" class="tn-app" data-theme="dark">
+      <header class="tn-topbar" role="banner">
+        <div class="tn-topbar__left">
+          <button type="button" class="tn-icon-btn" id="tn-menu" aria-label="Menu outils">
+            <span aria-hidden="true">📋</span>
+          </button>
+          <a class="tn-back tool-back" href="../index.html"
+            ><span class="tool-back__chev" aria-hidden="true">‹</span></a
+          >
+          <h1 class="tn-topbar__title" id="tn-board-title">Tableau Noir</h1>
+        </div>
+        <div class="tn-topbar__actions">
+          <button type="button" class="tn-top-btn tn-top-btn--primary" id="tn-new" title="Nouveau tableau">
+            Nouveau
+          </button>
+          <div class="tn-topbar__group" role="group" aria-label="Exporter">
+            <button type="button" class="tn-top-btn" id="tn-export-png" title="Export PNG">PNG</button>
+            <button type="button" class="tn-top-btn" id="tn-export-pdf" title="Export PDF">PDF</button>
+          </div>
+          <button type="button" class="tn-top-btn tn-top-btn--share" id="tn-share" title="Partager">Partager</button>
+          <button type="button" class="tn-top-btn tn-top-btn--accent" id="tn-present" title="Plein écran" aria-pressed="false">
+            <span class="tn-present-icon" aria-hidden="true">⛶</span><span class="tn-top-btn__label">Plein écran</span>
+          </button>
+        </div>
+      </header>
+
+      <p id="tn-msg" class="tn-msg" role="alert" hidden></p>
+
+      <div class="tn-layout">
+        <aside id="tn-sidebar" class="tn-sidebar" aria-label="Outils et paramètres">
+          <div class="tn-sidebar__head">
+            <span class="tn-sidebar__title">🧰 Outils</span>
+            <button type="button" class="tn-icon-btn" id="tn-close-sidebar" aria-label="Fermer le menu">✖️</button>
+          </div>
+
+          <nav class="tn-sidebar__scroll">
+            <details class="tn-acc">
+              <summary class="tn-acc__summary">
+                <span class="tn-acc__title">📁 Séance</span>
+                <span class="tn-acc__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="tn-acc__panel">
+              <label class="tn-label" for="tn-session-select">Séance active</label>
+              <select id="tn-session-select" class="tn-select"></select>
+              <label class="tn-label" for="tn-board-select">Tableau</label>
+              <select id="tn-board-select" class="tn-select"></select>
+              <button type="button" class="tn-btn tn-btn--ghost" id="tn-new-session">➕ Nouvelle séance</button>
+              <button type="button" class="tn-btn tn-btn--ghost" id="tn-duplicate">📋 Dupliquer le tableau</button>
+              </div>
+            </details>
+
+            <details class="tn-acc" open>
+              <summary class="tn-acc__summary">
+                <span class="tn-acc__title">🏟️ Terrain</span>
+                <span class="tn-acc__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="tn-acc__panel">
+              <div class="tn-field-grid">
+                <button type="button" class="tn-chip is-active" data-tn-field="vide">⬜ Vide</button>
+                <button type="button" class="tn-chip" data-tn-field="football">⚽ Football</button>
+                <button type="button" class="tn-chip" data-tn-field="handball">🤾 Handball</button>
+                <button type="button" class="tn-chip" data-tn-field="basketball">🏀 Basket</button>
+                <button type="button" class="tn-chip" data-tn-field="volleyball">🏐 Volley</button>
+                <button type="button" class="tn-chip" data-tn-field="badminton">🏸 Badminton</button>
+                <button type="button" class="tn-chip" data-tn-field="rugby">🏉 Rugby</button>
+                <button type="button" class="tn-chip" data-tn-field="tennis">🎾 Tennis</button>
+                <button type="button" class="tn-chip" data-tn-field="tennis-table">🏓 T. de table</button>
+              </div>
+              </div>
+            </details>
+
+            <details class="tn-acc" open>
+              <summary class="tn-acc__summary">
+                <span class="tn-acc__title">✏️ Dessin</span>
+                <span class="tn-acc__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="tn-acc__panel">
+              <div class="tn-tools">
+                <button type="button" class="tn-tool" data-tn-tool="hand" title="Main — déplacer">✋</button>
+                <button type="button" class="tn-tool is-active" data-tn-tool="pen" title="Stylo">✏️</button>
+                <button type="button" class="tn-tool" data-tn-tool="arrow" title="Flèche">➡️</button>
+                <button type="button" class="tn-tool" data-tn-tool="line" title="Ligne">📏</button>
+                <button type="button" class="tn-tool" data-tn-tool="dash" title="Pointillé">〰️</button>
+                <button type="button" class="tn-tool" data-tn-tool="circle" title="Cercle">⭕</button>
+                <button type="button" class="tn-tool" data-tn-tool="zone" title="Zone">🟨</button>
+                <button type="button" class="tn-tool" data-tn-tool="text" title="Texte">🔤</button>
+                <button type="button" class="tn-tool" data-tn-tool="eraser" title="Gomme">🧽</button>
+              </div>
+              <label class="tn-label">Couleur</label>
+              <div class="tn-colors">
+                <button type="button" class="tn-swatch is-active" data-tn-color="#ffeb3b" style="--sw:#ffeb3b" title="Jaune"></button>
+                <button type="button" class="tn-swatch" data-tn-color="#ffffff" style="--sw:#ffffff" title="Blanc"></button>
+                <button type="button" class="tn-swatch" data-tn-color="#ff5252" style="--sw:#ff5252" title="Rouge"></button>
+                <button type="button" class="tn-swatch" data-tn-color="#4fc3f7" style="--sw:#4fc3f7" title="Bleu"></button>
+                <button type="button" class="tn-swatch" data-tn-color="#69f0ae" style="--sw:#69f0ae" title="Vert"></button>
+                <button type="button" class="tn-swatch" data-tn-color="#ff9800" style="--sw:#ff9800" title="Orange"></button>
+                <button type="button" class="tn-swatch" data-tn-color="#e040fb" style="--sw:#e040fb" title="Violet"></button>
+                <button type="button" class="tn-swatch" data-tn-color="#212121" style="--sw:#212121" title="Noir"></button>
+              </div>
+              <label class="tn-label" for="tn-line-width">Épaisseur</label>
+              <input type="range" id="tn-line-width" class="tn-range" min="2" max="12" value="4" />
+              <div class="tn-undo-row">
+                <button type="button" class="tn-btn" id="tn-undo" disabled>↩️ Annuler</button>
+                <button type="button" class="tn-btn" id="tn-redo" disabled>↪️ Refaire</button>
+              </div>
+              <p class="tn-label">Placer sur le terrain</p>
+              <div class="tn-tools tn-tools--place">
+                <button type="button" class="tn-tool" data-tn-place="player" title="Joueur (couleur sélectionnée)">👤</button>
+                <button type="button" class="tn-tool" data-tn-place="cone" title="Plot plat (couleur sélectionnée)">⚫</button>
+                <button type="button" class="tn-tool" data-tn-place="cone-orange" title="Cône (couleur sélectionnée)">🔺</button>
+                <button type="button" class="tn-tool" data-tn-place="ball" title="Ballon (blanc)">⚽</button>
+                <button type="button" class="tn-tool" data-tn-place="hoop" title="Cerceau (couleur sélectionnée)">⭕</button>
+              </div>
+              </div>
+            </details>
+
+            <details class="tn-acc">
+              <summary class="tn-acc__summary">
+                <span class="tn-acc__title">🎬 Animation</span>
+                <span class="tn-acc__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="tn-acc__panel">
+              <p class="tn-anim-indicator" id="tn-anim-indicator" aria-live="polite">Aucune image clé</p>
+              <div class="tn-anim-nav">
+                <button type="button" class="tn-btn tn-btn--icon" id="tn-anim-prev" title="Image précédente" disabled>◀️</button>
+                <button type="button" class="tn-btn tn-btn--icon" id="tn-anim-next" title="Image suivante" disabled>▶️</button>
+              </div>
+              <button type="button" class="tn-btn tn-btn--accent" id="tn-anim-capture">📸 Capturer une image</button>
+              <button type="button" class="tn-btn tn-btn--ghost" id="tn-anim-update" disabled>🔄 Mettre à jour l’image</button>
+              <button type="button" class="tn-btn tn-btn--ghost" id="tn-anim-delete-frame" disabled>🗑 Supprimer cette image</button>
+              <div class="tn-anim-playback">
+                <button type="button" class="tn-btn tn-btn--ghost" id="tn-anim-play">▶️ Lire le clip</button>
+                <button type="button" class="tn-btn tn-btn--ghost tn-anim-speed" id="tn-anim-speed" title="Vitesse de lecture">⏩ Vitesse ×1</button>
+              </div>
+              <p class="tn-hint">
+                Chaque image enregistre ses joueurs, matériel et dessins. Passez à l’image voulue avec ◀️ ▶️ avant de
+                modifier : une flèche sur l’image 2 ne s’affichera pas sur l’image 1.
+              </p>
+              </div>
+            </details>
+
+            <details class="tn-acc">
+              <summary class="tn-acc__summary">
+                <span class="tn-acc__title">📚 Bibliothèque</span>
+                <span class="tn-acc__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="tn-acc__panel">
+              <p class="tn-label">Mes enregistrements</p>
+              <p class="tn-hint tn-hint--tight">Cliquez sur un nom pour rouvrir le schéma ou le clip sur le terrain.</p>
+              <ul id="tn-library-list" class="tn-library" aria-label="Schémas et clips enregistrés"></ul>
+              <p id="tn-library-empty" class="tn-library-empty">Aucun enregistrement pour l’instant.</p>
+              <div class="tn-lib-save" role="group" aria-labelledby="tn-lib-save-heading">
+                <p class="tn-label" id="tn-lib-save-heading">Enregistrer le tableau actuel</p>
+                <p class="tn-hint tn-hint--tight">
+                  Chaque bouton ajoute une copie dans la bibliothèque (le tableau à l’écran reste inchangé).
+                </p>
+                <button type="button" class="tn-btn tn-btn--accent tn-lib-save-btn" id="tn-save-lib-schema">
+                  <span class="tn-lib-save-btn__title">💾 Enregistrer un schéma</span>
+                  <span class="tn-lib-save-btn__desc">Une image fixe : terrain, dessins, joueurs et matériel tels qu’affichés.</span>
+                </button>
+                <button type="button" class="tn-btn tn-btn--ghost tn-lib-save-btn" id="tn-save-lib-clip">
+                  <span class="tn-lib-save-btn__title">🎬 Enregistrer un clip</span>
+                  <span class="tn-lib-save-btn__desc">Une animation : nécessite au moins 2 images clé (section Animation).</span>
+                </button>
+              </div>
+              </div>
+            </details>
+
+            <details class="tn-acc">
+              <summary class="tn-acc__summary">
+                <span class="tn-acc__title">⚙️ Paramètres</span>
+                <span class="tn-acc__chev" aria-hidden="true"></span>
+              </summary>
+              <div class="tn-acc__panel">
+              <button type="button" class="tn-btn tn-btn--ghost" id="tn-toggle-grid">#️⃣ Quadrillage</button>
+              <button type="button" class="tn-btn tn-btn--ghost" id="tn-toggle-theme">☀️ Mode clair</button>
+              <button type="button" class="tn-btn tn-btn--ghost" id="tn-reset-view">🔍 Réinitialiser zoom</button>
+              <button type="button" class="tn-btn tn-btn--danger" id="tn-clear">🗑️ Effacer tout</button>
+              </div>
+            </details>
+          </nav>
+        </aside>
+
+        <div class="tn-sidebar-backdrop" id="tn-sidebar-backdrop" hidden></div>
+
+        <main class="tn-stage" role="main">
+          <div id="tn-viewport" class="tn-viewport">
+            <canvas id="tn-canvas" class="tn-canvas" aria-label="Zone de dessin tactique"></canvas>
+          </div>
+        </main>
+      </div>
+
+      <div id="tn-toast" class="tn-toast" role="status" hidden></div>
+    </div>
+
+    <script src="../shared/tool-accueil.js"></script>
+    <script src="../data-manager.js"></script>
+    <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="tableau-noir-fields.js?v=15"></script>
+    <script src="tableau-noir.js"></script>
+    <script src="../pwa-register.js"></script>
+    <script src="../goatcounter.js" data-goatcounter="https://clementgodereau.goatcounter.com/count" async></script>
+  </body>
+</html>
