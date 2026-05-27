@@ -440,6 +440,7 @@
     }
     $("asns-eleve-delete").hidden = false;
     els.dialogEleve.showModal();
+    updateAsnsModalScrollLock();
   }
 
   var STATUTS_ETAPE = [SC.VALIDE, SC.NON_VALIDE, SC.A_REVOIR, SC.ABSENT];
@@ -560,6 +561,20 @@
     majProgressValidation(e);
   }
 
+  function updateAsnsModalScrollLock() {
+    var locked =
+      Boolean(els.dialogValidation && els.dialogValidation.open) ||
+      Boolean(els.dialogEleve && els.dialogEleve.open);
+    document.documentElement.classList.toggle("asns-modal-open", locked);
+    document.body.classList.toggle("asns-modal-open", locked);
+  }
+
+  function bindDialogScrollLock(dialog) {
+    if (!dialog || dialog.dataset.asnsScrollLock === "1") return;
+    dialog.dataset.asnsScrollLock = "1";
+    dialog.addEventListener("close", updateAsnsModalScrollLock);
+  }
+
   function ouvrirValidation(id) {
     eleveValidationId = id;
     var e = Core.getEleve(data, id);
@@ -568,6 +583,7 @@
     $("asns-validation-remarques").value = e.commentaires || "";
     renderGrilleValidation(e);
     els.dialogValidation.showModal();
+    updateAsnsModalScrollLock();
   }
 
   function validerSection(e, section) {
@@ -683,6 +699,9 @@
   }
 
   function bindEvents() {
+    bindDialogScrollLock(els.dialogValidation);
+    bindDialogScrollLock(els.dialogEleve);
+
     document.querySelectorAll(".dispense-nav--asns .dispense-nav__btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
         setVue(btn.dataset.view);
@@ -714,6 +733,7 @@
       $("asns-eleve-delete").hidden = true;
       $("asns-eleve-historique").innerHTML = "";
       els.dialogEleve.showModal();
+      updateAsnsModalScrollLock();
     });
 
     $("asns-form-eleve").addEventListener("submit", function (ev) {
