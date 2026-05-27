@@ -132,11 +132,11 @@
   var ZOOM_STEP = 1.15;
   var pinch = { active: false, dist: 0, scale0: 1 };
 
-  function freshBoardState(name) {
+  function freshBoardState(name, fieldId) {
     return {
       id: uid("board"),
       name: name || "Tableau 1",
-      field: "vide",
+      field: fieldId || "vide",
       theme: "dark",
       grid: false,
       tool: "pen",
@@ -151,7 +151,7 @@
 
   /** Séance 1 + Tableau 1 (premier lancement ou données absentes). */
   function ensureDefaultWorkspace() {
-    state = freshBoardState("Tableau 1");
+    state = freshBoardState("Tableau 1", "football");
     var sessId = uid("sess");
     var board = cloneBoard(state);
     sessions = {

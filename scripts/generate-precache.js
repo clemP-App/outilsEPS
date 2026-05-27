@@ -18,6 +18,7 @@ var ALLOWED_EXT = {
   ".js": true,
   ".webmanifest": true,
   ".png": true,
+  ".json": true,
 };
 
 var SKIP_DIRS = new Set([
@@ -52,7 +53,7 @@ function shouldInclude(relPosix) {
   var parts = relPosix.split("/");
   if (parts[0] === "vendor" && ext === ".js") return true;
   if (parts[0] === "shared" && ext === ".js") return true;
-  if (parts[0] === "outils" && (ext === ".html" || ext === ".js")) return true;
+  if (parts[0] === "outils" && (ext === ".html" || ext === ".js" || ext === ".json")) return true;
   if (parts.length === 1 && (ext === ".html" || ext === ".css" || ext === ".js" || ext === ".webmanifest")) {
     return true;
   }

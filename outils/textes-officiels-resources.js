@@ -1,0 +1,744 @@
+/* Généré par scripts/build-textes-officiels-data.js — ne pas modifier à la main */
+(function (global) {
+  "use strict";
+  global.TEXTES_OFFICIELS_EPS_DATA = {
+  "version": 1,
+  "updatedAt": "2026-05-27",
+  "resources": [
+    {
+      "id": "programme-eps-college",
+      "title": "Programme d’EPS — cycles des apprentissages fondamentaux",
+      "category": "Programmes EPS",
+      "subsection": "Collège",
+      "level": "Collège",
+      "source": "Eduscol",
+      "url": "https://eduscol.education.fr/1925/programme-d-enseignement-d-education-physique-et-sportive-aux-cycles-des-apprentissages-fondamentaux",
+      "verifiedAt": "2026-05-27",
+      "description": "Page officielle du programme EPS au collège (cycles 3 et 4).",
+      "tags": [
+        "collège",
+        "programme",
+        "cycle 3",
+        "cycle 4",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "programme-eps-lycee-gt",
+      "title": "Programme d’EPS — lycée général et technologique",
+      "category": "Programmes EPS",
+      "subsection": "Lycée général et technologique",
+      "level": "Lycée",
+      "source": "Eduscol",
+      "url": "https://eduscol.education.fr/1929/programme-d-enseignement-d-education-physique-et-sportive-pour-les-classes-de-seconde-generale-et-technologique-et-pour-les-classes-de-premiere-et-terminale-conduisant-au-baccalaureat-general",
+      "verifiedAt": "2026-05-27",
+      "description": "Page officielle du programme EPS en seconde, première et terminale générales et technologiques.",
+      "tags": [
+        "lycée",
+        "programme",
+        "seconde",
+        "première",
+        "terminale",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "programme-eps-lycee-pro",
+      "title": "Programmes et ressources EPS — voie professionnelle",
+      "category": "Programmes EPS",
+      "subsection": "Lycée professionnel",
+      "level": "Lycée professionnel",
+      "source": "Eduscol",
+      "url": "https://eduscol.education.fr/1758/programmes-et-ressources-en-education-physique-et-sportive-eps-voie-professionnelle",
+      "verifiedAt": "2026-05-27",
+      "description": "Programme EPS CAP et bac professionnel, avec ressources d’accompagnement.",
+      "tags": [
+        "lycée professionnel",
+        "CAP",
+        "bac pro",
+        "programme",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "hub-eps-eduscol",
+      "title": "Éducation physique et sportive (EPS) — portail Eduscol",
+      "category": "Ressources Eduscol",
+      "subsection": "Ressources pédagogiques EPS",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "https://eduscol.education.fr/1666/education-physique-et-sportive-eps",
+      "verifiedAt": "2026-05-27",
+      "description": "Point d’entrée officiel vers les programmes, ressources et actualités EPS.",
+      "tags": [
+        "eduscol",
+        "ressources",
+        "programme"
+      ]
+    },
+    {
+      "id": "programme-eps-voie-pro-bo",
+      "title": "Programme EPS voie professionnelle (BO spécial n° 5 — 2019)",
+      "category": "Programmes EPS",
+      "subsection": "Voie professionnelle",
+      "level": "Lycée professionnel",
+      "source": "Bulletin officiel",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Texte publié au Bulletin officiel — lien direct à compléter depuis la page Eduscol voie pro.",
+      "tags": [
+        "lycée professionnel",
+        "bulletin officiel",
+        "programme"
+      ]
+    },
+    {
+      "id": "eps-option-lycee",
+      "title": "Enseignement optionnel d’EPS au lycée",
+      "category": "Programmes EPS",
+      "subsection": "Enseignement optionnel EPS",
+      "level": "Lycée",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Cadre de l’option EPS — renvoi vers la documentation officielle à compléter.",
+      "tags": [
+        "lycée",
+        "option",
+        "programme",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "specialite-eppcs",
+      "title": "Spécialité EPPCS (Éducation physique, pratiques et culture sportives)",
+      "category": "Programmes EPS",
+      "subsection": "Enseignement de spécialité EPPCS",
+      "level": "Lycée",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Programme et ressources de la spécialité de bac — lien à vérifier sur Eduscol.",
+      "tags": [
+        "lycée",
+        "spécialité",
+        "bac",
+        "EPPCS",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "bac-eps-specialite",
+      "title": "Baccalauréat — spécialité EPS / EPPCS",
+      "category": "Référentiels et examens",
+      "subsection": "BAC EPS",
+      "level": "Lycée",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Référentiels et modalités d’évaluation du bac — page officielle à compléter.",
+      "tags": [
+        "examens",
+        "bac",
+        "lycée",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "referentiel-cap-eps",
+      "title": "Référentiel EPS — CAP",
+      "category": "Référentiels et examens",
+      "subsection": "CAP",
+      "level": "Lycée professionnel",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Référentiel d’évaluation CAP — via le portail voie professionnelle Eduscol.",
+      "tags": [
+        "CAP",
+        "examens",
+        "lycée professionnel",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "referentiel-bep-eps",
+      "title": "Référentiel EPS — BEP (historique)",
+      "category": "Référentiels et examens",
+      "subsection": "BEP",
+      "level": "Lycée professionnel",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Documents de référence BEP — à pointer vers l’archive ou la page officielle pertinente.",
+      "tags": [
+        "BEP",
+        "examens",
+        "lycée professionnel"
+      ]
+    },
+    {
+      "id": "dnb-evaluation-eps",
+      "title": "Évaluation en EPS — DNB",
+      "category": "Référentiels et examens",
+      "subsection": "DNB",
+      "level": "Collège",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Modalités d’évaluation EPS au brevet — lien officiel à compléter.",
+      "tags": [
+        "DNB",
+        "examens",
+        "collège",
+        "3e",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "ccf-cadre-general",
+      "title": "Le contrôle en cours de formation (CCF)",
+      "category": "Référentiels et examens",
+      "subsection": "CCF",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "https://eduscol.education.fr/3141/le-controle-en-cours-de-formation-ccf",
+      "verifiedAt": "2026-05-27",
+      "description": "Cadre général du CCF sur Eduscol.",
+      "tags": [
+        "CCF",
+        "examens",
+        "évaluation",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "evaluations-certificatives",
+      "title": "Évaluations certificatives en EPS",
+      "category": "Référentiels et examens",
+      "subsection": "Évaluations certificatives",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Pages d’évaluation certificative par diplôme — à relier depuis le portail EPS.",
+      "tags": [
+        "examens",
+        "évaluation",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "referentiels-nationaux-eps",
+      "title": "Référentiels nationaux — EPS",
+      "category": "Référentiels et examens",
+      "subsection": "Référentiels nationaux",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Index des référentiels nationaux publiés pour l’EPS.",
+      "tags": [
+        "référentiel",
+        "eduscol",
+        "ministère"
+      ]
+    },
+    {
+      "id": "referentiels-academiques",
+      "title": "Référentiels académiques EPS",
+      "category": "Référentiels et examens",
+      "subsection": "Référentiels académiques",
+      "level": "Tous niveaux",
+      "source": "Académie",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Exemple : page académique de votre rectorat — URL à renseigner selon l’académie.",
+      "tags": [
+        "académie",
+        "référentiel"
+      ]
+    },
+    {
+      "id": "socle-commun",
+      "title": "Le socle commun de connaissances, de compétences et de culture",
+      "category": "Socle commun et compétences",
+      "subsection": "Socle commun",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "https://eduscol.education.fr/227/le-socle-commun-de-connaissances-de-competences-et-de-culture",
+      "verifiedAt": "2026-05-27",
+      "description": "Présentation officielle du socle commun.",
+      "tags": [
+        "socle",
+        "compétences",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "socle-domaines",
+      "title": "Les cinq domaines du socle commun",
+      "category": "Socle commun et compétences",
+      "subsection": "Domaines du socle",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Détail des domaines — depuis la rubrique socle sur Eduscol.",
+      "tags": [
+        "socle",
+        "domaines",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "attendus-fin-cycle-3",
+      "title": "Attendus de fin de cycle 3 — EPS",
+      "category": "Socle commun et compétences",
+      "subsection": "Attendus de fin de cycle",
+      "level": "Collège",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Attendus de fin de cycle pour l’EPS au collège.",
+      "tags": [
+        "collège",
+        "cycle 3",
+        "attendus",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "attendus-fin-cycle-4",
+      "title": "Attendus de fin de cycle 4 — EPS",
+      "category": "Socle commun et compétences",
+      "subsection": "Attendus de fin de cycle",
+      "level": "Collège",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Attendus de fin de cycle 4 en EPS.",
+      "tags": [
+        "collège",
+        "cycle 4",
+        "attendus",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "competences-generales-eps",
+      "title": "Compétences générales en EPS",
+      "category": "Socle commun et compétences",
+      "subsection": "Compétences générales EPS",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Documents de cadrage sur les compétences générales travaillées en EPS.",
+      "tags": [
+        "compétences",
+        "eduscol",
+        "programme"
+      ]
+    },
+    {
+      "id": "champs-apprentissage-eps",
+      "title": "Les quatre champs d’apprentissage en EPS",
+      "category": "Socle commun et compétences",
+      "subsection": "Champs d’apprentissage",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Présentation des champs d’apprentissage — documents d’accompagnement des programmes.",
+      "tags": [
+        "champs d’apprentissage",
+        "programme",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "accompagnement-cycle-4",
+      "title": "Ressources d’accompagnement du programme EPS — cycle 4",
+      "category": "Ressources Eduscol",
+      "subsection": "Documents d’accompagnement",
+      "level": "Collège",
+      "source": "Eduscol",
+      "url": "https://eduscol.education.fr/5724/ressources-d-accompagnement-du-programme-d-education-physique-et-sportive-au-cycle-4",
+      "verifiedAt": "2026-05-27",
+      "description": "Fiches et documents pour la mise en œuvre au cycle 4.",
+      "tags": [
+        "collège",
+        "cycle 4",
+        "eduscol",
+        "accompagnement"
+      ]
+    },
+    {
+      "id": "fiches-ressources-eps",
+      "title": "Fiches ressources EPS",
+      "category": "Ressources Eduscol",
+      "subsection": "Fiches ressources",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Index des fiches ressources sur le portail EPS.",
+      "tags": [
+        "eduscol",
+        "fiches",
+        "ressources"
+      ]
+    },
+    {
+      "id": "guides-officiels-eps",
+      "title": "Guides officiels EPS",
+      "category": "Ressources Eduscol",
+      "subsection": "Guides officiels",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Guides publiés par la DGESCO / Eduscol pour l’EPS.",
+      "tags": [
+        "eduscol",
+        "guides"
+      ]
+    },
+    {
+      "id": "textes-cadrage-eps",
+      "title": "Textes de cadrage EPS",
+      "category": "Ressources Eduscol",
+      "subsection": "Textes de cadrage",
+      "level": "Tous niveaux",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Notes de service et circulaires EPS — via education.gouv.fr ou Eduscol.",
+      "tags": [
+        "ministère",
+        "cadrage",
+        "circulaire"
+      ]
+    },
+    {
+      "id": "unss-accueil",
+      "title": "UNSS — Union nationale du sport scolaire",
+      "category": "UNSS",
+      "subsection": "Documents officiels UNSS",
+      "level": "Tous niveaux",
+      "source": "UNSS",
+      "url": "https://www.unss.org/",
+      "verifiedAt": "2026-05-27",
+      "description": "Site officiel de l’UNSS.",
+      "tags": [
+        "UNSS",
+        "sport scolaire"
+      ]
+    },
+    {
+      "id": "unss-circulaires",
+      "title": "Circulaires et actualités UNSS",
+      "category": "UNSS",
+      "subsection": "Circulaires UNSS",
+      "level": "Tous niveaux",
+      "source": "UNSS",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Rubrique des circulaires sur unss.org — lien direct à compléter.",
+      "tags": [
+        "UNSS",
+        "circulaire"
+      ]
+    },
+    {
+      "id": "unss-licences",
+      "title": "Licences sportives scolaires UNSS",
+      "category": "UNSS",
+      "subsection": "Licences",
+      "level": "Tous niveaux",
+      "source": "UNSS",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Informations officielles sur les licences UNSS.",
+      "tags": [
+        "UNSS",
+        "licence"
+      ]
+    },
+    {
+      "id": "unss-association-sportive",
+      "title": "Association sportive scolaire",
+      "category": "UNSS",
+      "subsection": "Association sportive",
+      "level": "Tous niveaux",
+      "source": "UNSS",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Cadre de l’association sportive — documentation UNSS.",
+      "tags": [
+        "UNSS",
+        "AS",
+        "association sportive"
+      ]
+    },
+    {
+      "id": "unss-championnats",
+      "title": "Championnats scolaires UNSS",
+      "category": "UNSS",
+      "subsection": "Championnats scolaires",
+      "level": "Tous niveaux",
+      "source": "UNSS",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Calendriers et règlements des championnats — site UNSS.",
+      "tags": [
+        "UNSS",
+        "championnat",
+        "compétition"
+      ]
+    },
+    {
+      "id": "unss-reglements-sportifs",
+      "title": "Règlements sportifs UNSS",
+      "category": "UNSS",
+      "subsection": "Règlements sportifs",
+      "level": "Tous niveaux",
+      "source": "UNSS",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Règlements des disciplines en compétition scolaire.",
+      "tags": [
+        "UNSS",
+        "règlement"
+      ]
+    },
+    {
+      "id": "securite-eps-eduscol",
+      "title": "Sécurité et prévention en EPS",
+      "category": "Sécurité et réglementation",
+      "subsection": "Sécurité en EPS",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "https://eduscol.education.fr/3103/securite-et-prevention-en-eps",
+      "verifiedAt": "2026-05-27",
+      "description": "Ressources officielles sur la sécurité en EPS.",
+      "tags": [
+        "sécurité",
+        "prévention",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "asns-arrete-bo",
+      "title": "Arrêté du 8 juillet 2015 — savoir-nager (Bulletin officiel)",
+      "category": "Sécurité et réglementation",
+      "subsection": "ASNS",
+      "level": "Tous niveaux",
+      "source": "Bulletin officiel",
+      "url": "https://www.education.gouv.fr/bo/15/Hebdo30/MENE1514345A.htm",
+      "verifiedAt": "2026-05-27",
+      "description": "Texte officiel du parcours de validation du savoir-nager.",
+      "tags": [
+        "ASNS",
+        "natation",
+        "sécurité",
+        "bulletin officiel",
+        "ministère"
+      ]
+    },
+    {
+      "id": "natation-scolaire",
+      "title": "Natation scolaire — ressources officielles",
+      "category": "Sécurité et réglementation",
+      "subsection": "Natation scolaire",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Guides et recommandations natation — depuis Eduscol sécurité ou EPS.",
+      "tags": [
+        "natation",
+        "sécurité",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "sorties-scolaires",
+      "title": "Les sorties scolaires",
+      "category": "Sécurité et réglementation",
+      "subsection": "Sorties scolaires",
+      "level": "Tous niveaux",
+      "source": "Ministère",
+      "url": "https://www.education.gouv.fr/les-sorties-scolaires-12464",
+      "verifiedAt": "2026-05-27",
+      "description": "Cadre réglementaire des sorties scolaires sur education.gouv.fr.",
+      "tags": [
+        "sorties",
+        "sécurité",
+        "ministère",
+        "encadrement"
+      ]
+    },
+    {
+      "id": "responsabilite-enseignants",
+      "title": "Responsabilité des enseignants — cadre officiel",
+      "category": "Sécurité et réglementation",
+      "subsection": "Responsabilité des enseignants",
+      "level": "Tous niveaux",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Fiches service-public ou pages ministère — lien à compléter.",
+      "tags": [
+        "responsabilité",
+        "ministère",
+        "sécurité"
+      ]
+    },
+    {
+      "id": "encadrement-activites",
+      "title": "Encadrement des activités physiques et sportives",
+      "category": "Sécurité et réglementation",
+      "subsection": "Encadrement des activités physiques",
+      "level": "Tous niveaux",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Textes sur les ratios et l’encadrement — lien officiel à vérifier.",
+      "tags": [
+        "encadrement",
+        "sécurité",
+        "ministère"
+      ]
+    },
+    {
+      "id": "activites-a-risque",
+      "title": "Activités à risque en EPS",
+      "category": "Sécurité et réglementation",
+      "subsection": "Activités à risque",
+      "level": "Tous niveaux",
+      "source": "Eduscol",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Recommandations pour les APSA à risque — documentation Eduscol.",
+      "tags": [
+        "sécurité",
+        "risque",
+        "eduscol"
+      ]
+    },
+    {
+      "id": "capes-eps-externe",
+      "title": "Concours externe CAPEPS",
+      "category": "Concours et formation",
+      "subsection": "CAPEPS externe",
+      "level": "Concours",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Page officielle du concours externe CAPEPS sur education.gouv.fr.",
+      "tags": [
+        "concours",
+        "CAPEPS",
+        "ministère"
+      ]
+    },
+    {
+      "id": "capes-eps-interne",
+      "title": "Concours interne CAPEPS",
+      "category": "Concours et formation",
+      "subsection": "CAPEPS interne",
+      "level": "Concours",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Page officielle du concours interne CAPEPS.",
+      "tags": [
+        "concours",
+        "CAPEPS",
+        "ministère"
+      ]
+    },
+    {
+      "id": "agregation-eps",
+      "title": "Agrégation externe d’EPS",
+      "category": "Concours et formation",
+      "subsection": "Agrégation EPS",
+      "level": "Concours",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Informations officielles sur l’agrégation d’EPS.",
+      "tags": [
+        "concours",
+        "agrégation",
+        "ministère"
+      ]
+    },
+    {
+      "id": "caffa",
+      "title": "Concours d’admission au CAFFA",
+      "category": "Concours et formation",
+      "subsection": "CAFFA",
+      "level": "Concours",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Page du concours CAFFA — lien ministère à compléter.",
+      "tags": [
+        "concours",
+        "CAFFA",
+        "ministère"
+      ]
+    },
+    {
+      "id": "formation-continue-eps",
+      "title": "Formation continue des enseignants",
+      "category": "Concours et formation",
+      "subsection": "Formation continue",
+      "level": "Tous niveaux",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Dispositifs de formation continue — portail enseignants.",
+      "tags": [
+        "formation",
+        "ministère"
+      ]
+    },
+    {
+      "id": "rapports-jury-capes",
+      "title": "Rapports de jury — CAPEPS / agrégation",
+      "category": "Concours et formation",
+      "subsection": "Rapports de jury",
+      "level": "Concours",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Rapports de jury publiés — archives concours.",
+      "tags": [
+        "concours",
+        "rapport de jury",
+        "ministère"
+      ]
+    },
+    {
+      "id": "programmes-concours-eps",
+      "title": "Programmes des épreuves — concours EPS",
+      "category": "Concours et formation",
+      "subsection": "Programmes de concours",
+      "level": "Concours",
+      "source": "Ministère",
+      "url": "LIEN_OFFICIEL_A_COMPLETER",
+      "verifiedAt": null,
+      "description": "Programmes officiels des épreuves écrites et orales.",
+      "tags": [
+        "concours",
+        "programme",
+        "ministère"
+      ]
+    }
+  ]
+};
+})(typeof window !== "undefined" ? window : this);

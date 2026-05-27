@@ -70,6 +70,16 @@
       publicCible: "prof",
     },
     {
+      id: "textes-officiels",
+      titre: "Textes Officiels EPS",
+      description:
+        "Répertoire de liens vers programmes, référentiels, Eduscol, UNSS et textes officiels EPS.",
+      icone: "⚖️",
+      href: "outils/textes-officiels.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
       id: "oubli-materiel",
       titre: "Oubli de matériel",
       description:
