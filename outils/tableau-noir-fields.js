@@ -47,6 +47,14 @@
     };
   }
 
+  /** Écran portrait : axe long du terrain le long de la hauteur (lisible sur portable). */
+  function shouldDrawPortrait(W, H, fieldId) {
+    if (!fieldId || W <= 0 || H <= 0 || H <= W) return false;
+    var sport = FIELDS[fieldId] ? fieldId : "vide";
+    if (sport === "vide") return true;
+    return FIELDS[sport].ratio > 1;
+  }
+
   function prepStroke(ctx, lc, lw) {
     ctx.strokeStyle = lc;
     ctx.fillStyle = lc;
@@ -481,6 +489,7 @@
 
   global.TableauNoirFields = {
     FIELDS: FIELDS,
+    shouldDrawPortrait: shouldDrawPortrait,
     fieldList: function () {
       return Object.keys(FIELDS).map(function (id) {
         return { id: id, label: FIELDS[id].label };

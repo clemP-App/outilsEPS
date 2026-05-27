@@ -29,14 +29,29 @@
           <h1 class="tn-topbar__title" id="tn-board-title">Tableau Noir</h1>
         </div>
         <div class="tn-topbar__actions">
-          <button type="button" class="tn-top-btn tn-top-btn--primary" id="tn-new" title="Nouveau tableau">
-            Nouveau
-          </button>
-          <div class="tn-topbar__group" role="group" aria-label="Exporter">
-            <button type="button" class="tn-top-btn" id="tn-export-png" title="Export PNG">PNG</button>
-            <button type="button" class="tn-top-btn" id="tn-export-pdf" title="Export PDF">PDF</button>
+          <details class="tn-topbar-overflow" id="tn-topbar-overflow">
+            <summary class="tn-top-btn tn-top-btn--menu" aria-label="Fichier et export">⋯</summary>
+            <div class="tn-topbar-overflow__panel" role="menu">
+              <button type="button" class="tn-topbar-overflow__item" data-tn-action="new" role="menuitem">
+                Nouveau tableau
+              </button>
+              <button type="button" class="tn-topbar-overflow__item" data-tn-action="png" role="menuitem">Export PNG</button>
+              <button type="button" class="tn-topbar-overflow__item" data-tn-action="pdf" role="menuitem">Export PDF</button>
+              <button type="button" class="tn-topbar-overflow__item tn-topbar-overflow__item--accent" data-tn-action="share" role="menuitem">
+                Partager
+              </button>
+            </div>
+          </details>
+          <div class="tn-topbar__actions-inline" aria-label="Fichier et export">
+            <button type="button" class="tn-top-btn tn-top-btn--primary" data-tn-action="new" title="Nouveau tableau">
+              Nouveau
+            </button>
+            <div class="tn-topbar__group" role="group" aria-label="Exporter">
+              <button type="button" class="tn-top-btn" data-tn-action="png" title="Export PNG">PNG</button>
+              <button type="button" class="tn-top-btn" data-tn-action="pdf" title="Export PDF">PDF</button>
+            </div>
+            <button type="button" class="tn-top-btn tn-top-btn--share" data-tn-action="share" title="Partager">Partager</button>
           </div>
-          <button type="button" class="tn-top-btn tn-top-btn--share" id="tn-share" title="Partager">Partager</button>
           <button type="button" class="tn-top-btn tn-top-btn--accent" id="tn-present" title="Plein écran" aria-pressed="false">
             <span class="tn-present-icon" aria-hidden="true">⛶</span><span class="tn-top-btn__label">Plein écran</span>
           </button>
@@ -203,6 +218,9 @@
         <div class="tn-sidebar-backdrop" id="tn-sidebar-backdrop" hidden></div>
 
         <main class="tn-stage" role="main">
+          <button type="button" class="tn-exit-present" id="tn-exit-present" hidden title="Quitter le plein écran">
+            Quitter
+          </button>
           <div id="tn-viewport" class="tn-viewport">
             <canvas id="tn-canvas" class="tn-canvas" aria-label="Zone de dessin tactique"></canvas>
           </div>

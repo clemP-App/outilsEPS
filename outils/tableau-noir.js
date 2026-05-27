@@ -208,11 +208,29 @@
     render();
   }
 
+  function canvasLayout(W, H) {
+    var portrait =
+      typeof TableauNoirFields !== "undefined" &&
+      TableauNoirFields.shouldDrawPortrait(W, H, state.field);
+    if (portrait) {
+      return { portrait: true, dW: H, dH: W };
+    }
+    return { portrait: false, dW: W, dH: H };
+  }
+
   function normFromClient(clientX, clientY) {
     var rect = canvasEl.getBoundingClientRect();
-    var x = ((clientX - rect.left) / rect.width) * canvasEl.width;
-    var y = ((clientY - rect.top) / rect.height) * canvasEl.height;
-    return { x: x, y: y, nx: x / canvasEl.width, ny: y / canvasEl.height };
+    var W = canvasEl.width;
+    var H = canvasEl.height;
+    var x = ((clientX - rect.left) / rect.width) * W;
+    var y = ((clientY - rect.top) / rect.height) * H;
+    var layout = canvasLayout(W, H);
+    if (layout.portrait) {
+      var xd = H - y;
+      var yd = x;
+      return { x: xd, y: yd, nx: xd / H, ny: yd / W };
+    }
+    return { x: x, y: y, nx: x / W, ny: y / H };
   }
 
   function pushUndo() {
@@ -521,23 +539,31 @@
     if (!ctx || !canvasEl) return;
     var W = canvasEl.width;
     var H = canvasEl.height;
+    var layout = canvasLayout(W, H);
+    var dW = layout.dW;
+    var dH = layout.dH;
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
+    if (layout.portrait) {
+      ctx.translate(W / 2, H / 2);
+      ctx.rotate(Math.PI / 2);
+      ctx.translate(-dW / 2, -dH / 2);
+    }
     if (typeof TableauNoirFields !== "undefined") {
-      TableauNoirFields.drawField(ctx, W, H, state.field, state.theme, state.grid);
+      TableauNoirFields.drawField(ctx, dW, dH, state.field, state.theme, state.grid);
     }
     state.shapes.forEach(function (sh) {
-      drawShape(ctx, sh, W, H);
+      drawShape(ctx, sh, dW, dH);
     });
     state.equipment.forEach(function (eq) {
-      drawEquipment(ctx, eq, W, H);
+      drawEquipment(ctx, eq, dW, dH);
     });
     state.players.forEach(function (pl) {
-      drawPlayer(ctx, pl, W, H);
+      drawPlayer(ctx, pl, dW, dH);
     });
     if (pointer.active && pointer.preview) {
-      drawShape(ctx, pointer.preview, W, H, true);
+      drawShape(ctx, pointer.preview, dW, dH, true);
     }
     ctx.restore();
   }
@@ -1594,27 +1620,53 @@
 
   function syncFullscreenBtn() {
     var btn = document.getElementById("tn-present");
-    if (!btn) return;
+    var exitBtn = document.getElementById("tn-exit-present");
     var on = appEl && appEl.classList.contains("tn-presentation");
-    var icon = btn.querySelector(".tn-present-icon");
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.title = on ? "Quitter le plein écran" : "Plein écran";
-    if (icon) icon.textContent = on ? "🗗" : "⛶";
-    var label = btn.querySelector(".tn-top-btn__label");
-    if (label) label.textContent = on ? "Quitter" : "Plein écran";
+    if (btn) {
+      var icon = btn.querySelector(".tn-present-icon");
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.title = on ? "Quitter le plein écran" : "Plein écran";
+      if (icon) icon.textContent = on ? "🗗" : "⛶";
+      var label = btn.querySelector(".tn-top-btn__label");
+      if (label) label.textContent = on ? "Quitter" : "Plein écran";
+    }
+    if (exitBtn) {
+      exitBtn.hidden = !on;
+    }
+  }
+
+  function exitPresentation() {
+    if (!appEl) return;
+    appEl.classList.remove("tn-presentation");
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(function () {});
+    }
+    resetView();
+    syncFullscreenBtn();
+    resizeCanvas();
   }
 
   function togglePresentation() {
     if (!appEl) return;
-    var on = !appEl.classList.contains("tn-presentation");
-    appEl.classList.toggle("tn-presentation", on);
-    if (on && viewportEl && viewportEl.requestFullscreen) {
+    if (appEl.classList.contains("tn-presentation")) {
+      exitPresentation();
+      return;
+    }
+    appEl.classList.add("tn-presentation");
+    if (viewportEl && viewportEl.requestFullscreen) {
       viewportEl.requestFullscreen().catch(function () {});
-    } else if (!on && document.fullscreenElement) {
-      document.exitFullscreen().catch(function () {});
     }
     syncFullscreenBtn();
     resizeCanvas();
+  }
+
+  function runTopbarAction(action) {
+    var overflow = document.getElementById("tn-topbar-overflow");
+    if (overflow) overflow.removeAttribute("open");
+    if (action === "new") newBoard();
+    else if (action === "png") exportPng();
+    else if (action === "pdf") exportPdf();
+    else if (action === "share") shareBoard();
   }
 
   function applyPanZoomTransform() {
@@ -1729,11 +1781,14 @@
   function bindUi() {
     document.getElementById("tn-undo").addEventListener("click", undo);
     document.getElementById("tn-redo").addEventListener("click", redo);
-    document.getElementById("tn-new").addEventListener("click", newBoard);
-    document.getElementById("tn-export-png").addEventListener("click", exportPng);
-    document.getElementById("tn-export-pdf").addEventListener("click", exportPdf);
-    document.getElementById("tn-share").addEventListener("click", shareBoard);
+    document.querySelectorAll("[data-tn-action]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        runTopbarAction(btn.getAttribute("data-tn-action"));
+      });
+    });
     document.getElementById("tn-present").addEventListener("click", togglePresentation);
+    var exitPresent = document.getElementById("tn-exit-present");
+    if (exitPresent) exitPresent.addEventListener("click", exitPresentation);
     document.getElementById("tn-clear").addEventListener("click", clearBoard);
     document.getElementById("tn-duplicate").addEventListener("click", duplicateBoard);
     document.getElementById("tn-menu").addEventListener("click", toggleSidebar);
@@ -1906,9 +1961,18 @@
 
     window.addEventListener("resize", resizeCanvas);
     document.addEventListener("fullscreenchange", function () {
-      if (!document.fullscreenElement) appEl.classList.remove("tn-presentation");
-      syncFullscreenBtn();
-      resizeCanvas();
+      if (!document.fullscreenElement && appEl.classList.contains("tn-presentation")) {
+        exitPresentation();
+      } else {
+        syncFullscreenBtn();
+        resizeCanvas();
+      }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && appEl.classList.contains("tn-presentation")) {
+        e.preventDefault();
+        exitPresentation();
+      }
     });
   }
 
