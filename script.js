@@ -417,6 +417,7 @@
   }
 
   renderListe(OUTILS);
+  window.dispatchEvent(new Event("outils-eps-home-ready"));
   if (searchInput) {
     searchInput.addEventListener("input", onSearch);
   }

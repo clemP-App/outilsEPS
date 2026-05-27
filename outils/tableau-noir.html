@@ -15,7 +15,6 @@
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
-    <script src="../pwa-splash.js"></script>
   </head>
   <body class="app tn-body">
     <div id="tn-app" class="tn-app" data-theme="dark">
@@ -85,10 +84,9 @@
       <div class="tn-layout">
         <aside id="tn-sidebar" class="tn-sidebar" aria-label="Outils et paramètres">
           <div class="tn-sidebar__head">
-            <a class="tn-sidebar-home" href="../index.html">
-              <span class="tn-sidebar-home__chev" aria-hidden="true">‹</span>
-              <span class="tn-sidebar-home__label">Accueil</span>
-            </a>
+            <a class="tool-back tn-sidebar-home" href="../index.html" aria-label="Retour à l'accueil"
+              ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+            >
             <div class="tn-sidebar__head-row">
               <span class="tn-sidebar__title">🧰 Outils</span>
               <button type="button" class="tn-icon-btn" id="tn-close-sidebar" aria-label="Fermer le menu">✖️</button>

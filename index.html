@@ -16,7 +16,29 @@
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="style.css" />
-    <script src="pwa-splash.js"></script>
+    <style>
+      html.pwa-splash-boot,
+      html.pwa-splash-boot body {
+        background: #1a2744;
+      }
+      html.pwa-splash-boot body {
+        overflow: hidden;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          if (
+            window.navigator.standalone === true ||
+            window.matchMedia("(display-mode: standalone)").matches ||
+            window.matchMedia("(display-mode: fullscreen)").matches
+          ) {
+            document.documentElement.classList.add("pwa-splash-boot");
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script src="pwa-splash.js" data-home></script>
   </head>
   <body class="app app--home">
     <header class="site-header">

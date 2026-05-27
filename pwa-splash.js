@@ -1,11 +1,17 @@
 /**
- * Écran de chargement au démarrage de la PWA (mode installé).
- * À placer dans <head>, avant le contenu, pour éviter l’écran blanc.
+ * Écran de chargement au démarrage de la PWA (page d’accueil uniquement).
+ * Placer dans <head> avec l’attribut data-home sur index.html.
  */
 (function () {
   "use strict";
 
   var script = document.currentScript;
+  var MIN_VISIBLE_MS = 1000;
+  var MAX_WAIT_MS = 5000;
+  var shownAt = 0;
+  var loadDone = false;
+  var appReady = false;
+  var hidden = false;
 
   function isStandalonePwa() {
     if (window.navigator.standalone === true) return true;
@@ -17,6 +23,12 @@
       /* matchMedia indisponible */
     }
     return false;
+  }
+
+  function isHomePage() {
+    if (script && script.hasAttribute("data-home")) return true;
+    var path = (location.pathname || "").replace(/\\/g, "/");
+    return /(^|\/)index\.html$/i.test(path);
   }
 
   function assetBase() {
@@ -38,13 +50,13 @@
 
   function readAppVersion() {
     if (typeof APP_VERSION !== "undefined" && APP_VERSION) return String(APP_VERSION);
-    var base = assetBase();
-    document.write('<script src="' + base + 'app-version.js"><\/script>');
-    if (typeof APP_VERSION !== "undefined" && APP_VERSION) return String(APP_VERSION);
     return "";
   }
 
-  if (!isStandalonePwa() || document.getElementById("pwa-splash")) return;
+  if (!isStandalonePwa() || !isHomePage() || document.getElementById("pwa-splash")) {
+    document.documentElement.classList.remove("pwa-splash-boot");
+    return;
+  }
 
   var color = themeColor();
   var base = assetBase();
@@ -92,9 +104,7 @@
     '<p class="pwa-splash__status">Chargement…</p>' +
     '<div class="pwa-splash__spinner" aria-hidden="true"></div>' +
     "</div>" +
-    (version
-      ? '<p class="pwa-splash__version">Version ' + version + "</p>"
-      : "");
+    (version ? '<p class="pwa-splash__version">Version ' + version + "</p>" : "");
 
   function mount() {
     if (splash.parentNode) return;
@@ -102,12 +112,12 @@
     else document.documentElement.appendChild(splash);
   }
 
+  shownAt = Date.now();
   mount();
   if (!document.body) {
     document.addEventListener("DOMContentLoaded", mount);
   }
 
-  var hidden = false;
   function hideSplash() {
     if (hidden) return;
     hidden = true;
@@ -116,13 +126,53 @@
     window.setTimeout(function () {
       splash.remove();
       style.remove();
-      document.documentElement.classList.remove("pwa-splash-active");
+      document.documentElement.classList.remove("pwa-splash-active", "pwa-splash-boot");
     }, 320);
   }
 
-  if (document.readyState === "complete") {
-    hideSplash();
-  } else {
-    window.addEventListener("load", hideSplash);
+  function tryHideSplash() {
+    if (hidden || !loadDone || !appReady) return;
+    var elapsed = Date.now() - shownAt;
+    var wait = Math.max(0, MIN_VISIBLE_MS - elapsed);
+    window.setTimeout(hideSplash, wait);
   }
+
+  function markLoadDone() {
+    loadDone = true;
+    tryHideSplash();
+  }
+
+  function markAppReady() {
+    appReady = true;
+    tryHideSplash();
+  }
+
+  if (document.readyState === "complete") {
+    markLoadDone();
+  } else {
+    window.addEventListener("load", markLoadDone);
+  }
+
+  window.addEventListener("outils-eps-home-ready", markAppReady);
+
+  window.setTimeout(function () {
+    markAppReady();
+    markLoadDone();
+  }, MAX_WAIT_MS);
+
+  var versionScript = document.createElement("script");
+  versionScript.src = base + "app-version.js";
+  versionScript.async = true;
+  versionScript.onload = function () {
+    if (typeof APP_VERSION !== "undefined" && APP_VERSION) {
+      var verEl = splash.querySelector(".pwa-splash__version");
+      if (!verEl) {
+        verEl = document.createElement("p");
+        verEl.className = "pwa-splash__version";
+        splash.appendChild(verEl);
+      }
+      verEl.textContent = "Version " + APP_VERSION;
+    }
+  };
+  document.head.appendChild(versionScript);
 })();

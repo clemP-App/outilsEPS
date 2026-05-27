@@ -563,7 +563,7 @@
       drawEquipment(ctx, eq, dW, dH);
     });
     state.players.forEach(function (pl) {
-      drawPlayer(ctx, pl, dW, dH);
+      drawPlayer(ctx, pl, dW, dH, layout);
     });
     if (pointer.active && pointer.preview) {
       drawShape(ctx, pointer.preview, dW, dH, true);
@@ -819,7 +819,7 @@
     );
   }
 
-  function drawPlayer(ctx, pl, W, H) {
+  function drawPlayer(ctx, pl, W, H, layout) {
     var fill = pl.color || PALETTE[0];
     var stroke = mixHex(fill, "#ffffff", 0.45);
     var r = (pl.r || 0.028) * Math.min(W, H);
@@ -833,13 +833,18 @@
     ctx.lineWidth = Math.max(2, r * 0.15);
     ctx.stroke();
     var fs = Math.max(11, r * 0.95);
+    var num = String(pl.number != null ? pl.number : "");
+    ctx.save();
+    ctx.translate(x, y);
+    if (layout && layout.portrait) {
+      ctx.rotate(-Math.PI / 2);
+    }
     ctx.font = "bold " + fs + "px system-ui, sans-serif";
     ctx.fillStyle = textOnFill(fill);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(String(pl.number != null ? pl.number : ""), x, y);
-    ctx.textAlign = "left";
-    ctx.textBaseline = "alphabetic";
+    ctx.fillText(num, 0, 0);
+    ctx.restore();
   }
 
   function equipColor(eq) {

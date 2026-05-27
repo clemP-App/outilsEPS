@@ -13478,43 +13478,10 @@ body.orient-arrivee-modal-open {
   border-bottom: 1px solid var(--tn-border);
 }
 
-.tn-sidebar-home {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  align-self: flex-start;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 0.4rem 0.65rem;
-  margin: -0.15rem 0 0 -0.15rem;
-  border: 1px solid var(--tn-border);
-  border-radius: 0.45rem;
-  background: color-mix(in srgb, var(--tn-bg) 40%, var(--tn-surface));
-  color: var(--tn-muted);
-  font-size: 0.82rem;
-  font-weight: 650;
-  line-height: 1.2;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-}
-
-.tn-sidebar-home__chev {
+.tn-sidebar .tn-sidebar-home.tool-back {
   flex-shrink: 0;
-  font-size: 1rem;
-  line-height: 1;
-  font-weight: 700;
-}
-
-.tn-sidebar-home__label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tn-sidebar-home:hover {
-  color: var(--tn-text);
-  background: var(--tn-accent-dim);
-  border-color: color-mix(in srgb, var(--tn-accent) 40%, var(--tn-border));
+  align-self: flex-start;
+  margin: 0;
 }
 
 .tn-sidebar__head-row {
