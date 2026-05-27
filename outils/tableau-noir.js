@@ -127,6 +127,9 @@
   };
 
   var panZoom = { scale: 1, tx: 0, ty: 0 };
+  var ZOOM_MIN = 0.5;
+  var ZOOM_MAX = 3;
+  var ZOOM_STEP = 1.15;
   var pinch = { active: false, dist: 0, scale0: 1 };
 
   function freshBoardState(name) {
@@ -1066,15 +1069,6 @@
   function onPointerDown(e) {
     if (!isCanvasInteractionTarget(e.target)) return;
     closeSidebarMobile();
-    if (appEl && appEl.classList.contains("tn-presentation") && e.button === 0) {
-      pointer.mode = "pan";
-      pointer.active = true;
-      pointer.startX = e.clientX;
-      pointer.startY = e.clientY;
-      pointer.lastX = panZoom.tx;
-      pointer.lastY = panZoom.ty;
-      return;
-    }
     e.preventDefault();
     var p = normFromClient(e.clientX, e.clientY);
     pointer.active = true;
@@ -1618,46 +1612,27 @@
     }, "image/png");
   }
 
-  function syncFullscreenBtn() {
-    var btn = document.getElementById("tn-present");
-    var exitBtn = document.getElementById("tn-exit-present");
-    var on = appEl && appEl.classList.contains("tn-presentation");
-    if (btn) {
-      var icon = btn.querySelector(".tn-present-icon");
-      btn.setAttribute("aria-pressed", on ? "true" : "false");
-      btn.title = on ? "Quitter le plein écran" : "Plein écran";
-      if (icon) icon.textContent = on ? "🗗" : "⛶";
-      var label = btn.querySelector(".tn-top-btn__label");
-      if (label) label.textContent = on ? "Quitter" : "Plein écran";
-    }
-    if (exitBtn) {
-      exitBtn.hidden = !on;
-    }
+  function clampZoom(scale) {
+    return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, scale));
   }
 
-  function exitPresentation() {
-    if (!appEl) return;
-    appEl.classList.remove("tn-presentation");
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(function () {});
-    }
-    resetView();
-    syncFullscreenBtn();
-    resizeCanvas();
+  function syncZoomUi() {
+    var label = document.getElementById("tn-zoom-level");
+    if (label) label.textContent = Math.round(panZoom.scale * 100) + "%";
   }
 
-  function togglePresentation() {
-    if (!appEl) return;
-    if (appEl.classList.contains("tn-presentation")) {
-      exitPresentation();
-      return;
-    }
-    appEl.classList.add("tn-presentation");
-    if (viewportEl && viewportEl.requestFullscreen) {
-      viewportEl.requestFullscreen().catch(function () {});
-    }
-    syncFullscreenBtn();
-    resizeCanvas();
+  function zoomBy(factor) {
+    panZoom.scale = clampZoom(panZoom.scale * factor);
+    applyPanZoomTransform();
+    syncZoomUi();
+  }
+
+  function zoomIn() {
+    zoomBy(ZOOM_STEP);
+  }
+
+  function zoomOut() {
+    zoomBy(1 / ZOOM_STEP);
   }
 
   function runTopbarAction(action) {
@@ -1677,6 +1652,7 @@
   function resetView() {
     panZoom = { scale: 1, tx: 0, ty: 0 };
     applyPanZoomTransform();
+    syncZoomUi();
   }
 
   function captureAnimKeyframe() {
@@ -1786,9 +1762,9 @@
         runTopbarAction(btn.getAttribute("data-tn-action"));
       });
     });
-    document.getElementById("tn-present").addEventListener("click", togglePresentation);
-    var exitPresent = document.getElementById("tn-exit-present");
-    if (exitPresent) exitPresent.addEventListener("click", exitPresentation);
+    document.getElementById("tn-zoom-in").addEventListener("click", zoomIn);
+    document.getElementById("tn-zoom-out").addEventListener("click", zoomOut);
+    document.getElementById("tn-zoom-reset").addEventListener("click", resetView);
     document.getElementById("tn-clear").addEventListener("click", clearBoard);
     document.getElementById("tn-duplicate").addEventListener("click", duplicateBoard);
     document.getElementById("tn-menu").addEventListener("click", toggleSidebar);
@@ -1919,11 +1895,9 @@
     viewportEl.addEventListener(
       "wheel",
       function (e) {
-        if (!appEl.classList.contains("tn-presentation") && !e.ctrlKey) return;
+        if (!e.ctrlKey) return;
         e.preventDefault();
-        var delta = e.deltaY > 0 ? 0.92 : 1.08;
-        panZoom.scale = Math.max(0.5, Math.min(3, panZoom.scale * delta));
-        applyPanZoomTransform();
+        zoomBy(e.deltaY > 0 ? 1 / ZOOM_STEP : ZOOM_STEP);
       },
       { passive: false }
     );
@@ -1931,7 +1905,7 @@
     viewportEl.addEventListener(
       "touchstart",
       function (e) {
-        if (!appEl.classList.contains("tn-presentation") || e.touches.length !== 2) return;
+        if (e.touches.length !== 2) return;
         pinch.active = true;
         pinch.dist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
@@ -1950,8 +1924,9 @@
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
-        panZoom.scale = Math.max(0.5, Math.min(3, pinch.scale0 * (d / pinch.dist)));
+        panZoom.scale = clampZoom(pinch.scale0 * (d / pinch.dist));
         applyPanZoomTransform();
+        syncZoomUi();
       },
       { passive: false }
     );
@@ -1960,20 +1935,6 @@
     });
 
     window.addEventListener("resize", resizeCanvas);
-    document.addEventListener("fullscreenchange", function () {
-      if (!document.fullscreenElement && appEl.classList.contains("tn-presentation")) {
-        exitPresentation();
-      } else {
-        syncFullscreenBtn();
-        resizeCanvas();
-      }
-    });
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && appEl.classList.contains("tn-presentation")) {
-        e.preventDefault();
-        exitPresentation();
-      }
-    });
   }
 
   function init() {
@@ -1990,6 +1951,7 @@
       renderLibrary();
       renderSessionsList();
       resizeCanvas();
+      syncZoomUi();
       updateUndoButtons();
     });
   }

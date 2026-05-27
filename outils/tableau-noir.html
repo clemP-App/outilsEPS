@@ -52,9 +52,22 @@
             </div>
             <button type="button" class="tn-top-btn tn-top-btn--share" data-tn-action="share" title="Partager">Partager</button>
           </div>
-          <button type="button" class="tn-top-btn tn-top-btn--accent" id="tn-present" title="Plein écran" aria-pressed="false">
-            <span class="tn-present-icon" aria-hidden="true">⛶</span><span class="tn-top-btn__label">Plein écran</span>
-          </button>
+          <div class="tn-topbar__group tn-topbar__zoom" role="group" aria-label="Zoom">
+            <button type="button" class="tn-top-btn tn-top-btn--zoom" id="tn-zoom-out" title="Zoom arrière" aria-label="Zoom arrière">
+              −
+            </button>
+            <button
+              type="button"
+              class="tn-top-btn tn-top-btn--zoom tn-top-btn--zoom-level"
+              id="tn-zoom-reset"
+              title="Réinitialiser le zoom"
+            >
+              <span id="tn-zoom-level">100%</span>
+            </button>
+            <button type="button" class="tn-top-btn tn-top-btn--zoom" id="tn-zoom-in" title="Zoom avant" aria-label="Zoom avant">
+              +
+            </button>
+          </div>
         </div>
       </header>
 
@@ -218,9 +231,6 @@
         <div class="tn-sidebar-backdrop" id="tn-sidebar-backdrop" hidden></div>
 
         <main class="tn-stage" role="main">
-          <button type="button" class="tn-exit-present" id="tn-exit-present" hidden title="Quitter le plein écran">
-            Quitter
-          </button>
           <div id="tn-viewport" class="tn-viewport">
             <canvas id="tn-canvas" class="tn-canvas" aria-label="Zone de dessin tactique"></canvas>
           </div>
