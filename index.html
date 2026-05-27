@@ -28,6 +28,7 @@
     <script>
       (function () {
         try {
+          if (sessionStorage.getItem("outils_eps_splash_shown") === "1") return;
           if (
             window.navigator.standalone === true ||
             window.matchMedia("(display-mode: standalone)").matches ||

@@ -6,6 +6,7 @@
   "use strict";
 
   var script = document.currentScript;
+  var SPLASH_SESSION_KEY = "outils_eps_splash_shown";
   var MIN_VISIBLE_MS = 1000;
   var MAX_WAIT_MS = 5000;
   var shownAt = 0;
@@ -53,10 +54,57 @@
     return "";
   }
 
-  if (!isStandalonePwa() || !isHomePage() || document.getElementById("pwa-splash")) {
+  function splashAlreadyShownThisSession() {
+    try {
+      return sessionStorage.getItem(SPLASH_SESSION_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markSplashShownThisSession() {
+    try {
+      sessionStorage.setItem(SPLASH_SESSION_KEY, "1");
+    } catch (e) {
+      /* stockage indisponible */
+    }
+  }
+
+  /** Ouverture initiale de l’accueil, pas un retour depuis un outil. */
+  function isInitialHomeOpen() {
+    if (splashAlreadyShownThisSession()) return false;
+
+    try {
+      var nav = performance.getEntriesByType("navigation")[0];
+      if (nav && nav.type === "back_forward") return false;
+    } catch (e) {
+      /* API navigation indisponible */
+    }
+
+    try {
+      var ref = document.referrer;
+      if (!ref) return true;
+      var refUrl = new URL(ref, location.href);
+      if (refUrl.origin !== location.origin) return true;
+      var refPath = refUrl.pathname.replace(/\\/g, "/");
+      if (/\/outils\//i.test(refPath) || /eleves\.html$/i.test(refPath)) return false;
+    } catch (e) {
+      return true;
+    }
+
+    return true;
+  }
+
+  function shouldShowSplash() {
+    return isStandalonePwa() && isHomePage() && isInitialHomeOpen() && !document.getElementById("pwa-splash");
+  }
+
+  if (!shouldShowSplash()) {
     document.documentElement.classList.remove("pwa-splash-boot");
     return;
   }
+
+  markSplashShownThisSession();
 
   var color = themeColor();
   var base = assetBase();
