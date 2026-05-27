@@ -70,16 +70,6 @@
       publicCible: "prof",
     },
     {
-      id: "textes-officiels",
-      titre: "Textes Officiels EPS",
-      description:
-        "Répertoire de liens vers programmes, référentiels, Eduscol, UNSS et textes officiels EPS.",
-      icone: "⚖️",
-      href: "outils/textes-officiels.html",
-      categorie: "Gestion de classe",
-      publicCible: "prof",
-    },
-    {
       id: "oubli-materiel",
       titre: "Oubli de matériel",
       description:
@@ -96,6 +86,16 @@
         "Scannez les QR des élèves, consultez leurs résultats (aperçu identique à chaque outil) et gérez les imports.",
       icone: "📲",
       href: "outils/donnees-eleves.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
+      id: "ressources-eps",
+      titre: "Ressources EPS",
+      description:
+        "Liens officiels Eduscol et concours, favoris et ressources personnelles en un clin d’œil.",
+      icone: "📚",
+      href: "outils/ressources-eps.html",
       categorie: "Gestion de classe",
       publicCible: "prof",
     },

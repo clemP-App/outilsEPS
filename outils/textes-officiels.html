@@ -2,103 +2,11 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
-    />
-    <meta
-      name="description"
-      content="Répertoire de liens vers les textes officiels, programmes et ressources EPS."
-    />
-    <meta name="theme-color" content="#1a2744" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
-    <title>Textes Officiels EPS — Outils EPS</title>
-    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
-    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
-    <link rel="stylesheet" href="../style.css" />
+    <meta http-equiv="refresh" content="0; url=ressources-eps.html" />
+    <title>Ressources EPS — redirection</title>
+    <script>location.replace("ressources-eps.html");</script>
   </head>
-  <body class="app app--tool">
-    <div class="page-outil page-outil--textes-officiels">
-      <header class="page-outil__header page-outil__header--has-info">
-        <a class="tool-back" href="../index.html"
-          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
-        >
-        <h1>Textes Officiels EPS</h1>
-        <button
-          type="button"
-          class="tool-info-btn"
-          id="btn-info-textes-officiels"
-          aria-label="Informations sur cet outil"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" />
-            <path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
-          </svg>
-        </button>
-      </header>
-
-      <p class="toeps-tagline">Accédez rapidement aux ressources officielles utiles en EPS</p>
-
-      <p id="toeps-offline-banner" class="toeps-offline-banner" role="status" hidden>
-        Mode hors ligne — favoris consultables ; ouverture des liens externes nécessite une connexion Internet.
-      </p>
-
-      <p id="toeps-online-hint" class="hint toeps-online-hint">
-        Répertoire de liens officiels uniquement — connexion Internet nécessaire pour ouvrir les ressources en ligne.
-      </p>
-
-      <div id="toeps-search-mount" class="toeps-search-mount"></div>
-
-      <div id="toeps-filters-mount" class="toeps-filters-mount" hidden></div>
-
-      <section id="toeps-section-favoris" class="toeps-section" hidden aria-labelledby="toeps-lbl-favoris">
-        <h2 id="toeps-lbl-favoris" class="toeps-section__title">Favoris</h2>
-        <div id="toeps-favoris-list" class="toeps-resource-list" role="list"></div>
-      </section>
-
-      <section id="toeps-section-recent" class="toeps-section" aria-labelledby="toeps-lbl-recent">
-        <h2 id="toeps-lbl-recent" class="toeps-section__title">Récemment vérifiés</h2>
-        <div id="toeps-recent-list" class="toeps-resource-list" role="list"></div>
-      </section>
-
-      <section id="toeps-section-categories" class="toeps-section" aria-labelledby="toeps-lbl-categories">
-        <h2 id="toeps-lbl-categories" class="toeps-section__title">Rubriques</h2>
-        <div id="toeps-categories-mount"></div>
-      </section>
-
-      <section id="toeps-section-results" class="toeps-section" hidden aria-labelledby="toeps-lbl-results">
-        <div class="toeps-results-head">
-          <h2 id="toeps-lbl-results" class="toeps-section__title">Résultats</h2>
-          <button type="button" class="btn btn--ghost btn--small" id="toeps-btn-clear-view">
-            Tout afficher
-          </button>
-        </div>
-        <p id="toeps-results-count" class="toeps-results-count" aria-live="polite"></p>
-        <div id="toeps-results-list" class="toeps-resource-list" role="list"></div>
-      </section>
-    </div>
-
-    <dialog id="dialog-info-textes-officiels" class="tool-info-dialog">
-      <form method="dialog">
-        <h2>Textes Officiels EPS</h2>
-        <p>
-          Cet outil est un <strong>répertoire de liens</strong> vers des ressources publiées par le ministère,
-          Eduscol, l’UNSS ou d’autres sources officielles. Il ne reproduit ni ne résume les textes réglementaires.
-        </p>
-        <p>
-          Les entrées marquées « lien à compléter » doivent être vérifiées avant utilisation. La date indique la
-          dernière vérification du lien, pas la date du texte officiel.
-        </p>
-        <p class="hint">Favoris enregistrés sur cet appareil uniquement.</p>
-        <button type="submit" class="btn btn--primary">Fermer</button>
-      </form>
-    </dialog>
-
-    <script src="../tool-info.js"></script>
-    <script src="textes-officiels.js"></script>
+  <body>
+    <p><a href="ressources-eps.html">Ressources EPS</a></p>
   </body>
 </html>

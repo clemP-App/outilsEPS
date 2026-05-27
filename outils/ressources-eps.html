@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta
+      name="description"
+      content="Ressources officielles EPS : programmes, Eduscol, concours — liens utiles pour les professeurs."
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Ressources EPS — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--ressources-eps">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+      </header>
+
+      <section class="reps-hero" aria-labelledby="reps-hero-title">
+        <div class="reps-hero__inner">
+          <h1 id="reps-hero-title">Ressources EPS</h1>
+          <p class="reps-hero__lead">
+            Les liens officiels utiles, classés pour y accéder en un clin d’œil.
+          </p>
+          <label class="reps-search" for="reps-search-input">
+            <span class="reps-search__icon" aria-hidden="true">🔍</span>
+            <input
+              type="search"
+              id="reps-search-input"
+              class="reps-search__input"
+              placeholder="Rechercher une ressource…"
+              autocomplete="off"
+            />
+          </label>
+        </div>
+      </section>
+
+      <p id="reps-offline" class="reps-offline" role="status" hidden>
+        Hors ligne — favoris visibles ; ouvrir un lien nécessite Internet.
+      </p>
+
+      <section id="reps-favoris" class="reps-favoris" hidden aria-labelledby="reps-favoris-title">
+        <h2 id="reps-favoris-title" class="reps-block-title">
+          <span aria-hidden="true">★</span> Vos favoris
+        </h2>
+        <div id="reps-favoris-grid" class="reps-tiles reps-tiles--fav"></div>
+      </section>
+
+      <div id="reps-main" class="reps-main"></div>
+
+      <p id="reps-empty" class="reps-empty" hidden>Aucune ressource ne correspond à votre recherche.</p>
+
+      <button type="button" class="reps-fab" id="reps-btn-add" aria-label="Ajouter une ressource">
+        <span aria-hidden="true">＋</span>
+      </button>
+    </div>
+
+    <dialog id="dialog-reps-add" class="reps-dialog">
+      <form id="form-reps-add" method="dialog">
+        <h2>Ajouter une ressource</h2>
+        <p class="hint">Lien enregistré sur cet appareil uniquement.</p>
+        <div class="field-group">
+          <label class="field-label" for="reps-add-title">Titre</label>
+          <input type="text" id="reps-add-title" required maxlength="120" autocomplete="off" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="reps-add-url">Adresse du lien (https://…)</label>
+          <input type="url" id="reps-add-url" required inputmode="url" autocomplete="off" placeholder="https://" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="reps-add-note">Note courte (facultatif)</label>
+          <input type="text" id="reps-add-note" maxlength="160" autocomplete="off" />
+        </div>
+        <p id="reps-add-error" class="msg-error" role="alert" hidden></p>
+        <div class="reps-dialog__actions">
+          <button type="button" class="btn btn--ghost" id="reps-add-cancel">Annuler</button>
+          <button type="submit" class="btn btn--primary">Enregistrer</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="ressources-eps-data.js"></script>
+    <script src="ressources-eps.js"></script>
+  </body>
+</html>
