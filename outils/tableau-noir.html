@@ -15,17 +15,26 @@
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
+    <script src="../pwa-splash.js"></script>
   </head>
   <body class="app tn-body">
     <div id="tn-app" class="tn-app" data-theme="dark">
       <header class="tn-topbar" role="banner">
         <div class="tn-topbar__left">
-          <button type="button" class="tn-icon-btn" id="tn-menu" aria-label="Menu outils">
-            <span aria-hidden="true">📋</span>
-          </button>
-          <a class="tn-back tool-back" href="../index.html"
-            ><span class="tool-back__chev" aria-hidden="true">‹</span></a
+          <button
+            type="button"
+            class="tn-icon-btn tn-icon-btn--menu"
+            id="tn-menu"
+            aria-label="Ouvrir le menu"
+            aria-expanded="false"
+            aria-controls="tn-sidebar"
           >
+            <span class="tn-menu-icon" aria-hidden="true">
+              <span class="tn-menu-icon__bar"></span>
+              <span class="tn-menu-icon__bar"></span>
+              <span class="tn-menu-icon__bar"></span>
+            </span>
+          </button>
           <h1 class="tn-topbar__title" id="tn-board-title">Tableau Noir</h1>
         </div>
         <div class="tn-topbar__actions">
@@ -76,8 +85,14 @@
       <div class="tn-layout">
         <aside id="tn-sidebar" class="tn-sidebar" aria-label="Outils et paramètres">
           <div class="tn-sidebar__head">
-            <span class="tn-sidebar__title">🧰 Outils</span>
-            <button type="button" class="tn-icon-btn" id="tn-close-sidebar" aria-label="Fermer le menu">✖️</button>
+            <a class="tn-sidebar-home" href="../index.html">
+              <span class="tn-sidebar-home__chev" aria-hidden="true">‹</span>
+              <span class="tn-sidebar-home__label">Accueil</span>
+            </a>
+            <div class="tn-sidebar__head-row">
+              <span class="tn-sidebar__title">🧰 Outils</span>
+              <button type="button" class="tn-icon-btn" id="tn-close-sidebar" aria-label="Fermer le menu">✖️</button>
+            </div>
           </div>
 
           <nav class="tn-sidebar__scroll">

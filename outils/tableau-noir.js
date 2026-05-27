@@ -229,8 +229,8 @@
     var y = ((clientY - rect.top) / rect.height) * H;
     var layout = canvasLayout(W, H);
     if (layout.portrait) {
-      var xd = H - y;
-      var yd = x;
+      var xd = y;
+      var yd = W - x;
       return { x: xd, y: yd, nx: xd / H, ny: yd / W };
     }
     return { x: x, y: y, nx: x / W, ny: y / H };
@@ -997,6 +997,7 @@
   function closeSidebarMobile() {
     if (!sidebarEl || window.innerWidth >= 900) return;
     sidebarEl.classList.remove("is-open");
+    syncMenuBtn();
     var backdrop = document.getElementById("tn-sidebar-backdrop");
     if (backdrop) backdrop.hidden = true;
   }
@@ -1090,17 +1091,6 @@
         canvasEl.setPointerCapture(e.pointerId);
       } catch (err) {}
       return;
-    }
-
-    if (isDrawTool(state.tool)) {
-      var pickedDraw = pickAt(p.nx, p.ny);
-      if (pickedDraw) {
-        beginDrag(pickedDraw, p.nx, p.ny);
-        try {
-          canvasEl.setPointerCapture(e.pointerId);
-        } catch (err) {}
-        return;
-      }
     }
 
     if (state.tool === "eraser") {
@@ -1747,11 +1737,20 @@
     if (playBtn) playBtn.textContent = "▶️ Lire le clip";
   }
 
+  function syncMenuBtn() {
+    var menuBtn = document.getElementById("tn-menu");
+    if (!menuBtn || !sidebarEl) return;
+    var open = sidebarEl.classList.contains("is-open");
+    menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    menuBtn.setAttribute("aria-label", open ? "Fermer le menu" : "Ouvrir le menu");
+  }
+
   function toggleSidebar() {
     if (!sidebarEl) return;
     sidebarEl.classList.toggle("is-open");
     var backdrop = document.getElementById("tn-sidebar-backdrop");
     if (backdrop) backdrop.hidden = !sidebarEl.classList.contains("is-open");
+    syncMenuBtn();
   }
 
   function bindUi() {
@@ -1774,6 +1773,7 @@
       backdrop.addEventListener("click", function () {
         if (sidebarEl) sidebarEl.classList.remove("is-open");
         backdrop.hidden = true;
+        syncMenuBtn();
       });
     }
     document.getElementById("tn-save-lib-schema").addEventListener("click", function () {

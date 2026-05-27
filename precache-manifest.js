@@ -6,6 +6,7 @@ var APP_CACHE_VERSION = "43";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
+  "./app-version.js",
   "./assets/apple-touch-icon.png",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
@@ -90,6 +91,7 @@ var PRECACHE = [
   "./outils/vitesse-plots.js",
   "./pwa-install-banner.js",
   "./pwa-register.js",
+  "./pwa-splash.js",
   "./script.js",
   "./session-manager.js",
   "./shared/championnat-standings.js",

@@ -29,7 +29,7 @@ var SKIP_DIRS = new Set([
   "assets",
 ]);
 
-var SKIP_FILES = new Set(["precache-manifest.js", "sw.js", "app-version.js"]);
+var SKIP_FILES = new Set(["precache-manifest.js", "sw.js"]);
 
 var ROOT_ASSETS = ["assets/icon-192.png", "assets/icon-512.png", "assets/apple-touch-icon.png"];
 
