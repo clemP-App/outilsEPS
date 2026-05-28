@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a2744" />
+    <title>FAQ Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="app app--tool app--faq">
+    <div class="page-outil page-outil--faq">
+      <header class="page-outil__header">
+        <a class="tool-back" href="index.html"><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a>
+        <h1>FAQ Outils EPS</h1>
+      </header>
+
+      <section class="card">
+        <p class="hint">
+          La FAQ couvre les questions générales et les cas concrets par outil. Tapez directement le nom de l’application
+          ou un mot-clé (ex: ASNS, classes, QR, sauvegarde, Défi ATP) pour trouver rapidement la réponse.
+        </p>
+        <div class="field-group">
+          <label class="field-label" for="faq-search">Rechercher une question</label>
+          <input id="faq-search" type="search" placeholder="Ex: RGPD, QR code, Défi ATP, sauvegarde..." />
+        </div>
+        <p id="faq-count" class="hint" aria-live="polite"></p>
+      </section>
+
+      <section class="card">
+        <div id="faq-list" class="faq-list"></div>
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+        var FAQ_DATA = [
+          { cat: "general", q: "Qu’est-ce qu’Outils EPS ?", a: "Outils EPS est une suite d’outils pratiques pour les enseignants d’EPS et, selon les usages, pour les élèves. L’objectif est de réduire la charge logistique en séance: appel, suivi, évaluations, classements, chronos, observation, exports et partage." },
+          { cat: "general", q: "Comment bien débuter sur Outils EPS ?", a: "Commencez par l’outil « Classes et groupes »: c’est la base de travail qui sera réutilisée dans la grande majorité des applications.\n\nÉtapes conseillées:\n1) Créez vos classes et groupes.\n2) Vérifiez les noms/prénoms.\n3) Ensuite seulement, lancez les autres outils (Appel et notes, ASNS, Défi ATP, etc.) en important ces classes.\n\nPourquoi c’est important:\n- vous évitez les ressaisies,\n- vous limitez les erreurs de noms,\n- vous gardez une continuité de suivi d’un outil à l’autre." },
+          { cat: "general", q: "Pourquoi utiliser Outils EPS en cours ?", a: "Parce que vous gagnez du temps sur les tâches répétitives et vous rendez la séance plus fluide: moins de papier, plus de visibilité en direct, meilleure traçabilité des résultats, exports immédiats et retour d’information motivant pour les élèves." },
+          { cat: "general", q: "Faut-il un compte pour démarrer ?", a: "Non. Aucun compte obligatoire n’est nécessaire pour utiliser la majorité des outils." },
+          { cat: "general", q: "RGPD: où vont les données élèves ?", a: "Par défaut, les données pédagogiques restent stockées localement sur votre appareil (IndexedDB). Il n’y a pas de synchronisation cloud imposée ni de base élèves centralisée obligatoire. Vous gardez la maîtrise de vos exports et sauvegardes." },
+          { cat: "general", q: "Quels éléments sont collectés côté stats ?", a: "Des statistiques de fréquentation anonymes peuvent être utilisées pour améliorer l’application (ex: pages visitées, volume d’usage). Ce n’est pas un suivi individualisé d’élèves." },
+          { cat: "general", q: "Qui a créé Outils EPS et pourquoi ?", a: "Outils EPS est créé et maintenu par ClemP, pour répondre à des besoins concrets de terrain: simplifier l’organisation de séance, fiabiliser les traces d’évaluation et rendre les retours aux élèves plus lisibles et motivants." },
+          { cat: "general", q: "Puis-je installer Outils EPS comme une appli ?", a: "Oui, via la PWA.\n\nSur iPhone (Safari)\n1) Ouvrez Outils EPS dans Safari.\n2) Touchez Partager.\n3) Choisissez « Sur l’écran d’accueil ».\n\nSur Android (Chrome)\n1) Ouvrez Outils EPS dans Chrome.\n2) Ouvrez le menu (⋮).\n3) Choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».\n\nSur ordinateur (Chrome / Edge)\n1) Ouvrez Outils EPS.\n2) Cliquez l’icône d’installation dans la barre d’adresse (si proposée).\n\nRésultat\nUne fois installée, l’application se lance comme une app classique depuis l’écran d’accueil ou le menu des applications." },
+          { cat: "general", q: "Comment sauvegarder et restaurer mes données ?", a: "Ouvrez l’outil Sauvegarde: exportez un fichier JSON régulièrement (fin de journée / fin de cycle), stockez-le sur un espace sûr (cloud + clé USB conseillé), puis restaurez-le sur un autre appareil via import JSON." },
+          { cat: "general", q: "Que se passe-t-il si je change d’appareil ou vide le cache ?", a: "Les données locales peuvent être perdues si vous effacez les données du navigateur, changez d’appareil sans export, ou désinstallez l’app. D’où l’importance de la sauvegarde JSON." },
+          { cat: "general", q: "Comment partager aux élèves sans exposer les outils prof ?", a: "Utilisez le bouton Partager et diffusez le lien/QR de la page élèves. Les élèves arrivent sur une interface dédiée, sans les outils de pilotage enseignant." },
+          { cat: "general", q: "Le mode hors ligne fonctionne-t-il ?", a: "Oui en grande partie après premier chargement. Certaines ressources externes (liens officiels, contenus web) nécessitent une connexion Internet." },
+          { cat: "general", q: "Que faire en cas de bug ou de blocage ?", a: "1) Recharger la page. 2) Vérifier la séance active et les champs requis. 3) Faire une sauvegarde JSON. 4) Contacter le support via le lien Contacter dans le footer avec contexte, appareil et étapes de reproduction." },
+
+          { cat: "classes", q: "Classes et groupes: à quoi sert cet outil ?", a: "C’est votre socle: vous créez les classes une seule fois puis vous les réutilisez dans la plupart des outils.\n\nConcrètement:\n- cliquez sur création de classe,\n- ajoutez les élèves (saisie ou import),\n- créez des groupes si nécessaire,\n- réutilisez ensuite cette base dans Appel et notes, ASNS, Défi ATP, Tournois, etc." },
+          { cat: "classes", q: "Classes et groupes: bonne méthode de démarrage ?", a: "Méthode simple et robuste:\n1) Créez toutes les classes du niveau concerné.\n2) Vérifiez orthographe nom/prénom dès le départ.\n3) Créez des groupes pédagogiques si besoin.\n4) Faites un test d’import dans un autre outil.\n\nIntérêt:\n- moins de ressaisie,\n- moins d’erreurs d’identité,\n- meilleure continuité du suivi sur tout le cycle." },
+
+          { cat: "tableau-suivi", q: "Appel et notes: que permet l’outil ?", a: "Vous pouvez créer des feuilles de suivi, importer des élèves, ajouter des colonnes (présence, note, calcul), trier la liste et exporter en CSV/PDF.\n\nCas d’usage typique:\n- appel rapide,\n- évaluation critériée,\n- note de cycle,\n- synthèse imprimable." },
+          { cat: "tableau-suivi", q: "Appel et notes: comment configurer efficacement ?", a: "Workflow recommandé (clic par clic):\n1) Cliquez « Nouveau » pour créer la feuille.\n2) Cliquez « Importer depuis une classe » pour charger les élèves.\n3) Cliquez « Nouvelle colonne » puis choisissez le type (présence, nombre, calcul).\n4) Cliquez « Tri » si vous devez réordonner la liste.\n5) En fin de séance, cliquez « CSV » ou « PDF ».\n\nPourquoi paramétrer en amont:\n- saisie plus rapide pendant le cours,\n- critères homogènes d’une classe à l’autre,\n- export immédiat sans remise en forme." },
+
+          { cat: "cahier-texte", q: "Cahier de texte: à quoi sert-il ?", a: "À garder la trace pédagogique de la séquence: objectifs, contenu prévu/réalisé, observations, points d’attention pour la prochaine séance." },
+          { cat: "cahier-texte", q: "Cahier de texte: bénéfice principal ?", a: "Capitaliser votre progression réelle pour ajuster rapidement la séance suivante sans repartir d’une page blanche." },
+
+          { cat: "asns", q: "Validation ASNS: à quoi sert cet outil ?", a: "Il permet de suivre les validations savoir-nager, élève par élève, avec les étapes officielles, les statuts et la génération d’attestations." },
+          { cat: "asns", q: "Validation ASNS: comment paramétrer et l’utiliser ?", a: "Étapes conseillées:\n1) Ouvrez « Classes » puis importez/choisissez la classe.\n2) Ouvrez « Paramètres » et renseignez académie, établissement, enseignant.\n3) Dans « Élèves », validez les items au fil de la séance.\n4) Vérifiez les statuts (validé / en cours / à revoir).\n5) Générez les attestations dans l’onglet dédié.\n\nPourquoi paramétrer:\n- attestations auto-remplies et cohérentes,\n- moins d’erreurs administratives,\n- production PDF beaucoup plus rapide." },
+
+          { cat: "dispenses", q: "Dispenses / Inaptitudes: usage typique ?", a: "Suivre les dispenses avec dates de début/fin, filtres et statut, pour avoir en un coup d’œil les élèves concernés pendant l’appel et l’organisation d’atelier." },
+          { cat: "dispenses", q: "Dispenses: pourquoi c’est utile ?", a: "Vous sécurisez le suivi administratif et limitez les oublis (retour activité, échéances, continuité de suivi)." },
+
+          { cat: "oubli", q: "Oubli de matériel: que fait l’outil ?", a: "Il enregistre les oublis par élève et garde un historique lisible, utile pour objectiver les échanges et suivre l’évolution des comportements." },
+          { cat: "oubli", q: "Oubli de matériel: conseil terrain ?", a: "Saisir au fil de l’appel et montrer l’historique si besoin pour éviter les débats de mémoire." },
+
+          { cat: "donnees-eleves", q: "Données élèves: à quoi sert cet outil ?", a: "Il centralise les données reçues des élèves (souvent via QR), pour les consulter et les exploiter au même endroit.\n\nActions clés:\n- démarrer/arrêter le scan,\n- coller un lien d’import,\n- filtrer par outil, élève, classe, date,\n- exporter en CSV/PDF." },
+          { cat: "donnees-eleves", q: "Données élèves: quand l’utiliser ?", a: "Utilisez-le dès que les élèves produisent des retours individuels (débrief, journal, observation). Vous gagnez une vue unifiée de la classe et évitez de chercher les infos outil par outil." },
+
+          { cat: "ressources", q: "Ressources EPS: quel intérêt ?", a: "Avoir vos références (officielles + personnelles) au même endroit: liens rapides, favoris, ressources de préparation et veille." },
+
+          { cat: "video-retard", q: "Vidéo avec retard: principe ?", a: "Filmer une action et la rejouer avec décalage pour l’auto-correction immédiate (feedback visuel en quelques secondes)." },
+          { cat: "video-retard", q: "Vidéo avec retard: scénario efficace ?", a: "L’élève réalise, observe sa tentative avec retard, ajuste, puis reteste. Très utile pour posture, trajectoire, enchaînement technique." },
+
+          { cat: "tableau-noir", q: "Tableau Noir: à quoi sert-il ?", a: "Créer et présenter des schémas tactiques interactifs.\n\nCe que vous pouvez faire:\n- choisir un fond terrain,\n- placer joueurs/objets,\n- dessiner trajectoires et consignes,\n- créer des étapes (frames) d’animation,\n- exporter en image/PDF pour vos supports." },
+          { cat: "tableau-noir", q: "Tableau Noir: comment l’utiliser en séance ?", a: "Méthode efficace:\n1) Préparez 2 à 3 schémas avant le cours.\n2) En séance, cliquez les outils (dessin, joueur, texte) pour ajuster en direct.\n3) Utilisez lecture d’animation pour expliquer la progression action par action.\n4) Exportez si vous voulez garder une trace.\n\nIntérêt:\n- visualisation immédiate pour les élèves,\n- correction collective plus claire,\n- meilleure compréhension tactique." },
+
+          { cat: "composition-equipes", q: "Composition d’équipes homogènes: but ?", a: "Générer des équipes équilibrées (niveaux) rapidement et ajuster manuellement si besoin." },
+          { cat: "composition-equipes", q: "Composition d’équipes: astuce ?", a: "Renseigner un niveau simple (1–5) améliore fortement l’équilibrage automatique." },
+
+          { cat: "championnat-poule", q: "Championnat à poule unique: usage ?", a: "Créer un championnat complet, saisir les résultats match par match et suivre le classement automatiquement." },
+          { cat: "championnat-poule", q: "Championnat: bénéfice pédagogique ?", a: "Donner un cadre clair de progression collective et favoriser l’engagement sur la durée." },
+
+          { cat: "tournoi-elimination", q: "Tournoi éliminatoire: que fait l’outil ?", a: "Construit un tableau type tennis et fait progresser les vainqueurs automatiquement jusqu’à la finale." },
+
+          { cat: "pyramide", q: "Pyramide de victoires: principe ?", a: "Les élèves montent par paliers avec les victoires, sans redescendre sur défaite. Très motivant pour un suivi de cycle." },
+
+          { cat: "defi-atp", q: "Défi ATP: ce que l’outil apporte ?", a: "Défis entre élèves avec classement dynamique, badges, historique détaillé, Hall of Fame, popups de progression et exports.\n\nC’est un format très motivant pour les cycles de confrontation." },
+          { cat: "defi-atp", q: "Défi ATP: comment paramétrer intelligemment ?", a: "Démarrage recommandé:\n1) Cliquez l’accordéon « Paramètres ».\n2) Choisissez la formule de points adaptée à votre objectif.\n3) Réglez arbitre/score (obligatoire, facultatif, masqué).\n4) Activez les bonus uniquement si vous voulez distinguer certains scénarios.\n5) Enregistrez puis lancez la saisie des matchs.\n\nPourquoi paramétrer:\n- adapter la compétition au niveau de la classe,\n- valoriser les comportements ciblés (engagement, arbitrage, progression),\n- rendre les règles transparentes donc acceptées." },
+
+          { cat: "orientation", q: "Course d’orientation: comment bien lancer une séance ?", a: "Préparation conseillée:\n1) Créez les parcours et balises dans l’outil.\n2) Importez les élèves.\n3) Configurez pénalités/bonus et type de départ.\n4) Lancez les départs puis suivez les chronos en direct.\n5) Utilisez le classement pour le debrief final.\n\nPourquoi paramétrer:\n- départs plus fluides,\n- résultats comparables,\n- debrief plus objectif." },
+
+          { cat: "timer-hiit", q: "Timer HIIT / Tabata: quand l’utiliser ?", a: "Pour structurer des circuits travail/récupération avec rythme sonore et visuel clair, sans surveiller l’horloge en permanence." },
+
+          { cat: "maxi-timer", q: "Maxi timer: quelle différence avec HIIT ?", a: "Maxi timer privilégie l’affichage géant ultra lisible (décompte ou chrono), parfait pour grand groupe et vision à distance." },
+
+          { cat: "tirage", q: "Tirage au sort: utilité ?", a: "Sélectionner rapidement un élève ou un ordre de passage de manière transparente et aléatoire." },
+
+          { cat: "danse", q: "Inducteur danse: intérêt pédagogique ?", a: "Stimuler l’improvisation et la créativité via des contraintes/inducteurs tirés au sort (espace, énergie, relation, objet…)." },
+
+          { cat: "vma-test", q: "Test VMA: que couvre l’outil ?", a: "Chronométrage assisté (bips/voix/paliers) pour différents protocoles de VMA: suivi fiable et plus fluide du test collectif." },
+
+          { cat: "radar", q: "Radar vitesse: à quoi sert-il ?", a: "Calculer vitesse et allure à partir d’une distance + temps, avec suivi de performances par classe." },
+
+          { cat: "ecartement", q: "Écartement des plots: pourquoi l’utiliser ?", a: "Préparer précisément les distances entre plots en demi-fond pour aligner repères terrain et vitesse cible." },
+
+          { cat: "table-marque", q: "Table de marque (élèves): usage ?", a: "Gérer score et temps de match simplement sur le terrain, avec gros affichage et commandes rapides." },
+
+          { cat: "ptb", q: "Compteur PTB (élèves): que mesure-t-il ?", a: "Pertes, tirs, buts pour deux équipes, avec indicateurs comparatifs utiles pour l’analyse collective." },
+
+          { cat: "bonus", q: "Compteur bonus (élèves): à quoi sert-il ?", a: "Suivre bonus/malus/actions pour deux joueurs en direct et visualiser l’évolution de performance." },
+
+          { cat: "plots", q: "Vitesse aux plots (élèves): intérêt ?", a: "Chronométrer les passages intermédiaires et mieux comprendre la régularité/allure sur effort fractionné." },
+
+          { cat: "ratio", q: "Compteur ratio (élèves): quand l’utiliser ?", a: "Observation simple réussite/échec (technique ou tactique) avec ratio instantané." },
+
+          { cat: "debrief", q: "Questions débrief (élèves): bénéfice ?", a: "Structurer le retour réflexif élève (critères + questions ouvertes) et récupérer rapidement les réponses via QR côté enseignant.\n\nIntérêt pédagogique:\n- rendre l’élève acteur de son analyse,\n- objectiver le ressenti de séance,\n- alimenter l’évaluation formative." },
+
+          { cat: "impact", q: "Zone d’impact (élèves): but ?", a: "Visualiser les zones touchées/visées selon l’activité pour améliorer la prise d’information tactique." },
+
+          { cat: "convertisseur", q: "Convertisseur km/h ↔ min/km: pour qui ?", a: "Pour élèves et enseignants qui veulent passer instantanément d’une vitesse à une allure de course sans calcul mental." },
+
+          { cat: "distance-vma", q: "Distance VMA: cas d’usage ?", a: "Préparer des séances de course en convertissant VMA, distance et temps de passage de façon fiable." },
+
+          { cat: "rm1", q: "Calcul du 1RM: utilité ?", a: "Estimer une charge maximale de référence à partir d’un effort sous-maximal, pour planifier des charges adaptées." },
+
+          { cat: "journal-muscu", q: "Journal de musculation: pourquoi c’est utile ?", a: "Tracer les séances (exercices/séries/charges), visualiser la progression et partager un bilan ciblé via QR.\n\nComment faire simplement:\n1) Créez une séance.\n2) Ajoutez les exercices et séries.\n3) Enregistrez la séance.\n4) Partagez au besoin via QR.\n\nIntérêt:\n- suivi individualisé clair,\n- meilleure régularité des élèves,\n- discussions prof-élève appuyées sur des traces concrètes." },
+
+          { cat: "vitesse-course", q: "Vitesse de course: que calcule l’outil ?", a: "Conversion distance/temps en km/h, m/s et allure min/km pour aider à fixer des objectifs de rythme." },
+
+          { cat: "qr", q: "Transfert QR code: comment ça marche concrètement ?", a: "Principe:\n1) L’appareil A génère un QR (lien, résultat, réponse, résumé d’une action).\n2) L’appareil B scanne ce QR.\n3) L’outil cible récupère la donnée utile.\n\nPourquoi c’est pratique:\n- transfert rapide en séance,\n- moins de ressaisie,\n- moins d’erreurs de copie." },
+          { cat: "qr", q: "Le QR transmet-il toute ma base de données ?", a: "Non. En règle générale, le QR transporte une donnée ciblée liée à la tâche en cours, pas l’intégralité de votre base locale." }
+        ];
+
+        var LABELS = {
+          all: "Tout",
+          general: "Général",
+          classes: "Classes et groupes",
+          "tableau-suivi": "Appel et notes",
+          "cahier-texte": "Cahier de texte",
+          asns: "Validation ASNS",
+          dispenses: "Dispenses / Inaptitudes",
+          oubli: "Oubli de matériel",
+          "donnees-eleves": "Données élèves",
+          ressources: "Ressources EPS",
+          "video-retard": "Vidéo avec retard",
+          "tableau-noir": "Tableau Noir",
+          "composition-equipes": "Composition d’équipes",
+          "championnat-poule": "Championnat",
+          "tournoi-elimination": "Tournoi éliminatoire",
+          pyramide: "Pyramide de victoires",
+          "defi-atp": "Défi ATP",
+          orientation: "Course d’orientation",
+          "timer-hiit": "Timer HIIT / Tabata",
+          "maxi-timer": "Maxi timer",
+          tirage: "Tirage au sort",
+          danse: "Inducteur danse",
+          "vma-test": "Test VMA",
+          radar: "Radar vitesse",
+          ecartement: "Écartement des plots",
+          "table-marque": "Table de marque",
+          ptb: "Compteur PTB",
+          bonus: "Compteur bonus",
+          plots: "Vitesse aux plots",
+          ratio: "Compteur ratio",
+          debrief: "Questions débrief",
+          impact: "Zone d’impact",
+          convertisseur: "Convertisseur allure",
+          "distance-vma": "Distance VMA",
+          rm1: "Calcul du 1RM",
+          "journal-muscu": "Journal musculation",
+          "vitesse-course": "Vitesse de course",
+          qr: "QR code"
+        };
+
+        var state = { q: "" };
+        var list = document.getElementById("faq-list");
+        var count = document.getElementById("faq-count");
+        var search = document.getElementById("faq-search");
+
+        function matchItem(item) {
+          if (!state.q) return true;
+          var hay = (item.q + " " + item.a + " " + (LABELS[item.cat] || "")).toLowerCase();
+          return hay.indexOf(state.q) >= 0;
+        }
+
+        function render() {
+          var rows = FAQ_DATA.filter(matchItem);
+          list.innerHTML = "";
+          if (!rows.length) {
+            var p = document.createElement("p");
+            p.className = "empty-state";
+            p.textContent = "Aucune question ne correspond à votre recherche.";
+            list.appendChild(p);
+          } else {
+            rows.forEach(function (item) {
+              var d = document.createElement("details");
+              d.className = "faq-item";
+              var s = document.createElement("summary");
+              s.innerHTML = '<span class="faq-item__cat">' + (LABELS[item.cat] || "FAQ") + "</span>" +
+                            '<span class="faq-item__q">' + item.q + "</span>";
+              var body = document.createElement("div");
+              body.className = "faq-item__a";
+              body.textContent = item.a;
+              d.appendChild(s);
+              d.appendChild(body);
+              list.appendChild(d);
+            });
+          }
+          count.textContent = rows.length + " question(s) affichée(s).";
+        }
+
+        search.addEventListener("input", function () {
+          state.q = (search.value || "").trim().toLowerCase();
+          render();
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>
