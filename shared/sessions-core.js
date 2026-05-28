@@ -17,6 +17,7 @@
     PYRAMIDE: "pyramide-victoires",
     CHAMPIONNAT: "championnat-poule",
     ORIENTATION: "course-orientation",
+    DEFI_ATP: "defi-atp",
   };
 
   var TOOL_LABELS = {
@@ -25,6 +26,7 @@
     "pyramide-victoires": "Pyramide de victoires",
     "championnat-poule": "Championnat à poule",
     "course-orientation": "Course d’orientation",
+    "defi-atp": "Défi ATP",
   };
 
   var SESSION_TOOL_IDS = Object.keys(TOOL_LABELS);
@@ -50,6 +52,10 @@
 
   function courseOrientationDataId(sessionId) {
     return "course-orientation__" + sessionId;
+  }
+
+  function defiAtpDataId(sessionId) {
+    return "defi-atp__" + sessionId;
   }
 
   function legacySessionName(toolId, dateIso) {
@@ -122,6 +128,7 @@
     activeSessionParamId: activeSessionParamId,
     compositionDataId: compositionDataId,
     courseOrientationDataId: courseOrientationDataId,
+    defiAtpDataId: defiAtpDataId,
     legacySessionName: legacySessionName,
     validateSession: validateSession,
     normalizeSession: normalizeSession,

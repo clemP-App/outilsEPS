@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Défi ATP — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--defi-atp">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a>
+        <h1>Défi ATP</h1>
+      </header>
+
+      <div class="tool-session-gated" hidden>
+        <div id="session-manager-mount"></div>
+        <p id="defi-msg" class="msg-error" role="alert" hidden></p>
+
+        <details class="card card--accordion" id="defi-params-accordion">
+          <summary class="card--accordion__summary"><span class="card--accordion__title">⚙️ Paramètres</span><span class="card--accordion__chev" aria-hidden="true"></span></summary>
+          <div class="card--accordion__panel defi-params-panel">
+            <p class="hint">
+              Espace enseignant : vous définissez ici les <strong>règles du jeu</strong> (formule de points, rôle de l’arbitre, score, bonus, points de départ).
+              Une fois enregistrés, ces réglages pilotent automatiquement le classement, les badges et l’historique pour toute la séance.
+            </p>
+            <h3>1) Formule et points de classement</h3>
+            <div class="field-row" id="defi-formula-main-row">
+              <div class="field-group">
+                <label class="field-label" for="defi-formule">Formule de points</label>
+                <select id="defi-formule"></select>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="defi-initial-points">Points initiaux (même valeur)</label>
+                  <input id="defi-initial-points" type="number" step="1" value="1000" />
+                <p class="hint">Valeur donnée à chaque joueur au départ.</p>
+              </div>
+            </div>
+            <p id="defi-formule-help" class="hint"></p>
+            <div class="field-row" id="defi-formula-points-row">
+              <div class="field-group" id="defi-point-win-wrap"><label class="field-label" for="defi-point-win">Points victoire</label><input id="defi-point-win" type="number" step="1" /></div>
+              <div class="field-group" id="defi-point-loss-wrap"><label class="field-label" for="defi-point-loss">Points défaite</label><input id="defi-point-loss" type="number" step="1" /></div>
+              <div class="field-group" id="defi-point-ref-wrap"><label class="field-label" for="defi-point-ref">Points arbitre</label><input id="defi-point-ref" type="number" step="1" /></div>
+              <div class="field-group" id="defi-point-better-wrap"><label class="field-label" for="defi-point-better">Victoire vs mieux classé</label><input id="defi-point-better" type="number" step="1" /></div>
+              <div class="field-group" id="defi-point-lower-wrap"><label class="field-label" for="defi-point-lower">Victoire vs moins bien classé</label><input id="defi-point-lower" type="number" step="1" /></div>
+              <div class="field-group" id="defi-point-loss-better-wrap"><label class="field-label" for="defi-point-loss-better">Défaite vs mieux classé</label><input id="defi-point-loss-better" type="number" step="1" /></div>
+              <div class="field-group" id="defi-point-loss-lower-wrap"><label class="field-label" for="defi-point-loss-lower">Défaite vs moins bien classé</label><input id="defi-point-loss-lower" type="number" step="1" /></div>
+              <div class="field-group" id="defi-point-better-per-place-wrap"><label class="field-label" for="defi-point-better-per-place">Pts/place vs mieux classé</label><input id="defi-point-better-per-place" type="number" step="1" /></div>
+              <div class="field-group" id="defi-point-lower-per-place-wrap"><label class="field-label" for="defi-point-lower-per-place">Pts/place vs moins bien classé</label><input id="defi-point-lower-per-place" type="number" step="1" /></div>
+            </div>
+            <h3>2) Saisie de match</h3>
+            <div class="field-row">
+              <div class="field-group"><label class="field-label" for="defi-ref-mode">Arbitre</label><select id="defi-ref-mode"><option value="required">Obligatoire</option><option value="optional">Facultatif</option><option value="none" selected>Pas d’arbitre</option></select></div>
+              <div class="field-group"><label class="field-label" for="defi-score-mode">Score</label><select id="defi-score-mode"><option value="required">Obligatoire</option><option value="optional">Facultatif</option><option value="none" selected>Pas de score</option></select></div>
+            </div>
+            <h3>3) Bonus (optionnels)</h3>
+            <div class="field-row" id="defi-bonus-row">
+              <div class="field-group">
+                <label class="field-label" for="defi-off-enabled">Bonus offensif</label>
+                <select id="defi-off-enabled">
+                  <option value="0" selected>Désactivé</option>
+                  <option value="1">Activé</option>
+                </select>
+              </div>
+              <div class="field-group" id="defi-off-gap-wrap"><label class="field-label" for="defi-off-gap">Écart min (offensif)</label><input id="defi-off-gap" type="number" min="1" step="1" value="7" /></div>
+              <div class="field-group" id="defi-off-points-wrap"><label class="field-label" for="defi-off-points">Points bonus offensif</label><input id="defi-off-points" type="number" step="1" value="1" /></div>
+            </div>
+            <div class="field-row" id="defi-bonus-row-def">
+              <div class="field-group">
+                <label class="field-label" for="defi-def-enabled">Bonus défensif</label>
+                <select id="defi-def-enabled">
+                  <option value="0" selected>Désactivé</option>
+                  <option value="1">Activé</option>
+                </select>
+              </div>
+              <div class="field-group" id="defi-def-gap-wrap"><label class="field-label" for="defi-def-gap">Défaite de (max)</label><input id="defi-def-gap" type="number" min="1" step="1" value="2" /></div>
+              <div class="field-group" id="defi-def-points-wrap"><label class="field-label" for="defi-def-points">Points bonus défensif</label><input id="defi-def-points" type="number" step="1" value="1" /></div>
+            </div>
+            <p id="defi-formula-preview" class="hint"></p>
+            <button id="defi-save-settings" type="button" class="btn btn--primary btn--labeled"><span class="btn__icon" aria-hidden="true">💾</span><span class="btn__text">Enregistrer les paramètres</span></button>
+            <button id="defi-apply-initial" type="button" class="btn btn--ghost btn--labeled"><span class="btn__icon" aria-hidden="true">🎚️</span><span class="btn__text">Appliquer les points initiaux à tous</span></button>
+
+            <hr />
+            <h3>👥 Joueurs</h3>
+            <button type="button" class="btn btn--ghost btn--labeled" id="defi-import-classe"><span class="btn__icon" aria-hidden="true">👥</span><span class="btn__text">Importer une classe</span></button>
+            <div class="field-group">
+              <label class="field-label" for="defi-players-raw">Ajouter des joueurs (1 par ligne)</label>
+              <textarea id="defi-players-raw" rows="5" placeholder="Nom Prénom"></textarea>
+            </div>
+            <button id="defi-add-players" type="button" class="btn btn--primary">Ajouter</button>
+
+            <hr />
+            <h3>📤 Exports</h3>
+            <div class="field-row">
+              <button id="defi-export-classement" type="button" class="btn btn--ghost btn--labeled"><span class="btn__icon" aria-hidden="true">📊</span><span class="btn__text">Exporter classement CSV</span></button>
+              <button id="defi-export-matchs" type="button" class="btn btn--ghost btn--labeled"><span class="btn__icon" aria-hidden="true">🧾</span><span class="btn__text">Exporter résultats CSV</span></button>
+            </div>
+          </div>
+        </details>
+
+        <details class="card card--accordion" open>
+          <summary class="card--accordion__summary"><span class="card--accordion__title">🏆 Classement</span><span class="card--accordion__chev" aria-hidden="true"></span></summary>
+          <div class="card--accordion__panel">
+            <p class="hint">Lecture rapide enseignant : V = victoires, D = défaites, badges débloqués et série de victoires (🔥) sont visibles. Ajoutez ou ajustez les résultats au fil de la séance.</p>
+            <button id="defi-open-add" type="button" class="btn btn--primary btn--labeled"><span class="btn__icon" aria-hidden="true">⚡</span><span class="btn__text">Ajouter un résultat</span></button>
+            <div class="champ-table-wrap">
+              <table class="champ-table">
+                <thead><tr><th>Rang</th><th>Joueur</th><th>Pts</th><th>V</th><th>D</th><th>Badges</th><th>Série</th><th>Détail</th></tr></thead>
+                <tbody id="defi-standings"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+
+        <details class="card card--accordion" open>
+          <summary class="card--accordion__summary"><span class="card--accordion__title">🌟 Hall of fame</span><span class="card--accordion__chev" aria-hidden="true"></span></summary>
+          <div class="card--accordion__panel">
+            <p class="hint">Les meilleures performances de la séance — objectif : entrer au Hall of Fame.</p>
+            <div id="defi-hof" class="defi-hof-grid"></div>
+          </div>
+        </details>
+
+        <details class="card card--accordion">
+          <summary class="card--accordion__summary"><span class="card--accordion__title">🧾 Historique des matchs</span><span class="card--accordion__chev" aria-hidden="true"></span></summary>
+          <div class="card--accordion__panel">
+            <p class="hint">Trace complète de la séance : filtrez par joueur, corrigez un résultat si besoin, ou supprimez une erreur (le classement est recalculé automatiquement).</p>
+            <div class="field-group">
+              <label class="field-label" for="defi-history-filter">Filtrer par joueur</label>
+              <input id="defi-history-filter" type="search" placeholder="Ex: Emma, Girard..." />
+            </div>
+            <ul id="defi-match-history" class="defi-match-history"></ul>
+          </div>
+        </details>
+
+      </div>
+    </div>
+
+    <dialog id="defi-add-dialog" class="session-dialog card">
+      <form method="dialog" class="session-dialog__form">
+        <button type="submit" class="defi-dialog-close" aria-label="Fermer">✕</button>
+        <h2 class="session-dialog__title">⚡ Ajouter un résultat</h2>
+        <p class="hint">Saisie rapide : le perdant est préfiltré selon le gagnant, et l’arbitre suggéré automatiquement.</p>
+        <div class="field-group"><label class="field-label" for="defi-winner">Gagnant</label><select id="defi-winner"></select></div>
+        <div class="field-group"><label class="field-label" for="defi-loser">Perdant</label><select id="defi-loser"></select></div>
+        <div class="field-group" id="defi-ref-wrap"><label class="field-label" for="defi-referee">Arbitre</label><select id="defi-referee"></select></div>
+        <div class="field-row" id="defi-score-wrap">
+          <div class="field-group"><label class="field-label" for="defi-score-w">Score gagnant</label><input id="defi-score-w" type="number" min="0" step="1" /></div>
+          <div class="field-group"><label class="field-label" for="defi-score-l">Score perdant</label><input id="defi-score-l" type="number" min="0" step="1" /></div>
+        </div>
+        <div class="session-dialog__footer">
+          <button id="defi-save-match" type="button" class="btn btn--primary">Valider</button>
+          <button type="submit" class="btn btn--ghost">Fermer</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="defi-player-dialog" class="session-dialog card">
+      <form method="dialog" class="session-dialog__form">
+        <button type="submit" class="defi-dialog-close" aria-label="Fermer">✕</button>
+        <div class="defi-player-hero">
+          <h2 id="defi-player-title" class="session-dialog__title">Joueur</h2>
+          <p id="defi-player-stats"></p>
+          <div class="field-row">
+            <button id="defi-declare-win" type="button" class="btn btn--primary"></button>
+            <button id="defi-declare-loss" type="button" class="btn btn--ghost"></button>
+          </div>
+        </div>
+        <div id="defi-player-kpis" class="defi-kpi-grid"></div>
+        <div id="defi-player-perfs" class="defi-kpi-grid"></div>
+        <h3>Badges</h3>
+        <ul id="defi-player-badges-earned"></ul>
+        <details class="card card--accordion">
+          <summary class="card--accordion__summary">
+            <span class="card--accordion__title">Badges à débloquer</span>
+            <span class="card--accordion__chev" aria-hidden="true"></span>
+          </summary>
+          <div class="card--accordion__panel">
+            <ul id="defi-player-badges-locked"></ul>
+          </div>
+        </details>
+        <h3>Historique joueur/arbitre</h3>
+        <ul id="defi-player-history"></ul>
+        <div class="session-dialog__footer"><button type="submit" class="btn btn--ghost">Fermer</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="defi-popup" class="session-dialog card">
+      <form method="dialog" class="session-dialog__form">
+        <button type="submit" class="defi-dialog-close" aria-label="Fermer">✕</button>
+        <h2 class="session-dialog__title">🏆 Résultat enregistré</h2>
+        <div id="defi-popup-victory" class="defi-victory">
+          <div class="defi-victory__duel">
+            <div class="defi-victory__player defi-victory__player--winner">
+              <div id="defi-popup-winner-rank-big" class="defi-victory__rank-big"></div>
+              <div id="defi-popup-winner-rank-chip" class="defi-victory__rank-chip"></div>
+              <div class="defi-victory__label">Gagnant</div>
+              <div id="defi-popup-winner-name" class="defi-victory__name">—</div>
+              <div id="defi-popup-winner-rank" class="defi-victory__rank"></div>
+              <div id="defi-popup-winner-stats" class="defi-victory__stats"></div>
+            </div>
+            <div class="defi-victory__vs">VS</div>
+            <div class="defi-victory__player defi-victory__player--loser">
+              <div id="defi-popup-loser-rank-big" class="defi-victory__rank-big"></div>
+              <div id="defi-popup-loser-rank-chip" class="defi-victory__rank-chip"></div>
+              <div class="defi-victory__label">Perdant</div>
+              <div id="defi-popup-loser-name" class="defi-victory__name">—</div>
+              <div id="defi-popup-loser-rank" class="defi-victory__rank"></div>
+              <div id="defi-popup-loser-stats" class="defi-victory__stats"></div>
+            </div>
+          </div>
+          <div>
+            <h3 class="defi-victory__badges-title">🎖️ Badges débloqués</h3>
+            <ul id="defi-popup-badges" class="defi-victory__badges"></ul>
+          </div>
+          <div class="session-dialog__footer defi-victory__footer">
+            <button type="submit" class="btn btn--primary">OK</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="../dom-utils.js"></script>
+    <script src="../shared/sessions-core.js"></script>
+    <script src="../data-manager.js"></script>
+    <script src="../session-manager.js"></script>
+    <script src="../shared/outils-dom.js"></script>
+    <script src="../shared/eleve-display.js"></script>
+    <script src="../class-import.js"></script>
+    <script src="defi-atp.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Défis en continu avec classement ATP paramétrable, badges et hall of fame.",
+        sections: [{ title: "Utilisation", list: ["Ajoutez des joueurs (ou importez une classe).", "Réglez la formule et les règles de saisie.", "Saisissez les résultats et suivez le classement live."] }],
+      });
+    </script>
+    <script src="../shared/tool-accueil.js"></script>
+    <script src="../goatcounter.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

@@ -160,6 +160,16 @@
       publicCible: "prof",
     },
     {
+      id: "defi-atp",
+      titre: "Défi ATP",
+      description:
+        "Défis entre élèves avec classement dynamique, badges, historique, hall of fame et points paramétrables.",
+      icone: "🥊",
+      href: "outils/defi-atp.html",
+      categorie: "Séance",
+      publicCible: "prof",
+    },
+    {
       id: "course-orientation",
       titre: "Course d’orientation",
       description:

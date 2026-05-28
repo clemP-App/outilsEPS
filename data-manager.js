@@ -21,9 +21,13 @@ var DataManager = (function () {
             PYRAMIDE: "pyramide-victoires",
             CHAMPIONNAT: "championnat-poule",
             ORIENTATION: "course-orientation",
+            DEFI_ATP: "defi-atp",
           },
           courseOrientationDataId: function (sid) {
             return "course-orientation__" + sid;
+          },
+          defiAtpDataId: function (sid) {
+            return "defi-atp__" + sid;
           },
           MIGRATION_FLAG_ID: "migration-sessions-v1",
           LEGACY_TOURNOI_LS_KEY: "outils_eps_tournoi_elimination_v1",
@@ -1220,6 +1224,43 @@ var DataManager = (function () {
     });
   }
 
+  var DEFI_ATP_DEFAULT_STATE = {
+    players: [],
+    matches: [],
+    ladder: [],
+    settings: {},
+  };
+
+  function normalizeDefiAtpState(raw) {
+    if (!raw || typeof raw !== "object") return cloneData(DEFI_ATP_DEFAULT_STATE);
+    return {
+      players: Array.isArray(raw.players) ? raw.players.slice() : [],
+      matches: Array.isArray(raw.matches) ? raw.matches.slice() : [],
+      ladder: Array.isArray(raw.ladder) ? raw.ladder.slice() : [],
+      settings: raw.settings && typeof raw.settings === "object" ? cloneData(raw.settings) : {},
+    };
+  }
+
+  function getDefiAtpForSession(sessionId) {
+    return getParametre(SC.defiAtpDataId(sessionId)).then(function (rec) {
+      if (!rec) return normalizeDefiAtpState(null);
+      return normalizeDefiAtpState(rec);
+    });
+  }
+
+  function saveDefiAtpForSession(sessionId, state) {
+    if (!sessionId) return Promise.reject(new Error("Aucune séance active."));
+    var record = Object.assign({}, normalizeDefiAtpState(state), {
+      id: SC.defiAtpDataId(sessionId),
+      sessionId: sessionId,
+      toolId: SC.SESSION_TOOLS.DEFI_ATP,
+      updatedAt: new Date().toISOString(),
+    });
+    return saveParametre(record).then(function () {
+      return touchSession(sessionId);
+    });
+  }
+
   function getParametre(id) {
     return getById("parametres", id);
   }
@@ -2092,6 +2133,8 @@ var DataManager = (function () {
     savePyramideVictoires: savePyramideVictoires,
     getCourseOrientationForSession: getCourseOrientationForSession,
     saveCourseOrientationForSession: saveCourseOrientationForSession,
+    getDefiAtpForSession: getDefiAtpForSession,
+    saveDefiAtpForSession: saveDefiAtpForSession,
     PYRAMIDE_VICTOIRES_ID: PYRAMIDE_VICTOIRES_ID,
     getParametre: getParametre,
     saveParametre: saveParametre,
