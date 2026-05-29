@@ -1,11 +1,12 @@
 /**
  * Ressources EPS — liens officiels intégrés (ne pas inventer d’URL).
+ * published : date de publication officielle (ISO YYYY-MM-DD), si connue.
  */
 (function (global) {
   "use strict";
 
   global.RESSOURCES_EPS_DATA = {
-    version: 2,
+    version: 3,
     groups: [
       {
         id: "programmes",
@@ -64,13 +65,33 @@
         groupId: "evaluation",
         title: "Évaluation de l'éducation physique et sportive aux baccalauréats général et technologique",
         source: "Bulletin officiel",
+        published: "2026-02-26",
         url: "https://www.education.gouv.fr/bo/2026/Hebdo9/MENE2531948N",
+      },
+      {
+        id: "bo-mene2608631a",
+        groupId: "programmes",
+        title:
+          "Programmes d'enseignement d'éducation physique et sportive et d'histoire-géographie des cycles 2 et 3",
+        source: "Bulletin officiel",
+        published: "2026-05-28",
+        url: "https://www.education.gouv.fr/bo/2026/Hebdo22/MENE2608631A",
+      },
+      {
+        id: "bo-esrs2610301a",
+        groupId: "concours",
+        title:
+          "Référentiels de formation des professeurs des écoles, des professeurs certifiés, des professeurs d'éducation physique et sportive, des professeurs de lycée professionnel et des conseillers principaux d'éducation",
+        source: "Bulletin officiel spécial n° 1",
+        published: "2026-05-28",
+        url: "https://www.education.gouv.fr/bo/2026/Special1/ESRS2610301A",
       },
       {
         id: "prog-gt",
         groupId: "programmes",
         title: "Programmes EPS — voie générale et technologique",
         source: "Éduscol",
+        published: "2019-01-22",
         url: "https://eduscol.education.gouv.fr/5784/programmes-et-ressources-en-education-physique-et-sportive-eps-voie-gt",
       },
       {
@@ -78,6 +99,7 @@
         groupId: "programmes",
         title: "Programmes EPS — voie professionnelle",
         source: "Éduscol",
+        published: "2019-04-11",
         url: "https://eduscol.education.gouv.fr/5880/programmes-et-ressources-en-education-physique-et-sportive-eps-voie-professionnelle",
       },
       {
@@ -85,6 +107,7 @@
         groupId: "programmes",
         title: "Programme d’enseignement — cycle 4 (PDF)",
         source: "Éduscol",
+        published: "2020-07-30",
         url: "https://eduscol.education.gouv.fr/sites/default/files/document/programme-d-enseignement-du-cycle-4-67722.pdf",
       },
       {
@@ -92,6 +115,7 @@
         groupId: "programmes",
         title: "Programme d’enseignement — cycle 3 (PDF)",
         source: "Éduscol",
+        published: "2023-06-22",
         url: "https://eduscol.education.gouv.fr/sites/default/files/document/programme-d-enseignement-du-cycle-3-2023-100806.pdf",
       },
       {
@@ -106,6 +130,7 @@
         groupId: "pedagogie",
         title: "Accompagnement du programme — cycle 4",
         source: "Éduscol",
+        published: "2020-07-30",
         url: "https://eduscol.education.gouv.fr/5724/ressources-d-accompagnement-du-programme-d-education-physique-et-sportive-au-cycle-4",
       },
       {
@@ -113,6 +138,7 @@
         groupId: "pedagogie",
         title: "CA5 — Activité physique pour s’entretenir",
         source: "Éduscol",
+        published: "2019-01-22",
         url: "https://eduscol.education.gouv.fr/6300/realiser-une-activite-physique-pour-developper-ses-ressources-physiques-et-s-entretenir",
       },
       {
@@ -120,6 +146,7 @@
         groupId: "pedagogie",
         title: "Activités de pleine nature en EPS",
         source: "Éduscol",
+        published: "2017-04-20",
         url: "https://eduscol.education.gouv.fr/6297/les-activites-de-pleine-nature-en-eps",
       },
       {
@@ -127,6 +154,7 @@
         groupId: "securite",
         title: "Savoir nager en sécurité",
         source: "Éduscol",
+        published: "2022-03-03",
         url: "https://eduscol.education.gouv.fr/5709/savoir-nager-en-securite-de-la-maternelle-au-lycee",
       },
       {

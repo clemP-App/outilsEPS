@@ -103,11 +103,50 @@
     });
   }
 
+  function formatPublished(iso) {
+    if (!iso) return "";
+    var d = new Date(iso + "T12:00:00");
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  }
+
+  function formatMetaLine(resource) {
+    var parts = [];
+    var source = resource.source || (resource.custom ? "Lien personnel" : "");
+    if (source) parts.push(source);
+    var dateStr = formatPublished(resource.published);
+    if (dateStr) parts.push(dateStr);
+    return parts.join(" · ");
+  }
+
+  function compareResources(a, b) {
+    var da = a.published || "";
+    var db = b.published || "";
+    if (da !== db) {
+      if (!da) return 1;
+      if (!db) return -1;
+      return db.localeCompare(da);
+    }
+    return normalize(a.title).localeCompare(normalize(b.title), "fr");
+  }
+
   function matchesQuery(r, q) {
     if (!q) return true;
     var g = groupFor(r);
     var hay = normalize(
-      [r.title, r.source, r.note, g && g.title, g && g.subtitle].join(" ")
+      [
+        r.title,
+        r.source,
+        r.note,
+        r.published,
+        formatPublished(r.published),
+        g && g.title,
+        g && g.subtitle,
+      ].join(" ")
     );
     return hay.indexOf(normalize(q)) >= 0;
   }
@@ -177,7 +216,7 @@
 
     var meta = document.createElement("p");
     meta.className = "reps-tile__meta";
-    meta.textContent = resource.source || (isCustom ? "Lien personnel" : "");
+    meta.textContent = formatMetaLine(resource);
 
     body.appendChild(title);
     if (resource.note) {
@@ -248,6 +287,7 @@
 
     els.favorisSection.hidden = favResources.length === 0;
     els.favorisGrid.innerHTML = "";
+    favResources.sort(compareResources);
     favResources.forEach(function (r) {
       var wrap = createTile(r, { compact: true });
       els.favorisGrid.appendChild(wrap);
@@ -270,6 +310,7 @@
     state.groups.forEach(function (g) {
       var items = byGroup[g.id];
       if (!items || !items.length) return;
+      items = items.slice().sort(compareResources);
       any = true;
 
       var section = document.createElement("section");
@@ -321,7 +362,14 @@
     els.offline.hidden = navigator.onLine;
   }
 
-  function addCustomResource(title, url, note) {
+  function todayIso() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function addCustomResource(title, url, note, published) {
     var id = "custom-" + Date.now().toString(36);
     state.custom.push({
       id: id,
@@ -330,6 +378,7 @@
       url: url.trim(),
       source: "Personnel",
       note: note ? note.trim() : "",
+      published: published || todayIso(),
       custom: true,
     });
     saveCustom();
@@ -339,6 +388,7 @@
   function bindAddDialog() {
     els.btnAdd.addEventListener("click", function () {
       els.formAdd.reset();
+      document.getElementById("reps-add-date").value = todayIso();
       els.addError.hidden = true;
       els.dialogAdd.showModal();
       setTimeout(function () {
@@ -355,6 +405,7 @@
       var title = document.getElementById("reps-add-title").value.trim();
       var url = document.getElementById("reps-add-url").value.trim();
       var note = document.getElementById("reps-add-note").value.trim();
+      var published = document.getElementById("reps-add-date").value.trim();
 
       if (!title) {
         els.addError.textContent = "Indiquez un titre.";
@@ -367,7 +418,7 @@
         return;
       }
 
-      addCustomResource(title, url, note);
+      addCustomResource(title, url, note, published);
       els.dialogAdd.close();
     });
   }
