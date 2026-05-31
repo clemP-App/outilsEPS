@@ -402,7 +402,8 @@
     return null;
   }
 
-  function analyserImport() {
+  function analyserImport(e) {
+    if (e && e.preventDefault) e.preventDefault();
     if (typeof ClasseCsvImport === "undefined") {
       montrerErreurImport(importSourceErreurEl, "Module d'import CSV indisponible.");
       return;
@@ -410,20 +411,40 @@
     montrerErreurImport(importSourceErreurEl, "");
 
     function traiter(texte) {
-      var parsed = ClasseCsvImport.parseCsvTexte(texte);
-      if (parsed.erreur) {
-        montrerErreurImport(importSourceErreurEl, parsed.erreur);
-        return;
+      try {
+        var parsed = ClasseCsvImport.parseCsvTexte(texte);
+        if (parsed.erreur) {
+          montrerErreurImport(importSourceErreurEl, parsed.erreur);
+          return;
+        }
+        if (!parsed.lignes.length) {
+          montrerErreurImport(importSourceErreurEl, "Aucune ligne à importer.");
+          return;
+        }
+        importParseState = parsed;
+        if (importAEnteteEl) {
+          importAEnteteEl.checked = ClasseCsvImport.devinerEntete(parsed.lignes);
+        }
+        afficherEtapeMapping();
+      } catch (err) {
+        montrerErreurImport(
+          importSourceErreurEl,
+          (err && err.message) || "Impossible d'analyser le fichier."
+        );
       }
-      if (!parsed.lignes.length) {
-        montrerErreurImport(importSourceErreurEl, "Aucune ligne à importer.");
-        return;
-      }
-      importParseState = parsed;
-      if (importAEnteteEl) {
-        importAEnteteEl.checked = ClasseCsvImport.devinerEntete(parsed.lignes);
-      }
-      afficherEtapeMapping();
+    }
+
+    var fichier = importFichierEl && importFichierEl.files && importFichierEl.files[0];
+    if (fichier) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        traiter(String(reader.result || ""));
+      };
+      reader.onerror = function () {
+        montrerErreurImport(importSourceErreurEl, "Impossible de lire le fichier.");
+      };
+      reader.readAsText(fichier, "UTF-8");
+      return;
     }
 
     var texteColle = lireTexteImport();
@@ -432,19 +453,7 @@
       return;
     }
 
-    var fichier = importFichierEl && importFichierEl.files && importFichierEl.files[0];
-    if (!fichier) {
-      montrerErreurImport(importSourceErreurEl, "Choisissez un fichier CSV ou collez le contenu.");
-      return;
-    }
-    var reader = new FileReader();
-    reader.onload = function () {
-      traiter(String(reader.result || ""));
-    };
-    reader.onerror = function () {
-      montrerErreurImport(importSourceErreurEl, "Impossible de lire le fichier.");
-    };
-    reader.readAsText(fichier, "UTF-8");
+    montrerErreurImport(importSourceErreurEl, "Choisissez un fichier CSV ou collez le contenu.");
   }
 
   function entetesEtDonnees() {
@@ -609,6 +618,9 @@
     importStepMap.hidden = false;
     montrerErreurImport(importMapErreurEl, "");
     majApercuImport();
+    if (importStepMap.scrollIntoView) {
+      importStepMap.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
   }
 
   function retourEtapeSource() {
@@ -723,6 +735,16 @@
   if (document.getElementById("btn-import-analyser")) {
     document.getElementById("btn-import-analyser").addEventListener("click", analyserImport);
   }
+  if (document.getElementById("form-import")) {
+    document.getElementById("form-import").addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (importStepMap && !importStepMap.hidden) {
+        importerListe(e);
+      } else {
+        analyserImport(e);
+      }
+    });
+  }
   if (document.getElementById("btn-import-retour")) {
     document.getElementById("btn-import-retour").addEventListener("click", retourEtapeSource);
   }
@@ -739,6 +761,7 @@
       if (importFichierEl.files && importFichierEl.files[0]) {
         if (importTexteEl) importTexteEl.value = "";
         montrerErreurImport(importSourceErreurEl, "");
+        analyserImport();
       }
     });
   }
@@ -755,9 +778,6 @@
     document.getElementById("btn-annuler-eleve").addEventListener("click", function () {
       if (dialogEleve) dialogEleve.close();
     });
-  }
-  if (document.getElementById("form-import")) {
-    document.getElementById("form-import").addEventListener("submit", importerListe);
   }
   if (document.getElementById("btn-annuler-import")) {
     document.getElementById("btn-annuler-import").addEventListener("click", function () {

@@ -6528,6 +6528,12 @@ textarea {
 
 .classes-dialog--import {
   max-width: min(36rem, calc(100vw - 2rem));
+  max-height: min(90vh, calc(100dvh - 2rem));
+  overflow: auto;
+}
+
+.classes-dialog--import form {
+  min-height: 0;
 }
 
 .import-source-hint,

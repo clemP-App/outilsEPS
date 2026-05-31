@@ -34,7 +34,7 @@
       nom: [/^(nom|name|lastname|last_name|nom_de_famille|nom_famille|nom\s*de\s*famille|nom\s*élève|nom\s*eleve)$/i],
       prenom: [/^(pr[eé]nom|firstname|first_name|givenname|given_name)$/i],
       nom_et_prenom: [
-        /nom.*pr[eé]nom|pr[eé]nom.*nom|nom\s*&\s*pr[eé]nom|nom\s+et\s+pr[eé]nom|identit[eé]|[eé]l[eè]ve|nom\s*complet|full\s*name|name/i,
+        /nom.*pr[eé]nom|pr[eé]nom.*nom|nom\s*&\s*pr[eé]nom|nom\s+et\s+pr[eé]nom|identit[eé]|[eé]l[eè]ve|nom\s*complet|full\s*name/i,
       ],
       dateNaissance: [/naissance|date.*naiss|ddn|born|birth|date\s*de\s*naissance/i],
       sexe: [/^(sexe|genre|gender|m\/f|civilite|civilit[eé])$/i],
