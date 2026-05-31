@@ -227,10 +227,10 @@ var ValidationAsnsPdf = (function () {
     setText(doc, C.white);
     doc.setFont("times", "bolditalic");
     doc.setFontSize(18);
-    doc.text("Attestation scolaire", rightX + mainW / 2, top + 9, { align: "center" });
+    doc.text("Attestation du savoir-nager en sécurité", rightX + mainW / 2, top + 9, { align: "center" });
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text("« savoir-nager »", rightX + mainW / 2, top + 15, { align: "center" });
+    doc.text("(ASNS)", rightX + mainW / 2, top + 15, { align: "center" });
 
     var fy = top + 24;
     var fieldW = mainW;
@@ -258,7 +258,7 @@ var ValidationAsnsPdf = (function () {
     doc.setFont("helvetica", "italic");
     doc.setFontSize(7);
     doc.text(
-      "Document officiel — savoir-nager en sécurité (arrêté du 8 juillet 2015)",
+      "Document officiel — attestation du savoir-nager en sécurité (arrêté du 28 février 2022)",
       rightX,
       top + contentH - 2
     );
@@ -282,7 +282,7 @@ var ValidationAsnsPdf = (function () {
     setText(doc, C.white);
     doc.setFont("times", "bolditalic");
     doc.setFontSize(17);
-    doc.text('Attestation scolaire « savoir-nager »', w / 2, top + 12, { align: "center" });
+    doc.text('Attestation du savoir-nager en sécurité (ASNS)', w / 2, top + 12, { align: "center" });
 
     var bodyY = top + 26;
     setFill(doc, C.white);
@@ -323,7 +323,7 @@ var ValidationAsnsPdf = (function () {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10.5);
     var p2 =
-      "maîtrise le savoir-nager défini par l'arrêté du 8 juillet 2015 (parcours de capacités, connaissances et attitudes).";
+      "maîtrise le savoir-nager en sécurité défini par l'arrêté du 28 février 2022 (parcours aquatique d'environ 50 m, connaissances et attitudes).";
     y = textBlock(doc, doc.splitTextToSize(p2, maxW - 14), pad + 7, y, 5.5);
 
     y += 6;

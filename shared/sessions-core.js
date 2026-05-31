@@ -117,6 +117,57 @@
       .sort(sortSessionsRecent);
   }
 
+  function deepCloneJson(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  /** Copie parcours + réglages pour une nouvelle séance CO (sans coureurs ni chronos). */
+  function cloneOrientationSessionData(sourceState) {
+    var src = sourceState && typeof sourceState === "object" ? sourceState : {};
+    return {
+      parcours: Array.isArray(src.parcours) ? deepCloneJson(src.parcours) : [],
+      coureurs: [],
+      runs: [],
+      settings:
+        src.settings && typeof src.settings === "object"
+          ? deepCloneJson(src.settings)
+          : null,
+    };
+  }
+
+  function compareTexteFr(a, b) {
+    return String(a || "").localeCompare(String(b || ""), "fr");
+  }
+
+  function buildOrientationCoureurs(noms, idFactory) {
+    var factory =
+      typeof idFactory === "function"
+        ? idFactory
+        : function (_nom, idx) {
+            return "coureur_" + idx;
+          };
+    var seen = {};
+    var liste = (noms || [])
+      .map(function (n) {
+        return normalizeText(n);
+      })
+      .filter(function (n) {
+        if (!n) return false;
+        var key = n.toLowerCase();
+        if (seen[key]) return false;
+        seen[key] = true;
+        return true;
+      })
+      .sort(compareTexteFr);
+    return liste.map(function (nom, idx) {
+      return {
+        id: factory(nom, idx),
+        nom: nom,
+        ordre: idx + 1,
+      };
+    });
+  }
+
   return {
     SESSION_TOOLS: SESSION_TOOLS,
     SESSION_TOOL_IDS: SESSION_TOOL_IDS,
@@ -134,5 +185,7 @@
     normalizeSession: normalizeSession,
     sortSessionsRecent: sortSessionsRecent,
     filterSessionsForTool: filterSessionsForTool,
+    cloneOrientationSessionData: cloneOrientationSessionData,
+    buildOrientationCoureurs: buildOrientationCoureurs,
   };
 });

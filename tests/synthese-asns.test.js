@@ -39,6 +39,24 @@ test("ASNS absent si aucune validation commencée", function () {
   assert.equal(summary, null);
 });
 
+test("migration grille ASSN 2015 vers ASNS 2022/2025", function () {
+  var migrated = ValidationAsnsCore.migrerEtapesV2({
+    p1: "valide",
+    p4: "valide",
+    p5: "a_revoir",
+    p6: "valide",
+    p10: "valide",
+    k1: "valide",
+  });
+  assert.equal(migrated.p1, "valide");
+  assert.equal(migrated.p4, "a_revoir");
+  assert.equal(migrated.p5, "valide");
+  assert.equal(migrated.p9, "valide");
+  assert.equal(migrated.p10, "");
+  assert.equal(migrated.k1, "valide");
+  assert.equal(ValidationAsnsCore.ETAPES.length, 13);
+});
+
 test("ASNS présent si au moins une étape validée", function () {
   var asnsData = {
     classes: [{ id: "ac1", nom: "6eA" }],

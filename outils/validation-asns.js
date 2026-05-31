@@ -353,9 +353,13 @@
   function renderParcoursReference() {
     var parc = $("asns-parcours-parcours");
     var conn = $("asns-parcours-conn");
+    var countEl = $("asns-parcours-count");
     if (!parc || !conn) return;
     parc.innerHTML = "";
     conn.innerHTML = "";
+    if (countEl) countEl.textContent = String(Core.ETAPES.length);
+    var toutBtn = $("asns-val-tout");
+    if (toutBtn) toutBtn.textContent = Core.ETAPES.length + " étapes";
     var i = 1;
     Core.etapesParSection("parcours").forEach(function (ep) {
       parc.appendChild(carteParcoursRef(ep, i, "parcours"));

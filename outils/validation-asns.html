@@ -32,17 +32,40 @@
       </p>
 
       <section class="card asns-ref-card" aria-labelledby="lbl-ref-officiel">
-        <h2 id="lbl-ref-officiel">Texte officiel</h2>
-        <p class="hint">Consultation en ligne — connexion Internet nécessaire.</p>
-        <a
-          class="btn btn--ghost btn--labeled asns-ref-link"
-          href="https://www.education.gouv.fr/bo/15/Hebdo30/MENE1514345A.htm"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span class="btn__icon" aria-hidden="true">🔗</span>
-          <span class="btn__text">Arrêté du 8 juillet 2015 — savoir-nager (Bulletin officiel)</span>
-        </a>
+        <h2 id="lbl-ref-officiel">Référentiel officiel ASNS</h2>
+        <p class="hint">
+          Attestation du savoir-nager en sécurité — grille 2022/2025 (parcours ~50 m, 10 situations + 3
+          connaissances).
+        </p>
+        <div class="field-row field-row--actions asns-ref-links">
+          <a
+            class="btn btn--ghost btn--labeled asns-ref-link"
+            href="https://eduscol.education.gouv.fr/5709/savoir-nager-en-securite-de-la-maternelle-au-lycee"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="btn__icon" aria-hidden="true">🔗</span>
+            <span class="btn__text">Éduscol — savoir-nager en sécurité</span>
+          </a>
+          <a
+            class="btn btn--ghost btn--labeled asns-ref-link"
+            href="https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045348378"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="btn__icon" aria-hidden="true">📜</span>
+            <span class="btn__text">Arrêté du 28 février 2022</span>
+          </a>
+          <a
+            class="btn btn--ghost btn--labeled asns-ref-link"
+            href="https://www.youtube.com/watch?v=4D-ekJs-2QYs"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span class="btn__icon" aria-hidden="true">▶</span>
+            <span class="btn__text">Vidéo du parcours officiel</span>
+          </a>
+        </div>
       </section>
 
       <details class="card card--accordion asns-acc-classes" id="asns-acc-classes">
@@ -188,16 +211,18 @@
         <section class="card asns-parcours-card" aria-labelledby="lbl-parcours">
           <h2 id="lbl-parcours">Parcours à réaliser</h2>
           <p class="hint">
-            Les 13 étapes validées en séance —
+            Les <span id="asns-parcours-count">13</span> étapes validées en séance — grille des observables
+            ASNS (2022/2025).
             <a
-              href="https://www.education.gouv.fr/bo/15/Hebdo30/MENE1514345A.htm"
+              href="https://eduscol.education.gouv.fr/5709/savoir-nager-en-securite-de-la-maternelle-au-lycee"
               target="_blank"
               rel="noopener noreferrer"
-              >texte officiel complet</a
+              >référentiel Éduscol</a
             >.
           </p>
           <p class="asns-parcours-notice">
-            <strong>En continuité</strong> · sans reprise d'appuis au bord · <strong>sans lunettes</strong>
+            <strong>Parcours d'environ 50 m</strong> · en continuité · sans reprise d'appuis ·
+            <strong>sans lunettes</strong>
           </p>
           <div id="asns-parcours-parcours" class="asns-parcours-ref" aria-label="Étapes du parcours"></div>
           <h3 class="asns-parcours-ref-title">Connaissances et attitudes</h3>
@@ -353,7 +378,7 @@
             <button type="button" class="asns-val-chip" id="asns-val-tout-parcours">Parcours</button>
             <button type="button" class="asns-val-chip" id="asns-val-tout-conn">Connaissances</button>
             <button type="button" class="asns-val-chip asns-val-chip--accent" id="asns-val-tout">
-              13 étapes
+              Toutes les étapes
             </button>
           </div>
         </div>
@@ -385,16 +410,16 @@
     <script src="../tool-info.js"></script>
     <script>
       ToolInfo.init({
-        intro: "Validez le savoir-nager en sécurité au bord du bassin.",
+        intro: "Validez l'attestation du savoir-nager en sécurité (ASNS) au bord du bassin.",
         sections: [
           {
             title: "En pratique",
             list: [
               "Créez une classe ou importez depuis « Classes et groupes ».",
-              "Sur chaque élève : « Valider » ouvre la grille des étapes du parcours officiel.",
-              "L'avancement (étapes validées) est visible sur la fiche de chaque élève.",
+              "Sur chaque élève : « Valider » ouvre la grille des 13 observables (10 parcours + 3 connaissances).",
+              "Le parcours officiel (~50 m) est réalisé en continuité, sans lunettes ni reprise d'appuis.",
               "Générez l'attestation PDF lorsque toutes les étapes sont validées.",
-              "L'onglet Parcours rappelle le texte officiel à réaliser.",
+              "L'onglet Parcours rappelle le texte officiel ASNS 2022/2025.",
             ],
           },
         ],

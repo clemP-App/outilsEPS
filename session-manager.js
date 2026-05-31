@@ -13,6 +13,9 @@ var SessionManager = (function () {
   var mountEl = null;
   var barEl = null;
   var dialogEl = null;
+  var duplicateDialogEl = null;
+  var duplicateSourceId = null;
+  var duplicateSourceNom = null;
   var gatedEls = [];
 
   function toolId() {
@@ -66,6 +69,175 @@ var SessionManager = (function () {
     });
   }
 
+  function duplicationActivee() {
+    return !!(cfg && cfg.enableDuplicate && typeof cfg.duplicateSession === "function");
+  }
+
+  function remplirSelectClassesDuplicate(sel) {
+    if (!sel) return Promise.resolve();
+    OutilsDom.clear(sel);
+    var sansClasse = document.createElement("option");
+    sansClasse.value = "";
+    sansClasse.textContent = "Sans classe — importer les coureurs plus tard";
+    sel.appendChild(sansClasse);
+    if (typeof DataManager === "undefined" || !DataManager.getClasses) {
+      sel.disabled = false;
+      return Promise.resolve();
+    }
+    return DataManager.getClasses().then(function (classes) {
+      sel.disabled = false;
+      classes.forEach(function (c) {
+        var o = document.createElement("option");
+        o.value = c.id;
+        o.textContent = c.nom;
+        sel.appendChild(o);
+      });
+    });
+  }
+
+  function nomDuplicateParDefaut(classeId) {
+    var nomEl = duplicateDialogEl && duplicateDialogEl.querySelector("#session-duplicate-nom");
+    if (!nomEl || nomEl.dataset.userEdited === "1") return;
+    if (classeId) {
+      var sel = duplicateDialogEl.querySelector("#session-duplicate-classe");
+      var opt = sel && sel.options[sel.selectedIndex];
+      nomEl.value = opt && opt.value ? opt.textContent : "";
+      return;
+    }
+    nomEl.value = duplicateSourceNom ? duplicateSourceNom + " (copie)" : "";
+  }
+
+  function majNomDuplicateDepuisClasse() {
+    if (!duplicateDialogEl) return;
+    var sel = duplicateDialogEl.querySelector("#session-duplicate-classe");
+    nomDuplicateParDefaut(sel && sel.value ? sel.value : "");
+  }
+
+  function ouvrirDuplicateDialog(sourceSessionId) {
+    if (!duplicationActivee() || !duplicateDialogEl || !sourceSessionId) return;
+    duplicateSourceId = sourceSessionId;
+    duplicateSourceNom = null;
+    var nomEl = duplicateDialogEl.querySelector("#session-duplicate-nom");
+    var sel = duplicateDialogEl.querySelector("#session-duplicate-classe");
+    if (nomEl) {
+      nomEl.value = "";
+      nomEl.dataset.userEdited = "0";
+    }
+    var prep = Promise.resolve();
+    if (typeof DataManager !== "undefined" && DataManager.getSessionById) {
+      prep = DataManager.getSessionById(sourceSessionId).then(function (s) {
+        duplicateSourceNom = s && s.nomSession ? s.nomSession : null;
+        nomDuplicateParDefaut("");
+      });
+    }
+    prep.then(function () {
+      return remplirSelectClassesDuplicate(sel);
+    }).then(function () {
+      if (sel) sel.selectedIndex = 0;
+      if (duplicateDialogEl.showModal) duplicateDialogEl.showModal();
+    });
+  }
+
+  function confirmerDuplicate(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!duplicationActivee() || !duplicateSourceId) return;
+    var sel = duplicateDialogEl.querySelector("#session-duplicate-classe");
+    var nomEl = duplicateDialogEl.querySelector("#session-duplicate-nom");
+    var classeId = sel && sel.value ? sel.value : null;
+    var nomSession = nomEl ? (nomEl.value || "").trim().replace(/\s+/g, " ") : "";
+    montrerErreur("");
+    cfg
+      .duplicateSession(duplicateSourceId, { classeId: classeId, nomSession: nomSession })
+      .then(function (newSession) {
+        duplicateSourceId = null;
+        duplicateSourceNom = null;
+        if (duplicateDialogEl && duplicateDialogEl.open) duplicateDialogEl.close();
+        return choisirSession(newSession.id);
+      })
+      .then(function () {
+        return rafraichirListeDialog();
+      })
+      .catch(function (err) {
+        montrerErreur(err && err.message ? err.message : "Duplication impossible.");
+      });
+  }
+
+  function creerDuplicateDialog() {
+    duplicateDialogEl = document.createElement("dialog");
+    duplicateDialogEl.className = "session-dialog card session-duplicate-dialog";
+    duplicateDialogEl.setAttribute("aria-labelledby", "session-duplicate-title");
+
+    var form = document.createElement("form");
+    form.method = "dialog";
+    form.className = "session-dialog__form";
+    form.addEventListener("submit", confirmerDuplicate);
+
+    var h = document.createElement("h2");
+    h.id = "session-duplicate-title";
+    h.className = "session-dialog__title";
+    h.textContent = "Dupliquer la séance";
+
+    var hint = document.createElement("p");
+    hint.className = "hint";
+    hint.textContent =
+      "Les parcours et les réglages sont recopiés, sans les chronos. Choisissez une classe pour remplir les coureurs automatiquement, ou laissez « Sans classe » et importez-les plus tard.";
+
+    var fgClasse = document.createElement("div");
+    fgClasse.className = "field-group";
+    var lblClasse = document.createElement("label");
+    lblClasse.className = "field-label";
+    lblClasse.setAttribute("for", "session-duplicate-classe");
+    lblClasse.textContent = "Classe (facultatif)";
+    var selClasse = document.createElement("select");
+    selClasse.id = "session-duplicate-classe";
+    selClasse.addEventListener("change", majNomDuplicateDepuisClasse);
+    fgClasse.appendChild(lblClasse);
+    fgClasse.appendChild(selClasse);
+
+    var fgNom = document.createElement("div");
+    fgNom.className = "field-group";
+    var lblNom = document.createElement("label");
+    lblNom.className = "field-label";
+    lblNom.setAttribute("for", "session-duplicate-nom");
+    lblNom.textContent = "Nom de la nouvelle séance";
+    var inpNom = document.createElement("input");
+    inpNom.type = "text";
+    inpNom.id = "session-duplicate-nom";
+    inpNom.placeholder = "Ex. 6e2 — CO séance 1";
+    inpNom.addEventListener("input", function () {
+      inpNom.dataset.userEdited = inpNom.value.trim() ? "1" : "0";
+    });
+    fgNom.appendChild(lblNom);
+    fgNom.appendChild(inpNom);
+
+    var row = document.createElement("div");
+    row.className = "session-dialog__footer";
+    var btnCancel = document.createElement("button");
+    btnCancel.type = "button";
+    btnCancel.className = "btn btn--ghost";
+    btnCancel.textContent = "Annuler";
+    btnCancel.addEventListener("click", function () {
+      duplicateSourceId = null;
+      duplicateSourceNom = null;
+      if (duplicateDialogEl.close) duplicateDialogEl.close();
+    });
+    var btnOk = document.createElement("button");
+    btnOk.type = "submit";
+    btnOk.className = "btn btn--primary";
+    btnOk.textContent = "Dupliquer";
+    row.appendChild(btnCancel);
+    row.appendChild(btnOk);
+
+    form.appendChild(h);
+    form.appendChild(hint);
+    form.appendChild(fgClasse);
+    form.appendChild(fgNom);
+    form.appendChild(row);
+    duplicateDialogEl.appendChild(form);
+    document.body.appendChild(duplicateDialogEl);
+    return duplicateDialogEl;
+  }
+
   function rafraichirListeDialog() {
     var listEl = dialogEl && dialogEl.querySelector(".session-dialog__list");
     if (!listEl || typeof DataManager === "undefined") return Promise.resolve();
@@ -115,6 +287,18 @@ var SessionManager = (function () {
           e.stopPropagation();
           renommerSession(s.id, s.nomSession);
         });
+
+        if (duplicationActivee()) {
+          var btnDup = document.createElement("button");
+          btnDup.type = "button";
+          btnDup.className = "btn btn--ghost session-dialog__mini";
+          btnDup.textContent = "Dupliquer";
+          btnDup.addEventListener("click", function (e) {
+            e.stopPropagation();
+            ouvrirDuplicateDialog(s.id);
+          });
+          actions.appendChild(btnDup);
+        }
 
         var btnArch = document.createElement("button");
         btnArch.type = "button";
@@ -342,6 +526,21 @@ var SessionManager = (function () {
     btnNew.addEventListener("click", creerSession);
     actions.appendChild(btnChange);
     actions.appendChild(btnNew);
+    if (duplicationActivee()) {
+      var btnDup = document.createElement("button");
+      btnDup.type = "button";
+      btnDup.className = "btn btn--ghost btn--labeled session-bar__duplicate";
+      btnDup.innerHTML =
+        '<span class="btn__icon" aria-hidden="true">📋</span><span class="btn__text">Dupliquer</span>';
+      btnDup.addEventListener("click", function () {
+        if (!activeSession) {
+          montrerErreur("Ouvrez une séance à dupliquer.");
+          return;
+        }
+        ouvrirDuplicateDialog(activeSession.id);
+      });
+      actions.appendChild(btnDup);
+    }
 
     row.appendChild(info);
     row.appendChild(actions);
@@ -421,6 +620,7 @@ var SessionManager = (function () {
       mountEl.appendChild(creerAccordionSeance());
     }
     creerDialog();
+    if (duplicationActivee()) creerDuplicateDialog();
     setGatedVisible(false);
     montrerErreur("");
 

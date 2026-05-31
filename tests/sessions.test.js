@@ -60,3 +60,34 @@ test("legacySessionName contient le libellé outil", function () {
   assert.match(name, /Tournoi éliminatoire/);
   assert.match(name, /Legacy/);
 });
+
+test("cloneOrientationSessionData copie parcours et réglages sans chronos", function () {
+  var src = {
+    parcours: [{ id: "p1", nom: "Court", balises: [1, 2] }],
+    coureurs: [{ id: "c1", nom: "Dupont", ordre: 1 }],
+    runs: [{ id: "r1", coureurId: "c1" }],
+    settings: { penaliteFausseSec: 45, classementCriteres: [{ key: "tempsTotal", order: "asc" }] },
+  };
+  var copy = sessionsCore.cloneOrientationSessionData(src);
+  assert.deepEqual(copy.parcours, src.parcours);
+  assert.notEqual(copy.parcours, src.parcours);
+  assert.deepEqual(copy.coureurs, []);
+  assert.deepEqual(copy.runs, []);
+  assert.deepEqual(copy.settings, src.settings);
+  assert.notEqual(copy.settings, src.settings);
+});
+
+test("buildOrientationCoureurs trie et numérote", function () {
+  var coureurs = sessionsCore.buildOrientationCoureurs(
+    ["Zorro", "  Abel  ", "Abel", "Martin"],
+    function (nom, idx) {
+      return "id_" + idx + "_" + nom.replace(/\s+/g, "");
+    }
+  );
+  assert.equal(coureurs.length, 3);
+  assert.equal(coureurs[0].nom, "Abel");
+  assert.equal(coureurs[1].nom, "Martin");
+  assert.equal(coureurs[2].nom, "Zorro");
+  assert.equal(coureurs[0].ordre, 1);
+  assert.equal(coureurs[2].ordre, 3);
+});

@@ -802,12 +802,16 @@
   }
 
   function majBadgeAccordeons() {
+    var accP = document.getElementById("orient-acc-parcours");
+    var accC = document.getElementById("orient-acc-coureurs");
     var bp = document.getElementById("orient-acc-parcours-count");
     var bc = document.getElementById("orient-acc-coureurs-count");
     var nP = state.parcours.length;
     var nC = state.coureurs.length;
     if (bp) bp.textContent = String(nP);
     if (bc) bc.textContent = String(nC);
+    if (accP) accP.classList.toggle("orient-acc--attention", nP === 0);
+    if (accC) accC.classList.toggle("orient-acc--attention", nC === 0);
   }
 
   function renderParcoursGestion() {
@@ -2526,6 +2530,10 @@
     SessionManager.init({
       toolId: DataManager.SESSION_TOOLS.ORIENTATION,
       toolLabel: "Course d’orientation",
+      enableDuplicate: true,
+      duplicateSession: function (sourceId, opts) {
+        return DataManager.duplicateCourseOrientationSession(sourceId, opts);
+      },
       onSessionReady: initSession,
       onSessionCleared: function () {
         state = {

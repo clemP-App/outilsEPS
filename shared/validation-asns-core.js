@@ -6,9 +6,14 @@ var ValidationAsnsCore = (function () {
 
   var DATA_ID = "validation-asns-data";
   var SETTINGS_ID = "validation-asns-settings";
-  var DATA_VERSION = 2;
-  var OFFICIAL_TEXT_URL =
-    "https://www.education.gouv.fr/bo/15/Hebdo30/MENE1514345A.htm";
+  var DATA_VERSION = 3;
+  var OFFICIAL_PAGE_URL =
+    "https://eduscol.education.gouv.fr/5709/savoir-nager-en-securite-de-la-maternelle-au-lycee";
+  var OFFICIAL_ARRATE_URL =
+    "https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000045348378";
+  var OFFICIAL_VIDEO_URL = "https://www.youtube.com/watch?v=4D-ekJs-2QYs";
+  /** @deprecated utiliser OFFICIAL_PAGE_URL */
+  var OFFICIAL_TEXT_URL = OFFICIAL_PAGE_URL;
 
   var STATUT_ELEVE = {
     NON_COMMENCE: "non_commence",
@@ -24,12 +29,12 @@ var ValidationAsnsCore = (function () {
     ABSENT: "absent",
   };
 
-  /** Étapes validables par élève (parcours officiel + connaissances). */
+  /** Étapes validables — grille ASNS 2022/2025 (10 parcours + 3 connaissances). */
   var ETAPES = [
     {
       id: "p1",
       section: "parcours",
-      label: "Entrer dans l'eau en chute arrière (depuis le bord de la piscine)",
+      label: "À partir du bord de la piscine, entrer dans l'eau en chute arrière",
     },
     {
       id: "p2",
@@ -39,62 +44,66 @@ var ValidationAsnsCore = (function () {
     {
       id: "p3",
       section: "parcours",
-      label: "Franchir l'obstacle en immersion complète sur 1,5 m",
+      label:
+        "Franchir en immersion complète l'obstacle sur 1,5 m (tapis si possible ; repères extérieurs en dernier recours)",
     },
     {
       id: "p4",
       section: "parcours",
-      label: "Se déplacer sur le ventre sur 15 m",
+      label:
+        "Se déplacer sur le ventre sur 20 m ; au signal, surplace vertical 15 s puis terminer les 20 m",
     },
     {
       id: "p5",
       section: "parcours",
       label:
-        "Sur 15 m ventral : au signal, surplace vertical 15 s puis terminer les 15 m",
+        "Faire demi-tour sans reprise d'appuis et passer d'une position ventrale à dorsale",
     },
     {
       id: "p6",
       section: "parcours",
-      label: "Demi-tour sans appui, passage ventral → dorsal",
+      label: "Se déplacer sur le dos sur une distance de 20 m",
     },
     {
       id: "p7",
       section: "parcours",
-      label: "Se déplacer sur le dos sur 15 m",
+      label:
+        "Au cours des 20 m dorsaux : au signal, surplace horizontale dorsale 15 s puis terminer les 20 m",
     },
     {
       id: "p8",
       section: "parcours",
       label:
-        "Sur 15 m dorsal : au signal, surplace dorsale 15 s puis terminer les 15 m",
+        "Se retourner sur le ventre et franchir à nouveau l'obstacle en immersion complète",
     },
     {
       id: "p9",
       section: "parcours",
-      label: "Retour sur le ventre et franchir l'obstacle en immersion complète",
+      label: "Se déplacer sur le ventre pour revenir au point de départ",
     },
     {
       id: "p10",
       section: "parcours",
-      label: "Se déplacer sur le ventre pour revenir au point de départ",
+      label:
+        "S'ancrer de manière sécurisée sur un élément fixe et stable (en piscine : échelle acceptable)",
     },
     {
       id: "k1",
       section: "connaissances",
       label:
-        "Identifier la personne responsable de la surveillance à alerter en cas de problème",
+        "Savoir identifier la personne responsable de la surveillance à alerter en cas de problème",
     },
     {
       id: "k2",
       section: "connaissances",
       label:
-        "Connaître les règles d'hygiène et de sécurité (établissement de bains ou espace surveillé)",
+        "Connaître et respecter les règles de base d'hygiène et de sécurité (établissement de bains ou espace surveillé)",
     },
     {
       id: "k3",
       section: "connaissances",
       label:
-        "Identifier les environnements et circonstances adaptés à la maîtrise du savoir-nager",
+        "Savoir identifier les environnements et circonstances pour lesquels l'ASNS permet d'évoluer en sécurité",
     },
   ];
 
@@ -133,6 +142,46 @@ var ValidationAsnsCore = (function () {
     });
   }
 
+  function fusionnerStatutEtape(a, b) {
+    if (a === STATUT_COMP.VALIDE && b === STATUT_COMP.VALIDE) return STATUT_COMP.VALIDE;
+    if (!a && !b) return "";
+    if (a === STATUT_COMP.NON_VALIDE || b === STATUT_COMP.NON_VALIDE) {
+      return STATUT_COMP.NON_VALIDE;
+    }
+    if (a === STATUT_COMP.A_REVOIR || b === STATUT_COMP.A_REVOIR) return STATUT_COMP.A_REVOIR;
+    if (a === STATUT_COMP.ABSENT || b === STATUT_COMP.ABSENT) return STATUT_COMP.ABSENT;
+    if (a === STATUT_COMP.VALIDE || b === STATUT_COMP.VALIDE) return STATUT_COMP.A_REVOIR;
+    return a || b || "";
+  }
+
+  /** Migration grille ASSN 2015 (13 étapes, 15 m) → ASNS 2022/2025 (13 étapes, 20 m + ancrage). */
+  function migrerEtapesV2(legacy) {
+    legacy = legacy && typeof legacy === "object" ? legacy : {};
+    var o = etapesVides();
+    o.p1 = legacy.p1 || "";
+    o.p2 = legacy.p2 || "";
+    o.p3 = legacy.p3 || "";
+    o.p4 = fusionnerStatutEtape(legacy.p4, legacy.p5);
+    o.p5 = legacy.p6 || "";
+    o.p6 = legacy.p7 || "";
+    o.p7 = legacy.p8 || "";
+    o.p8 = legacy.p9 || "";
+    o.p9 = legacy.p10 || "";
+    o.p10 = "";
+    o.k1 = legacy.k1 || "";
+    o.k2 = legacy.k2 || "";
+    o.k3 = legacy.k3 || "";
+    return o;
+  }
+
+  function migrerHistoriqueEtapes(historique) {
+    if (!Array.isArray(historique)) return historique;
+    return historique.map(function (h) {
+      if (!h || !h.etapes) return h;
+      return Object.assign({}, h, { etapes: migrerEtapesV2(h.etapes) });
+    });
+  }
+
   function defaultData() {
     return {
       id: DATA_ID,
@@ -158,16 +207,25 @@ var ValidationAsnsCore = (function () {
   function normaliserData(raw) {
     var d = raw && typeof raw === "object" ? raw : defaultData();
     if (!d.id) d.id = DATA_ID;
-    d.version = DATA_VERSION;
+    var sourceVersion = typeof d.version === "number" ? d.version : 1;
+    var needsMigrate = sourceVersion < DATA_VERSION;
     if (!Array.isArray(d.classes)) d.classes = [];
     if (!Array.isArray(d.eleves)) d.eleves = [];
-    d.eleves = d.eleves.map(normaliserEleve);
+    d.eleves = d.eleves.map(function (el) {
+      var e = normaliserEleve(el, needsMigrate);
+      if (needsMigrate && e && e.historique) {
+        e.historique = migrerHistoriqueEtapes(e.historique);
+      }
+      return e;
+    });
+    d.version = DATA_VERSION;
     return d;
   }
 
-  function normaliserEleve(e) {
+  function normaliserEleve(e, needsMigrate) {
     if (!e || typeof e !== "object") return null;
     var legacy = e.etapes || e.competences || {};
+    if (needsMigrate) legacy = migrerEtapesV2(legacy);
     return {
       id: e.id || genererId("eleve"),
       classeId: e.classeId || "",
@@ -389,7 +447,11 @@ var ValidationAsnsCore = (function () {
     DATA_ID: DATA_ID,
     SETTINGS_ID: SETTINGS_ID,
     DATA_VERSION: DATA_VERSION,
+    OFFICIAL_PAGE_URL: OFFICIAL_PAGE_URL,
+    OFFICIAL_ARRATE_URL: OFFICIAL_ARRATE_URL,
+    OFFICIAL_VIDEO_URL: OFFICIAL_VIDEO_URL,
     OFFICIAL_TEXT_URL: OFFICIAL_TEXT_URL,
+    migrerEtapesV2: migrerEtapesV2,
     STATUT_ELEVE: STATUT_ELEVE,
     STATUT_COMP: STATUT_COMP,
     ETAPES: ETAPES,

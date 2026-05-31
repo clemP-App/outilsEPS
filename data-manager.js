@@ -1085,6 +1085,12 @@ var DataManager = (function () {
       getParametre(SC.compositionDataId(sessionId)).then(function (p) {
         return p ? deleteParametre(p.id) : null;
       }),
+      getParametre(SC.courseOrientationDataId(sessionId)).then(function (p) {
+        return p ? deleteParametre(p.id) : null;
+      }),
+      getParametre(SC.defiAtpDataId(sessionId)).then(function (p) {
+        return p ? deleteParametre(p.id) : null;
+      }),
     ]).then(function (res) {
       var ops = [];
       (res[0] || []).forEach(function (c) {
@@ -1423,6 +1429,62 @@ var DataManager = (function () {
     });
     return saveParametre(record).then(function () {
       return touchSession(sessionId);
+    });
+  }
+
+  function nomElevePourCoureur(e) {
+    if (!e) return "";
+    return ([e.nom, e.prenom].filter(Boolean).join(" ") || "")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
+  function duplicateCourseOrientationSession(sourceSessionId, options) {
+    options = options || {};
+    var classeId = options.classeId || null;
+    var nomSession = (options.nomSession || "").trim().replace(/\s+/g, " ");
+
+    return getSessionById(sourceSessionId).then(function (sourceSession) {
+      if (!sourceSession) {
+        return Promise.reject(new Error("Séance source introuvable."));
+      }
+      if (sourceSession.toolId !== SC.SESSION_TOOLS.ORIENTATION) {
+        return Promise.reject(new Error("Cette séance n’est pas une séance de course d’orientation."));
+      }
+      return Promise.all([
+        getCourseOrientationForSession(sourceSessionId),
+        classeId ? getClasseById(classeId) : Promise.resolve(null),
+      ]).then(function (res) {
+        var sourceState = res[0];
+        var classe = res[1];
+        if (classeId && !classe) {
+          return Promise.reject(new Error("Classe introuvable."));
+        }
+        var noms = classe
+          ? sortElevesAlphabetique(
+              (classe.eleves || []).map(function (e) {
+                return nomElevePourCoureur(e);
+              })
+            ).filter(Boolean)
+          : [];
+        var sessionNom =
+          nomSession ||
+          (classe ? classe.nom : sourceSession.nomSession + " (copie)");
+        var newState = SC.cloneOrientationSessionData(sourceState);
+        newState.coureurs = SC.buildOrientationCoureurs(noms, function () {
+          return genererId("coureur");
+        });
+        return createSession({
+          toolId: SC.SESSION_TOOLS.ORIENTATION,
+          nomSession: sessionNom,
+          classeId: classeId,
+          classeNomSnapshot: classe ? classe.nom : null,
+        }).then(function (newSession) {
+          return saveCourseOrientationForSession(newSession.id, newState).then(function () {
+            return newSession;
+          });
+        });
+      });
     });
   }
 
@@ -2189,6 +2251,7 @@ var DataManager = (function () {
     savePyramideVictoires: savePyramideVictoires,
     getCourseOrientationForSession: getCourseOrientationForSession,
     saveCourseOrientationForSession: saveCourseOrientationForSession,
+    duplicateCourseOrientationSession: duplicateCourseOrientationSession,
     getDefiAtpForSession: getDefiAtpForSession,
     saveDefiAtpForSession: saveDefiAtpForSession,
     PYRAMIDE_VICTOIRES_ID: PYRAMIDE_VICTOIRES_ID,
