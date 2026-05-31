@@ -329,8 +329,12 @@
     if (roundIndex >= state.rounds.length - 1) return;
     var nextMatch = state.rounds[roundIndex + 1][Math.floor(matchIndex / 2)];
     var slot = matchIndex % 2;
+    var previous = nextMatch.players[slot];
     nextMatch.players[slot] = winner;
-    if (nextMatch.winner && nextMatch.winner !== winner && nextMatch.players.indexOf(nextMatch.winner) === -1) {
+    if (
+      nextMatch.winner &&
+      (previous !== winner || nextMatch.players.indexOf(nextMatch.winner) === -1)
+    ) {
       nextMatch.winner = null;
     }
   }
@@ -358,8 +362,12 @@
     }
     var nextMatch = table.rounds[roundIndex + 1][Math.floor(matchIndex / 2)];
     var slot = matchIndex % 2;
+    var previous = nextMatch.players[slot];
     nextMatch.players[slot] = winner;
-    if (nextMatch.winner && nextMatch.winner !== winner && nextMatch.players.indexOf(nextMatch.winner) === -1) {
+    if (
+      nextMatch.winner &&
+      (previous !== winner || nextMatch.players.indexOf(nextMatch.winner) === -1)
+    ) {
       nextMatch.winner = null;
     }
   }
@@ -412,23 +420,13 @@
     }
   }
 
-  function setWinnerClassement(tableId, roundIndex, matchIndex, winner) {
-    var table = findTable(tableId);
-    if (!table) return;
+  function applyClassementWinner(table, roundIndex, matchIndex, winner) {
     var match = table.rounds[roundIndex][matchIndex];
     if (!winner || match.players.indexOf(winner) === -1) return;
-    var oldWinner = match.winner;
-    if (oldWinner === winner) return;
-    if (oldWinner && oldWinner !== winner) {
-      removeDescendantTables(table.id);
-      resetTableAfter(table, roundIndex);
-      state.placements = {};
-    }
     match.winner = winner;
     var loser = match.players.filter(function (player) {
       return player && player !== winner;
     })[0];
-
     placeWinnerInTable(table, roundIndex, matchIndex, winner);
     if (loser) {
       var range = loserRange(table, roundIndex);
@@ -438,6 +436,79 @@
         addPlayerToTable(getOrCreateLoserTable(table, roundIndex), loser);
       }
     }
+  }
+
+  function snapshotTableWinners(table) {
+    return table.rounds.map(function (round) {
+      return round.map(function (match) {
+        return match.winner;
+      });
+    });
+  }
+
+  function clearTableResults(table) {
+    resetTableAfter(table, 0);
+    table.rounds.forEach(function (round, r) {
+      round.forEach(function (match) {
+        match.winner = null;
+        if (r > 0) match.players = [null, null];
+      });
+    });
+  }
+
+  function replayTableFromSnapshot(table, winnersByRound) {
+    winnersByRound.forEach(function (round, r) {
+      round.forEach(function (savedWinner, m) {
+        if (savedWinner) applyClassementWinner(table, r, m, savedWinner);
+      });
+    });
+    autoAdvanceTableByes(table);
+  }
+
+  function rebuildClassementFromSnapshots(snapshots) {
+    var main = findTable("principal");
+    if (!main) return;
+    removeDescendantTables("principal");
+    state.tables = [main];
+    state.placements = {};
+    clearTableResults(main);
+
+    var mainSnap = snapshots.filter(function (snap) {
+      return snap.id === "principal";
+    })[0];
+    if (mainSnap) replayTableFromSnapshot(main, mainSnap.winners);
+
+    snapshots
+      .filter(function (snap) {
+        return snap.id !== "principal";
+      })
+      .sort(function (a, b) {
+        return a.id.localeCompare(b.id, "fr");
+      })
+      .forEach(function (snap) {
+        var table = findTable(snap.id);
+        if (!table) return;
+        clearTableResults(table);
+        replayTableFromSnapshot(table, snap.winners);
+      });
+  }
+
+  function setWinnerClassement(tableId, roundIndex, matchIndex, winner) {
+    var table = findTable(tableId);
+    if (!table) return;
+    var match = table.rounds[roundIndex][matchIndex];
+    if (!winner || match.players.indexOf(winner) === -1) return;
+    if (match.winner === winner) return;
+
+    var snapshots = (state.tables || []).map(function (t) {
+      return { id: t.id, winners: snapshotTableWinners(t) };
+    });
+    snapshots.forEach(function (snap) {
+      if (snap.id !== tableId) return;
+      snap.winners[roundIndex][matchIndex] = winner;
+    });
+
+    rebuildClassementFromSnapshots(snapshots);
     save();
     render();
   }
