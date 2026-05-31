@@ -4902,6 +4902,12 @@ textarea {
   background: rgba(148, 163, 184, 0.12);
 }
 
+.tournoi-player.is-waiting {
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
 .tournoi-matchs-list {
   list-style: none;
   margin: 0.85rem 0 0;

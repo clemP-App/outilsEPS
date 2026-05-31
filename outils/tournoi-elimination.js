@@ -311,17 +311,23 @@
     if (setupEl) setupEl.open = false;
   }
 
-  function recomputeFrom(roundIndex) {
-    for (var r = roundIndex + 1; r < state.rounds.length; r++) {
-      state.rounds[r].forEach(function (match) {
-        match.winner = null;
-        match.players = [null, null];
-      });
-    }
-    for (var sourceRound = 0; sourceRound <= roundIndex; sourceRound++) {
-      state.rounds[sourceRound].forEach(function (match, idx) {
-        if (match.winner) placeWinner(sourceRound, idx, match.winner);
-      });
+  function syncMatchPlayersFromFeeders(rounds, roundIndex, matchIndex) {
+    if (roundIndex < 1 || !rounds[roundIndex]) return false;
+    var match = rounds[roundIndex][matchIndex];
+    if (!match) return false;
+    var before0 = match.players[0];
+    var before1 = match.players[1];
+    var left = rounds[roundIndex - 1][matchIndex * 2];
+    var right = rounds[roundIndex - 1][matchIndex * 2 + 1];
+    match.players[0] = left && left.winner ? left.winner : null;
+    match.players[1] = right && right.winner ? right.winner : null;
+    return before0 !== match.players[0] || before1 !== match.players[1];
+  }
+
+  function invalidateWinnerIfNeeded(match) {
+    if (!match || !match.winner) return;
+    if (match.players.indexOf(match.winner) === -1) {
+      match.winner = null;
     }
   }
 
@@ -339,11 +345,61 @@
     }
   }
 
+  function clearBranchSlotDownstream(rounds, roundIndex, matchIndex) {
+    var r = roundIndex;
+    var m = matchIndex;
+    while (r < rounds.length - 1) {
+      var nextR = r + 1;
+      var nextM = Math.floor(m / 2);
+      var slot = m % 2;
+      var nextMatch = rounds[nextR][nextM];
+      nextMatch.players[slot] = null;
+      invalidateWinnerIfNeeded(nextMatch);
+      if (nextMatch.winner) return;
+      r = nextR;
+      m = nextM;
+    }
+  }
+
+  /** Met à jour uniquement la branche issue du match corrigé ; les autres branches restent intactes. */
+  function refreshBranchFrom(roundIndex, matchIndex) {
+    var r = roundIndex;
+    var m = matchIndex;
+    while (r < state.rounds.length - 1) {
+      var cur = state.rounds[r][m];
+      if (!cur.winner) {
+        clearBranchSlotDownstream(state.rounds, r, m);
+        return;
+      }
+      placeWinner(r, m, cur.winner);
+      var nextR = r + 1;
+      var nextM = Math.floor(m / 2);
+      var nextMatch = state.rounds[nextR][nextM];
+      var rosterChanged = syncMatchPlayersFromFeeders(state.rounds, nextR, nextM);
+      if (rosterChanged && nextMatch.winner) {
+        nextMatch.winner = null;
+      } else {
+        invalidateWinnerIfNeeded(nextMatch);
+      }
+      if (nextMatch.winner) return;
+      r = nextR;
+      m = nextM;
+    }
+  }
+
   function setWinnerClassic(roundIndex, matchIndex, winner) {
     var match = state.rounds[roundIndex][matchIndex];
     if (!winner || match.players.indexOf(winner) === -1) return;
+    if (match.winner === winner) {
+      match.winner = null;
+      clearBranchSlotDownstream(state.rounds, roundIndex, matchIndex);
+      autoAdvanceByes();
+      save();
+      render();
+      return;
+    }
     match.winner = winner;
-    recomputeFrom(roundIndex);
+    refreshBranchFrom(roundIndex, matchIndex);
     autoAdvanceByes();
     save();
     render();
@@ -369,6 +425,31 @@
       (previous !== winner || nextMatch.players.indexOf(nextMatch.winner) === -1)
     ) {
       nextMatch.winner = null;
+    }
+  }
+
+  function refreshBranchInTable(table, roundIndex, matchIndex) {
+    var r = roundIndex;
+    var m = matchIndex;
+    while (r < table.rounds.length - 1) {
+      var cur = table.rounds[r][m];
+      if (!cur.winner) {
+        clearBranchSlotDownstream(table.rounds, r, m);
+        return;
+      }
+      placeWinnerInTable(table, r, m, cur.winner);
+      var nextR = r + 1;
+      var nextM = Math.floor(m / 2);
+      var nextMatch = table.rounds[nextR][nextM];
+      var rosterChanged = syncMatchPlayersFromFeeders(table.rounds, nextR, nextM);
+      if (rosterChanged && nextMatch.winner) {
+        nextMatch.winner = null;
+      } else {
+        invalidateWinnerIfNeeded(nextMatch);
+      }
+      if (nextMatch.winner) return;
+      r = nextR;
+      m = nextM;
     }
   }
 
@@ -498,14 +579,13 @@
     if (!table) return;
     var match = table.rounds[roundIndex][matchIndex];
     if (!winner || match.players.indexOf(winner) === -1) return;
-    if (match.winner === winner) return;
 
     var snapshots = (state.tables || []).map(function (t) {
       return { id: t.id, winners: snapshotTableWinners(t) };
     });
     snapshots.forEach(function (snap) {
       if (snap.id !== tableId) return;
-      snap.winners[roundIndex][matchIndex] = winner;
+      snap.winners[roundIndex][matchIndex] = match.winner === winner ? null : winner;
     });
 
     rebuildClassementFromSnapshots(snapshots);
@@ -571,6 +651,34 @@
     if (match.players[0] || match.players[1] || match.winner) return true;
     if (roundIndex === 0) return false;
     return branchHasPlayer(table, roundIndex - 1, matchIndex * 2) || branchHasPlayer(table, roundIndex - 1, matchIndex * 2 + 1);
+  }
+
+  function tableForRender(tableId) {
+    if (state.format !== "classement" && tableId === "principal") {
+      return { id: "principal", rounds: state.rounds };
+    }
+    return findTable(tableId);
+  }
+
+  /** Exempt = bye (avance seul) ; sinon la case attend le vainqueur d'un match précédent. */
+  function isExemptSlot(tableId, roundIndex, matchIndex, slotIndex) {
+    var table = tableForRender(tableId);
+    if (!table || !table.rounds[roundIndex]) return false;
+    var match = table.rounds[roundIndex][matchIndex];
+    if (!match || match.players[slotIndex]) return false;
+    var otherSlot = slotIndex === 0 ? 1 : 0;
+    if (roundIndex === 0) {
+      return !!match.players[otherSlot];
+    }
+    if (match.players[otherSlot]) {
+      return brancheAdverseVide(table, roundIndex, matchIndex, otherSlot);
+    }
+    var sourceMatchIndex = matchIndex * 2 + slotIndex;
+    return !branchHasPlayer(table, roundIndex - 1, sourceMatchIndex);
+  }
+
+  function emptySlotLabel(tableId, roundIndex, matchIndex, slotIndex) {
+    return isExemptSlot(tableId, roundIndex, matchIndex, slotIndex) ? "Exempt" : "Attente de joueur";
   }
 
   function resetResults() {
@@ -765,18 +873,25 @@
     });
   }
 
-  function renderPlayer(tableId, match, player, roundIndex, matchIndex) {
+  function renderPlayer(tableId, match, player, roundIndex, matchIndex, slotIndex) {
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "tournoi-player";
     if (!player) {
-      btn.className += " is-empty";
+      var exempt = isExemptSlot(tableId, roundIndex, matchIndex, slotIndex);
+      btn.className += " is-empty" + (exempt ? " is-exempt" : " is-waiting");
       btn.disabled = true;
-      btn.textContent = "Exempt";
+      btn.textContent = emptySlotLabel(tableId, roundIndex, matchIndex, slotIndex);
       return btn;
     }
     btn.textContent = player;
-    btn.classList.toggle("is-winner", match.winner === player);
+    var isWinner = match.winner === player;
+    btn.classList.toggle("is-winner", isWinner);
+    btn.setAttribute("aria-pressed", isWinner ? "true" : "false");
+    btn.setAttribute(
+      "aria-label",
+      player + (isWinner ? " — cliquer pour annuler le résultat" : " — cliquer pour désigner vainqueur")
+    );
     btn.addEventListener("click", function () {
       setWinner(tableId, roundIndex, matchIndex, player);
     });
@@ -818,8 +933,8 @@
         label.className = "tournoi-match__label";
         label.textContent = matchLabel(r, m, totalRounds);
         matchEl.appendChild(label);
-        matchEl.appendChild(renderPlayer(table.id, match, match.players[0], r, m));
-        matchEl.appendChild(renderPlayer(table.id, match, match.players[1], r, m));
+        matchEl.appendChild(renderPlayer(table.id, match, match.players[0], r, m, 0));
+        matchEl.appendChild(renderPlayer(table.id, match, match.players[1], r, m, 1));
         roundEl.appendChild(matchEl);
       });
       tableEl.appendChild(roundEl);
