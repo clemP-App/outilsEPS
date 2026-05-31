@@ -36,6 +36,12 @@
   var dlgColTitre = document.getElementById("dlg-col-titre");
   var dlgColTypeHint = document.getElementById("dlg-col-type-hint");
   var dlgColNom = document.getElementById("dlg-col-nom");
+  var dlgColNoteWrap = document.getElementById("dlg-col-note-wrap");
+  var dlgColEstNote = document.getElementById("dlg-col-est-note");
+  var dlgColMaxWrap = document.getElementById("dlg-col-max-wrap");
+  var dlgColMax = document.getElementById("dlg-col-max");
+  var dlgColCheckWrap = document.getElementById("dlg-col-check-wrap");
+  var dlgColHorsSynthese = document.getElementById("dlg-col-hors-synthese");
   var dlgColRemplirSection = document.getElementById("dlg-col-remplir-section");
   var dlgColRemplirBody = document.getElementById("dlg-col-remplir-body");
   var dlgColCalcHint = document.getElementById("dlg-col-calc-hint");
@@ -63,6 +69,8 @@
   var dlgIconeGrid = document.getElementById("dlg-icone-grid");
   var dlgIconeTitre = document.getElementById("dlg-icone-titre");
   var iconeEleveRowId = null;
+  var filtreColonnes = "all";
+  var colFiltreEl = document.getElementById("tab-suivi-col-filtre");
 
   var ICONES_ELEVE = [
     { id: "", glyph: "·", label: "Aucune", cls: "vide" },
@@ -701,7 +709,24 @@
       if (!c.id) c.id = genererId("col");
       if (!c.label) c.label = "Colonne";
       if (c.type === "text") c.type = "number";
-      if (c.type === "calc") {
+      if (c.type === "check") {
+        c.horsSynthese = c.horsSynthese === true;
+      } else {
+        delete c.horsSynthese;
+      }
+      if (c.type === "number") {
+        if (c.estNote !== true && c.estNote !== false) {
+          c.estNote = c.max > 0;
+        }
+        if (!c.estNote) {
+          c.max = null;
+        } else if (c.max != null && c.max !== "") {
+          var parsedMax = parseFloat(String(c.max).replace(",", "."));
+          c.max = !isNaN(parsedMax) && parsedMax > 0 ? parsedMax : null;
+        } else {
+          c.max = null;
+        }
+      } else if (c.type === "calc") {
         if (c.calcOp !== "sum" && c.calcOp !== "avg") c.calcOp = "sum";
         if (!Array.isArray(c.sourceIds)) c.sourceIds = [];
         c.sourceIds = c.sourceIds.filter(function (sid) {
@@ -709,17 +734,131 @@
             return x.id === sid && x.type === "number";
           });
         });
-      } else if (c.type !== "check" && c.type !== "number") {
+        if (c.estNote !== true && c.estNote !== false) {
+          c.estNote = c.calcOp === "avg";
+        }
+        if (!c.estNote) {
+          c.max = null;
+        } else if (c.max != null && c.max !== "") {
+          var parsedMaxCalc = parseFloat(String(c.max).replace(",", "."));
+          c.max = !isNaN(parsedMaxCalc) && parsedMaxCalc > 0 ? parsedMaxCalc : null;
+        } else {
+          c.max = null;
+        }
+      } else {
+        delete c.estNote;
+        delete c.max;
+      }
+      if (c.type !== "check" && c.type !== "number" && c.type !== "calc") {
         c.type = "number";
       }
     });
     return t;
   }
 
+  function colonneEstNote(col) {
+    if (!col) return false;
+    if (col.type === "number" || col.type === "calc") return col.estNote === true;
+    return false;
+  }
+
   function colonnesNombreSources(t) {
     return t.cols.filter(function (c) {
       return c.type === "number";
     });
+  }
+
+  function colonneNoteOuCalc(col) {
+    return colonneEstNote(col);
+  }
+
+  function colonneAppel(col) {
+    return col.type === "check";
+  }
+
+  function colonneAppelSynthese(col) {
+    return col.type === "check" && col.horsSynthese !== true;
+  }
+
+  function colonneAutre(col) {
+    if (col.type === "number" || col.type === "calc") return col.estNote !== true;
+    return false;
+  }
+
+  function colonnesVisibles(t) {
+    if (!t || !t.cols) return [];
+    if (filtreColonnes === "check") {
+      return t.cols.filter(function (c) {
+        return colonneAppel(c);
+      });
+    }
+    if (filtreColonnes === "note") {
+      return t.cols.filter(function (c) {
+        return colonneNoteOuCalc(c);
+      });
+    }
+    if (filtreColonnes === "autre") {
+      return t.cols.filter(function (c) {
+        return colonneAutre(c);
+      });
+    }
+    return t.cols;
+  }
+
+  function baremeColonne(t, col) {
+    if (!col || !colonneEstNote(col)) return null;
+    if ((col.type === "number" || col.type === "calc") && col.max > 0) return col.max;
+    if (col.type === "calc" && col.calcOp === "avg") {
+      var maxs = [];
+      (col.sourceIds || []).forEach(function (sid) {
+        var src = t.cols.filter(function (c) {
+          return c.id === sid;
+        })[0];
+        if (src && colonneEstNote(src) && src.max > 0) maxs.push(src.max);
+      });
+      if (maxs.length && maxs.every(function (m) {
+        return m === maxs[0];
+      })) {
+        return maxs[0];
+      }
+    }
+    return null;
+  }
+
+  function formatNombreAffiche(val) {
+    if (val === null || val === undefined || val === "" || isNaN(val)) return "";
+    var n = Number(val);
+    var s = n.toFixed(1);
+    if (s.indexOf(".0") === s.length - 2) s = String(Math.round(n));
+    return s.replace(".", ",");
+  }
+
+  function formatNombreAvecBareme(val, max) {
+    var base = formatNombreAffiche(val);
+    if (!base) return "";
+    return max > 0 ? base + "/" + max : base;
+  }
+
+  function majFiltreColonnesUi(t) {
+    if (!colFiltreEl) return;
+    var hasCheck = t && t.cols.some(colonneAppel);
+    var hasNotes = t && t.cols.some(colonneNoteOuCalc);
+    var hasAutre = t && t.cols.some(colonneAutre);
+    var nbTypes = (hasCheck ? 1 : 0) + (hasNotes ? 1 : 0) + (hasAutre ? 1 : 0);
+    colFiltreEl.hidden = nbTypes < 2;
+    colFiltreEl.querySelectorAll("[data-col-filtre]").forEach(function (btn) {
+      var mode = btn.getAttribute("data-col-filtre");
+      btn.classList.toggle("is-active", mode === filtreColonnes);
+      btn.setAttribute("aria-pressed", mode === filtreColonnes ? "true" : "false");
+    });
+  }
+
+  function definirFiltreColonnes(mode) {
+    if (mode !== "all" && mode !== "check" && mode !== "note" && mode !== "autre") return;
+    filtreColonnes = mode;
+    var t = getActif();
+    majFiltreColonnesUi(t);
+    rendreGrille();
   }
 
   function valeurCalculee(t, rowId, col) {
@@ -748,22 +887,8 @@
   }
 
   function demanderNomColonne(col) {
-    if (!col || (col.type !== "number" && col.type !== "calc")) return;
-    var def = col.label || "";
-    var rep = window.prompt("Nom de la colonne :", def);
-    if (rep === null) {
-      montrerOk("Colonne « " + def + " » ajoutée.");
-      return;
-    }
-    var l = normaliserNom(rep);
-    if (!l) {
-      montrerOk("Colonne « " + def + " » ajoutée.");
-      return;
-    }
-    col.label = l;
-    rendreGrille(true);
-    planifierSauvegarde();
-    montrerOk("Colonne « " + l + " » ajoutée.");
+    if (!col) return;
+    ouvrirDialogColonne(col.id);
   }
 
   function labelColonneCalcDefaut(t, calcOp, sourceIds) {
@@ -853,7 +978,7 @@
       return "";
     }
     if (v === null || v === undefined || v === "") return "";
-    return String(v).replace(".", ",");
+    return formatNombreAffiche(v);
   }
 
   function ouvrirDialogIcone(rowId) {
@@ -945,7 +1070,9 @@
         if (!el) return;
         var cv = valeurCalculee(t, row.id, col);
         el.textContent =
-          cv === null || cv === undefined || isNaN(cv) ? "—" : String(cv).replace(".", ",");
+          cv === null || cv === undefined || isNaN(cv)
+            ? "—"
+            : formatNombreAffiche(cv) || "—";
       });
     });
   }
@@ -978,12 +1105,14 @@
   function syntheseColonne(t, col) {
     if (!t.rows.length) return "—";
     if (col.type === "check") {
+      if (col.horsSynthese) return "—";
       var ok = 0;
       t.rows.forEach(function (row) {
         if (getCell(t, row.id, col.id) === true) ok++;
       });
       return ok + " ✓";
     }
+    if ((col.type === "number" || col.type === "calc") && !colonneEstNote(col)) return "—";
     var sum = 0;
     var n = 0;
     t.rows.forEach(function (row) {
@@ -995,9 +1124,7 @@
     });
     if (!n) return "—";
     var moy = sum / n;
-    var s = moy.toFixed(1);
-    if (s.indexOf(".0") === s.length - 2) s = String(Math.round(moy));
-    return s.replace(".", ",");
+    return formatNombreAvecBareme(moy, baremeColonne(t, col)) || "—";
   }
 
   function planifierSauvegarde() {
@@ -1138,16 +1265,35 @@
 
     if (titreEl) titreEl.value = t.titre || "";
     if (nbElevesEl) nbElevesEl.textContent = libelleNbEleves(t.rows.length);
+    majFiltreColonnesUi(t);
 
+    var cols = colonnesVisibles(t);
     var hasGrid = t.rows.length > 0 || t.cols.length > 0;
-    if (emptyEl) emptyEl.hidden = hasGrid;
-    if (scrollEl) scrollEl.hidden = !hasGrid;
+    if (emptyEl) {
+      emptyEl.hidden = hasGrid;
+      if (hasGrid && t.rows.length > 0 && t.cols.length > 0 && !cols.length) {
+        emptyEl.hidden = false;
+        emptyEl.textContent =
+          filtreColonnes === "check"
+            ? "Aucune colonne d’appel (✓/✗) sur cette feuille."
+            : filtreColonnes === "note"
+              ? "Aucune colonne de note sur cette feuille."
+              : filtreColonnes === "autre"
+                ? "Aucune autre colonne (mesure, somme…) sur cette feuille."
+                : "Aucune colonne à afficher.";
+      } else if (hasGrid) {
+        emptyEl.textContent =
+          "Ajoutez des élèves puis créez des colonnes (bouton Nouvelle colonne).";
+      }
+    }
+    if (scrollEl) scrollEl.hidden = !hasGrid || (t.rows.length > 0 && t.cols.length > 0 && !cols.length);
     if (!theadEl || !tbodyEl) return;
 
     theadEl.innerHTML = "";
     tbodyEl.innerHTML = "";
 
     if (!hasGrid) return;
+    if (t.rows.length > 0 && t.cols.length > 0 && !cols.length) return;
 
     if (!t.cols.length) {
       var trSeul = document.createElement("tr");
@@ -1156,13 +1302,13 @@
       theadEl.appendChild(trSeul);
     }
 
-    if (t.cols.length) {
+    if (cols.length) {
       var trHead = document.createElement("tr");
       trHead.className = "tab-suivi-head-main";
 
       trHead.appendChild(creerEnteteEleve());
 
-      t.cols.forEach(function (col) {
+      cols.forEach(function (col) {
         var th = document.createElement("th");
         th.className =
           "tab-suivi-th tab-suivi-th--col" + (col.type === "calc" ? " tab-suivi-th--calc" : "");
@@ -1187,6 +1333,19 @@
         span.textContent = col.label || "";
         stack.appendChild(span);
 
+        var bareme = baremeColonne(t, col);
+        if (bareme > 0) {
+          var baremeHint = document.createElement("span");
+          baremeHint.className = "tab-suivi-col-bareme";
+          baremeHint.textContent = "/" + bareme;
+          stack.appendChild(baremeHint);
+        } else if (col.type === "check" && col.horsSynthese) {
+          var horsHint = document.createElement("span");
+          horsHint.className = "tab-suivi-col-bareme tab-suivi-col-bareme--hors-synth";
+          horsHint.textContent = "hors synth.";
+          stack.appendChild(horsHint);
+        }
+
         th.appendChild(stack);
         trHead.appendChild(th);
       });
@@ -1201,7 +1360,7 @@
       thStatNom.scope = "col";
       trStats.appendChild(thStatNom);
 
-      t.cols.forEach(function (col) {
+      cols.forEach(function (col) {
         var thS = document.createElement("th");
         thS.className = "tab-suivi-th tab-suivi-th--col tab-suivi-th--stats";
         thS.scope = "col";
@@ -1234,7 +1393,7 @@
       tdNom.appendChild(nomWrap);
       tr.appendChild(tdNom);
 
-      t.cols.forEach(function (col) {
+      cols.forEach(function (col) {
         var td = document.createElement("td");
         td.className = "tab-suivi-td tab-suivi-td--cell";
         td.setAttribute("data-col-id", col.id);
@@ -1246,7 +1405,7 @@
           spanCalc.textContent =
             cv === null || cv === undefined || isNaN(cv)
               ? "—"
-              : String(cv).replace(".", ",");
+              : formatNombreAffiche(cv) || "—";
           td.appendChild(spanCalc);
         } else if (col.type === "check") {
           var btn = document.createElement("button");
@@ -1285,11 +1444,14 @@
           });
           td.appendChild(btn);
         } else {
+          var numWrap = document.createElement("div");
+          numWrap.className = "tab-suivi-cell-number";
           var num = document.createElement("input");
           num.type = "number";
           num.className = "tab-suivi-cell-input";
           num.inputMode = "decimal";
           num.setAttribute("data-col-id", col.id);
+          if (col.max > 0) num.max = col.max;
           var nv = getCell(t, row.id, col.id);
           num.value = nv === null || nv === undefined || nv === "" ? "" : String(nv);
           num.addEventListener("change", function () {
@@ -1301,7 +1463,8 @@
             appliquerValeurDepuisInput(num, t, row, col);
             focusCelluleNombre(rowIndex + 1, col.id);
           });
-          td.appendChild(num);
+          numWrap.appendChild(num);
+          td.appendChild(numWrap);
         }
 
         tr.appendChild(td);
@@ -1338,6 +1501,10 @@
       col.calcOp = options.calcOp === "avg" ? "avg" : "sum";
       col.sourceIds = (options.sourceIds || []).slice();
       col.label = labelColonneCalcDefaut(t, col.calcOp, col.sourceIds);
+      col.estNote = false;
+    }
+    if (type === "number") {
+      col.estNote = false;
     }
     t.cols.push(col);
     rendreGrille(scrollTo ? col.id : null);
@@ -1475,7 +1642,10 @@
       cb.value = col.id;
       cb.name = "calc-source";
       lab.appendChild(cb);
-      lab.appendChild(document.createTextNode(col.label || "Colonne"));
+      var lib =
+        (col.label || "Colonne") +
+        (col.estNote ? (col.max > 0 ? " /" + col.max : " · note") : " · mesure");
+      lab.appendChild(document.createTextNode(lib));
       dlgCalcSources.appendChild(lab);
     });
 
@@ -1535,11 +1705,20 @@
   }
 
   function typeColonneLabel(col) {
-    if (col.type === "check") return "Présence / rendu (✓ et ✗)";
-    if (col.type === "calc") {
-      return (col.calcOp === "avg" ? "Moyenne" : "Somme") + " calculée automatiquement";
+    if (col.type === "check") {
+      return col.horsSynthese
+        ? "Présence / rendu — hors synthèse"
+        : "Appel (✓ et ✗) — inclus dans la synthèse";
     }
-    return "Note / nombre";
+    if (col.type === "calc") {
+      var op = col.calcOp === "avg" ? "Moyenne" : "Somme";
+      if (col.estNote) return op + " (note" + (col.max > 0 ? " /" + col.max : "") + ")";
+      return op + " calculée (notes et mesures possibles)";
+    }
+    if (col.estNote) {
+      return "Note" + (col.max > 0 ? " /" + col.max : "");
+    }
+    return "Mesure chiffrée (hors moyennes)";
   }
 
   function rendreRemplirDialogColonne(t, col) {
@@ -1588,6 +1767,15 @@
     }
   }
 
+  function majDialogColonneNoteUi() {
+    if (!dlgColNoteWrap || !dlgColEstNote) return;
+    var estNote = dlgColEstNote.checked;
+    if (dlgColMaxWrap) dlgColMaxWrap.hidden = !estNote;
+    if (estNote && dlgColMax && !String(dlgColMax.value || "").trim()) {
+      dlgColMax.value = "20";
+    }
+  }
+
   function ouvrirDialogColonne(colId) {
     var t = getActif();
     if (!t || !dialogColonne) return;
@@ -1600,6 +1788,19 @@
     if (dlgColTitre) dlgColTitre.textContent = "Colonne « " + (col.label || "") + " »";
     if (dlgColTypeHint) dlgColTypeHint.textContent = typeColonneLabel(col);
     if (dlgColNom) dlgColNom.value = col.label || "";
+    if (dlgColNoteWrap) dlgColNoteWrap.hidden = col.type !== "number" && col.type !== "calc";
+    if (dlgColEstNote) {
+      dlgColEstNote.checked =
+        (col.type === "number" || col.type === "calc") && col.estNote === true;
+    }
+    if (dlgColMax) {
+      var estNoteCol = col.type === "number" || col.type === "calc";
+      dlgColMax.value =
+        estNoteCol && col.estNote && col.max > 0 ? String(col.max) : col.estNote ? "20" : "";
+    }
+    majDialogColonneNoteUi();
+    if (dlgColCheckWrap) dlgColCheckWrap.hidden = col.type !== "check";
+    if (dlgColHorsSynthese) dlgColHorsSynthese.checked = col.type === "check" && col.horsSynthese === true;
 
     var peutRemplir = col.type !== "calc" && t.rows.length > 0;
     if (dlgColRemplirSection) dlgColRemplirSection.hidden = !peutRemplir;
@@ -1642,6 +1843,23 @@
     })[0];
     if (col && dlgColNom) {
       col.label = normaliserNom(dlgColNom.value) || col.label;
+    }
+    if (col && (col.type === "number" || col.type === "calc")) {
+      col.estNote = dlgColEstNote ? dlgColEstNote.checked : false;
+      if (col.estNote && dlgColMax) {
+        var rawMax = (dlgColMax.value || "").trim();
+        if (!rawMax) {
+          col.max = 20;
+        } else {
+          var parsedMax = parseFloat(rawMax.replace(",", "."));
+          col.max = !isNaN(parsedMax) && parsedMax > 0 ? parsedMax : 20;
+        }
+      } else {
+        col.max = null;
+      }
+    }
+    if (col && col.type === "check") {
+      col.horsSynthese = dlgColHorsSynthese ? dlgColHorsSynthese.checked : false;
     }
     if (dialogColonne && dialogColonne.open) dialogColonne.close();
     colonneDialogId = null;
@@ -1713,22 +1931,26 @@
     if (!t) return;
     montrerMsg("");
 
+    var cols = colonnesVisibles(t);
     var header = ["Élève"];
-    t.cols.forEach(function (col) {
-      header.push(col.label || "");
+    cols.forEach(function (col) {
+      var label = col.label || "";
+      var bareme = baremeColonne(t, col);
+      if (bareme > 0 && colonneEstNote(col)) label += " (/ " + bareme + ")";
+      header.push(label);
     });
     var lines = [header.map(csvEscapeCell).join(";")];
 
     t.rows.forEach(function (row) {
       var line = [labelEleveAvecIcone(row, false)];
-      t.cols.forEach(function (col) {
+      cols.forEach(function (col) {
         line.push(valeurVersTexte(t, row.id, col, false));
       });
       lines.push(line.map(csvEscapeCell).join(";"));
     });
 
     var synth = [""];
-    t.cols.forEach(function (col) {
+    cols.forEach(function (col) {
       synth.push(syntheseColonne(t, col));
     });
     lines.push(synth.map(csvEscapeCell).join(";"));
@@ -1749,6 +1971,7 @@
     }
     montrerMsg("");
 
+    var colsExport = colonnesVisibles(t);
     var doc = new JSPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     var margin = 14;
     var pageW = doc.internal.pageSize.getWidth();
@@ -1761,8 +1984,8 @@
     var maxColsPage = Math.max(1, Math.floor((contentW - wNom) / wColMin));
     var colChunks = [];
     var ci;
-    for (ci = 0; ci < t.cols.length; ci += maxColsPage) {
-      colChunks.push(t.cols.slice(ci, ci + maxColsPage));
+    for (ci = 0; ci < colsExport.length; ci += maxColsPage) {
+      colChunks.push(colsExport.slice(ci, ci + maxColsPage));
     }
     if (!colChunks.length) colChunks.push([]);
 
@@ -1834,7 +2057,10 @@
     function dessinerEnteteTable(cols, wCol) {
       var head = ["Élève"];
       cols.forEach(function (col) {
-        head.push(col.label || "");
+        var label = col.label || "";
+        var bareme = baremeColonne(t, col);
+        if (bareme > 0 && colonneEstNote(col)) label += " /" + bareme;
+        head.push(label);
       });
       drawTableRow(head, "head", 0, wCol);
       var syn = [""];
@@ -2034,6 +2260,14 @@
   var btnGestion = document.getElementById("btn-gestion-cols");
   if (btnGestion) btnGestion.addEventListener("click", ouvrirDialogGestion);
 
+  if (colFiltreEl) {
+    colFiltreEl.querySelectorAll("[data-col-filtre]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        definirFiltreColonnes(btn.getAttribute("data-col-filtre"));
+      });
+    });
+  }
+
   var btnDialogGestionClose = document.getElementById("btn-dialog-gestion-close");
   if (btnDialogGestionClose) {
     btnDialogGestionClose.addEventListener("click", fermerDialogGestion);
@@ -2119,6 +2353,10 @@
       colonneDialogId = null;
       dialogColonne.close();
     });
+  }
+
+  if (dlgColEstNote) {
+    dlgColEstNote.addEventListener("change", majDialogColonneNoteUi);
   }
 
   var formColonne = document.getElementById("form-tab-suivi-colonne");

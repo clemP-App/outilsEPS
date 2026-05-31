@@ -104,9 +104,16 @@
           <p id="imports-empty" class="empty-state" hidden>Aucun import pour cet outil et ces filtres.</p>
 
           <div id="imports-detail-card" class="imports-detail-card" hidden>
-            <h3 class="sauvegarde-imports__sub">Aperçu (lecture seule)</h3>
+            <div class="imports-detail-toolbar">
+              <h3 class="sauvegarde-imports__sub imports-detail-toolbar__title">Aperçu</h3>
+              <button type="button" class="btn btn--primary btn--small" id="imports-associate" hidden>
+                Associer…
+              </button>
+            </div>
             <div id="imports-detail" class="imports-detail"></div>
-            <button type="button" class="btn btn--danger btn--ghost" id="imports-delete-one">Supprimer cet import</button>
+            <div class="imports-detail-actions">
+              <button type="button" class="btn btn--danger btn--ghost" id="imports-delete-one">Supprimer cet import</button>
+            </div>
           </div>
         </section>
       </div>
@@ -121,8 +128,10 @@
     <script src="../shared/imports-eleves-export.js"></script>
     <script src="../vendor/jspdf.umd.min.js"></script>
     <script src="../vendor/html5-qrcode.min.js"></script>
-    <script src="../shared/imports-eleves-ui.js"></script>
     <script src="../data-manager.js"></script>
+    <script src="../shared/synthese-identity.js"></script>
+    <script src="../shared/import-eleve-associate.js"></script>
+    <script src="../shared/imports-eleves-ui.js"></script>
     <script src="donnees-eleves.js"></script>
     <script src="../tool-info.js"></script>
     <script>

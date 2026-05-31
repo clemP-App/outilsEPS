@@ -36,7 +36,20 @@ var ImportDetailRender = (function () {
       typeof QrExchangeCore !== "undefined" ? QrExchangeCore.toolTitle(record.toolId) : record.toolId
     );
     metaChip(meta, "Classe", record.classeLabel);
-    metaChip(meta, "Joueur / Équipe", record.auteurLabel);
+    if (
+      typeof SyntheseIdentity !== "undefined" &&
+      SyntheseIdentity.isDualPlayerImportTool(record.toolId) &&
+      record.playerAssociations
+    ) {
+      var slots = SyntheseIdentity.getImportPlayerSlots(record);
+      slots.forEach(function (slot, index) {
+        var assoc = record.playerAssociations[slot.slot];
+        var value = (assoc && assoc.eleveLabel) || slot.label || "—";
+        metaChip(meta, "Joueur " + (index + 1), value);
+      });
+    } else {
+      metaChip(meta, "Joueur / Équipe", record.auteurLabel);
+    }
     var created = record.createdAt
       ? new Date(record.createdAt).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })
       : "";

@@ -126,39 +126,85 @@
       </form>
     </dialog>
 
-    <dialog class="classes-dialog card" id="dialog-import">
+    <dialog class="classes-dialog classes-dialog--import card" id="dialog-import">
       <form id="form-import" method="dialog">
         <h2 class="classes-dialog-title">Importer une liste</h2>
-        <div class="import-format-hint">
-          <p class="hint import-format-hint__lead">Une ligne par élève · séparateur <strong>;</strong> ou <strong>,</strong></p>
-          <ul class="import-format-hint__list">
-            <li><span class="import-format-hint__ex">nom;prénom</span></li>
-            <li>
-              <span class="import-format-hint__ex">nom;prénom;dateNaissance</span>
-              <span class="import-format-hint__note">facultatif (2012-05-14 ou 14/05/2012)</span>
-            </li>
-            <li>
-              <span class="import-format-hint__ex">nom;prénom;dateNaissance;sexe;niveau;commentaire</span>
-              <span class="import-format-hint__note">sexe F/M · niveau 1–5 · tout est optionnel après le prénom</span>
-            </li>
-          </ul>
+
+        <div id="import-step-source">
+          <p class="hint import-source-hint">
+            Chargez un fichier CSV (Pronote, Excel, LibreOffice…) ou collez le contenu. Le séparateur
+            (<strong>;</strong>, <strong>,</strong> ou tabulation) est détecté automatiquement.
+          </p>
+          <div class="field-group">
+            <label class="field-label" for="import-fichier">Fichier CSV</label>
+            <input type="file" id="import-fichier" accept=".csv,.txt,text/csv,text/plain" />
+          </div>
+          <p class="import-source-ou" aria-hidden="true">ou</p>
+          <div class="field-group">
+            <label class="field-label" for="import-texte">Coller le contenu</label>
+            <textarea id="import-texte" rows="6" spellcheck="false" placeholder="Nom;Prénom;Date de naissance&#10;DUPONT;Léa;14/05/2012"></textarea>
+          </div>
+          <p id="import-source-erreur" class="msg-error import-source-erreur" role="alert" hidden></p>
+          <div class="field-row classes-dialog-actions">
+            <button type="button" class="btn btn--primary btn--labeled" id="btn-import-analyser">
+              <span class="btn__text">Analyser le fichier</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-annuler-import">
+              <span class="btn__text">Annuler</span>
+            </button>
+          </div>
         </div>
-        <div class="field-group">
-          <label class="field-label" for="import-texte">Liste à coller</label>
-          <textarea id="import-texte" rows="10" spellcheck="false" placeholder="Dupont;Léa;2012-05-14;F;4&#10;Martin;Paul"></textarea>
-        </div>
-        <div class="field-row classes-dialog-actions">
-          <button type="submit" class="btn btn--primary btn--labeled">
-            <span class="btn__text">Importer</span>
-          </button>
-          <button type="button" class="btn btn--ghost btn--labeled" id="btn-annuler-import">
-            <span class="btn__text">Annuler</span>
-          </button>
+
+        <div id="import-step-map" hidden>
+          <p class="hint import-map-hint">
+            Indiquez si la première ligne contient les titres, puis faites correspondre les colonnes du
+            fichier avec les champs élève.
+          </p>
+          <label class="import-entete-check">
+            <input type="checkbox" id="import-a-entete" checked />
+            <span>La première ligne contient les titres des colonnes</span>
+          </label>
+
+          <div class="import-preview-wrap">
+            <p class="field-label import-preview-label">Aperçu</p>
+            <div class="import-preview-scroll">
+              <table class="import-preview-table" id="import-preview-table">
+                <thead id="import-preview-head"></thead>
+                <tbody id="import-preview-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <fieldset class="import-mapping-fieldset">
+            <legend class="field-label">Correspondance des colonnes</legend>
+            <div id="import-mapping-rows" class="import-mapping-rows"></div>
+          </fieldset>
+
+          <div class="field-group import-ordre-wrap" id="import-ordre-wrap" hidden>
+            <label class="field-label" for="import-ordre-nom">Ordre dans la colonne « Nom et prénom »</label>
+            <select id="import-ordre-nom">
+              <option value="nom_prenom">Nom puis prénom (ex. DUPONT Léa)</option>
+              <option value="prenom_nom">Prénom puis nom (ex. Léa Dupont)</option>
+            </select>
+          </div>
+
+          <p id="import-map-erreur" class="msg-error import-map-erreur" role="alert" hidden></p>
+          <p id="import-map-info" class="hint import-map-info" hidden></p>
+
+          <div class="field-row classes-dialog-actions">
+            <button type="submit" class="btn btn--primary btn--labeled">
+              <span class="btn__text">Importer les élèves</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-retour">
+              <span class="btn__text">Retour</span>
+            </button>
+          </div>
         </div>
       </form>
     </dialog>
 
     <script src="../shared/eleve-display.js"></script>
+    <script src="../shared/classe-csv-import.js"></script>
     <script src="../data-manager.js"></script>
     <script src="classes.js"></script>
     <script src="../tool-info.js"></script>
@@ -175,8 +221,9 @@
           {
             title: "Comment s’en servir",
             list: [
-              "Créez une classe (ex. 6eA) puis ajoutez les élèves un par un ou collez une liste.",
-              "Vous pouvez aussi importer un fichier CSV depuis Pronote ou un tableur.",
+              "Créez une classe (ex. 6eA) puis ajoutez les élèves un par un ou importez un CSV.",
+              "À l’import, indiquez si le fichier a une ligne d’en-tête et faites correspondre les colonnes (nom, prénom, etc.).",
+              "Une colonne « Nom & Prénom » combinée est aussi acceptée.",
               "Ensuite, dans un autre outil, choisissez « Importer une classe » pour récupérer les noms.",
             ],
           },

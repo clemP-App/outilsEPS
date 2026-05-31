@@ -1275,6 +1275,49 @@ var DataManager = (function () {
     });
   }
 
+  var SYNTHESE_ALIASES_ID = "synthese-identite-aliases";
+
+  function normalizeAliasLabel(label) {
+    return String(label || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ");
+  }
+
+  function getSyntheseIdentityAliases() {
+    return getParametre(SYNTHESE_ALIASES_ID).then(function (rec) {
+      return rec && Array.isArray(rec.aliases) ? rec.aliases.slice() : [];
+    });
+  }
+
+  function saveSyntheseIdentityAlias(classeId, label, eleveId) {
+    if (!classeId || !label || !eleveId) {
+      return Promise.reject(new Error("Alias incomplet."));
+    }
+    var labelNorm = normalizeAliasLabel(label);
+    return getSyntheseIdentityAliases().then(function (aliases) {
+      aliases = aliases.filter(function (a) {
+        return !(a && a.classeId === classeId && a.labelNorm === labelNorm);
+      });
+      aliases.push({
+        classeId: classeId,
+        labelNorm: labelNorm,
+        labelOriginal: String(label).trim(),
+        eleveId: eleveId,
+        createdAt: new Date().toISOString(),
+      });
+      return saveParametre({
+        id: SYNTHESE_ALIASES_ID,
+        aliases: aliases,
+        updatedAt: new Date().toISOString(),
+      }).then(function () {
+        return aliases;
+      });
+    });
+  }
+
   function deleteParametre(id) {
     return deleteItem("parametres", id);
   }
@@ -2036,6 +2079,19 @@ var DataManager = (function () {
     return deleteItem("importsEleves", id);
   }
 
+  function getImportedRecord(id) {
+    if (!id) return Promise.resolve(null);
+    return getItem("importsEleves", id);
+  }
+
+  function updateImportedRecord(id, patch) {
+    if (!id) return Promise.reject(new Error("Import introuvable."));
+    return getImportedRecord(id).then(function (item) {
+      if (!item) return Promise.reject(new Error("Import introuvable."));
+      return updateItem("importsEleves", Object.assign({}, item, patch || {}));
+    });
+  }
+
   function clearImportedRecords(filters) {
     if (
       !filters ||
@@ -2138,6 +2194,9 @@ var DataManager = (function () {
     PYRAMIDE_VICTOIRES_ID: PYRAMIDE_VICTOIRES_ID,
     getParametre: getParametre,
     saveParametre: saveParametre,
+    getSyntheseIdentityAliases: getSyntheseIdentityAliases,
+    saveSyntheseIdentityAlias: saveSyntheseIdentityAlias,
+    SYNTHESE_ALIASES_ID: SYNTHESE_ALIASES_ID,
     deleteParametre: deleteParametre,
     STORAGE_CATEGORIES: STORAGE_CATEGORIES,
     STORAGE_GROUP_ORDER: STORAGE_GROUP_ORDER,
@@ -2151,6 +2210,8 @@ var DataManager = (function () {
     clearStorageCategory: clearStorageCategory,
     saveImportedRecord: saveImportedRecord,
     getImportedRecords: getImportedRecords,
+    getImportedRecord: getImportedRecord,
+    updateImportedRecord: updateImportedRecord,
     deleteImportedRecord: deleteImportedRecord,
     clearImportedRecords: clearImportedRecords,
     hasImportedRecord: hasImportedRecord,

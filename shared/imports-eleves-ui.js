@@ -78,6 +78,17 @@ var ImportsElevesUI = (function () {
         showMsg("Import enregistré — " + title + ".", true);
         setToolFilter(saved.toolId);
         refreshList(saved.id);
+        if (typeof ImportEleveAssociate !== "undefined") {
+          return ImportEleveAssociate.maybePromptAfterImport(saved, {
+            onSaved: function (result) {
+              if (result && result.updatedRecord) mergeRecordUpdate(saved, result.updatedRecord);
+              showMsg("Association enregistrée — " + title + ".", true);
+              refreshList(saved.id);
+            },
+          }).then(function () {
+            updateAssociateButton(saved);
+          });
+        }
       })
       .catch(function (e) {
         var msg = e.message || "Erreur lors de l’import.";
@@ -162,6 +173,49 @@ var ImportsElevesUI = (function () {
     return f;
   }
 
+  function mergeRecordUpdate(rec, patch) {
+    if (!rec || !patch) return rec;
+    Object.keys(patch).forEach(function (k) {
+      rec[k] = patch[k];
+    });
+    return rec;
+  }
+
+  function updateAssociateButton(rec) {
+    if (!els.btnAssociate) return;
+    if (!rec) {
+      els.btnAssociate.hidden = true;
+      return;
+    }
+    var isTeam =
+      typeof SyntheseIdentity !== "undefined" && SyntheseIdentity.isTeamImportTool(rec.toolId);
+    var isDual =
+      typeof SyntheseIdentity !== "undefined" && SyntheseIdentity.isDualPlayerImportTool(rec.toolId);
+    els.btnAssociate.hidden = false;
+    if (isTeam) {
+      els.btnAssociate.textContent = "Associer à une classe…";
+      return;
+    }
+    if (isDual) {
+      els.btnAssociate.textContent = "Associer les joueurs…";
+      if (typeof ImportEleveAssociate !== "undefined") {
+        ImportEleveAssociate.loadContext().then(function (ctx) {
+          var needs = ImportEleveAssociate.recordNeedsAssociation(rec, ctx);
+          els.btnAssociate.textContent = needs ? "Associer les joueurs…" : "Modifier les associations…";
+        });
+      }
+      return;
+    }
+    if (typeof ImportEleveAssociate === "undefined") {
+      els.btnAssociate.textContent = "Associer…";
+      return;
+    }
+    ImportEleveAssociate.loadContext().then(function (ctx) {
+      var needs = ImportEleveAssociate.recordNeedsAssociation(rec, ctx);
+      els.btnAssociate.textContent = needs ? "Associer à un élève…" : "Modifier l’association…";
+    });
+  }
+
   function selectRecord(id) {
     selectedId = id;
     var rec = records.find(function (r) {
@@ -180,6 +234,7 @@ var ImportsElevesUI = (function () {
         tr.classList.toggle("is-selected", tr.getAttribute("data-id") === id);
       });
     }
+    updateAssociateButton(rec);
   }
 
   function clearTable() {
@@ -450,6 +505,26 @@ var ImportsElevesUI = (function () {
     els.btnExportPdf = $(options.exportPdfId || "imports-export-pdf");
     els.btnClear = $(options.clearId || "imports-clear-filtered");
     els.btnDeleteOne = $(options.deleteOneId || "imports-delete-one");
+    els.btnAssociate = $(options.associateId || "imports-associate");
+
+    if (els.btnAssociate) {
+      els.btnAssociate.addEventListener("click", function () {
+        if (!selectedId) return;
+        var rec = records.find(function (r) {
+          return r.id === selectedId;
+        });
+        if (!rec || typeof ImportEleveAssociate === "undefined") return;
+        ImportEleveAssociate.showAssociateForRecord(rec, {
+          onSaved: function (result) {
+            if (result && result.updatedRecord) {
+              mergeRecordUpdate(rec, result.updatedRecord);
+            }
+            showMsg("Association enregistrée.", true);
+            refreshList(selectedId);
+          },
+        });
+      });
+    }
 
     if (els.btnStart) els.btnStart.addEventListener("click", startScanner);
     if (els.btnStop) els.btnStop.addEventListener("click", stopScanner);
@@ -547,4 +622,4 @@ var ImportsElevesUI = (function () {
 
   return { init: init, refreshList: refreshList, stopScanner: stopScanner };
 })();
-
+

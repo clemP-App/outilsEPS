@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Synthèse — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--synthese-eps">
+      <header class="synthese-page-header page-outil__header page-outil__header--has-info">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <div class="synthese-page-header__brand">
+          <div>
+            <h1>Synthèse</h1>
+            <p class="synthese-page-header__lead">
+              Tableaux de bord classe et élève — présence, activités, alertes et bilans en un coup d’œil.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div class="synthese-mode-wrap">
+        <nav class="synthese-seg synthese-seg--mode" role="tablist" aria-label="Type de fiche">
+          <button
+            type="button"
+            class="synthese-seg__btn synthese-seg__btn--active"
+            role="tab"
+            id="tab-classe"
+            aria-selected="true"
+            aria-controls="panel-classe"
+          >
+            <span class="synthese-seg__icon" aria-hidden="true">👥</span>
+            <span class="synthese-seg__label">Classe</span>
+          </button>
+          <button
+            type="button"
+            class="synthese-seg__btn"
+            role="tab"
+            id="tab-eleve"
+            aria-selected="false"
+            aria-controls="panel-eleve"
+            tabindex="-1"
+          >
+            <span class="synthese-seg__icon" aria-hidden="true">👤</span>
+            <span class="synthese-seg__label">Élève</span>
+          </button>
+        </nav>
+      </div>
+
+      <p id="synthese-msg" class="msg-error synthese-toast synthese-toast--error" role="alert" hidden></p>
+      <p id="synthese-ok" class="msg-ok synthese-toast synthese-toast--ok" role="status" hidden></p>
+
+      <section class="synthese-toolbar card" aria-labelledby="lbl-filtres">
+        <h2 id="lbl-filtres" class="synthese-toolbar__title">Sélection</h2>
+        <div class="synthese-filtres__grid synthese-filtres__grid--classe">
+          <div class="field-group">
+            <label class="field-label" for="synthese-classe">Classe</label>
+            <select id="synthese-classe" required>
+              <option value="" disabled selected>Choisir une classe…</option>
+            </select>
+          </div>
+        </div>
+        <div id="synthese-eleve-filtres" class="synthese-filtres-eleve" hidden>
+          <div class="synthese-filtres__grid synthese-filtres__grid--eleve">
+            <div class="field-group">
+              <label class="field-label" for="synthese-eleve-search">Rechercher</label>
+              <input
+                type="search"
+                id="synthese-eleve-search"
+                placeholder="Nom ou prénom…"
+                autocomplete="off"
+                list="synthese-eleves-datalist"
+              />
+              <datalist id="synthese-eleves-datalist"></datalist>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="synthese-eleve">Élève</label>
+              <select id="synthese-eleve" disabled>
+                <option value="">Sélectionnez une classe</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <details class="synthese-periode">
+          <summary>Filtres avancés</summary>
+          <div class="synthese-filtres__grid synthese-filtres__grid--dates">
+            <div class="field-group">
+              <label class="field-label" for="synthese-date-from">Depuis</label>
+              <input type="date" id="synthese-date-from" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="synthese-date-to">Jusqu’au</label>
+              <input type="date" id="synthese-date-to" />
+            </div>
+            <div class="field-group synthese-filtres__options">
+              <label class="dispense-hide-done-label">
+                <input type="checkbox" id="synthese-tri-alertes" checked />
+                <span>Tri par alertes</span>
+              </label>
+            </div>
+          </div>
+        </details>
+        <div class="synthese-actions-bar">
+          <button type="button" class="btn btn--ghost btn--small" id="synthese-export-csv">CSV</button>
+          <button type="button" class="btn btn--ghost btn--small" id="synthese-export-pdf">PDF</button>
+        </div>
+      </section>
+
+      <main class="synthese-main">
+        <div id="panel-classe" class="synthese-panel" role="tabpanel" aria-labelledby="tab-classe">
+          <div id="synthese-classe-content" class="synthese-stack">
+            <p class="synthese-empty-state">Choisissez une classe pour afficher la synthèse.</p>
+          </div>
+        </div>
+
+        <div
+          id="panel-eleve"
+          class="synthese-panel"
+          role="tabpanel"
+          aria-labelledby="tab-eleve"
+          hidden
+        >
+          <div id="synthese-eleve-content" class="synthese-stack">
+            <p class="synthese-empty-state">Choisissez un élève pour afficher la synthèse.</p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="../data-manager.js"></script>
+    <script src="../shared/sessions-core.js"></script>
+    <script src="../shared/championnat-standings.js"></script>
+    <script src="../shared/synthese-identity.js"></script>
+    <script src="../shared/import-eleve-associate.js"></script>
+    <script src="../shared/synthese-facts.js"></script>
+    <script src="../shared/synthese-eps-activites.js"></script>
+    <script src="../shared/eleve-display.js"></script>
+    <script src="../shared/validation-asns-core.js"></script>
+    <script src="../shared/synthese-asns.js"></script>
+    <script src="../shared/synthese-eps-core.js"></script>
+    <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="synthese-eps.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Consultez en un coup d’œil la synthèse pédagogique d’une classe ou d’un élève.",
+        sections: [
+          {
+            title: "Données agrégées",
+            text:
+              "L’outil relie automatiquement dispenses, oublis, radar, appels, imports QR et séances sans modifier les autres outils.",
+          },
+          {
+            title: "Exports",
+            list: [
+              "CSV résumé et PDF structuré (classe ou élève) pour le conseil de classe ou les familles.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../shared/tool-accueil.js"></script>
+    <script src="../goatcounter.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

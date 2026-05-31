@@ -21,6 +21,23 @@
   var dialogImport = document.getElementById("dialog-import");
   var formEleve = document.getElementById("form-eleve");
   var importTexteEl = document.getElementById("import-texte");
+  var importFichierEl = document.getElementById("import-fichier");
+  var importStepSource = document.getElementById("import-step-source");
+  var importStepMap = document.getElementById("import-step-map");
+  var importAEnteteEl = document.getElementById("import-a-entete");
+  var importMappingRowsEl = document.getElementById("import-mapping-rows");
+  var importPreviewHeadEl = document.getElementById("import-preview-head");
+  var importPreviewBodyEl = document.getElementById("import-preview-body");
+  var importOrdreWrapEl = document.getElementById("import-ordre-wrap");
+  var importOrdreNomEl = document.getElementById("import-ordre-nom");
+  var importSourceErreurEl = document.getElementById("import-source-erreur");
+  var importMapErreurEl = document.getElementById("import-map-erreur");
+  var importMapInfoEl = document.getElementById("import-map-info");
+
+  /** @type {{ lignes: string[][], colonnes: number, delimiteur: string }|null} */
+  var importParseState = null;
+  /** @type {Record<string, number|string>} */
+  var importMappingState = {};
 
   function onError(e) {
     montrerErreur(e && e.message ? e.message : "Erreur lors de l'enregistrement.");
@@ -362,41 +379,285 @@
     );
   }
 
-  function parserLigneImport(ligne) {
-    if (typeof EleveDisplay !== "undefined" && EleveDisplay.parserLigneImportClasse) {
-      return EleveDisplay.parserLigneImportClasse(ligne, {
-        genererId: function () {
-          return DataManager.genererId("eleve");
-        },
-      });
-    }
+  function montrerErreurImport(el, t) {
+    if (!el) return;
+    el.hidden = !t;
+    el.textContent = t || "";
+  }
+
+  function reinitialiserImportDialog() {
+    importParseState = null;
+    importMappingState = {};
+    if (importTexteEl) importTexteEl.value = "";
+    if (importFichierEl) importFichierEl.value = "";
+    montrerErreurImport(importSourceErreurEl, "");
+    montrerErreurImport(importMapErreurEl, "");
+    if (importMapInfoEl) importMapInfoEl.hidden = true;
+    if (importStepSource) importStepSource.hidden = false;
+    if (importStepMap) importStepMap.hidden = true;
+  }
+
+  function lireTexteImport() {
+    if (importTexteEl && importTexteEl.value.trim()) return importTexteEl.value;
     return null;
   }
 
+  function analyserImport() {
+    if (typeof ClasseCsvImport === "undefined") {
+      montrerErreurImport(importSourceErreurEl, "Module d'import CSV indisponible.");
+      return;
+    }
+    montrerErreurImport(importSourceErreurEl, "");
+
+    function traiter(texte) {
+      var parsed = ClasseCsvImport.parseCsvTexte(texte);
+      if (parsed.erreur) {
+        montrerErreurImport(importSourceErreurEl, parsed.erreur);
+        return;
+      }
+      if (!parsed.lignes.length) {
+        montrerErreurImport(importSourceErreurEl, "Aucune ligne à importer.");
+        return;
+      }
+      importParseState = parsed;
+      if (importAEnteteEl) {
+        importAEnteteEl.checked = ClasseCsvImport.devinerEntete(parsed.lignes);
+      }
+      afficherEtapeMapping();
+    }
+
+    var texteColle = lireTexteImport();
+    if (texteColle) {
+      traiter(texteColle);
+      return;
+    }
+
+    var fichier = importFichierEl && importFichierEl.files && importFichierEl.files[0];
+    if (!fichier) {
+      montrerErreurImport(importSourceErreurEl, "Choisissez un fichier CSV ou collez le contenu.");
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function () {
+      traiter(String(reader.result || ""));
+    };
+    reader.onerror = function () {
+      montrerErreurImport(importSourceErreurEl, "Impossible de lire le fichier.");
+    };
+    reader.readAsText(fichier, "UTF-8");
+  }
+
+  function entetesEtDonnees() {
+    if (!importParseState) return { entetes: [], data: [] };
+    var lignes = importParseState.lignes;
+    var aEntete = importAEnteteEl && importAEnteteEl.checked;
+    if (aEntete && lignes.length) {
+      return { entetes: lignes[0], data: lignes.slice(1) };
+    }
+    return { entetes: [], data: lignes.slice() };
+  }
+
+  function optionsColonnesMapping(entetes, nbColonnes) {
+    var opts = [{ value: "", label: "— Ignorer —" }];
+    var i;
+    for (i = 0; i < nbColonnes; i++) {
+      opts.push({
+        value: String(i),
+        label: ClasseCsvImport.libelleColonne(i, entetes),
+      });
+    }
+    return opts;
+  }
+
+  function majVisibiliteOrdreNomPrenom() {
+    if (!importOrdreWrapEl) return;
+    var combine =
+      importMappingState.nom_et_prenom !== undefined &&
+      importMappingState.nom_et_prenom !== "";
+    importOrdreWrapEl.hidden = !combine;
+  }
+
+  function lireMappingDepuisUi() {
+    if (!importMappingRowsEl || typeof ClasseCsvImport === "undefined") return {};
+    var mapping = {};
+    ClasseCsvImport.CHAMPS.forEach(function (champ) {
+      var sel = importMappingRowsEl.querySelector(
+        'select[data-champ="' + champ.id + '"]'
+      );
+      if (!sel || sel.value === "") return;
+      mapping[champ.id] = parseInt(sel.value, 10);
+    });
+    return mapping;
+  }
+
+  function majApercuImport() {
+    if (!importPreviewHeadEl || !importPreviewBodyEl || !importParseState) return;
+    var parts = entetesEtDonnees();
+    var entetes = parts.entetes;
+    var data = parts.data;
+    var nbColonnes = importParseState.colonnes;
+
+    importPreviewHeadEl.innerHTML = "";
+    importPreviewBodyEl.innerHTML = "";
+    var trHead = document.createElement("tr");
+    var c;
+    for (c = 0; c < nbColonnes; c++) {
+      var th = document.createElement("th");
+      th.scope = "col";
+      th.textContent = entetes[c] || "Col. " + (c + 1);
+      trHead.appendChild(th);
+    }
+    importPreviewHeadEl.appendChild(trHead);
+
+    var max = Math.min(data.length, 4);
+    var r;
+    for (r = 0; r < max; r++) {
+      var tr = document.createElement("tr");
+      for (c = 0; c < nbColonnes; c++) {
+        var td = document.createElement("td");
+        td.textContent = data[r][c] !== undefined ? data[r][c] : "";
+        tr.appendChild(td);
+      }
+      importPreviewBodyEl.appendChild(tr);
+    }
+
+    importMappingState = ClasseCsvImport.devinerMapping(entetes, nbColonnes);
+    renderMappingRows(entetes, nbColonnes);
+    majInfoImport();
+  }
+
+  function renderMappingRows(entetes, nbColonnes) {
+    if (!importMappingRowsEl || typeof ClasseCsvImport === "undefined") return;
+    importMappingRowsEl.innerHTML = "";
+    var opts = optionsColonnesMapping(entetes, nbColonnes);
+
+    ClasseCsvImport.CHAMPS.forEach(function (champ) {
+      var row = document.createElement("div");
+      row.className = "import-mapping-row";
+
+      var lab = document.createElement("label");
+      lab.className = "import-mapping-label";
+      lab.setAttribute("for", "import-map-" + champ.id);
+      lab.textContent = champ.label + (champ.requis ? " *" : "");
+
+      var sel = document.createElement("select");
+      sel.id = "import-map-" + champ.id;
+      sel.className = "import-mapping-select";
+      sel.setAttribute("data-champ", champ.id);
+      opts.forEach(function (o) {
+        var opt = document.createElement("option");
+        opt.value = o.value;
+        opt.textContent = o.label;
+        sel.appendChild(opt);
+      });
+      var val = importMappingState[champ.id];
+      sel.value = val !== undefined && val !== "" ? String(val) : "";
+
+      sel.addEventListener("change", function () {
+        importMappingState = lireMappingDepuisUi();
+        if (champ.id === "nom_et_prenom" && sel.value) {
+          delete importMappingState.nom;
+          delete importMappingState.prenom;
+          var nomSel = importMappingRowsEl.querySelector('select[data-champ="nom"]');
+          var prenomSel = importMappingRowsEl.querySelector('select[data-champ="prenom"]');
+          if (nomSel) nomSel.value = "";
+          if (prenomSel) prenomSel.value = "";
+        } else if ((champ.id === "nom" || champ.id === "prenom") && sel.value) {
+          var combineSel = importMappingRowsEl.querySelector('select[data-champ="nom_et_prenom"]');
+          if (combineSel) combineSel.value = "";
+          delete importMappingState.nom_et_prenom;
+        }
+        importMappingState = lireMappingDepuisUi();
+        majVisibiliteOrdreNomPrenom();
+        majInfoImport();
+      });
+
+      row.appendChild(lab);
+      row.appendChild(sel);
+      importMappingRowsEl.appendChild(row);
+    });
+
+    majVisibiliteOrdreNomPrenom();
+  }
+
+  function majInfoImport() {
+    if (!importMapInfoEl || typeof ClasseCsvImport === "undefined" || !importParseState) return;
+    var mapping = lireMappingDepuisUi();
+    var err = ClasseCsvImport.validerMapping(mapping);
+    montrerErreurImport(importMapErreurEl, err || "");
+    if (err) {
+      importMapInfoEl.hidden = true;
+      return;
+    }
+    var parts = entetesEtDonnees();
+    var ordre = importOrdreNomEl ? importOrdreNomEl.value : "nom_prenom";
+    var result = ClasseCsvImport.lignesVersEleves(parts.data, mapping, {
+      ordreNomPrenom: ordre,
+      genererId: function () {
+        return DataManager.genererId("eleve");
+      },
+    });
+    importMapInfoEl.hidden = false;
+    var msg = result.eleves.length + " élève(s) prêt(s) à importer";
+    if (result.invalides) msg += " · " + result.invalides + " ligne(s) ignorée(s)";
+    importMapInfoEl.textContent = msg;
+  }
+
+  function afficherEtapeMapping() {
+    if (!importStepSource || !importStepMap) return;
+    importStepSource.hidden = true;
+    importStepMap.hidden = false;
+    montrerErreurImport(importMapErreurEl, "");
+    majApercuImport();
+  }
+
+  function retourEtapeSource() {
+    if (!importStepSource || !importStepMap) return;
+    importStepMap.hidden = true;
+    importStepSource.hidden = false;
+    montrerErreurImport(importMapErreurEl, "");
+  }
+
+
   function importerListe(e) {
     e.preventDefault();
+    if (typeof ClasseCsvImport === "undefined" || !importParseState) {
+      montrerErreurImport(importMapErreurEl, "Analysez d'abord un fichier CSV.");
+      return;
+    }
+    var mapping = lireMappingDepuisUi();
+    var errMap = ClasseCsvImport.validerMapping(mapping);
+    if (errMap) {
+      montrerErreurImport(importMapErreurEl, errMap);
+      return;
+    }
+    var parts = entetesEtDonnees();
+    var ordre = importOrdreNomEl ? importOrdreNomEl.value : "nom_prenom";
+    var result = ClasseCsvImport.lignesVersEleves(parts.data, mapping, {
+      ordreNomPrenom: ordre,
+      genererId: function () {
+        return DataManager.genererId("eleve");
+      },
+    });
+    if (!result.eleves.length) {
+      montrerErreurImport(
+        importMapErreurEl,
+        "Aucun élève valide. Vérifiez la correspondance des colonnes."
+      );
+      return;
+    }
     run(
       getClasseCourante().then(function (classe) {
-        if (!classe || !importTexteEl) return;
-        var lignes = importTexteEl.value.split(/\r?\n/);
-        var ajoutes = 0;
-        var i;
-        for (i = 0; i < lignes.length; i++) {
-          if (/^nom\s*[;,]/i.test(lignes[i].trim())) continue;
-          var el = parserLigneImport(lignes[i]);
-          if (el && el.nom && el.prenom) {
-            classe.eleves.push(el);
-            ajoutes++;
-          }
-        }
-        if (!ajoutes) {
-          montrerErreur("Aucune ligne valide (nom;prénom minimum).");
-          return;
-        }
+        if (!classe) return;
+        result.eleves.forEach(function (el) {
+          classe.eleves.push(el);
+        });
         return sauverClasseCourante(classe).then(function () {
           if (dialogImport) dialogImport.close();
-          importTexteEl.value = "";
-          montrerOk(ajoutes + " élève(s) importé(s).");
+          reinitialiserImportDialog();
+          var msg = result.eleves.length + " élève(s) importé(s).";
+          if (result.invalides) msg += " " + result.invalides + " ligne(s) ignorée(s).";
+          montrerOk(msg);
           montrerErreur("");
           return renderListeClasses();
         });
@@ -455,8 +716,35 @@
   }
   if (document.getElementById("btn-importer-liste")) {
     document.getElementById("btn-importer-liste").addEventListener("click", function () {
-      if (importTexteEl) importTexteEl.value = "";
+      reinitialiserImportDialog();
       if (dialogImport && dialogImport.showModal) dialogImport.showModal();
+    });
+  }
+  if (document.getElementById("btn-import-analyser")) {
+    document.getElementById("btn-import-analyser").addEventListener("click", analyserImport);
+  }
+  if (document.getElementById("btn-import-retour")) {
+    document.getElementById("btn-import-retour").addEventListener("click", retourEtapeSource);
+  }
+  if (importAEnteteEl) {
+    importAEnteteEl.addEventListener("change", function () {
+      if (importParseState) majApercuImport();
+    });
+  }
+  if (importOrdreNomEl) {
+    importOrdreNomEl.addEventListener("change", majInfoImport);
+  }
+  if (importFichierEl) {
+    importFichierEl.addEventListener("change", function () {
+      if (importFichierEl.files && importFichierEl.files[0]) {
+        if (importTexteEl) importTexteEl.value = "";
+        montrerErreurImport(importSourceErreurEl, "");
+      }
+    });
+  }
+  if (importTexteEl) {
+    importTexteEl.addEventListener("input", function () {
+      if (importTexteEl.value.trim() && importFichierEl) importFichierEl.value = "";
     });
   }
   if (document.getElementById("btn-exporter-csv")) {
@@ -474,7 +762,11 @@
   if (document.getElementById("btn-annuler-import")) {
     document.getElementById("btn-annuler-import").addEventListener("click", function () {
       if (dialogImport) dialogImport.close();
+      reinitialiserImportDialog();
     });
+  }
+  if (dialogImport) {
+    dialogImport.addEventListener("close", reinitialiserImportDialog);
   }
 
   run(DataManager.ready.then(renderListeClasses));

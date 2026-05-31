@@ -90,7 +90,23 @@
 
       <section class="card tab-suivi-grid-card" aria-labelledby="lbl-grille">
         <div class="tab-suivi-grid-head">
-          <h2 id="lbl-grille">Grille</h2>
+          <div class="tab-suivi-grid-head__title">
+            <h2 id="lbl-grille">Grille</h2>
+            <div
+              class="tab-suivi-col-filtre tools-view-toggle"
+              id="tab-suivi-col-filtre"
+              role="group"
+              aria-label="Filtrer les colonnes affichées"
+              hidden
+            >
+              <button type="button" class="tools-view-toggle__btn is-active" data-col-filtre="all">
+                Tout
+              </button>
+              <button type="button" class="tools-view-toggle__btn" data-col-filtre="note">Note</button>
+              <button type="button" class="tools-view-toggle__btn" data-col-filtre="check">Appel</button>
+              <button type="button" class="tools-view-toggle__btn" data-col-filtre="autre">Autre</button>
+            </div>
+          </div>
           <div class="tab-suivi-grid-actions">
             <button type="button" class="btn btn--ghost btn--labeled" id="btn-gestion-cols">
               <span class="btn__icon" aria-hidden="true">＋</span>
@@ -152,8 +168,8 @@
                   >#</span
                 >
                 <span class="tab-suivi-type-card__text">
-                  <span class="tab-suivi-type-card__label">Note / nombre</span>
-                  <span class="tab-suivi-type-card__hint">Chiffre par élève</span>
+                  <span class="tab-suivi-type-card__label">Chiffre</span>
+                  <span class="tab-suivi-type-card__hint">Note (/20) ou mesure (VMA…)</span>
                 </span>
               </button>
               <button type="button" class="tab-suivi-type-card" data-dlg-col-type="calc">
@@ -222,7 +238,7 @@
         <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
           <div class="tab-suivi-dialog__header-text">
             <h2 class="tab-suivi-dialog__title">Colonne calculée</h2>
-            <p class="tab-suivi-dialog__intro">Somme ou moyenne d’une ou plusieurs colonnes chiffres.</p>
+            <p class="tab-suivi-dialog__intro">Somme ou moyenne de colonnes chiffres (notes ou mesures).</p>
           </div>
           <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-calc-close" aria-label="Fermer">
             ×
@@ -246,7 +262,7 @@
             <span class="field-label" id="lbl-calc-sources">Colonnes à inclure</span>
             <div id="dlg-calc-sources" class="tab-suivi-calc-sources" role="group" aria-labelledby="lbl-calc-sources"></div>
             <p id="dlg-calc-sources-empty" class="tab-suivi-dialog__empty" hidden>
-              Ajoutez d’abord au moins une colonne « Note / nombre ».
+              Ajoutez d’abord au moins une colonne chiffre.
             </p>
           </div>
         </div>
@@ -378,6 +394,36 @@
             <label class="field-label" for="dlg-col-nom">Nom de la colonne</label>
             <input type="text" id="dlg-col-nom" class="tab-suivi-col-dlg-nom" maxlength="24" autocomplete="off" />
           </div>
+          <div class="field-group tab-suivi-col-note-opt" id="dlg-col-note-wrap" hidden>
+            <label class="tab-suivi-col-note-check">
+              <input type="checkbox" id="dlg-col-est-note" />
+              C’est une note
+            </label>
+            <div class="field-row tab-suivi-col-bareme-row" id="dlg-col-max-wrap" hidden>
+              <span class="tab-suivi-col-bareme-label">sur</span>
+              <input
+                type="number"
+                id="dlg-col-max"
+                class="tab-suivi-col-dlg-max"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                placeholder="20"
+                aria-label="Note sur combien"
+              />
+            </div>
+            <p class="hint" id="dlg-col-note-hint">
+              Cochez pour une note (/20…) incluse dans les moyennes. Décochez pour une mesure ou un calcul hors
+              synthèse notes.
+            </p>
+          </div>
+          <div class="field-group tab-suivi-col-check-opt" id="dlg-col-check-wrap" hidden>
+            <label class="tab-suivi-col-note-check">
+              <input type="checkbox" id="dlg-col-hors-synthese" />
+              Ne pas inclure dans la synthèse
+            </label>
+            <p class="hint">Pour un rendu, un matériel… qui n’est pas un appel de présence.</p>
+          </div>
           <section class="tab-suivi-col-dlg-block" aria-labelledby="dlg-col-lbl-position">
             <h3 id="dlg-col-lbl-position" class="tab-suivi-dialog__block-title">Position</h3>
             <div class="tab-suivi-col-dlg-move">
@@ -436,6 +482,8 @@
               "Bouton ⚙ à côté de « Élève » : menu déroulant pour modifier un élève ou le retirer.",
               "Bouton 👟 : historique des oublis de tenue et ajout d’un nouvel oubli.",
               "Dans une case nombre, touche Entrée pour passer à l’élève suivant.",
+              "Cochez « C’est une note » sur une colonne chiffre (▼) pour le barème /20 et les moyennes ; laissez décoché pour une mesure (VMA, temps…).",
+              "Filtrez l’affichage : Tout, Note, Appel ou Autre (mesures, sommes…).",
               "Le bouton ▼ au-dessus d’une colonne permet de la renommer, la déplacer ou la remplir.",
               "« Nouvelle colonne » ajoute une colonne ; « Tri » réordonne les élèves.",
               "Exportez le tableau en CSV ou PDF pour le conserver ou le partager.",

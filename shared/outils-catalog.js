@@ -90,6 +90,16 @@
       publicCible: "prof",
     },
     {
+      id: "synthese-eps",
+      titre: "Synthèse",
+      description:
+        "Consulter les fiches élèves et fiches classes avec présence, oublis, dispenses, performances, observations, évaluations et bilans.",
+      icone: "🧾",
+      href: "outils/synthese-eps.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
       id: "ressources-eps",
       titre: "Ressources EPS",
       description:
