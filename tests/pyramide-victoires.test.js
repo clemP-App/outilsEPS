@@ -38,6 +38,28 @@ test("dejaAffrontes : bloque seulement au palier du match", function () {
   assert.equal(dejaAffrontes("a", "b", 1), false);
 });
 
+test("bilan matchs : ignore les victoires automatiques", function () {
+  function bilanMatchsJoueur(playerId, matches) {
+    var v = 0;
+    var d = 0;
+    (matches || []).forEach(function (m) {
+      if (m.auto) return;
+      if (m.winnerId === playerId) v += 1;
+      else if (m.loserId === playerId) d += 1;
+    });
+    return { wins: v, losses: d };
+  }
+  var matches = [
+    { auto: true, winnerId: "a", loserId: null },
+    { auto: false, winnerId: "a", loserId: "b" },
+    { auto: false, winnerId: "b", loserId: "a" },
+    { auto: false, winnerId: "c", loserId: "a" },
+  ];
+  assert.deepEqual(bilanMatchsJoueur("a", matches), { wins: 1, losses: 2 });
+  assert.deepEqual(bilanMatchsJoueur("b", matches), { wins: 1, losses: 1 });
+  assert.deepEqual(bilanMatchsJoueur("c", matches), { wins: 1, losses: 0 });
+});
+
 test("classement : victoire auto derniere a palier egal", function () {
   function estPromuAuto(p) {
     return !!(p.promotedAutoAt && p.promotedAutoAt[p.wins]);

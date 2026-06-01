@@ -214,6 +214,38 @@
     return tournoi.players.slice().sort(comparerJoueursClassement);
   }
 
+  /** Victoires et défaites issues des matchs joués (hors promotions automatiques). */
+  function bilanMatchsJoueur(playerId) {
+    var v = 0;
+    var d = 0;
+    (tournoi.matches || []).forEach(function (m) {
+      if (m.auto) return;
+      if (m.winnerId === playerId) v += 1;
+      else if (m.loserId === playerId) d += 1;
+    });
+    return { wins: v, losses: d };
+  }
+
+  function creerPuceBilan(label, valeur, mod) {
+    var span = document.createElement("span");
+    span.className = "pyramide-classement__stat pyramide-classement__stat--" + mod;
+    var lib =
+      mod === "v"
+        ? valeur + (valeur <= 1 ? " victoire" : " victoires")
+        : valeur + (valeur <= 1 ? " défaite" : " défaites");
+    span.setAttribute("aria-label", lib);
+    var abbr = document.createElement("span");
+    abbr.className = "pyramide-classement__stat-lbl";
+    abbr.setAttribute("aria-hidden", "true");
+    abbr.textContent = label;
+    var n = document.createElement("span");
+    n.className = "pyramide-classement__stat-n";
+    n.textContent = String(valeur);
+    span.appendChild(n);
+    span.appendChild(abbr);
+    return span;
+  }
+
   function joueursParPalier() {
     var map = {};
     tournoi.players.forEach(function (p) {
@@ -328,12 +360,14 @@
       var nom = document.createElement("span");
       nom.className = "pyramide-classement__nom";
       nom.textContent = p.name;
-      var vict = document.createElement("span");
-      vict.className = "pyramide-classement__v";
-      vict.textContent = palierLabel(p.wins);
+      var stats = document.createElement("span");
+      stats.className = "pyramide-classement__stats";
+      var bilan = bilanMatchsJoueur(p.id);
+      stats.appendChild(creerPuceBilan("V", bilan.wins, "v"));
+      stats.appendChild(creerPuceBilan("D", bilan.losses, "d"));
       li.appendChild(rang);
       li.appendChild(nom);
-      li.appendChild(vict);
+      li.appendChild(stats);
       classementEl.appendChild(li);
     });
   }

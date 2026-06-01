@@ -8648,11 +8648,44 @@ body.install-banner-open {
   word-break: break-word;
 }
 
-.pyramide-classement__v {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-weight: 700;
-  white-space: nowrap;
+.pyramide-classement__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: flex-end;
+}
+
+.pyramide-classement__stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.12rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.45rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.pyramide-classement__stat-n {
+  font-size: 0.85rem;
+}
+
+.pyramide-classement__stat-lbl {
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.02em;
+}
+
+.pyramide-classement__stat--v {
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+  border: 1px solid rgba(22, 163, 74, 0.28);
+}
+
+.pyramide-classement__stat--d {
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+  border: 1px solid rgba(220, 38, 38, 0.24);
 }
 
 .pyramide-board__cols {
