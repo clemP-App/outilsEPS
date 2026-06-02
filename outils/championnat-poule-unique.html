@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a2744" />
+    <title>Championnat poule unique — Outils EPS</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--champ">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../eleves.html"><span class="tool-back__chev" aria-hidden="true">‹</span> Outils élèves</a>
+        <h1>Championnat poule unique</h1>
+      </header>
+
+      <p id="champ-eleve-msg" class="msg-error" role="alert" hidden></p>
+
+      <details class="card card--accordion champ-management champ-session-list" style="margin-bottom: 10px">
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">🏆 Mes championnats</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <div class="champ-toolbar champ-toolbar--labeled">
+            <div class="field-group" style="min-width: 240px; flex: 1">
+              <label class="field-label" for="champ-eleve-session-select">Championnat enregistré</label>
+              <select id="champ-eleve-session-select"></select>
+            </div>
+            <button id="champ-eleve-session-load-btn" type="button" class="btn btn--ghost btn--labeled">
+              <span class="btn__icon" aria-hidden="true">📂</span>
+              <span class="btn__text">Charger</span>
+            </button>
+            <button id="champ-eleve-session-new-btn" type="button" class="btn btn--primary btn--labeled">
+              <span class="btn__icon" aria-hidden="true">➕</span>
+              <span class="btn__text">Nouveau championnat</span>
+            </button>
+            <button id="champ-eleve-session-delete-btn" type="button" class="btn btn--danger btn--labeled">
+              <span class="btn__icon" aria-hidden="true">🗑️</span>
+              <span class="btn__text">Supprimer</span>
+            </button>
+          </div>
+        </div>
+      </details>
+
+      <details class="card card--accordion champ-management champ-management--single" id="accordion-eleve-gestion" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">Gestion de la poule</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <details class="card card--accordion champ-management-section champ-management-section--share" style="margin-bottom: 10px">
+            <summary class="card--accordion__summary">
+              <span class="card--accordion__title">📥 Importer une poule envoyée par le professeur</span>
+              <span class="card--accordion__chev" aria-hidden="true"></span>
+            </summary>
+            <div class="card--accordion__panel">
+              <p class="hint">
+                Collez le lien `outilseps://qr...` reçu depuis l’outil prof, puis chargez la poule.
+                Le professeur envoie uniquement les noms : les matchs sont créés ici, sans score prérempli.
+              </p>
+              <div class="champ-toolbar champ-import-scan-actions">
+                <button id="champ-eleve-import-scan-btn" type="button" class="btn btn--ghost btn--labeled">
+                  <span class="btn__icon" aria-hidden="true">📷</span>
+                  <span class="btn__text">Scanner le QR</span>
+                </button>
+                <button id="champ-eleve-import-stop-scan-btn" type="button" class="btn btn--ghost btn--labeled" hidden>
+                  <span class="btn__icon" aria-hidden="true">⏹️</span>
+                  <span class="btn__text">Arrêter le scan</span>
+                </button>
+              </div>
+              <textarea id="champ-eleve-import-input" rows="3" placeholder="outilseps://qr?v=1&d=..." style="width: 100%; margin-top: 8px"></textarea>
+              <div class="champ-toolbar" style="margin-top: 8px">
+                <button id="champ-eleve-import-btn" type="button" class="btn btn--ghost btn--labeled">
+                  <span class="btn__icon" aria-hidden="true">📥</span>
+                  <span class="btn__text">Charger la poule</span>
+                </button>
+              </div>
+              <div id="champ-eleve-import-reader" style="margin-top: 8px" hidden></div>
+            </div>
+          </details>
+          <details class="card card--accordion champ-management-section champ-management-section--share" style="margin-bottom: 10px">
+            <summary class="card--accordion__summary">
+              <span class="card--accordion__title">📤 Envoyer les résultats au professeur</span>
+              <span class="card--accordion__chev" aria-hidden="true"></span>
+            </summary>
+            <div class="card--accordion__panel">
+              <p class="hint">
+                Générez un QR ou copiez le lien pour transmettre uniquement les matchs complétés.
+              </p>
+              <div class="champ-toolbar champ-toolbar--labeled" style="margin-top: 8px">
+                <button id="champ-eleve-generate-share-btn" type="button" class="btn btn--ghost btn--labeled">
+                  <span class="btn__icon" aria-hidden="true">🔳</span>
+                  <span class="btn__text">Générer QR / lien</span>
+                </button>
+                <button id="champ-eleve-copy-share-btn" type="button" class="btn btn--ghost btn--labeled" hidden>
+                  <span class="btn__icon" aria-hidden="true">📋</span>
+                  <span class="btn__text">Copier le lien</span>
+                </button>
+              </div>
+              <div id="champ-eleve-share-qr-host" style="margin-top: 8px"></div>
+              <textarea id="champ-eleve-share-link" rows="3" placeholder="outilseps://qr?v=1&d=..." hidden></textarea>
+            </div>
+          </details>
+          <div class="champ-add-row field-row champ-management-add-row">
+            <div class="field-group champ-add-field">
+              <label class="field-label" for="champ-eleve-team">Nouveau participant</label>
+              <input id="champ-eleve-team" type="text" maxlength="80" autocomplete="off" />
+            </div>
+            <button id="champ-eleve-add" type="button" class="btn btn--primary btn--labeled">
+              <span class="btn__icon" aria-hidden="true">➕</span>
+              <span class="btn__text">Ajouter</span>
+            </button>
+          </div>
+          <ul id="champ-eleve-teams" class="champ-team-list"></ul>
+        </div>
+      </details>
+
+      <details class="card card--accordion champ-management champ-results-accordion" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title">Classement</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <div class="table-wrap champ-table-wrap">
+            <table class="champ-table">
+              <thead>
+                <tr>
+                  <th>Rang</th><th>Participant</th><th>MJ</th><th>V</th><th>N</th><th>D</th><th>Pour</th><th>Contre</th><th>Diff</th><th>Pts</th>
+                </tr>
+              </thead>
+              <tbody id="champ-eleve-standings"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <details class="card card--accordion champ-management champ-results-accordion" open>
+        <summary class="card--accordion__summary">
+          <span class="card--accordion__title" id="accordion-eleve-matchs-title">Matchs</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <div class="champ-match-filter champ-match-filter--single">
+            <div class="field-group champ-match-filter__field">
+              <label class="field-label" for="champ-eleve-match-search">Filtrer les matchs</label>
+              <input
+                type="search"
+                id="champ-eleve-match-search"
+                placeholder="Nom d'un participant..."
+                autocomplete="off"
+              />
+            </div>
+            <button type="button" class="btn btn--ghost btn--labeled champ-match-filter__clear" id="champ-eleve-clear-match-search">
+              <span class="btn__icon" aria-hidden="true">✕</span>
+              <span class="btn__text">Effacer</span>
+            </button>
+          </div>
+          <div id="champ-eleve-matches" class="champ-match-list"></div>
+        </div>
+      </details>
+    </div>
+    <script src="../dom-utils.js"></script>
+    <script src="../shared/outils-dom.js"></script>
+    <script src="../vendor/lz-string.min.js"></script>
+    <script src="../vendor/qrcode.min.js"></script>
+    <script src="../vendor/html5-qrcode.min.js"></script>
+    <script src="../shared/championnat-standings.js"></script>
+    <script src="../shared/qr-exchange-core.js"></script>
+    <script src="../shared/eleve-labels.js"></script>
+    <script src="../shared/qr-share-ui.js"></script>
+    <script src="championnat-poule-unique.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Gérez une poule locale et partagez vos résultats au professeur par QR.",
+      });
+    </script>
+    <script src="../shared/tool-accueil.js"></script>
+  </body>
+</html>

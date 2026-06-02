@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "44";
+var APP_CACHE_VERSION = "55";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -23,6 +23,8 @@ var PRECACHE = [
   "./outils/cahier-texte.js",
   "./outils/calcul-1rm.html",
   "./outils/calcul-1rm.js",
+  "./outils/championnat-poule-unique.html",
+  "./outils/championnat-poule-unique.js",
   "./outils/championnat-poule.html",
   "./outils/championnat-poule.js",
   "./outils/classes.html",
@@ -57,6 +59,8 @@ var PRECACHE = [
   "./outils/journal-musculation.js",
   "./outils/maxi-timer.html",
   "./outils/maxi-timer.js",
+  "./outils/nouvelle-annee-scolaire.html",
+  "./outils/nouvelle-annee-scolaire.js",
   "./outils/oubli-materiel.html",
   "./outils/oubli-materiel.js",
   "./outils/pyramide-victoires.html",

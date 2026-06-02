@@ -105,6 +105,7 @@
     <footer class="site-footer">
       <p>
         <span class="site-footer__text">Créé avec soin par <strong>ClemP</strong> pour les cours d’EPS.</span>
+        <a href="outils/nouvelle-annee-scolaire.html">🗓️ Nouvelle année scolaire, cet outil permet de passer sur une nouvelle année.</a>
         <a href="https://fr.tipeee.com/clemp/" target="_blank" rel="noopener noreferrer">☕ Soutenir le projet</a>
         <a href="faq.html">❓ FAQ</a>
         <a href="https://www.instagram.com/clemp_eps2.0/" target="_blank" rel="noopener noreferrer">📷 @clemp_eps2.0</a>
@@ -188,6 +189,33 @@
         </section>
 
         <button type="submit" class="btn btn--primary info-dialog__close">Fermer</button>
+      </form>
+    </dialog>
+
+    <dialog class="info-dialog card" id="dialog-nouvelle-annee-home" aria-labelledby="dialog-nouvelle-annee-home-title">
+      <form method="dialog" class="info-dialog__form">
+        <h2 id="dialog-nouvelle-annee-home-title" class="info-dialog__title">Nouvelle année scolaire</h2>
+        <section class="info-dialog__section">
+          <h3>C’est disponible sur l’accueil prof</h3>
+          <p>
+            Un outil dédié vous permet de préparer la bascule sur une nouvelle année scolaire en choisissant
+            ce que vous conservez, archivez ou supprimez.
+          </p>
+        </section>
+        <section class="info-dialog__section">
+          <h3>Pour basculer</h3>
+          <ul class="info-dialog__list">
+            <li>Depuis le <strong>bas de page</strong>, ouvrez <strong>Nouvelle année scolaire</strong>.</li>
+          </ul>
+        </section>
+        <label class="annee-help-hide">
+          <input type="checkbox" id="home-nouvelle-annee-never" />
+          <span>Ne plus afficher</span>
+        </label>
+        <div class="field-row">
+          <a href="outils/nouvelle-annee-scolaire.html" class="btn btn--ghost">Ouvrir l’outil</a>
+          <button type="submit" class="btn btn--primary">Fermer</button>
+        </div>
       </form>
     </dialog>
 

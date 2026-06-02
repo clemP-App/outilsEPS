@@ -435,6 +435,33 @@
     });
   }
 
+  var HOME_NEW_YEAR_HIDE_KEY = "outils_eps_home_new_year_hide_v1";
+  var dialogNewYearHome = document.getElementById("dialog-nouvelle-annee-home");
+  var hideNewYearHomeEl = document.getElementById("home-nouvelle-annee-never");
+  var isIndexPage =
+    typeof window !== "undefined" &&
+    window.location &&
+    /(^|\/)index\.html$/i.test(window.location.pathname);
+  if (isIndexPage && dialogNewYearHome && dialogNewYearHome.showModal) {
+    var hideNewYearHome = false;
+    try {
+      hideNewYearHome = localStorage.getItem(HOME_NEW_YEAR_HIDE_KEY) === "1";
+    } catch (e) {}
+    if (!hideNewYearHome) {
+      setTimeout(function () {
+        dialogNewYearHome.showModal();
+      }, 350);
+    }
+    dialogNewYearHome.addEventListener("close", function () {
+      try {
+        localStorage.setItem(
+          HOME_NEW_YEAR_HIDE_KEY,
+          hideNewYearHomeEl && hideNewYearHomeEl.checked ? "1" : "0"
+        );
+      } catch (e) {}
+    });
+  }
+
   var btnShare = document.getElementById("btn-share-app");
   var dialogShare = document.getElementById("dialog-share-app");
   var shareLink = document.getElementById("share-link");

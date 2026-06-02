@@ -37,6 +37,10 @@
               <span class="btn__text">Nouvelle</span>
             </button>
           </div>
+          <label class="classes-filter-archived">
+            <input type="checkbox" id="classes-show-archived" />
+            <span>Afficher les classes archivées</span>
+          </label>
           <ul id="classes-list" class="classes-list" role="list"></ul>
           <p id="classes-list-empty" class="empty-state" hidden>Aucune classe. Créez-en une pour commencer.</p>
         </div>
@@ -47,6 +51,9 @@
               <label class="field-label" for="classe-nom-edit">Nom de la classe ou du groupe</label>
               <input type="text" id="classe-nom-edit" maxlength="80" autocomplete="off" />
             </div>
+            <button type="button" class="btn btn--ghost btn--small btn--labeled" id="btn-archiver-classe">
+              <span class="btn__text">Archiver la classe</span>
+            </button>
             <button type="button" class="btn btn--danger btn--small btn--labeled" id="btn-supprimer-classe">
               <span class="btn__text">Supprimer la classe</span>
             </button>

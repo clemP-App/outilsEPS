@@ -24,7 +24,7 @@
     "composition-equipes": "Composition d’équipes",
     "tournoi-elimination": "Tournoi éliminatoire",
     "pyramide-victoires": "Pyramide de victoires",
-    "championnat-poule": "Championnat à poule",
+    "championnat-poule": "Championnat",
     "course-orientation": "Course d’orientation",
     "defi-atp": "Défi ATP",
   };

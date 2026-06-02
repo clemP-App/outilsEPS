@@ -778,24 +778,33 @@ var DataManager = (function () {
     });
   }
 
-  function getClasses() {
+  function getClasses(options) {
+    options = options || {};
     return Promise.all([getAll("classes"), getAll("eleves")]).then(function (res) {
       var classes = res[0];
       var eleves = res[1];
+      var includeArchived = !!options.includeArchived;
       return sortClassesAlphabetique(
-        classes.map(function (c) {
-          return {
-            id: c.id,
-            nom: c.nom,
-            eleves: sortElevesAlphabetique(
-              eleves
-                .filter(function (e) {
-                  return e.classeId === c.id;
-                })
-                .map(mapEleveSansClasseId)
-            ),
-          };
-        })
+        classes
+          .filter(function (c) {
+            if (!c) return false;
+            if (includeArchived) return true;
+            return !c.archived;
+          })
+          .map(function (c) {
+            return {
+              id: c.id,
+              nom: c.nom,
+              archived: !!c.archived,
+              eleves: sortElevesAlphabetique(
+                eleves
+                  .filter(function (e) {
+                    return e.classeId === c.id;
+                  })
+                  .map(mapEleveSansClasseId)
+              ),
+            };
+          })
       );
     });
   }
@@ -807,6 +816,7 @@ var DataManager = (function () {
       return {
         id: c.id,
         nom: c.nom,
+        archived: !!c.archived,
         eleves: sortElevesAlphabetique(res[1].map(mapEleveSansClasseId)),
       };
     });
@@ -849,6 +859,7 @@ var DataManager = (function () {
     var item = {
       id: id,
       nom: (classe.nom || "").trim() || "Sans nom",
+      archived: !!classe.archived,
     };
     return addItem("classes", item).then(function () {
       if (classe.eleves && classe.eleves.length) {
@@ -866,6 +877,10 @@ var DataManager = (function () {
       var ops = [];
       if (patch.nom !== undefined) {
         c.nom = (patch.nom || "").trim() || c.nom;
+        ops.push(updateItem("classes", c));
+      }
+      if (patch.archived !== undefined) {
+        c.archived = !!patch.archived;
         ops.push(updateItem("classes", c));
       }
       if (patch.eleves !== undefined) {
@@ -895,6 +910,16 @@ var DataManager = (function () {
       .catch(function () {
         return false;
       });
+  }
+
+  function setClasseArchived(id, archived) {
+    return getById("classes", id).then(function (c) {
+      if (!c) return false;
+      c.archived = !!archived;
+      return updateItem("classes", c).then(function () {
+        return true;
+      });
+    });
   }
 
   function getElevesFromClasse(id) {
@@ -1124,13 +1149,15 @@ var DataManager = (function () {
     return getBySession("championnats", sessionId).then(function (list) {
       var c = list[0];
       if (!c) {
-        return { dataId: null, teams: [], matches: [], nom: null };
+        return { dataId: null, teams: [], matches: [], poules: [], importMeta: {}, nom: null };
       }
       return {
         dataId: c.id,
         nom: c.nom || null,
+        poules: Array.isArray(c.poules) ? c.poules.slice() : [],
         teams: Array.isArray(c.teams) ? c.teams.slice() : [],
         matches: Array.isArray(c.matches) ? c.matches.slice() : [],
+        importMeta: c.importMeta && typeof c.importMeta === "object" ? cloneData(c.importMeta) : {},
       };
     });
   }
@@ -1145,8 +1172,10 @@ var DataManager = (function () {
         id: list[0] ? list[0].id : genererId("championnat"),
         sessionId: sessionId,
         nom: meta.nom || (list[0] && list[0].nom) || "Championnat",
+        poules: state.poules || [],
         teams: state.teams || [],
         matches: state.matches || [],
+        importMeta: state.importMeta && typeof state.importMeta === "object" ? cloneData(state.importMeta) : {},
         updatedAt: new Date().toISOString(),
       };
       if (list.length) return updateItem("championnats", bloc);
@@ -1160,7 +1189,7 @@ var DataManager = (function () {
     return getActiveSessionId(SC.SESSION_TOOLS.CHAMPIONNAT).then(function (sid) {
       if (!sid) return { teams: [], matches: [] };
       return getChampionnatForSession(sid).then(function (d) {
-        return { teams: d.teams, matches: d.matches };
+        return { poules: d.poules || [], teams: d.teams, matches: d.matches };
       });
     });
   }
@@ -1169,6 +1198,38 @@ var DataManager = (function () {
     return getActiveSessionId(SC.SESSION_TOOLS.CHAMPIONNAT).then(function (sid) {
       if (!sid) return Promise.reject(new Error("Aucune séance championnat active."));
       return saveChampionnatForSession(sid, state);
+    });
+  }
+
+  function duplicateChampionnatSession(sourceSessionId, options) {
+    options = options || {};
+    var nomSession = (options.nomSession || "").trim().replace(/\s+/g, " ");
+    return getSessionById(sourceSessionId).then(function (sourceSession) {
+      if (!sourceSession) {
+        return Promise.reject(new Error("Seance source introuvable."));
+      }
+      if (sourceSession.toolId !== SC.SESSION_TOOLS.CHAMPIONNAT) {
+        return Promise.reject(new Error("Cette seance n'est pas une seance de championnat."));
+      }
+      return getChampionnatForSession(sourceSessionId).then(function (sourceState) {
+        var sessionNom = nomSession || sourceSession.nomSession + " (copie)";
+        var newState = {
+          poules: cloneData(sourceState.poules || []),
+          teams: cloneData(sourceState.teams || []),
+          matches: cloneData(sourceState.matches || []),
+          importMeta: cloneData(sourceState.importMeta || {}),
+        };
+        return createSession({
+          toolId: SC.SESSION_TOOLS.CHAMPIONNAT,
+          nomSession: sessionNom,
+          classeId: sourceSession.classeId || null,
+          classeNomSnapshot: sourceSession.classeNomSnapshot || null,
+        }).then(function (newSession) {
+          return saveChampionnatForSession(newSession.id, newState, { nom: sessionNom }).then(function () {
+            return newSession;
+          });
+        });
+      });
     });
   }
 
@@ -1696,7 +1757,7 @@ var DataManager = (function () {
     },
     {
       id: "championnat",
-      label: "Championnat à poule",
+      label: "Championnat",
       groupe: "Séance",
       stores: ["championnats"],
     },
@@ -2212,6 +2273,7 @@ var DataManager = (function () {
     addClasse: addClasse,
     updateClasse: updateClasse,
     deleteClasse: deleteClasse,
+    setClasseArchived: setClasseArchived,
     getElevesFromClasse: getElevesFromClasse,
     getDispenses: getDispenses,
     saveDispenses: saveDispenses,
@@ -2241,6 +2303,7 @@ var DataManager = (function () {
     saveChampionnatForSession: saveChampionnatForSession,
     getChampionnatActif: getChampionnatActif,
     saveChampionnatActif: saveChampionnatActif,
+    duplicateChampionnatSession: duplicateChampionnatSession,
     getTournoiForSession: getTournoiForSession,
     saveTournoiForSession: saveTournoiForSession,
     getCompositionForSession: getCompositionForSession,

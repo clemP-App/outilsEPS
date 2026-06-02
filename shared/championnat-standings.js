@@ -4,6 +4,19 @@
 (function (root) {
   "use strict";
 
+  function sortStandings(arr) {
+    arr.sort(function (a, b) {
+      if (b.pts !== a.pts) return b.pts - a.pts;
+      if (b.diff !== a.diff) return b.diff - a.diff;
+      if (b.pour !== a.pour) return b.pour - a.pour;
+      return a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
+    });
+    for (var i = 0; i < arr.length; i++) {
+      arr[i].rang = i + 1;
+    }
+    return arr;
+  }
+
   function computeStandingsFromData(teams, matches) {
     var map = {};
     (teams || []).forEach(function (t) {
@@ -54,19 +67,39 @@
       r.diff = r.pour - r.contre;
       return r;
     });
-    arr.sort(function (a, b) {
-      if (b.pts !== a.pts) return b.pts - a.pts;
-      if (b.diff !== a.diff) return b.diff - a.diff;
-      if (b.pour !== a.pour) return b.pour - a.pour;
-      return a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
-    });
-    for (var i = 0; i < arr.length; i++) {
-      arr[i].rang = i + 1;
-    }
-    return arr;
+    return sortStandings(arr);
   }
 
-  var api = { computeStandingsFromData: computeStandingsFromData };
+  function computeStandingsByPoules(teams, matches, poules) {
+    var pools = Array.isArray(poules) ? poules.slice() : [];
+    var teamByPool = {};
+    (teams || []).forEach(function (t) {
+      var pid = t.pouleId || (pools[0] && pools[0].id) || "poule-a";
+      if (!teamByPool[pid]) teamByPool[pid] = [];
+      teamByPool[pid].push(t);
+    });
+    var matchByPool = {};
+    (matches || []).forEach(function (m) {
+      var pid = m.pouleId || (pools[0] && pools[0].id) || "poule-a";
+      if (!matchByPool[pid]) matchByPool[pid] = [];
+      matchByPool[pid].push(m);
+    });
+
+    return pools.map(function (p) {
+      var poolTeams = teamByPool[p.id] || [];
+      var poolMatches = matchByPool[p.id] || [];
+      return {
+        pouleId: p.id,
+        pouleNom: p.name || p.nom || "Poule",
+        rows: computeStandingsFromData(poolTeams, poolMatches),
+      };
+    });
+  }
+
+  var api = {
+    computeStandingsFromData: computeStandingsFromData,
+    computeStandingsByPoules: computeStandingsByPoules,
+  };
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
   }

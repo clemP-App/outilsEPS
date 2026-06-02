@@ -35,6 +35,7 @@
     "zone-impact",
     "journal-musculation",
     "questions-debrief",
+    "championnat-poule-unique",
   ];
 
   function stableStringify(obj) {
@@ -237,6 +238,7 @@
       "zone-impact": "Zone d'impact",
       "journal-musculation": "Journal de musculation",
       "questions-debrief": "Questions débrief",
+      "championnat-poule-unique": "Championnat poule unique",
     };
     return titles[toolId] || toolId;
   }

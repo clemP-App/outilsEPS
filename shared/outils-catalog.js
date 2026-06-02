@@ -141,13 +141,23 @@
     },
     {
       id: "championnat-poule",
-      titre: "Championnat à poule unique",
+      titre: "Championnat",
       description:
-        "Créer un championnat, gérer les équipes, saisir les résultats et afficher le classement.",
+        "Créer un championnat multi-poules, gérer les équipes, saisir les résultats et afficher les classements.",
       icone: "🏆",
       href: "outils/championnat-poule.html",
       categorie: "Séance",
       publicCible: "prof",
+    },
+    {
+      id: "championnat-poule-unique",
+      titre: "Championnat poule unique",
+      description:
+        "Gérer une poule sur appareil élève, saisir les scores et transmettre les résultats par QR.",
+      icone: "🏆",
+      href: "outils/championnat-poule-unique.html",
+      categorie: "Sports collectifs",
+      publicCible: "eleve",
     },
     {
       id: "tournoi-elimination",

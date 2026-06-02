@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Nouvelle année scolaire — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--nouvelle-annee">
+      <header class="page-outil__header">
+        <a class="tool-back" href="../index.html"><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a>
+        <h1>Nouvelle année scolaire</h1>
+      </header>
+
+      <p id="annee-msg" class="msg-error" role="alert" hidden></p>
+      <p id="annee-ok" class="msg-ok" role="status" hidden></p>
+
+      <section class="card" aria-labelledby="annee-objectif-title">
+        <h2 id="annee-objectif-title">Avant de commencer</h2>
+        <p class="hint">
+          Pour réussir la bascule, suivez toutes les étapes dans l’ordre : sauvegarde, choix du mode, vérification des éléments impactés, puis validation finale.
+        </p>
+      </section>
+
+      <section class="card" aria-labelledby="annee-sauvegarde-title">
+        <h2 id="annee-sauvegarde-title">Étape 1 : Sauvegarde obligatoire</h2>
+        <p class="hint">
+          Avant toute action de fin d’année, exportez une sauvegarde complète.
+        </p>
+        <div class="field-row">
+          <button type="button" class="btn btn--primary btn--labeled" id="btn-annee-export">
+            <span class="btn__icon" aria-hidden="true">💾</span>
+            <span class="btn__text">Exporter la sauvegarde</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="card annee-after-backup" id="annee-mode-section" aria-labelledby="annee-mode-title" hidden>
+        <h2 id="annee-mode-title">Étape 2 : Choisir un mode</h2>
+        <div class="annee-presets" role="group" aria-label="Modes de préparation">
+          <button type="button" class="btn btn--ghost annee-preset" data-preset="prudent">Mode prudent</button>
+          <button type="button" class="btn btn--primary annee-preset" data-preset="equilibre">Mode équilibré</button>
+          <button type="button" class="btn btn--ghost annee-preset" data-preset="reset">Tout remettre à zéro</button>
+          <button type="button" class="btn btn--ghost annee-preset" data-preset="personnalise">Personnaliser</button>
+        </div>
+        <p class="hint" id="annee-preset-hint"></p>
+        <div class="annee-rules-block" aria-labelledby="annee-regles-title">
+          <h3 class="annee-rules-title" id="annee-regles-title">Règles appliquées</h3>
+          <div class="annee-grid">
+            <div class="annee-rule-row">
+              <span class="annee-rule-label">Classes / élèves</span>
+              <div class="annee-rule-actions">
+                <label class="annee-choice"><input type="radio" name="classes-action" value="keep" /><span>Conserver</span></label>
+                <label class="annee-choice"><input type="radio" name="classes-action" value="archive" /><span>Archiver</span></label>
+                <label class="annee-choice"><input type="radio" name="classes-action" value="delete" /><span>Supprimer</span></label>
+              </div>
+            </div>
+
+            <div class="annee-rule-row">
+              <span class="annee-rule-label">Dispenses</span>
+              <div class="annee-rule-actions">
+                <label class="annee-choice"><input type="radio" name="dispenses-action" value="keep" /><span>Conserver</span></label>
+                <label class="annee-choice"><input type="radio" name="dispenses-action" value="archive" /><span>Archiver</span></label>
+                <label class="annee-choice"><input type="radio" name="dispenses-action" value="delete" /><span>Supprimer</span></label>
+              </div>
+            </div>
+
+            <div class="annee-rule-row">
+              <span class="annee-rule-label">Oublis matériel</span>
+              <div class="annee-rule-actions">
+                <label class="annee-choice"><input type="radio" name="oublis-action" value="keep" /><span>Conserver</span></label>
+                <label class="annee-choice"><input type="radio" name="oublis-action" value="archive" /><span>Archiver</span></label>
+                <label class="annee-choice"><input type="radio" name="oublis-action" value="delete" /><span>Supprimer</span></label>
+              </div>
+            </div>
+
+            <div class="annee-rule-row">
+              <span class="annee-rule-label">Séances</span>
+              <div class="annee-rule-actions">
+                <label class="annee-choice"><input type="radio" name="sessions-action" value="keep" /><span>Conserver</span></label>
+                <label class="annee-choice"><input type="radio" name="sessions-action" value="archive" /><span>Archiver</span></label>
+                <label class="annee-choice"><input type="radio" name="sessions-action" value="delete" /><span>Supprimer</span></label>
+              </div>
+            </div>
+
+            <div class="annee-rule-row">
+              <span class="annee-rule-label">Cahier de texte</span>
+              <div class="annee-rule-actions">
+                <label class="annee-choice"><input type="radio" name="cahier-action" value="keep" /><span>Conserver</span></label>
+                <label class="annee-choice"><input type="radio" name="cahier-action" value="archive" /><span>Archiver</span></label>
+                <label class="annee-choice"><input type="radio" name="cahier-action" value="delete" /><span>Supprimer</span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="annee-rules-block annee-impact-block" aria-labelledby="annee-impact-title">
+          <h3 class="annee-rules-title" id="annee-impact-title">Éléments impactés</h3>
+          <p class="hint">Le nombre d’éléments est recalculé selon vos choix.</p>
+          <div id="annee-impact-lists"></div>
+        </div>
+      </section>
+
+      <section
+        class="card card--accordion annee-after-backup"
+        id="annee-archivage-section"
+        open
+        aria-labelledby="annee-archivage-title"
+        hidden
+      >
+        <summary>
+          <span class="card--accordion__title" id="annee-archivage-title">Étape 3 : Vérification archivage des outils à séances</span>
+          <span class="card--accordion__chev" aria-hidden="true"></span>
+        </summary>
+        <div class="card--accordion__panel">
+          <div class="annee-archive-table-wrap" role="region" aria-label="Vérification archivage">
+            <table class="annee-archive-table">
+              <thead>
+                <tr>
+                  <th scope="col">Outil</th>
+                  <th scope="col">Séances actives</th>
+                  <th scope="col">Total séances</th>
+                </tr>
+              </thead>
+              <tbody id="annee-archivage-check"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="card annee-after-backup" id="annee-lancer-section" aria-labelledby="annee-lancer-title" hidden>
+        <h2 id="annee-lancer-title">Étape 4 : Lancer la transition</h2>
+        <p class="hint">Une confirmation finale récapitulera les actions avant exécution.</p>
+        <button type="button" class="btn btn--primary btn--labeled" id="btn-annee-apply">
+          <span class="btn__icon" aria-hidden="true">✅</span>
+          <span class="btn__text">Appliquer la transition d’année</span>
+        </button>
+      </section>
+    </div>
+
+    <script src="../shared/sessions-core.js"></script>
+    <script src="../data-manager.js"></script>
+    <script src="nouvelle-annee-scolaire.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro: "Passez à la nouvelle année en conservant, archivant ou supprimant les données utiles.",
+        sections: [
+          {
+            title: "Important",
+            text: "Suivez les étapes dans l’ordre. Commencez toujours par exporter une sauvegarde complète.",
+          },
+        ],
+      });
+    </script>
+    <script src="../shared/tool-accueil.js"></script>
+    <script src="../goatcounter.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>

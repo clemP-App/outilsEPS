@@ -6,6 +6,7 @@
 
   var selectedId = null;
   var editingEleveId = null;
+  var showArchived = false;
 
   var msgEl = document.getElementById("classes-msg");
   var okEl = document.getElementById("classes-ok");
@@ -17,6 +18,8 @@
   var rechercheEl = document.getElementById("recherche-eleve");
   var elevesListEl = document.getElementById("eleves-list");
   var elevesEmptyEl = document.getElementById("eleves-list-empty");
+  var showArchivedEl = document.getElementById("classes-show-archived");
+  var btnArchiverClasseEl = document.getElementById("btn-archiver-classe");
   var dialogEleve = document.getElementById("dialog-eleve");
   var dialogImport = document.getElementById("dialog-import");
   var formEleve = document.getElementById("form-eleve");
@@ -77,7 +80,7 @@
 
   function renderListeClasses() {
     if (!listEl) return Promise.resolve();
-    return DataManager.getClasses().then(function (classes) {
+    return DataManager.getClasses({ includeArchived: showArchived }).then(function (classes) {
       listEl.innerHTML = "";
       if (!classes.length) {
         if (listEmptyEl) listEmptyEl.hidden = false;
@@ -93,11 +96,19 @@
       if (!selectedId || !found) selectedId = classes[0].id;
       classes.forEach(function (c) {
         var li = document.createElement("li");
-        li.className = "classes-list__item" + (c.id === selectedId ? " classes-list__item--active" : "");
+        li.className =
+          "classes-list__item" +
+          (c.id === selectedId ? " classes-list__item--active" : "") +
+          (c.archived ? " classes-list__item--archived" : "");
         var btn = document.createElement("button");
         btn.type = "button";
         btn.className = "classes-list__btn";
-        btn.textContent = c.nom + " (" + libelleNbEleves(c.eleves ? c.eleves.length : 0) + ")";
+        btn.textContent =
+          c.nom +
+          (c.archived ? " [archivée]" : "") +
+          " (" +
+          libelleNbEleves(c.eleves ? c.eleves.length : 0) +
+          ")";
         btn.addEventListener("click", function () {
           selectedId = c.id;
           run(renderListeClasses());
@@ -216,6 +227,10 @@
           })
         );
       });
+      if (classe.archived) {
+        bEdit.disabled = true;
+        bDel.disabled = true;
+      }
       actions.appendChild(bEdit);
       actions.appendChild(bDel);
       li.appendChild(main);
@@ -234,6 +249,22 @@
       if (detailEl) detailEl.hidden = false;
       if (hintEl) hintEl.hidden = true;
       if (nomEditEl) nomEditEl.value = classe.nom;
+      if (btnArchiverClasseEl) {
+        btnArchiverClasseEl.querySelector(".btn__text").textContent = classe.archived
+          ? "Désarchiver la classe"
+          : "Archiver la classe";
+      }
+      if (nomEditEl) nomEditEl.disabled = !!classe.archived;
+      if (rechercheEl) rechercheEl.disabled = !!classe.archived;
+      var disableWhenArchived = classe.archived;
+      [
+        "btn-ajouter-eleve",
+        "btn-importer-liste",
+        "btn-exporter-csv",
+      ].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.disabled = disableWhenArchived;
+      });
       renderEleves(classe);
     });
   }
@@ -263,6 +294,32 @@
         return DataManager.deleteClasse(classe.id).then(function () {
           selectedId = null;
           montrerOk("Classe supprimée.");
+          return renderListeClasses();
+        });
+      })
+    );
+  }
+
+  function basculerArchiveClasse() {
+    run(
+      getClasseCourante().then(function (classe) {
+        if (!classe) return;
+        var targetArchived = !classe.archived;
+        var action = targetArchived ? "archiver" : "désarchiver";
+        if (
+          !confirm(
+            (targetArchived ? "Archiver" : "Désarchiver") +
+              ' la classe « ' +
+              classe.nom +
+              " » ?"
+          )
+        )
+          return;
+        return DataManager.setClasseArchived(classe.id, targetArchived).then(function () {
+          montrerOk("Classe " + action + "e.");
+          if (targetArchived && !showArchived) {
+            selectedId = null;
+          }
           return renderListeClasses();
         });
       })
@@ -711,6 +768,18 @@
   }
   if (document.getElementById("btn-supprimer-classe")) {
     document.getElementById("btn-supprimer-classe").addEventListener("click", supprimerClasse);
+  }
+  if (btnArchiverClasseEl) {
+    btnArchiverClasseEl.addEventListener("click", basculerArchiveClasse);
+  }
+  if (showArchivedEl) {
+    showArchivedEl.addEventListener("change", function () {
+      showArchived = !!showArchivedEl.checked;
+      if (!showArchived) {
+        selectedId = null;
+      }
+      run(renderListeClasses());
+    });
   }
   if (nomEditEl) {
     nomEditEl.addEventListener("change", sauverNomClasse);

@@ -78,7 +78,8 @@ var SessionManager = (function () {
     OutilsDom.clear(sel);
     var sansClasse = document.createElement("option");
     sansClasse.value = "";
-    sansClasse.textContent = "Sans classe — importer les coureurs plus tard";
+    sansClasse.textContent =
+      (cfg && cfg.duplicateClassEmptyLabel) || "Sans classe — importer les coureurs plus tard";
     sel.appendChild(sansClasse);
     if (typeof DataManager === "undefined" || !DataManager.getClasses) {
       sel.disabled = false;
@@ -175,11 +176,12 @@ var SessionManager = (function () {
     var h = document.createElement("h2");
     h.id = "session-duplicate-title";
     h.className = "session-dialog__title";
-    h.textContent = "Dupliquer la séance";
+    h.textContent = (cfg && cfg.duplicateTitle) || "Dupliquer la séance";
 
     var hint = document.createElement("p");
     hint.className = "hint";
     hint.textContent =
+      (cfg && cfg.duplicateHint) ||
       "Les parcours et les réglages sont recopiés, sans les chronos. Choisissez une classe pour remplir les coureurs automatiquement, ou laissez « Sans classe » et importez-les plus tard.";
 
     var fgClasse = document.createElement("div");
@@ -203,7 +205,7 @@ var SessionManager = (function () {
     var inpNom = document.createElement("input");
     inpNom.type = "text";
     inpNom.id = "session-duplicate-nom";
-    inpNom.placeholder = "Ex. 6e2 — CO séance 1";
+    inpNom.placeholder = (cfg && cfg.duplicateNamePlaceholder) || "Ex. 6e2 — CO séance 1";
     inpNom.addEventListener("input", function () {
       inpNom.dataset.userEdited = inpNom.value.trim() ? "1" : "0";
     });
@@ -230,7 +232,9 @@ var SessionManager = (function () {
 
     form.appendChild(h);
     form.appendChild(hint);
-    form.appendChild(fgClasse);
+    if (!cfg || cfg.duplicateShowClass !== false) {
+      form.appendChild(fgClasse);
+    }
     form.appendChild(fgNom);
     form.appendChild(row);
     duplicateDialogEl.appendChild(form);
@@ -540,6 +544,19 @@ var SessionManager = (function () {
         ouvrirDuplicateDialog(activeSession.id);
       });
       actions.appendChild(btnDup);
+    }
+    if (cfg && typeof cfg.createSessionActions === "function") {
+      var extraActions = cfg.createSessionActions({
+        getActiveSession: getActiveSession,
+        showError: montrerErreur,
+        openPicker: ouvrirDialog,
+      });
+      if (extraActions) {
+        if (!Array.isArray(extraActions)) extraActions = [extraActions];
+        extraActions.forEach(function (actionEl) {
+          if (actionEl) actions.appendChild(actionEl);
+        });
+      }
     }
 
     row.appendChild(info);

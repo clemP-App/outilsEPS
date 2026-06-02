@@ -38,7 +38,7 @@ Quatre outils utilisent des **séances** pour enregistrer plusieurs contextes (e
 - Composition d’équipes
 - Tournoi éliminatoire
 - Pyramide de victoires
-- Championnat à poule unique
+- Championnat (multi-poules prof) + Championnat poule unique (élève)
 
 **Utilisation :**
 
