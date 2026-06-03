@@ -250,23 +250,25 @@
         });
       })
       .catch(function (err) {
-        if (configured) throw err;
         if (global.navigator && global.navigator.onLine === false) return [];
         return fetch(legacy, { cache: "no-store" })
           .then(function (res) {
-            if (!res.ok) throw new Error("legacy");
+            if (!res.ok) throw err || new Error("legacy");
             return res.json();
           })
           .then(function (data) {
             var list = Array.isArray(data) ? data : data.rubrics || [];
-            return list.map(function (r) {
+            list = list.map(function (r) {
               r = r && typeof r === "object" ? r : {};
               r.source = "catalog";
+              r.catalogLegacyFallback = true;
               return r;
             });
+            if (list.length) return list;
+            throw err || new Error("catalog");
           })
           .catch(function () {
-            return [];
+            throw err || new Error("catalog");
           });
       });
   };

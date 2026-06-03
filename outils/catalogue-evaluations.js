@@ -66,6 +66,7 @@
       downvotes: Number(r.downvotes != null ? r.downvotes : 0),
       status: r.status || "published",
       canVote: isSupabaseGridId(r.catalogGridId || r.id),
+      catalogLegacyFallback: !!r.catalogLegacyFallback,
     };
   }
 
@@ -265,8 +266,23 @@
         rubrics = (list || []).map(normalizeRubric).filter(function (r) {
           return !r.status || r.status === "published";
         });
+        var legacyOnly = rubrics.some(function (r) {
+          return r.catalogLegacyFallback;
+        });
         if (window.OutilsEPS && window.OutilsEPS.isSupabaseConfigured && window.OutilsEPS.isSupabaseConfigured()) {
-          setStatus("ok", "Catalogue collaboratif chargé. Un vote par navigateur et par grille.");
+          if (legacyOnly) {
+            setStatus(
+              "warn",
+              "Catalogue JSON de secours affiché (Supabase injoignable ou URL incorrecte). Votes désactivés sur ces grilles."
+            );
+          } else if (rubrics.length) {
+            setStatus("ok", "Catalogue collaboratif chargé. Un vote par navigateur et par grille.");
+          } else {
+            setStatus(
+              "ok",
+              "Catalogue collaboratif connecté. Aucune grille publiée pour le moment — proposez la vôtre depuis Grilles d'évaluation."
+            );
+          }
         } else if (rubrics.length) {
           setStatus("ok", "Catalogue chargé (mode lecture). Configurez Supabase pour les votes et les propositions.");
         } else {
@@ -274,9 +290,15 @@
         }
         render();
       })
-      .catch(function () {
+      .catch(function (err) {
         rubrics = [];
-        setStatus("error", "Impossible de charger le catalogue en ligne. Connexion nécessaire.");
+        var detail = err && err.message ? err.message : "";
+        setStatus(
+          "error",
+          detail
+            ? "Impossible de charger le catalogue : " + detail
+            : "Impossible de charger le catalogue en ligne. Connexion nécessaire."
+        );
         render();
       });
   }
