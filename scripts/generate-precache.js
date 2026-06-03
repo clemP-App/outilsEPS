@@ -53,7 +53,9 @@ function shouldInclude(relPosix) {
   var parts = relPosix.split("/");
   if (parts[0] === "vendor" && ext === ".js") return true;
   if (parts[0] === "shared" && ext === ".js") return true;
-  if (parts[0] === "outils" && (ext === ".html" || ext === ".js" || ext === ".json")) return true;
+  if (parts[0] === "outils" && (ext === ".html" || ext === ".js" || ext === ".json" || ext === ".css")) {
+    return true;
+  }
   if (parts.length === 1 && (ext === ".html" || ext === ".css" || ext === ".js" || ext === ".webmanifest")) {
     return true;
   }

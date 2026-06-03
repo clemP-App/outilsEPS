@@ -19,22 +19,16 @@
   </head>
   <body class="app app--tool">
     <div class="page-outil page-outil--grilles-evaluation">
-      <header class="page-outil__header ge-hero">
+      <header class="page-outil__header">
         <a class="tool-back" href="../index.html"
           ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
         >
-        <div>
-          <p class="ge-kicker">Modèles d'évaluation</p>
-          <h1>Grilles d'évaluation</h1>
-          <p class="ge-lead">
-            Créez vos grilles, modifiez vos modèles, dupliquez une grille du catalogue et proposez-la aux collègues.
-          </p>
-        </div>
+        <h1>Grilles d'évaluation</h1>
       </header>
 
-      <p id="ge-status" class="ge-status" role="status">Chargement des grilles...</p>
+      <p id="ge-status" class="ge-status" role="status" hidden></p>
 
-      <p class="ge-use-note">
+      <p class="hint ge-use-note">
         Pour utiliser une grille avec une classe, ouvrez <a href="tableau-suivi.html">Appel et notes</a>,
         puis créez une colonne <strong>Grille d'évaluation</strong>.
       </p>
@@ -48,14 +42,6 @@
             autocomplete="off"
             placeholder="APSA, cycle, niveau, titre..."
           />
-        </div>
-        <div class="field-group">
-          <label class="field-label" for="ge-source">Source</label>
-          <select id="ge-source">
-            <option value="">Toutes</option>
-            <option value="local">Mes grilles</option>
-            <option value="catalog">Catalogue</option>
-          </select>
         </div>
         <div class="field-group">
           <label class="field-label" for="ge-cycle">Cycle</label>
@@ -74,16 +60,21 @@
       </section>
 
       <main class="ge-layout">
-        <section class="ge-library" aria-labelledby="ge-library-title">
-          <div class="ge-section-head">
-            <h2 id="ge-library-title">Bibliothèque</h2>
-            <p id="ge-count" aria-live="polite"></p>
+        <section class="card ge-library" aria-labelledby="ge-library-title">
+          <div class="ge-section-head ge-section-head--library">
+            <div>
+              <h2 id="ge-library-title">Bibliothèque</h2>
+              <p id="ge-count" aria-live="polite"></p>
+            </div>
+            <a class="btn btn--primary ge-catalog-link" href="catalogue-evaluations.html"
+              >Catalogue en ligne</a
+            >
           </div>
           <p id="ge-empty" class="empty-state" hidden>Aucune grille ne correspond à cette recherche.</p>
           <div id="ge-list" class="ge-list"></div>
         </section>
 
-        <section class="ge-editor-card" aria-labelledby="ge-editor-title">
+        <section class="card ge-editor-card" aria-labelledby="ge-editor-title">
           <div class="ge-section-head">
             <h2 id="ge-editor-title">Éditeur</h2>
             <p id="ge-editor-mode">Nouvelle grille</p>
@@ -96,7 +87,9 @@
             </div>
             <div class="field-group">
               <label class="field-label" for="ge-apsa">APSA</label>
-              <input type="text" id="ge-apsa" maxlength="60" placeholder="Badminton, Danse..." />
+              <select id="ge-apsa">
+                <option value="">Choisir une APSA…</option>
+              </select>
             </div>
             <div class="field-group">
               <label class="field-label" for="ge-cycle-edit">Cycle</label>
@@ -124,13 +117,16 @@
 
           <div id="ge-editor" class="ge-editor" aria-label="Éditeur de grille"></div>
 
-          <label class="ge-share">
-            <input type="checkbox" id="ge-share" checked />
-            Proposer cette grille sur le catalogue enseignant
-          </label>
+          <div id="ge-share-wrap" class="ge-share-wrap">
+            <label class="ge-share">
+              <input type="checkbox" id="ge-share" />
+              <span>Visible sur le catalogue en ligne</span>
+            </label>
+            <p id="ge-share-reason" class="ge-share-reason" role="status"></p>
+          </div>
           <p class="ge-share-hint hint">
-            Cette grille pourra être partagée anonymement dans le catalogue enseignant.
-            <a href="catalogue-evaluations.html">Voir le catalogue</a>
+            Si la case est cochée et les critères sont remplis, la grille est publiée au catalogue (sans compte).
+            <a href="catalogue-evaluations.html">Parcourir le catalogue</a>
           </p>
 
           <div class="ge-savebar">
@@ -163,6 +159,8 @@
     </dialog>
 
     <script src="../data-manager.js"></script>
+    <script src="../shared/eps-apsa-list.js"></script>
+    <script src="../shared/evaluation-rubric-library.js"></script>
     <script src="../shared/supabase-config.js"></script>
     <script src="../shared/supabaseClient.js"></script>
     <script src="../shared/catalog-grid-validation.js"></script>
@@ -178,6 +176,7 @@
             {
               title: "Mes grilles",
               list: [
+                "Une grille basket « Exemple » est fournie au premier lancement (supprimable définitivement).",
                 "Enregistrez vos modèles sur cet appareil.",
                 "Modifiez-les, dupliquez-les ou supprimez-les depuis la bibliothèque.",
                 "Les grilles personnelles apparaissent ensuite dans la colonne Grille d'évaluation.",
@@ -188,7 +187,7 @@
               list: [
                 "Une connexion est nécessaire pour charger les grilles publiées.",
                 "Dupliquez une grille du catalogue pour l'adapter à votre classe.",
-                "La case cochée propose la grille au catalogue en ligne (Supabase), sans compte.",
+                "Cochez « Visible sur le catalogue en ligne » pour publier la grille si elle respecte les critères.",
               ],
             },
           ],

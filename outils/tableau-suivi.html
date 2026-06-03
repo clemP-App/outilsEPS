@@ -333,7 +333,9 @@
               </div>
               <div class="field-group">
                 <label class="field-label" for="dlg-rubric-apsa">APSA</label>
-                <input type="text" id="dlg-rubric-apsa" maxlength="60" placeholder="Badminton, Danse..." />
+                <select id="dlg-rubric-apsa">
+                  <option value="">Choisir une APSA…</option>
+                </select>
               </div>
               <div class="field-group">
                 <label class="field-label" for="dlg-rubric-cycle">Cycle</label>
@@ -365,13 +367,15 @@
               </div>
             </div>
             <div id="dlg-rubric-editor" class="tab-suivi-rubric-editor" aria-label="Éditeur de grille"></div>
-            <label class="tab-suivi-col-note-check tab-suivi-rubric-share">
-              <input type="checkbox" id="dlg-rubric-share" checked />
-              Proposer cette grille sur le catalogue enseignant
-            </label>
-            <p class="hint tab-suivi-rubric-share-hint">
-              Cette grille pourra être partagée anonymement dans le catalogue enseignant.
-            </p>
+            <div id="dlg-rubric-share-wrap" class="tab-suivi-rubric-share-wrap ge-share-wrap ge-share-wrap--disabled">
+              <label class="tab-suivi-col-note-check tab-suivi-rubric-share ge-share">
+                <input type="checkbox" id="dlg-rubric-share" checked disabled />
+                <span>Ajouter cette grille au catalogue enseignant</span>
+              </label>
+              <p id="dlg-rubric-share-reason" class="ge-share-reason" role="status">
+                Complétez la grille (3 lignes × 3 colonnes minimum) pour activer le partage.
+              </p>
+            </div>
             <div class="tab-suivi-rubric-import-actions">
               <button type="button" class="btn btn--ghost" id="btn-rubric-test-import">Tester</button>
               <button type="button" class="btn btn--primary" id="btn-rubric-create-import">
@@ -570,6 +574,10 @@
               <span class="btn__icon" aria-hidden="true">✎</span>
               <span class="btn__text">Modifier la grille</span>
             </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-col-rubric-pdf">
+              <span class="btn__icon" aria-hidden="true">📄</span>
+              <span class="btn__text">Exporter PDF</span>
+            </button>
             <p class="hint">La note est calculée automatiquement à partir des cases sélectionnées.</p>
           </div>
           <section class="tab-suivi-col-dlg-block" aria-labelledby="dlg-col-lbl-position">
@@ -610,6 +618,7 @@
     <script src="../shared/eleve-display.js"></script>
     <script src="../class-import.js"></script>
     <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="../shared/eps-apsa-list.js"></script>
     <script src="../shared/supabase-config.js"></script>
     <script src="../shared/supabaseClient.js"></script>
     <script src="../shared/catalog-grid-validation.js"></script>

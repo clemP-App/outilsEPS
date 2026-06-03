@@ -53,6 +53,9 @@
   var btnRubricAddRow = document.getElementById("btn-rubric-add-row");
   var btnRubricAddCol = document.getElementById("btn-rubric-add-col");
   var dlgRubricShare = document.getElementById("dlg-rubric-share");
+  var dlgRubricShareWrap = document.getElementById("dlg-rubric-share-wrap");
+  var dlgRubricShareReason = document.getElementById("dlg-rubric-share-reason");
+  var dlgRubricShareTimer = null;
   var dialogRubricCell = document.getElementById("dialog-tab-suivi-rubric-cell");
   var dlgRubricCellTitle = document.getElementById("dlg-rubric-cell-title");
   var dlgRubricCellMeta = document.getElementById("dlg-rubric-cell-meta");
@@ -82,6 +85,7 @@
   var dlgColRubricWrap = document.getElementById("dlg-col-rubric-wrap");
   var btnColRubricTest = document.getElementById("btn-col-rubric-test");
   var btnColRubricEdit = document.getElementById("btn-col-rubric-edit");
+  var btnColRubricPdf = document.getElementById("btn-col-rubric-pdf");
   var dlgColRemplirSection = document.getElementById("dlg-col-remplir-section");
   var dlgColRemplirBody = document.getElementById("dlg-col-remplir-body");
   var dlgColCalcHint = document.getElementById("dlg-col-calc-hint");
@@ -807,6 +811,45 @@
     return normaliserRubrique(rubriqueEdition);
   }
 
+  function mettreAJourPartageCatalogueRubrique() {
+    if (!dlgRubricShare || !dlgRubricShareWrap) return;
+    var rubric = lireRubriqueDepuisEditeur();
+    var reasons = [];
+    if (
+      !window.OutilsEPS ||
+      !window.OutilsEPS.isSupabaseConfigured ||
+      !window.OutilsEPS.isSupabaseConfigured()
+    ) {
+      reasons.push("Le catalogue en ligne n'est pas configuré sur ce site.");
+    } else if (
+      window.OutilsEPS.catalog &&
+      window.OutilsEPS.catalog.validateGridForCatalog
+    ) {
+      var validation = window.OutilsEPS.catalog.validateGridForCatalog(rubric);
+      if (!validation.valid) reasons = validation.errors;
+    }
+    if (reasons.length) {
+      dlgRubricShare.checked = false;
+      dlgRubricShare.disabled = true;
+      dlgRubricShareWrap.classList.add("ge-share-wrap--disabled");
+      if (dlgRubricShareReason) {
+        dlgRubricShareReason.textContent =
+          reasons.length > 1
+            ? reasons[0] + " (" + (reasons.length - 1) + " autre(s) critère(s))."
+            : reasons[0];
+      }
+    } else {
+      dlgRubricShare.disabled = false;
+      dlgRubricShareWrap.classList.remove("ge-share-wrap--disabled");
+      if (dlgRubricShareReason) dlgRubricShareReason.textContent = "";
+    }
+  }
+
+  function planifierMajPartageCatalogueRubrique() {
+    if (dlgRubricShareTimer) clearTimeout(dlgRubricShareTimer);
+    dlgRubricShareTimer = setTimeout(mettreAJourPartageCatalogueRubrique, 100);
+  }
+
   function rendreEditeurRubrique() {
     if (!dlgRubricEditor) return;
     var r = normaliserRubrique(rubriqueEdition || rubriqueVierge(metaRubriqueEdition()));
@@ -900,6 +943,7 @@
     });
     table.appendChild(tbody);
     dlgRubricEditor.appendChild(table);
+    planifierMajPartageCatalogueRubrique();
   }
 
   function ajouterLigneRubriqueEdition() {
@@ -3210,12 +3254,19 @@
   function remplirFormulaireRubrique(rubrique) {
     var r = normaliserRubrique(rubrique || rubriqueVierge(metaRubriqueEdition()));
     if (dlgRubricTitle) dlgRubricTitle.value = r.title || "";
-    if (dlgRubricApsa) dlgRubricApsa.value = r.apsa || "";
+    if (dlgRubricApsa) {
+      if (window.OutilsEPS && window.OutilsEPS.fillApsaSelect) {
+        window.OutilsEPS.fillApsaSelect(dlgRubricApsa, { selected: r.apsa || "" });
+      } else {
+        dlgRubricApsa.value = r.apsa || "";
+      }
+    }
     if (dlgRubricCycle) dlgRubricCycle.value = normaliserCycleRubrique(r.cycle);
     if (dlgRubricNiveau) dlgRubricNiveau.value = r.niveau || "";
     if (dlgRubricShare) dlgRubricShare.checked = true;
     rubriqueEdition = r;
     rendreEditeurRubrique();
+    mettreAJourPartageCatalogueRubrique();
   }
 
   function ouvrirDialogRubriqueCatalog() {
@@ -3485,6 +3536,246 @@
     montrerOk("Export CSV téléchargé.");
   }
 
+  function exporterPdfGrilles(onlyColId) {
+    var t = donneesExport();
+    if (!t) return;
+    var rubricCols = (t.cols || []).filter(function (c) {
+      return c && c.type === "rubric" && c.rubric;
+    });
+    if (onlyColId) {
+      rubricCols = rubricCols.filter(function (c) {
+        return c.id === onlyColId;
+      });
+      if (!rubricCols.length) {
+        montrerMsg("Cette colonne n'est pas une grille d'évaluation.");
+        return;
+      }
+    } else if (!rubricCols.length) {
+      montrerMsg("Aucune colonne « Grille d'évaluation » dans ce tableau.");
+      return;
+    }
+    var JSPDF = window.jspdf && window.jspdf.jsPDF;
+    if (!JSPDF) {
+      montrerMsg("Impossible de charger jsPDF. Réessayez plus tard.");
+      return;
+    }
+    montrerMsg("");
+
+    var doc = new JSPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+    var margin = 12;
+    var pageW = doc.internal.pageSize.getWidth();
+    var pageH = doc.internal.pageSize.getHeight();
+    var contentW = pageW - 2 * margin;
+    var pageCount = 0;
+
+    function rgb(c) {
+      doc.setFillColor(c[0], c[1], c[2]);
+      doc.setDrawColor(c[0], c[1], c[2]);
+      doc.setTextColor(c[0], c[1], c[2]);
+    }
+
+    function dessinerFiche(row, col, rubrique, selection, score) {
+      if (pageCount > 0) doc.addPage();
+      pageCount++;
+      var y = margin;
+
+      rgb([15, 118, 110]);
+      doc.setFillColor(15, 118, 110);
+      doc.rect(0, 0, pageW, 18, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text(String(t.titre || "Appel et notes").slice(0, 70), margin, 11);
+
+      rgb([15, 23, 42]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      y = 26;
+      doc.text(labelEleveAvecIcone(row, true).slice(0, 80), margin, y);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      y += 6;
+      var colLabel = col.label || rubrique.title || "Grille d'évaluation";
+      doc.text(colLabel.slice(0, 90), margin, y);
+      y += 5;
+      var meta = metaRubriqueTexte(rubrique);
+      if (meta) {
+        doc.setTextColor(100, 116, 139);
+        doc.text(meta.slice(0, 100), margin, y);
+        y += 5;
+      }
+      doc.setTextColor(15, 118, 110);
+      doc.setFont("helvetica", "bold");
+      var noteTxt =
+        score.note === null || score.note === undefined || isNaN(score.note)
+          ? "Note : —"
+          : "Note : " + formatNombreAffiche(score.note) + " / " + RUBRIQUE_MAX_DEFAUT;
+      doc.text(
+        noteTxt +
+          "  ·  " +
+          formatNombreAffiche(score.points) +
+          " / " +
+          formatNombreAffiche(score.total) +
+          " pts  ·  " +
+          score.selectedCount +
+          " / " +
+          score.itemCount +
+          " items",
+        margin,
+        y
+      );
+      y += 8;
+
+      var nLevels = rubrique.levels.length;
+      var wItem = Math.min(52, contentW * 0.28);
+      var wLevel = (contentW - wItem) / Math.max(nLevels, 1);
+      var minRowH = 11;
+      var fontCell = 7;
+      var fontHead = 7.5;
+
+      function drawGridHeader() {
+        rgb([15, 118, 110]);
+        doc.setFillColor(15, 118, 110);
+        doc.rect(margin, y, contentW, minRowH, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(fontHead);
+        doc.text("Item", margin + 2, y + minRowH * 0.62);
+        var x = margin + wItem;
+        rubrique.levels.forEach(function (level) {
+          var lines = doc.splitTextToSize(String(level.label || ""), wLevel - 3);
+          doc.text(lines.slice(0, 2), x + wLevel / 2, y + minRowH * 0.62, { align: "center" });
+          x += wLevel;
+        });
+        y += minRowH;
+      }
+
+      drawGridHeader();
+
+      rubrique.items.forEach(function (item, rowIndex) {
+        var rowH = minRowH;
+        var cellLines = [];
+        rubrique.levels.forEach(function (level, levelIndex) {
+          var cell = item.cells[levelIndex] || {};
+          var txt = (cell.text || level.label || "").trim();
+          var lines = doc.splitTextToSize(txt, wLevel - 4);
+          var blockH = Math.max(minRowH, lines.length * 3.2 + 4);
+          if (blockH > rowH) rowH = blockH;
+          cellLines[levelIndex] = lines;
+        });
+        var itemLines = doc.splitTextToSize(String(item.label || ""), wItem - 4);
+        var itemH = Math.max(minRowH, itemLines.length * 3.2 + 3);
+        if (itemH > rowH) rowH = itemH;
+
+        if (y + rowH > pageH - margin - 10) {
+          doc.addPage();
+          y = margin;
+          drawGridHeader();
+        }
+
+        var bg = rowIndex % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
+        rgb(bg);
+        doc.rect(margin, y, contentW, rowH, "F");
+        rgb([226, 232, 240]);
+        doc.setLineWidth(0.1);
+        doc.rect(margin, y, contentW, rowH, "S");
+
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(fontCell);
+        doc.text(itemLines, margin + 2, y + 4);
+
+        var xCol = margin + wItem;
+        rubrique.levels.forEach(function (level, levelIndex) {
+          var selected = selection.selected[item.id] === level.id;
+          if (selected) {
+            rgb([204, 251, 241]);
+            doc.rect(xCol, y, wLevel, rowH, "F");
+          }
+          rgb([226, 232, 240]);
+          doc.rect(xCol, y, wLevel, rowH, "S");
+
+          doc.setFont("helvetica", selected ? "bold" : "normal");
+          doc.setTextColor(selected ? 15 : 71, selected ? 118 : 85, selected ? 110 : 105);
+          var cell = item.cells[levelIndex] || {};
+          var lines = cellLines[levelIndex] || [""];
+          doc.setFontSize(fontCell);
+          doc.text(lines.slice(0, 4), xCol + wLevel / 2, y + 3.5, { align: "center" });
+          var pts = cell.points;
+          if (pts !== undefined && pts !== null && !isNaN(pts)) {
+            doc.setFontSize(6);
+            doc.text(formatNombreAffiche(pts) + " pt", xCol + wLevel / 2, y + rowH - 2.5, {
+              align: "center",
+            });
+          }
+          if (selected) {
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(15, 118, 110);
+            doc.text("✓", xCol + wLevel - 3, y + 4, { align: "right" });
+          }
+          xCol += wLevel;
+        });
+        y += rowH;
+      });
+
+      rgb([148, 163, 184]);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.text(
+        "Outils EPS — " + new Date().toLocaleString("fr-FR"),
+        margin,
+        pageH - 6
+      );
+    }
+
+    rubricCols.forEach(function (col) {
+      var rubrique = normaliserRubrique(col.rubric);
+      t.rows.forEach(function (row) {
+        var selection = normaliserSelectionRubrique(getCell(t, row.id, col.id));
+        var score = calculerScoreRubrique(rubrique, selection);
+        if (!score.selectedCount) return;
+        dessinerFiche(row, col, rubrique, selection, score);
+      });
+    });
+
+    if (!pageCount) {
+      montrerMsg(
+        "Aucune sélection enregistrée sur les grilles d'évaluation. Renseignez les cellules puis réessayez."
+      );
+      return;
+    }
+
+    var total = doc.internal.getNumberOfPages();
+    for (var p = 1; p <= total; p++) {
+      doc.setPage(p);
+      rgb([148, 163, 184]);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text("Page " + p + " / " + total, pageW - margin, pageH - 6, { align: "right" });
+    }
+
+    try {
+      var base = nomFichierExport("pdf").replace(/\.pdf$/i, "");
+      var colSlug = "";
+      if (onlyColId && rubricCols[0]) {
+        colSlug =
+          "-" +
+          String(rubricCols[0].label || "grille")
+            .replace(/[^\w\-]+/g, "_")
+            .replace(/_+/g, "_")
+            .slice(0, 32);
+      } else {
+        colSlug = "-grilles";
+      }
+      telechargerBlob(base + colSlug + ".pdf", doc.output("blob"));
+      montrerOk("Export PDF téléchargé (" + pageCount + " fiche(s)).");
+    } catch (err) {
+      montrerMsg("Export PDF des grilles impossible.");
+    }
+  }
+
   function exporterPdf() {
     var t = donneesExport();
     if (!t) return;
@@ -3731,6 +4022,9 @@
   }
 
   function init() {
+    if (dlgRubricApsa && window.OutilsEPS && window.OutilsEPS.fillApsaSelect) {
+      window.OutilsEPS.fillApsaSelect(dlgRubricApsa);
+    }
     if (typeof DataManager === "undefined") {
       montrerMsg("Enregistrement indisponible sur cet appareil.");
       return;
@@ -3904,11 +4198,17 @@
   }
   [dlgRubricTitle, dlgRubricApsa, dlgRubricCycle, dlgRubricNiveau].forEach(function (el) {
     if (!el) return;
+    el.addEventListener("input", planifierMajPartageCatalogueRubrique);
     el.addEventListener("change", function () {
       if (!rubriqueEdition) return;
       rubriqueEdition = appliquerMetaRubriqueEdition(lireRubriqueDepuisEditeur());
+      planifierMajPartageCatalogueRubrique();
     });
   });
+  if (dlgRubricEditor) {
+    dlgRubricEditor.addEventListener("input", planifierMajPartageCatalogueRubrique);
+    dlgRubricEditor.addEventListener("change", planifierMajPartageCatalogueRubrique);
+  }
 
   var formRubricCatalog = document.getElementById("form-tab-suivi-rubric-catalog");
   if (formRubricCatalog) {
@@ -3990,6 +4290,13 @@
     btnColRubricEdit.addEventListener("click", function () {
       if (!colonneDialogId) return;
       ouvrirDialogRubriqueColonne(colonneDialogId);
+    });
+  }
+
+  if (btnColRubricPdf) {
+    btnColRubricPdf.addEventListener("click", function () {
+      if (!colonneDialogId) return;
+      exporterPdfGrilles(colonneDialogId);
     });
   }
 

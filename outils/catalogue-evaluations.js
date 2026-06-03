@@ -3,6 +3,7 @@
 
   var CATALOG_URL = "../shared/evaluation-rubrics-catalog.json";
   var rubrics = [];
+  var viewRubric = null;
 
   var statusEl = document.getElementById("eval-catalog-status");
   var searchEl = document.getElementById("eval-catalog-search");
@@ -11,6 +12,13 @@
   var countEl = document.getElementById("eval-catalog-count");
   var emptyEl = document.getElementById("eval-catalog-empty");
   var listEl = document.getElementById("eval-catalog-list");
+  var viewDialog = document.getElementById("eval-catalog-view-dialog");
+  var viewTitleEl = document.getElementById("eval-catalog-view-title");
+  var viewMetaEl = document.getElementById("eval-catalog-view-meta");
+  var viewGridEl = document.getElementById("eval-catalog-view-grid");
+  var viewImportBtn = document.getElementById("eval-catalog-view-import");
+  var viewCloseBtn = document.getElementById("eval-catalog-view-close");
+  var viewCloseXBtn = document.getElementById("eval-catalog-view-close-x");
 
   function norm(s) {
     return String(s || "")
@@ -48,8 +56,12 @@
     }
   }
 
+  function cloneRubric(r) {
+    return JSON.parse(JSON.stringify(r || {}));
+  }
+
   function normalizeRubric(r) {
-    r = r && typeof r === "object" ? r : {};
+    r = r && typeof r === "object" ? cloneRubric(r) : {};
     var gridId = r.catalogGridId || r.id || "";
     return {
       id: gridId,
@@ -65,9 +77,18 @@
       upvotes: Number(r.upvotes != null ? r.upvotes : 0),
       downvotes: Number(r.downvotes != null ? r.downvotes : 0),
       status: r.status || "published",
-      canVote: isSupabaseGridId(r.catalogGridId || r.id),
+      catalogSource: r.catalogSource || "",
+      canVote: isSupabaseGridId(gridId),
       catalogLegacyFallback: !!r.catalogLegacyFallback,
+      catalogBuiltin: !!r.catalogBuiltin,
+      grid_data: r.grid_data,
     };
+  }
+
+  function metaLine(r) {
+    return [r.apsa, r.niveau, cycleLabel(r.cycle), r.author ? "par " + r.author : ""]
+      .filter(Boolean)
+      .join(" · ");
   }
 
   function voteWeight(r) {
@@ -91,6 +112,12 @@
       return voteWeight(b) - voteWeight(a) || a.title.localeCompare(b.title, "fr", { sensitivity: "base" });
     });
     return list;
+  }
+
+  function setStatus(kind, text) {
+    if (!statusEl) return;
+    statusEl.className = "eval-catalog-status eval-catalog-status--" + kind;
+    statusEl.textContent = text;
   }
 
   function updateCardVotes(card, r) {
@@ -117,7 +144,10 @@
       !window.OutilsEPS.catalog ||
       !window.OutilsEPS.catalog.voteCatalogGrid
     ) {
-      setStatus("warn", "Les votes en ligne nécessitent Supabase et une grille publiée.");
+      setStatus(
+        "warn",
+        "Vote impossible : connexion requise et grille publiée sur le catalogue en ligne (Supabase)."
+      );
       return;
     }
     window.OutilsEPS.catalog
@@ -140,6 +170,58 @@
       .catch(function (err) {
         setStatus("error", (err && err.message) || "Vote impossible.");
       });
+  }
+
+  function openView(r) {
+    viewRubric = normalizeRubric(r);
+    if (viewTitleEl) viewTitleEl.textContent = viewRubric.title;
+    if (viewMetaEl) viewMetaEl.textContent = metaLine(viewRubric);
+    if (
+      window.OutilsEPS &&
+      window.OutilsEPS.rubricLibrary &&
+      window.OutilsEPS.rubricLibrary.renderRubricPreview &&
+      viewGridEl
+    ) {
+      window.OutilsEPS.rubricLibrary.renderRubricPreview(viewGridEl, viewRubric);
+    }
+    if (viewDialog && viewDialog.showModal) viewDialog.showModal();
+  }
+
+  function closeView() {
+    if (viewDialog && viewDialog.open) viewDialog.close();
+    viewRubric = null;
+  }
+
+  function importRubric(r, options) {
+    options = options || {};
+    if (!window.OutilsEPS || !window.OutilsEPS.rubricLibrary || !window.OutilsEPS.rubricLibrary.importRubricToLibrary) {
+      setStatus("error", "Import impossible : stockage local indisponible.");
+      return Promise.resolve();
+    }
+    return window.OutilsEPS.rubricLibrary
+      .importRubricToLibrary(r, {
+        catalogSourceId: r.catalogGridId || r.id || "",
+        titleSuffix: false,
+      })
+      .then(function () {
+        setStatus("ok", "Grille importée dans votre bibliothèque personnelle.");
+        if (options.goToLibrary) {
+          window.location.href = "grilles-evaluation.html?imported=1";
+        }
+      })
+      .catch(function (err) {
+        setStatus("warn", err && err.message ? err.message : "Import impossible.");
+      });
+  }
+
+  function actionBtn(label, handler, variant) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className =
+      variant === "primary" ? "btn btn--primary btn--small" : "btn btn--ghost btn--small";
+    btn.textContent = label;
+    btn.addEventListener("click", handler);
+    return btn;
   }
 
   function renderRubric(r) {
@@ -182,17 +264,22 @@
     detail.textContent = r.items.length + " items · " + r.levels.length + " niveaux";
     card.appendChild(detail);
 
-    var sample = document.createElement("ul");
-    sample.className = "eval-catalog-card__items";
-    r.items.slice(0, 3).forEach(function (item) {
-      var li = document.createElement("li");
-      li.textContent = item.label || "Item";
-      sample.appendChild(li);
-    });
-    card.appendChild(sample);
+    var primary = document.createElement("div");
+    primary.className = "eval-catalog-card__actions eval-catalog-card__actions--primary";
+    primary.appendChild(
+      actionBtn("Voir la grille", function () {
+        openView(r);
+      })
+    );
+    primary.appendChild(
+      actionBtn("Importer dans ma bibliothèque", function () {
+        importRubric(r);
+      }, "primary")
+    );
+    card.appendChild(primary);
 
-    var actions = document.createElement("div");
-    actions.className = "eval-catalog-card__actions eval-catalog-card__actions--votes";
+    var voteRow = document.createElement("div");
+    voteRow.className = "eval-catalog-card__actions eval-catalog-card__actions--votes";
     var upBtn = document.createElement("button");
     upBtn.type = "button";
     upBtn.className = "btn btn--ghost btn--small eval-catalog-vote-btn";
@@ -206,6 +293,8 @@
     if (!r.canVote) {
       upBtn.disabled = true;
       downBtn.disabled = true;
+      upBtn.title = "Vote disponible pour les grilles du catalogue en ligne (connexion requise)";
+      downBtn.title = upBtn.title;
     }
     upBtn.addEventListener("click", function () {
       onVoteClick(r, card, "up");
@@ -213,9 +302,9 @@
     downBtn.addEventListener("click", function () {
       onVoteClick(r, card, "down");
     });
-    actions.appendChild(upBtn);
-    actions.appendChild(downBtn);
-    card.appendChild(actions);
+    voteRow.appendChild(upBtn);
+    voteRow.appendChild(downBtn);
+    card.appendChild(voteRow);
     updateCardVotes(card, r);
     return card;
   }
@@ -232,12 +321,6 @@
     list.forEach(function (r) {
       listEl.appendChild(renderRubric(r));
     });
-  }
-
-  function setStatus(kind, text) {
-    if (!statusEl) return;
-    statusEl.className = "eval-catalog-status eval-catalog-status--" + kind;
-    statusEl.textContent = text;
   }
 
   function loadCatalog() {
@@ -266,27 +349,16 @@
         rubrics = (list || []).map(normalizeRubric).filter(function (r) {
           return !r.status || r.status === "published";
         });
-        var legacyOnly = rubrics.some(function (r) {
-          return r.catalogLegacyFallback;
-        });
-        if (window.OutilsEPS && window.OutilsEPS.isSupabaseConfigured && window.OutilsEPS.isSupabaseConfigured()) {
-          if (legacyOnly) {
-            setStatus(
-              "warn",
-              "Catalogue JSON de secours affiché (Supabase injoignable ou URL incorrecte). Votes désactivés sur ces grilles."
-            );
-          } else if (rubrics.length) {
-            setStatus("ok", "Catalogue collaboratif chargé. Un vote par navigateur et par grille.");
-          } else {
-            setStatus(
-              "ok",
-              "Catalogue collaboratif connecté. Aucune grille publiée pour le moment — proposez la vôtre depuis Grilles d'évaluation."
-            );
-          }
-        } else if (rubrics.length) {
-          setStatus("ok", "Catalogue chargé (mode lecture). Configurez Supabase pour les votes et les propositions.");
+        if (rubrics.length) {
+          setStatus(
+            "ok",
+            rubrics.length +
+              " grille" +
+              (rubrics.length > 1 ? "s" : "") +
+              " disponibles. Importez un modèle ou consultez-le avant de l'adapter."
+          );
         } else {
-          setStatus("warn", "Catalogue vide ou non configuré.");
+          setStatus("warn", "Catalogue vide pour le moment.");
         }
         render();
       })
@@ -308,6 +380,15 @@
     if (el) el.addEventListener("change", render);
   });
 
+  if (viewCloseBtn) viewCloseBtn.addEventListener("click", closeView);
+  if (viewCloseXBtn) viewCloseXBtn.addEventListener("click", closeView);
+  if (viewImportBtn) {
+    viewImportBtn.addEventListener("click", function () {
+      if (!viewRubric) return;
+      importRubric(viewRubric, { goToLibrary: false });
+    });
+  }
+
   window.addEventListener("online", loadCatalog);
   window.addEventListener("offline", function () {
     setStatus("error", "Catalogue non disponible hors ligne. Cette page nécessite une connexion.");
@@ -316,7 +397,7 @@
   var propose = document.createElement("a");
   propose.className = "btn btn--primary eval-catalog-propose";
   propose.href = "grilles-evaluation.html";
-  propose.textContent = "Proposer une grille";
+  propose.textContent = "Mes grilles";
   var toolbar = document.querySelector(".eval-catalog-toolbar");
   if (toolbar) toolbar.appendChild(propose);
 

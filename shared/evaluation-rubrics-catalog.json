@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-06-03T00:00:00.000Z",
+  "updatedAt": "2026-06-04T00:00:00.000Z",
   "rubrics": [
     {
       "id": "pub-badminton-c4-construire-point",
@@ -364,6 +364,180 @@
             { "text": "Bilan qui identifie quelques ecarts.", "points": 1 },
             { "text": "Bilan relie aux sensations et aux temps.", "points": 2 },
             { "text": "Bilan precis qui prepare un ajustement pertinent.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-football-c4-conserver-balle",
+      "title": "Football - conserver et progresser",
+      "apsa": "Football",
+      "cycle": "4",
+      "niveau": "5e / 4e",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.5, "votes": 14 },
+      "levels": [
+        { "id": "l1", "label": "A consolider", "color": "#fb7185" },
+        { "id": "l2", "label": "En progres", "color": "#fdba74" },
+        { "id": "l3", "label": "Maitrise", "color": "#fde68a" },
+        { "id": "l4", "label": "Tres maitrise", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Conduire la balle",
+          "cells": [
+            { "text": "Conduite irreguliere, pertes frequentes.", "points": 0 },
+            { "text": "Conduit par moments mais lentement.", "points": 1 },
+            { "text": "Conduit de facon stable en situation simple.", "points": 2 },
+            { "text": "Conduit vite, tete levee, protege la balle.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Passer et recevoir",
+          "cells": [
+            { "text": "Passes imprecises ou non controlees.", "points": 0 },
+            { "text": "Quelques passes utiles a courte distance.", "points": 1 },
+            { "text": "Passes precises et controle de la reception.", "points": 2 },
+            { "text": "Varie passes, temporise et cree des espaces.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Defendre",
+          "cells": [
+            { "text": "Marquage peu actif, repli lent.", "points": 0 },
+            { "text": "Suit l'adversaire avec des retards.", "points": 1 },
+            { "text": "Marque, intercepte par moments.", "points": 2 },
+            { "text": "Anticipe, communique et recupere la balle.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i4",
+          "label": "Cooperer",
+          "cells": [
+            { "text": "Joue souvent seul, peu de communication.", "points": 0 },
+            { "text": "Participe au jeu collectif par moments.", "points": 1 },
+            { "text": "Respecte consignes et roles du groupe.", "points": 2 },
+            { "text": "Organise le jeu, soutient et relance l'equipe.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-volley-c4-organiser-echange",
+      "title": "Volley-ball - organiser l'echange",
+      "apsa": "Volley-ball",
+      "cycle": "4",
+      "niveau": "4e / 3e",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.4, "votes": 10 },
+      "levels": [
+        { "id": "l1", "label": "Fragile", "color": "#fb7185" },
+        { "id": "l2", "label": "En cours", "color": "#fdba74" },
+        { "id": "l3", "label": "Solide", "color": "#fde68a" },
+        { "id": "l4", "label": "Expert", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Service et reception",
+          "cells": [
+            { "text": "Service ou reception peu maitrises.", "points": 0 },
+            { "text": "Met l'echange en jeu avec aide.", "points": 1 },
+            { "text": "Service et reception reguliers.", "points": 2 },
+            { "text": "Service place et reception orientee.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Manoeuvre collective",
+          "cells": [
+            { "text": "Enchainement passees fragile ou absent.", "points": 0 },
+            { "text": "Participe a 2-3 touches sans stabilite.", "points": 1 },
+            { "text": "Respecte roles et enchainements simples.", "points": 2 },
+            { "text": "Construit l'attaque avec variete.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Attaquer",
+          "cells": [
+            { "text": "Attaque peu controlee ou hors cadre.", "points": 0 },
+            { "text": "Quelques frappes dans le terrain.", "points": 1 },
+            { "text": "Attaque efficace en zone libre.", "points": 2 },
+            { "text": "Varie puissance et trajectoire.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i4",
+          "label": "Arbitrer",
+          "cells": [
+            { "text": "Regles essentielles instables.", "points": 0 },
+            { "text": "Regles principales avec rappels.", "points": 1 },
+            { "text": "Arbitrage fiable et calme.", "points": 2 },
+            { "text": "Arbitrage autonome et explique.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-natation-c3-securite-efficacite",
+      "title": "Natation - securite et efficacite",
+      "apsa": "Natation",
+      "cycle": "3",
+      "niveau": "CM2 / 6e",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.1, "votes": 6 },
+      "levels": [
+        { "id": "l1", "label": "Debutant", "color": "#fb7185" },
+        { "id": "l2", "label": "En cours", "color": "#fdba74" },
+        { "id": "l3", "label": "Reussi", "color": "#fde68a" },
+        { "id": "l4", "label": "Tres reussi", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Securite",
+          "cells": [
+            { "text": "Consignes de bassin peu respectees.", "points": 0 },
+            { "text": "Respecte les consignes avec rappels.", "points": 1 },
+            { "text": "Adopte une attitude responsable.", "points": 2 },
+            { "text": "Vigilant, previent et aide les autres.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Respiration et glisse",
+          "cells": [
+            { "text": "Respiration irreguliere, ligne instable.", "points": 0 },
+            { "text": "Respire par moments, glisse courte.", "points": 1 },
+            { "text": "Respiration et glisse coordonnees.", "points": 2 },
+            { "text": "Glisse longue, respiration maitrisee.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Brasse ou crawl",
+          "cells": [
+            { "text": "Gestes peu efficaces, essoufflement rapide.", "points": 0 },
+            { "text": "Gestes en place mais rythme irregulier.", "points": 1 },
+            { "text": "Gestes efficaces sur une distance moyenne.", "points": 2 },
+            { "text": "Gestes fluides, endurance et regularite.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i4",
+          "label": "Projet de progression",
+          "cells": [
+            { "text": "Objectif personnel flou ou absent.", "points": 0 },
+            { "text": "Objectif identifie sans strategie.", "points": 1 },
+            { "text": "Progresse selon un objectif clair.", "points": 2 },
+            { "text": "Ajuste son projet avec lucidite.", "points": 3 }
           ]
         }
       ]

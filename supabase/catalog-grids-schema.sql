@@ -91,6 +91,7 @@ declare
   v_old_vote text;
   v_up integer;
   v_down integer;
+  v_result_vote text;
 begin
   if p_vote_type is null or p_vote_type not in ('up', 'down') then
     raise exception 'vote_type invalide';
@@ -129,9 +130,18 @@ begin
     else
       v_down := v_down + 1;
     end if;
+    v_result_vote := p_vote_type;
   elsif v_old_vote = p_vote_type then
-    -- même vote : rien à changer
-    null;
+    -- re-clic sur le même vote : annulation
+    delete from public.catalog_votes
+    where grid_id = p_grid_id
+      and voter_fingerprint = trim(p_voter_fingerprint);
+    if p_vote_type = 'up' then
+      v_up := greatest(0, v_up - 1);
+    else
+      v_down := greatest(0, v_down - 1);
+    end if;
+    v_result_vote := null;
   else
     update public.catalog_votes
     set vote_type = p_vote_type
@@ -147,6 +157,7 @@ begin
     else
       v_down := v_down + 1;
     end if;
+    v_result_vote := p_vote_type;
   end if;
 
   if v_down >= 10 then
@@ -171,7 +182,7 @@ begin
     'status', v_grid.status,
     'upvotes', v_grid.upvotes,
     'downvotes', v_grid.downvotes,
-    'vote_type', p_vote_type
+    'vote_type', v_result_vote
   );
 end;
 $$;

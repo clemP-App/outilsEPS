@@ -150,7 +150,8 @@ Les grilles peuvent être proposées au **catalogue enseignant** sans compte uti
 
 1. Créez un projet sur [supabase.com](https://supabase.com).
 2. Exécutez le script SQL `supabase/catalog-grids-schema.sql` dans l’éditeur SQL du projet.
-3. Collez vos identifiants dans `shared/supabase-config.js` :
+3. **Grilles prêtes** : exécutez `supabase/catalog-grids-seed.sql` dans l’éditeur SQL (10 modèles APSA), ou régénérez-le avec `node scripts/generate-catalog-grids-seed.mjs` puis collez le SQL. Alternative : `node scripts/push-catalog-grids-seed.mjs` (envoi via l’API REST avec la clé anon). Après import, remettez les votes à zéro avec `supabase/catalog-grids-reset-votes.sql` (l’API anon ne peut pas modifier les lignes existantes).
+4. Collez vos identifiants dans `shared/supabase-config.js` :
    - `SUPABASE_URL` — Project URL (Settings → API)
    - `SUPABASE_ANON_KEY` — clé **anon** « public »
 
@@ -158,9 +159,9 @@ Alternative sans modifier le fichier : avant les scripts, définir `window.OUTIL
 
 ### Comportement
 
-- Case **« Proposer cette grille sur le catalogue enseignant »** cochée par défaut à l’enregistrement (`grilles-evaluation`, `tableau-suivi`).
+- Case **« Visible sur le catalogue en ligne »** à l’enregistrement (`grilles-evaluation`) : publication si cochée et critères remplis.
 - Validation côté navigateur puis contraintes SQL + RLS à l’insertion.
-- Votes 👍 / 👎 via la fonction RPC `vote_catalog_grid` (un vote par navigateur et par grille, modifiable).
+- Votes 👍 / 👎 via la fonction RPC `vote_catalog_grid` (un vote par navigateur et par grille ; recliquer sur le même bouton annule le vote). Si besoin, exécutez `supabase/catalog-grids-vote-toggle.sql` pour mettre à jour la fonction sur un projet déjà créé.
 - À **10 pouces bas**, la grille passe en `archived` et disparaît du catalogue public.
 - Fichiers partagés : `shared/catalog-grid-validation.js`, `shared/catalog-grids.js`, `shared/supabaseClient.js`.
 

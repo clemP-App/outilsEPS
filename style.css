@@ -11806,6 +11806,8 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-share {
 }
 
 .page-outil--tableau-suivi .tab-suivi-col-rubric-opt {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.45rem;
 }
 
@@ -11979,30 +11981,37 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
   }
 }
 
+.page-outil--eval-catalog .tool-back--return {
+  width: auto;
+  min-width: 2.65rem;
+  padding: 0.35rem 0.9rem 0.35rem 0.55rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  gap: 0.15rem;
+}
+
+.page-outil--eval-catalog .tool-back--return::before {
+  content: none;
+}
+
+.page-outil--eval-catalog .tool-back--return .tool-back__chev {
+  display: inline;
+  font-size: 1.15rem;
+  line-height: 1;
+  font-weight: 850;
+}
+
+.page-outil--eval-catalog .tool-back--return .tool-back__label {
+  display: inline;
+}
+
 .page-outil--eval-catalog {
-  max-width: min(72rem, calc(100% - 1.25rem));
+  max-width: min(56rem, 100%);
   padding-bottom: 2rem;
 }
 
-.page-outil--eval-catalog .eval-catalog-hero {
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.page-outil--eval-catalog .eval-catalog-kicker {
-  margin: 0 0 0.35rem;
-  color: #f97316;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.page-outil--eval-catalog .eval-catalog-lead {
-  max-width: 48rem;
-  margin: 0.35rem 0 0;
-  color: var(--text-muted);
-  line-height: 1.5;
+.eval-catalog-intro {
+  margin-bottom: 0.85rem;
 }
 
 .page-outil--eval-catalog .eval-catalog-status {
@@ -12069,11 +12078,9 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
   min-height: 16rem;
   padding: 1rem;
   border: 1px solid rgba(226, 232, 240, 0.95);
-  border-radius: 0.85rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98)),
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.16), transparent 42%);
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius);
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: var(--shadow);
 }
 
 .page-outil--eval-catalog .eval-catalog-card__top {
@@ -12132,6 +12139,108 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
   margin-top: auto;
 }
 
+.page-outil--eval-catalog .eval-catalog-card__actions--primary {
+  margin-top: 0.35rem;
+}
+
+.page-outil--eval-catalog .eval-catalog-card__actions--votes {
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.page-outil--eval-catalog .eval-catalog-view-grid {
+  max-height: min(72vh, 36rem);
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.page-outil--eval-catalog .eval-catalog-view-dialog .tab-suivi-dialog__body {
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
+}
+
+.page-outil--eval-catalog .eval-rubric-preview-wrap {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  background: #fff;
+  padding: 0.35rem;
+}
+
+.page-outil--eval-catalog .eval-rubric-preview-grid {
+  width: 100%;
+  min-width: 42rem;
+  border-collapse: separate;
+  border-spacing: 0.35rem;
+  table-layout: fixed;
+}
+
+.page-outil--eval-catalog .eval-rubric-preview-grid th,
+.page-outil--eval-catalog .eval-rubric-preview-grid td {
+  border: none;
+  vertical-align: top;
+  padding: 0;
+}
+
+.page-outil--eval-catalog .eval-rubric-preview-grid thead th {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--rubric-level, #f8fafc) 42%, #ffffff);
+  color: #1e293b;
+  font-size: 0.84rem;
+  font-weight: 900;
+  text-align: left;
+}
+
+.page-outil--eval-catalog .eval-rubric-preview-grid tbody th {
+  padding: 0.8rem 0.85rem;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 900;
+  text-align: left;
+  width: 11rem;
+}
+
+.page-outil--eval-catalog .tab-suivi-rubric-option--readonly {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.65rem;
+  min-height: 7.5rem;
+  padding: 0.85rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #0f172a;
+  pointer-events: none;
+}
+
+.page-outil--eval-catalog .tab-suivi-rubric-option--readonly .tab-suivi-rubric-option__text {
+  font-size: 0.86rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.page-outil--eval-catalog .tab-suivi-rubric-option--readonly .tab-suivi-rubric-option__points {
+  align-self: flex-start;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.08);
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.page-outil--eval-catalog .eval-catalog-card__votes--info {
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
 .page-outil--eval-catalog .eval-catalog-card__votes {
   margin: 0;
   font-size: 0.88rem;
@@ -12149,6 +12258,64 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
   margin: 0.35rem 0 0.75rem;
 }
 
+.ge-share-wrap {
+  margin-top: 1rem;
+}
+
+.ge-share-wrap .ge-share,
+label.ge-share {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #f8fafc;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ge-share-wrap--disabled .ge-share,
+.ge-share-wrap--disabled label.ge-share {
+  border-color: #e2e8f0;
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.92;
+}
+
+.ge-share-wrap--disabled .ge-share input {
+  cursor: not-allowed;
+}
+
+.ge-share-wrap .ge-share input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-top: 0.2rem;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+
+.ge-share-reason {
+  margin: 0.45rem 0 0;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  background: #f1f5f9;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.ge-share-wrap:not(.ge-share-wrap--disabled) .ge-share-reason:empty {
+  display: none;
+}
+
+.page-outil--grilles-evaluation .ge-section-head--library .ge-catalog-link {
+  flex-shrink: 0;
+}
+
 @media (max-width: 760px) {
   .page-outil--eval-catalog .eval-catalog-toolbar {
     grid-template-columns: 1fr;
@@ -12160,29 +12327,8 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
 }
 
 .page-outil--grilles-evaluation {
-  max-width: min(88rem, calc(100% - 1.25rem));
+  max-width: min(72rem, 100%);
   padding-bottom: 2rem;
-}
-
-.page-outil--grilles-evaluation .ge-hero {
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.page-outil--grilles-evaluation .ge-kicker {
-  margin: 0 0 0.35rem;
-  color: #f97316;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.page-outil--grilles-evaluation .ge-lead {
-  max-width: 54rem;
-  margin: 0.35rem 0 0;
-  color: var(--text-muted);
-  line-height: 1.5;
 }
 
 .page-outil--grilles-evaluation .ge-status {
@@ -12215,21 +12361,7 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
 }
 
 .page-outil--grilles-evaluation .ge-use-note {
-  margin: -0.25rem 0 0.9rem;
-  padding: 0.75rem 0.9rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(13, 148, 136, 0.22);
-  background: #ecfdf5;
-  color: #0f766e;
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.45;
-}
-
-.page-outil--grilles-evaluation .ge-use-note a {
-  color: #0f766e;
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
+  margin-bottom: 0.85rem;
 }
 
 .page-outil--grilles-evaluation .ge-toolbar {
@@ -12278,18 +12410,15 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
 .page-outil--grilles-evaluation .ge-library,
 .page-outil--grilles-evaluation .ge-editor-card {
   min-width: 0;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  border-radius: 0.9rem;
-  background: #fff;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  margin-bottom: 0;
 }
 
-.page-outil--grilles-evaluation .ge-library {
-  padding: 0.9rem;
-}
-
-.page-outil--grilles-evaluation .ge-editor-card {
-  padding: 0.95rem;
+.page-outil--grilles-evaluation #ge-apsa,
+.page-outil--tableau-suivi #dlg-rubric-apsa {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.65rem;
+  font: inherit;
 }
 
 .page-outil--grilles-evaluation .ge-section-head {
@@ -12311,6 +12440,15 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
   color: #64748b;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.page-outil--grilles-evaluation .ge-section-head--library {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.page-outil--grilles-evaluation .ge-section-head--library .btn {
+  flex-shrink: 0;
 }
 
 .page-outil--grilles-evaluation .ge-list {
@@ -12365,6 +12503,11 @@ dialog.tab-suivi-dialog .tab-suivi-rubric-option__points {
 .page-outil--grilles-evaluation .ge-card--catalog .ge-card__badge {
   background: #ffedd5;
   color: #9a3412;
+}
+
+.page-outil--grilles-evaluation .ge-card__badge--example {
+  background: #e0e7ff;
+  color: #4338ca;
 }
 
 .page-outil--grilles-evaluation .ge-card__meta,

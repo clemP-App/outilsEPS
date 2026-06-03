@@ -62,21 +62,24 @@
     var data = row.grid_data && typeof row.grid_data === "object" ? row.grid_data : {};
     return {
       id: row.id,
-      catalogGridId: row.id,
+      catalogGridId: row.catalogGridId || row.id,
       title: row.title || data.title || "Grille",
-      apsa: row.activity || data.apsa || "",
-      cycle: data.cycle || "",
-      niveau: row.level || data.niveau || "",
-      author: row.author_name || "",
+      apsa: row.activity || row.apsa || data.apsa || "",
+      cycle: row.cycle || data.cycle || "",
+      niveau: row.level || row.niveau || data.niveau || "",
+      author: row.author_name || row.author || "",
+      catalogSource: row.source || "",
       source: "catalog",
-      updatedAt: row.updated_at || row.created_at || "",
-      createdAt: row.created_at || "",
-      levels: Array.isArray(data.levels) ? data.levels : [],
-      items: Array.isArray(data.items) ? data.items : [],
+      updatedAt: row.updated_at || row.updatedAt || row.created_at || "",
+      createdAt: row.created_at || row.createdAt || "",
+      levels: Array.isArray(data.levels) ? data.levels : Array.isArray(row.levels) ? row.levels : [],
+      items: Array.isArray(data.items) ? data.items : Array.isArray(row.items) ? row.items : [],
       upvotes: Number(row.upvotes || 0),
       downvotes: Number(row.downvotes || 0),
       status: row.status,
       gridHash: row.grid_hash,
+      catalogBuiltin: !!row.catalogBuiltin,
+      grid_data: row.grid_data || (row.items ? row : data),
     };
   }
 
@@ -214,62 +217,88 @@
         p_voter_fingerprint: fingerprint,
       })
       .then(function (result) {
-        if (result && result.vote_type) saveLocalVote(gridId, result.vote_type);
-        if (result && result.status === "archived") saveLocalVote(gridId, null);
+        if (result && result.status === "archived") {
+          saveLocalVote(gridId, null);
+        } else if (result && result.vote_type) {
+          saveLocalVote(gridId, result.vote_type);
+        } else if (result) {
+          saveLocalVote(gridId, null);
+        }
         return result;
       });
   };
 
-  /** Fusion catalogue Supabase + JSON statique legacy si Supabase vide ou non configuré. */
-  catalog.loadCatalogWithLegacyFallback = function (legacyUrl) {
+  function fetchBuiltinCatalog(legacyUrl) {
     var legacy = legacyUrl || "../shared/evaluation-rubrics-catalog.json";
-    var configured = ns.isSupabaseConfigured && ns.isSupabaseConfigured();
-    return catalog
-      .loadPublishedCatalogGrids()
-      .then(function (online) {
-        if (online.length) return online;
-        if (configured) return [];
-        if (global.navigator && global.navigator.onLine === false) return [];
-        return fetch(legacy, { cache: "no-store" })
-        .then(function (res) {
-          if (!res.ok) throw new Error("legacy");
-          return res.json();
-        })
-        .then(function (data) {
-          var list = Array.isArray(data) ? data : data.rubrics || [];
-          return list.map(function (r) {
-            r = r && typeof r === "object" ? r : {};
-            r.source = "catalog";
-            r.upvotes = r.upvotes || 0;
-            r.downvotes = r.downvotes || 0;
-            return r;
-          });
-        })
-        .catch(function () {
-          return [];
+    if (global.navigator && global.navigator.onLine === false) {
+      return Promise.resolve([]);
+    }
+    return fetch(legacy, { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("legacy");
+        return res.json();
+      })
+      .then(function (data) {
+        var list = Array.isArray(data) ? data : data.rubrics || [];
+        return list.map(function (r) {
+          r = r && typeof r === "object" ? cloneRow(r) : {};
+          r.source = "catalog";
+          r.author = r.author || r.author_name || "OutilsEPS";
+          r.author_name = r.author;
+          r.upvotes = 0;
+          r.downvotes = 0;
+          r.catalogBuiltin = true;
+          r.catalogGridId = r.catalogGridId || r.id || "";
+          return mapRowToRubric(r);
         });
       })
+      .catch(function () {
+        return [];
+      });
+  }
+
+  function cloneRow(r) {
+    return JSON.parse(JSON.stringify(r));
+  }
+
+  function mergeCatalogLists(builtin, online) {
+    var seen = {};
+    var merged = [];
+    function keyOf(r) {
+      return String(r.gridHash || r.catalogGridId || r.id || r.title || "")
+        .toLowerCase()
+        .trim();
+    }
+    function pushUnique(r) {
+      var k = keyOf(r);
+      if (!k || seen[k]) return;
+      seen[k] = true;
+      merged.push(r);
+    }
+    (builtin || []).forEach(pushUnique);
+    (online || []).forEach(pushUnique);
+    return merged;
+  }
+
+  /** Grilles OutilsEPS (JSON) + grilles publiées Supabase. */
+  catalog.loadCatalogWithLegacyFallback = function (legacyUrl) {
+    var configured = ns.isSupabaseConfigured && ns.isSupabaseConfigured();
+    var builtinP = fetchBuiltinCatalog(legacyUrl);
+    var onlineP = configured ? catalog.loadPublishedCatalogGrids() : Promise.resolve([]);
+    return Promise.all([builtinP, onlineP])
+      .then(function (parts) {
+        return mergeCatalogLists(parts[0], parts[1]);
+      })
       .catch(function (err) {
-        if (global.navigator && global.navigator.onLine === false) return [];
-        return fetch(legacy, { cache: "no-store" })
-          .then(function (res) {
-            if (!res.ok) throw err || new Error("legacy");
-            return res.json();
-          })
-          .then(function (data) {
-            var list = Array.isArray(data) ? data : data.rubrics || [];
-            list = list.map(function (r) {
-              r = r && typeof r === "object" ? r : {};
-              r.source = "catalog";
+        return fetchBuiltinCatalog(legacyUrl).then(function (builtin) {
+          if (builtin.length) {
+            builtin.forEach(function (r) {
               r.catalogLegacyFallback = true;
-              return r;
             });
-            if (list.length) return list;
-            throw err || new Error("catalog");
-          })
-          .catch(function () {
-            throw err || new Error("catalog");
-          });
+            return builtin;
+          }
+          throw err;
+        });
       });
   };
 })(typeof window !== "undefined" ? window : global);

@@ -2,14 +2,13 @@
   "use strict";
 
   var PARAM_ID = "tableau-suivi-rubriques-v1";
-  var CATALOG_URL = "../shared/evaluation-rubrics-catalog.json";
+  var EXAMPLE_RUBRIC_ID = "local-basket-4e-exemple";
   var HANDOFF_KEY = "outils_eps_rubric_edit_handoff_v1";
-  var SUBMIT_MAIL = "mailto:clement.pignet@gmail.com";
+  var exampleDismissed = false;
   var MAX_NOTE = 20;
   var COLORS = ["#fb7185", "#fdba74", "#fde68a", "#bbf7d0", "#bfdbfe", "#ddd6fe"];
 
   var localRubrics = [];
-  var catalogRubrics = [];
   var draft = null;
   var editingId = null;
   var columnEdit = null;
@@ -18,7 +17,6 @@
 
   var statusEl = document.getElementById("ge-status");
   var searchEl = document.getElementById("ge-search");
-  var sourceEl = document.getElementById("ge-source");
   var cycleFilterEl = document.getElementById("ge-cycle");
   var countEl = document.getElementById("ge-count");
   var emptyEl = document.getElementById("ge-empty");
@@ -30,6 +28,9 @@
   var niveauEl = document.getElementById("ge-niveau");
   var editorEl = document.getElementById("ge-editor");
   var shareEl = document.getElementById("ge-share");
+  var shareWrapEl = document.getElementById("ge-share-wrap");
+  var shareReasonEl = document.getElementById("ge-share-reason");
+  var shareUpdateTimer = null;
   var importCsvEl = document.getElementById("ge-import-csv");
   var testDialog = document.getElementById("ge-test-dialog");
   var testTitleEl = document.getElementById("ge-test-title");
@@ -150,7 +151,20 @@
         },
       ];
     }
+    r.catalogVisible = !!r.catalogVisible;
+    if (r.id === EXAMPLE_RUBRIC_ID) r.isExample = true;
+    else if (r.isExample !== false) r.isExample = !!r.isExample;
     return r;
+  }
+
+  function isExampleRubric(r) {
+    return !!(r && (r.isExample || r.id === EXAMPLE_RUBRIC_ID));
+  }
+
+  function badgeLabel(r) {
+    if (isExampleRubric(r)) return "Exemple";
+    if (r.importedFromCatalog) return "Importée";
+    return "Mes grilles";
   }
 
   function blankRubric() {
@@ -184,13 +198,15 @@
 
   function defaultBasketRubric() {
     return normalizeRubric({
-      id: "local-basket-4e-exemple",
+      id: EXAMPLE_RUBRIC_ID,
       title: "Basket-ball 4e - jouer vite et juste",
       apsa: "Basket-ball",
       cycle: "4",
       niveau: "4e",
       source: "local",
       author: "Outils EPS",
+      isExample: true,
+      catalogVisible: false,
       levels: [
         { id: "l1", label: "A consolider", color: COLORS[0] },
         { id: "l2", label: "En progres", color: COLORS[1] },
@@ -244,6 +260,13 @@
 
   function setStatus(kind, text) {
     if (!statusEl) return;
+    if (!text) {
+      statusEl.hidden = true;
+      statusEl.textContent = "";
+      statusEl.className = "ge-status";
+      return;
+    }
+    statusEl.hidden = false;
     statusEl.className = "ge-status ge-status--" + (kind || "info");
     statusEl.textContent = text;
   }
@@ -267,9 +290,11 @@
         return DataManager.getParametre(PARAM_ID);
       })
       .then(function (rec) {
+        exampleDismissed = !!(rec && rec.exampleDismissed);
         if (rec && Array.isArray(rec.rubrics)) {
           localRubrics = rec.rubrics.map(normalizeRubric);
         } else {
+          exampleDismissed = false;
           localRubrics = [defaultBasketRubric()];
           return saveLocal().then(function () {
             return localRubrics;
@@ -291,6 +316,7 @@
     return DataManager.saveParametre({
       id: PARAM_ID,
       rubrics: localRubrics.map(normalizeRubric),
+      exampleDismissed: exampleDismissed,
       updatedAt: nowIso(),
     });
   }
@@ -370,44 +396,43 @@
     });
   }
 
-  function loadCatalog() {
-    catalogRubrics = [];
-    if (navigator && navigator.onLine === false) {
-      setStatus("warn", "Hors ligne : les grilles personnelles restent disponibles. Connexion nécessaire pour le catalogue.");
-      return Promise.resolve([]);
-    }
-    var loader =
-      window.OutilsEPS &&
+  function updateShareCatalogOption() {
+    if (!shareEl || !shareWrapEl) return;
+    var rubric = readEditor();
+    var reasons = [];
+    if (
+      !window.OutilsEPS ||
+      !window.OutilsEPS.isSupabaseConfigured ||
+      !window.OutilsEPS.isSupabaseConfigured()
+    ) {
+      reasons.push("Le catalogue en ligne n'est pas configuré sur ce site.");
+    } else if (
       window.OutilsEPS.catalog &&
-      window.OutilsEPS.catalog.loadCatalogWithLegacyFallback
-        ? window.OutilsEPS.catalog.loadCatalogWithLegacyFallback(
-            window.OUTILS_EPS_EVAL_CATALOG_URL || CATALOG_URL
-          )
-        : fetch(window.OUTILS_EPS_EVAL_CATALOG_URL || CATALOG_URL, { cache: "no-store" })
-            .then(function (res) {
-              if (!res.ok) throw new Error("catalog");
-              return res.json();
-            })
-            .then(function (data) {
-              return Array.isArray(data) ? data : data.rubrics || [];
-            });
-    return loader
-      .then(function (list) {
-        catalogRubrics = (list || []).map(function (r) {
-          var rub = normalizeRubric(r);
-          rub.source = "catalog";
-          if (r.catalogGridId) rub.catalogGridId = r.catalogGridId;
-          if (r.upvotes != null) rub.catalogUpvotes = r.upvotes;
-          if (r.downvotes != null) rub.catalogDownvotes = r.downvotes;
-          return rub;
-        });
-        return catalogRubrics;
-      })
-      .catch(function () {
-        catalogRubrics = [];
-        setStatus("warn", "Catalogue en ligne non chargé. Connexion nécessaire pour les grilles publiées.");
-        return [];
-      });
+      window.OutilsEPS.catalog.validateGridForCatalog
+    ) {
+      var validation = window.OutilsEPS.catalog.validateGridForCatalog(rubric);
+      if (!validation.valid) reasons = validation.errors;
+    }
+    if (reasons.length) {
+      shareEl.checked = false;
+      shareEl.disabled = true;
+      shareWrapEl.classList.add("ge-share-wrap--disabled");
+      if (shareReasonEl) {
+        shareReasonEl.textContent =
+          reasons.length > 1
+            ? reasons[0] + " (" + (reasons.length - 1) + " autre(s) critère(s))."
+            : reasons[0];
+      }
+    } else {
+      shareEl.disabled = false;
+      shareWrapEl.classList.remove("ge-share-wrap--disabled");
+      if (shareReasonEl) shareReasonEl.textContent = "";
+    }
+  }
+
+  function scheduleShareCatalogUpdate() {
+    if (shareUpdateTimer) clearTimeout(shareUpdateTimer);
+    shareUpdateTimer = setTimeout(updateShareCatalogOption, 100);
   }
 
   function proposeToCatalog(rubric, options) {
@@ -440,66 +465,25 @@
 
   function filteredRubrics() {
     var q = norm(searchEl ? searchEl.value : "");
-    var source = sourceEl ? sourceEl.value : "";
     var cycle = cycleFilterEl ? cycleFilterEl.value : "";
-    var list = localRubrics
-      .map(function (r) {
-        var x = normalizeRubric(r);
-        x.source = "local";
-        return x;
-      })
-      .concat(
-        catalogRubrics.map(function (r) {
-          var x = normalizeRubric(r);
-          x.source = "catalog";
-          return x;
-        })
-      );
+    var list = localRubrics.map(function (r) {
+      var x = normalizeRubric(r);
+      x.source = "local";
+      return x;
+    });
     list = list.filter(function (r) {
-      if (source && r.source !== source) return false;
       if (cycle && normalizeCycle(r.cycle) !== cycle) return false;
       if (!q) return true;
       var hay = norm([r.title, r.apsa, cycleLabel(r.cycle), r.niveau, r.author].join(" "));
       return hay.indexOf(q) !== -1;
     });
     list.sort(function (a, b) {
-      if (a.source !== b.source) return a.source === "local" ? -1 : 1;
-      var bw = (b.rating.score || 0) * Math.log((b.rating.votes || 0) + 1);
-      var aw = (a.rating.score || 0) * Math.log((a.rating.votes || 0) + 1);
-      return bw - aw || a.title.localeCompare(b.title, "fr", { sensitivity: "base" });
+      return (
+        String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")) ||
+        a.title.localeCompare(b.title, "fr", { sensitivity: "base" })
+      );
     });
     return list;
-  }
-
-  function feedbackUrl(rubric, typeAvis) {
-    var r = normalizeRubric(rubric);
-    var title = typeAvis ? "Avis catalogue evaluation - " + r.title : "Proposition grille evaluation - " + r.title;
-    var body =
-      (typeAvis ? "Avis : " + typeAvis + "\n\n" : "Merci de proposer cette grille au catalogue.\n\n") +
-      "APSA : " +
-      r.apsa +
-      "\nCycle : " +
-      cycleLabel(r.cycle) +
-      "\nNiveau : " +
-      r.niveau +
-      "\n\nJSON :\n" +
-      JSON.stringify(r, null, 2);
-    var configured = window.OUTILS_EPS_EVAL_SUBMIT_URL || "";
-    if (configured) {
-      return (
-        configured +
-        (configured.indexOf("?") === -1 ? "?" : "&") +
-        "title=" +
-        encodeURIComponent(title) +
-        "&body=" +
-        encodeURIComponent(body)
-      );
-    }
-    return SUBMIT_MAIL + "?subject=" + encodeURIComponent(title) + "&body=" + encodeURIComponent(body);
-  }
-
-  function openProposal(rubric) {
-    proposeToCatalog(rubric, { shareToCatalog: true });
   }
 
   function renderCard(r) {
@@ -512,7 +496,8 @@
     title.textContent = r.title;
     var badge = document.createElement("span");
     badge.className = "ge-card__badge";
-    badge.textContent = r.source === "local" ? "Mes grilles" : "Catalogue";
+    badge.textContent = badgeLabel(r);
+    if (isExampleRubric(r)) badge.className = "ge-card__badge ge-card__badge--example";
     top.appendChild(title);
     top.appendChild(badge);
     card.appendChild(top);
@@ -536,29 +521,18 @@
 
     var actions = document.createElement("div");
     actions.className = "ge-card__actions";
-    if (r.source === "local") {
-      actions.appendChild(actionButton("Modifier", function () {
-        setDraft(r, r.id);
-      }));
-    } else {
-      actions.appendChild(actionButton("Importer", function () {
-        duplicateRubric(r, true);
-      }));
-    }
+    actions.appendChild(actionButton("Modifier", function () {
+      setDraft(r, r.id);
+    }));
     actions.appendChild(actionButton("Dupliquer", function () {
       duplicateRubric(r, true);
     }));
     actions.appendChild(actionButton("Tester", function () {
       openTest(r);
     }));
-    if (r.source === "local") {
-      actions.appendChild(actionButton("Publier", function () {
-        openProposal(r);
-      }));
-      actions.appendChild(actionButton("Supprimer", function () {
-        deleteRubric(r.id);
-      }, "danger"));
-    }
+    actions.appendChild(actionButton("Supprimer", function () {
+      deleteRubric(r.id);
+    }, "danger"));
     card.appendChild(actions);
     return card;
   }
@@ -710,6 +684,7 @@
     });
     table.appendChild(tbody);
     editorEl.appendChild(table);
+    scheduleShareCatalogUpdate();
   }
 
   function smallDeleteButton(handler) {
@@ -725,12 +700,19 @@
     draft = normalizeRubric(rubric || blankRubric());
     editingId = localId || null;
     if (titleEl) titleEl.value = draft.title;
-    if (apsaEl) apsaEl.value = draft.apsa;
+    if (apsaEl) {
+      if (window.OutilsEPS && window.OutilsEPS.fillApsaSelect) {
+        window.OutilsEPS.fillApsaSelect(apsaEl, { selected: draft.apsa });
+      } else {
+        apsaEl.value = draft.apsa;
+      }
+    }
     if (cycleEl) cycleEl.value = normalizeCycle(draft.cycle);
     if (niveauEl) niveauEl.value = draft.niveau;
-    if (shareEl) shareEl.checked = true;
+    if (shareEl) shareEl.checked = !!draft.catalogVisible;
     if (modeEl) modeEl.textContent = editingId ? "Modification d'une grille personnelle" : "Nouvelle grille";
     renderEditor();
+    updateShareCatalogOption();
   }
 
   function consumeColumnHandoff() {
@@ -768,6 +750,10 @@
     r.id = id("rubric");
     r.title = cleanName(r.title + " copie");
     r.source = "local";
+    r.catalogVisible = false;
+    delete r.isExample;
+    delete r.importedFromCatalog;
+    delete r.catalogSourceId;
     r.createdAt = nowIso();
     r.updatedAt = r.createdAt;
     localRubrics.push(r);
@@ -784,6 +770,7 @@
     })[0];
     if (!r) return;
     if (!confirm("Supprimer la grille « " + r.title + " » ?")) return;
+    if (rubricId === EXAMPLE_RUBRIC_ID) exampleDismissed = true;
     localRubrics = localRubrics.filter(function (item) {
       return item.id !== rubricId;
     });
@@ -797,9 +784,13 @@
   function saveDraft(copy) {
     var r = readEditor();
     r.source = "local";
+    r.catalogVisible = !!(shareEl && shareEl.checked);
     r.updatedAt = nowIso();
     if (copy || !editingId) {
       r.id = copy || !r.id ? id("rubric") : r.id;
+      if (copy || r.id !== EXAMPLE_RUBRIC_ID) {
+        delete r.isExample;
+      }
       r.createdAt = r.createdAt || nowIso();
       localRubrics.push(r);
       editingId = r.id;
@@ -819,7 +810,7 @@
         });
       }
       setStatus("ok", "Grille enregistrée. Elle est disponible dans Appel et notes.");
-      if (shareEl && shareEl.checked) {
+      if (r.catalogVisible) {
         proposeToCatalog(r, { shareToCatalog: true });
       }
     });
@@ -1038,7 +1029,7 @@
   }
 
   function initEvents() {
-    [searchEl, sourceEl, cycleFilterEl].forEach(function (el) {
+    [searchEl, cycleFilterEl].forEach(function (el) {
       if (!el) return;
       el.addEventListener("input", renderList);
       el.addEventListener("change", renderList);
@@ -1076,36 +1067,45 @@
     ["ge-title", "ge-apsa", "ge-cycle-edit", "ge-niveau"].forEach(function (idAttr) {
       var el = document.getElementById(idAttr);
       if (!el) return;
+      el.addEventListener("input", scheduleShareCatalogUpdate);
       el.addEventListener("change", function () {
         if (draft) draft = applyMetaToDraft(readEditor());
+        scheduleShareCatalogUpdate();
       });
     });
+    if (editorEl) {
+      editorEl.addEventListener("input", scheduleShareCatalogUpdate);
+      editorEl.addEventListener("change", scheduleShareCatalogUpdate);
+    }
     document.getElementById("ge-test-close").addEventListener("click", closeTest);
     document.getElementById("ge-test-close-x").addEventListener("click", closeTest);
     document.getElementById("ge-test-clear").addEventListener("click", function () {
       testValue = { selected: {}, points: 0, note: null };
       renderTest(currentTestRubric || readEditor());
     });
-    window.addEventListener("online", function () {
-      loadCatalog().then(function () {
-        renderList();
-      });
-    });
+  }
+
+  function initApsaSelect() {
+    if (apsaEl && window.OutilsEPS && window.OutilsEPS.fillApsaSelect) {
+      window.OutilsEPS.fillApsaSelect(apsaEl);
+    }
   }
 
   function init() {
+    initApsaSelect();
     initEvents();
     setDraft(blankRubric(), null);
-    Promise.all([loadLocal(), loadCatalog()]).then(function () {
+    loadLocal().then(function () {
       var openedFromTable = consumeColumnHandoff();
       renderList();
       if (openedFromTable) return;
-      if (catalogRubrics.length) {
-        setStatus("ok", "Catalogue chargé. Vos grilles restent enregistrées sur cet appareil.");
-      } else if (localRubrics.length) {
-        setStatus("warn", "Mes grilles chargées. Connexion nécessaire pour le catalogue.");
+      var params = new URLSearchParams(window.location.search || "");
+      if (params.get("imported") === "1") {
+        setStatus("ok", "Grille importée dans votre bibliothèque.");
+      } else if (!localRubrics.length) {
+        setStatus("info", "Créez votre première grille ou parcourez le catalogue en ligne.");
       } else {
-        setStatus("info", "Créez votre première grille ou chargez le catalogue en ligne.");
+        setStatus();
       }
     });
   }

@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "68";
+var APP_CACHE_VERSION = "77";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -117,6 +117,8 @@ var PRECACHE = [
   "./shared/classe-csv-import.js",
   "./shared/eleve-display.js",
   "./shared/eleve-labels.js",
+  "./shared/eps-apsa-list.js",
+  "./shared/evaluation-rubric-library.js",
   "./shared/import-detail-render.js",
   "./shared/import-eleve-associate.js",
   "./shared/import-record-core.js",

@@ -11,18 +11,16 @@
   </head>
   <body class="app app--tool">
     <div class="page-outil page-outil--eval-catalog">
-      <header class="page-outil__header eval-catalog-hero">
-        <a class="tool-back" href="grilles-evaluation.html"
-          ><span class="tool-back__chev" aria-hidden="true">‹</span> Grilles d'évaluation</a
+      <header class="page-outil__header">
+        <a class="tool-back tool-back--return" href="grilles-evaluation.html" aria-label="Retour"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span><span class="tool-back__label">Retour</span></a
         >
-        <div>
-          <p class="eval-catalog-kicker">Connexion nécessaire</p>
-          <h1>Catalogue des évaluations</h1>
-          <p class="eval-catalog-lead">
-            Recherchez une grille publiée, repérez les modèles les plus utiles et proposez vos améliorations.
-          </p>
-        </div>
+        <h1>Catalogue des évaluations</h1>
       </header>
+
+      <p class="hint eval-catalog-intro">
+        Consultez les grilles publiées, prévisualisez-les et importez-les dans votre bibliothèque.
+      </p>
 
       <p id="eval-catalog-status" class="eval-catalog-status" role="status">
         Chargement du catalogue en ligne...
@@ -64,10 +62,33 @@
       <div id="eval-catalog-list" class="eval-catalog-list"></div>
     </div>
 
+    <dialog id="eval-catalog-view-dialog" class="tab-suivi-dialog tab-suivi-dialog--rubric-cell eval-catalog-view-dialog">
+      <form method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title" id="eval-catalog-view-title">Grille</h2>
+            <p class="tab-suivi-dialog__intro" id="eval-catalog-view-meta"></p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="eval-catalog-view-close-x" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body tab-suivi-rubric-cell-body">
+          <div id="eval-catalog-view-grid" class="tab-suivi-rubric-grid-wrap eval-catalog-view-grid"></div>
+        </div>
+        <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
+          <button type="button" class="btn btn--ghost" id="eval-catalog-view-import">Importer dans ma bibliothèque</button>
+          <button type="button" class="btn btn--primary" id="eval-catalog-view-close">Fermer</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <script src="../data-manager.js"></script>
     <script src="../shared/supabase-config.js"></script>
     <script src="../shared/supabaseClient.js"></script>
     <script src="../shared/catalog-grid-validation.js"></script>
     <script src="../shared/catalog-grids.js"></script>
+    <script src="../shared/evaluation-rubric-library.js"></script>
     <script src="catalogue-evaluations.js"></script>
     <script src="../goatcounter.js"></script>
   </body>
