@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Créer, modifier, dupliquer et publier des grilles d'évaluation EPS."
+    />
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Grilles d'évaluation - Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--grilles-evaluation">
+      <header class="page-outil__header ge-hero">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <div>
+          <p class="ge-kicker">Modèles d'évaluation</p>
+          <h1>Grilles d'évaluation</h1>
+          <p class="ge-lead">
+            Créez vos grilles, modifiez vos modèles, dupliquez une grille du catalogue et proposez-la aux collègues.
+          </p>
+        </div>
+      </header>
+
+      <p id="ge-status" class="ge-status" role="status">Chargement des grilles...</p>
+
+      <p class="ge-use-note">
+        Pour utiliser une grille avec une classe, ouvrez <a href="tableau-suivi.html">Appel et notes</a>,
+        puis créez une colonne <strong>Grille d'évaluation</strong>.
+      </p>
+
+      <section class="ge-toolbar" aria-label="Recherche et actions">
+        <div class="field-group ge-search">
+          <label class="field-label" for="ge-search">Rechercher</label>
+          <input
+            type="search"
+            id="ge-search"
+            autocomplete="off"
+            placeholder="APSA, cycle, niveau, titre..."
+          />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="ge-source">Source</label>
+          <select id="ge-source">
+            <option value="">Toutes</option>
+            <option value="local">Mes grilles</option>
+            <option value="catalog">Catalogue</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="ge-cycle">Cycle</label>
+          <select id="ge-cycle">
+            <option value="">Tous</option>
+            <option value="3">Cycle 3</option>
+            <option value="4">Cycle 4</option>
+            <option value="lycee">Lycée</option>
+          </select>
+        </div>
+        <div class="ge-toolbar__actions">
+          <button type="button" class="btn btn--primary" id="ge-new">Nouvelle grille</button>
+          <label class="btn btn--ghost ge-import-btn" for="ge-import-csv">Import CSV</label>
+          <input type="file" id="ge-import-csv" accept=".csv,text/csv" hidden />
+        </div>
+      </section>
+
+      <main class="ge-layout">
+        <section class="ge-library" aria-labelledby="ge-library-title">
+          <div class="ge-section-head">
+            <h2 id="ge-library-title">Bibliothèque</h2>
+            <p id="ge-count" aria-live="polite"></p>
+          </div>
+          <p id="ge-empty" class="empty-state" hidden>Aucune grille ne correspond à cette recherche.</p>
+          <div id="ge-list" class="ge-list"></div>
+        </section>
+
+        <section class="ge-editor-card" aria-labelledby="ge-editor-title">
+          <div class="ge-section-head">
+            <h2 id="ge-editor-title">Éditeur</h2>
+            <p id="ge-editor-mode">Nouvelle grille</p>
+          </div>
+
+          <div class="ge-meta">
+            <div class="field-group">
+              <label class="field-label" for="ge-title">Nom</label>
+              <input type="text" id="ge-title" maxlength="80" placeholder="Ex. Badminton - opposition" />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="ge-apsa">APSA</label>
+              <input type="text" id="ge-apsa" maxlength="60" placeholder="Badminton, Danse..." />
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="ge-cycle-edit">Cycle</label>
+              <select id="ge-cycle-edit">
+                <option value="3">Cycle 3</option>
+                <option value="4">Cycle 4</option>
+                <option value="lycee">Lycée</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label" for="ge-niveau">Niveau</label>
+              <input type="text" id="ge-niveau" maxlength="40" placeholder="5e, 2de, 1re..." />
+            </div>
+          </div>
+
+          <div class="ge-editor-top">
+            <p class="hint">
+              Chaque ligne est un item. Chaque colonne est un niveau de maîtrise avec ses points.
+            </p>
+            <div class="ge-editor-actions">
+              <button type="button" class="btn btn--ghost btn--small" id="ge-add-row">+ Ligne</button>
+              <button type="button" class="btn btn--ghost btn--small" id="ge-add-col">+ Colonne</button>
+            </div>
+          </div>
+
+          <div id="ge-editor" class="ge-editor" aria-label="Éditeur de grille"></div>
+
+          <label class="ge-share">
+            <input type="checkbox" id="ge-share" checked />
+            Proposer cette grille sur le catalogue enseignant
+          </label>
+          <p class="ge-share-hint hint">
+            Cette grille pourra être partagée anonymement dans le catalogue enseignant.
+            <a href="catalogue-evaluations.html">Voir le catalogue</a>
+          </p>
+
+          <div class="ge-savebar">
+            <button type="button" class="btn btn--ghost" id="ge-test">Tester</button>
+            <button type="button" class="btn btn--ghost" id="ge-save-copy">Enregistrer une copie</button>
+            <button type="button" class="btn btn--primary" id="ge-save">Enregistrer</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="ge-test-dialog" class="tab-suivi-dialog tab-suivi-dialog--rubric-cell">
+      <form method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title" id="ge-test-title">Test</h2>
+            <p class="tab-suivi-dialog__intro" id="ge-test-meta"></p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="ge-test-close-x" aria-label="Fermer">×</button>
+        </header>
+        <div class="tab-suivi-dialog__body tab-suivi-rubric-cell-body">
+          <div class="tab-suivi-rubric-score" id="ge-test-score" aria-live="polite"></div>
+          <div id="ge-test-grid" class="tab-suivi-rubric-grid-wrap"></div>
+        </div>
+        <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
+          <button type="button" class="btn btn--ghost" id="ge-test-clear">Effacer</button>
+          <button type="button" class="btn btn--primary" id="ge-test-close">Fermer</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <script src="../data-manager.js"></script>
+    <script src="../shared/supabase-config.js"></script>
+    <script src="../shared/supabaseClient.js"></script>
+    <script src="../shared/catalog-grid-validation.js"></script>
+    <script src="../shared/catalog-grids.js"></script>
+    <script src="grilles-evaluation.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      if (window.ToolInfo) {
+        ToolInfo.init({
+          intro:
+            "Cet outil sert à préparer les modèles de grilles utilisés ensuite dans Appel et notes.",
+          sections: [
+            {
+              title: "Mes grilles",
+              list: [
+                "Enregistrez vos modèles sur cet appareil.",
+                "Modifiez-les, dupliquez-les ou supprimez-les depuis la bibliothèque.",
+                "Les grilles personnelles apparaissent ensuite dans la colonne Grille d'évaluation.",
+              ],
+            },
+            {
+              title: "Catalogue",
+              list: [
+                "Une connexion est nécessaire pour charger les grilles publiées.",
+                "Dupliquez une grille du catalogue pour l'adapter à votre classe.",
+                "La case cochée propose la grille au catalogue en ligne (Supabase), sans compte.",
+              ],
+            },
+          ],
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a2744" />
+    <title>Catalogue des évaluations — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--eval-catalog">
+      <header class="page-outil__header eval-catalog-hero">
+        <a class="tool-back" href="grilles-evaluation.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Grilles d'évaluation</a
+        >
+        <div>
+          <p class="eval-catalog-kicker">Connexion nécessaire</p>
+          <h1>Catalogue des évaluations</h1>
+          <p class="eval-catalog-lead">
+            Recherchez une grille publiée, repérez les modèles les plus utiles et proposez vos améliorations.
+          </p>
+        </div>
+      </header>
+
+      <p id="eval-catalog-status" class="eval-catalog-status" role="status">
+        Chargement du catalogue en ligne...
+      </p>
+
+      <section class="eval-catalog-toolbar" aria-label="Recherche et filtres">
+        <div class="field-group eval-catalog-search">
+          <label class="field-label" for="eval-catalog-search">Rechercher</label>
+          <input
+            type="search"
+            id="eval-catalog-search"
+            autocomplete="off"
+            placeholder="APSA, cycle, lycée, niveau, auteur..."
+          />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="eval-catalog-cycle">Cycle</label>
+          <select id="eval-catalog-cycle">
+            <option value="">Tous</option>
+            <option value="3">Cycle 3</option>
+            <option value="4">Cycle 4</option>
+            <option value="lycee">Lycée</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="eval-catalog-sort">Trier</label>
+          <select id="eval-catalog-sort">
+            <option value="votes">Mieux notées</option>
+            <option value="recent">Récentes</option>
+            <option value="title">A → Z</option>
+          </select>
+        </div>
+      </section>
+
+      <p id="eval-catalog-count" class="eval-catalog-count" aria-live="polite"></p>
+      <p id="eval-catalog-empty" class="empty-state" hidden>
+        Aucune grille ne correspond à cette recherche.
+      </p>
+      <div id="eval-catalog-list" class="eval-catalog-list"></div>
+    </div>
+
+    <script src="../shared/supabase-config.js"></script>
+    <script src="../shared/supabaseClient.js"></script>
+    <script src="../shared/catalog-grid-validation.js"></script>
+    <script src="../shared/catalog-grids.js"></script>
+    <script src="catalogue-evaluations.js"></script>
+    <script src="../goatcounter.js"></script>
+  </body>
+</html>

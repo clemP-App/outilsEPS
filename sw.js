@@ -35,6 +35,21 @@ function isStaticAsset(url) {
   return /\.(css|js|png|jpe?g|webp|svg|woff2?|webmanifest)$/i.test(url.pathname);
 }
 
+function isOnlineOnlyEvalCatalog(url) {
+  return (
+    url.pathname.endsWith("/outils/catalogue-evaluations.html") ||
+    url.pathname.endsWith("/outils/catalogue-evaluations.js") ||
+    url.pathname.endsWith("/shared/evaluation-rubrics-catalog.json")
+  );
+}
+
+function onlineOnlyResponse() {
+  return new Response(
+    "<!doctype html><html lang=\"fr\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Connexion nécessaire</title><body style=\"font-family:system-ui,sans-serif;margin:2rem;line-height:1.5\"><h1>Connexion nécessaire</h1><p>Le catalogue des évaluations est disponible uniquement en ligne.</p></body></html>",
+    { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } }
+  );
+}
+
 function putInCache(request, response) {
   if (!response || response.status !== 200 || response.type !== "basic") return;
   caches.open(CACHE_NAME).then(function (cache) {
@@ -107,6 +122,11 @@ self.addEventListener("fetch", function (event) {
 
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+
+  if (isOnlineOnlyEvalCatalog(url)) {
+    event.respondWith(fetch(event.request).catch(onlineOnlyResponse));
+    return;
+  }
 
   if (isNavigationRequest(event.request)) {
     event.respondWith(networkFirstNavigation(event.request));

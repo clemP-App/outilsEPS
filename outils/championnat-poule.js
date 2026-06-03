@@ -673,10 +673,14 @@
     var val = parseScoreInput(valeurBrute);
     if (cote === "home") m.homeScore = val;
     else m.awayScore = val;
-    if (m.homeScore == null && m.awayScore != null) {
-      m.homeScore = 0;
-    } else if (m.awayScore == null && m.homeScore != null) {
-      m.awayScore = 0;
+    if (val == null && cote === "home" && m.awayScore === 0) {
+      m.awayScore = null;
+      var awayInput = matchListEl.querySelector('input.match-row__score[data-match-id="' + matchId + '"][data-side="away"]');
+      if (awayInput) awayInput.value = "";
+    } else if (val == null && cote === "away" && m.homeScore === 0) {
+      m.homeScore = null;
+      var homeInput = matchListEl.querySelector('input.match-row__score[data-match-id="' + matchId + '"][data-side="home"]');
+      if (homeInput) homeInput.value = "";
     }
     if (m.homeScore != null || m.awayScore != null) {
       closeGestionAccordionsOnScoreEntry();
@@ -1650,7 +1654,7 @@
       return poolOk && searchOk;
     });
     var remaining = filtered.filter(function (m) {
-      return m.homeScore == null || m.awayScore == null;
+      return m.homeScore == null && m.awayScore == null;
     }).length;
     if (accordionMatchsTitleEl) {
       accordionMatchsTitleEl.textContent = "⚽ Matchs (" + remaining + " restants)";

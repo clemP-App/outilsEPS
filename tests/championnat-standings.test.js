@@ -41,3 +41,18 @@ test("classement : match sans score ignoré", function () {
   assert.equal(rows[0].mj, 0);
   assert.equal(rows[0].pts, 0);
 });
+
+test("classement : score partiel compte le score vide comme 0", function () {
+  var teams = [
+    { id: "a", name: "Alpha" },
+    { id: "b", name: "Bravo" },
+  ];
+  var matches = [{ id: "m1", homeId: "a", awayId: "b", homeScore: 3, awayScore: null }];
+  var rows = standings.computeStandingsFromData(teams, matches);
+  assert.equal(rows[0].teamId, "a");
+  assert.equal(rows[0].mj, 1);
+  assert.equal(rows[0].pour, 3);
+  assert.equal(rows[0].contre, 0);
+  assert.equal(rows[0].pts, 3);
+  assert.equal(rows[1].mj, 1);
+});

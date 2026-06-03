@@ -30,7 +30,7 @@
 
       <details class="card card--accordion tab-suivi-acc" id="acc-tableaux">
         <summary class="card--accordion__summary">
-          <span class="card--accordion__title" id="lbl-tableaux">Mes appels</span>
+          <span class="card--accordion__title" id="lbl-tableaux">Mes tableaux</span>
           <span class="card--accordion__chev" aria-hidden="true"></span>
         </summary>
         <div class="card--accordion__panel">
@@ -181,6 +181,15 @@
                   <span class="tab-suivi-type-card__hint">À partir d’autres colonnes chiffres</span>
                 </span>
               </button>
+              <button type="button" class="tab-suivi-type-card" data-dlg-col-type="rubric">
+                <span class="tab-suivi-type-card__icon tab-suivi-type-card__icon--rubric" aria-hidden="true"
+                  >▦</span
+                >
+                <span class="tab-suivi-type-card__text">
+                  <span class="tab-suivi-type-card__label">Grille d’évaluation</span>
+                  <span class="tab-suivi-type-card__hint">Items, niveaux de maîtrise et note calculée</span>
+                </span>
+              </button>
             </div>
           </section>
         </div>
@@ -269,6 +278,134 @@
         <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
           <button type="button" class="btn btn--ghost" id="btn-calc-annuler">Annuler</button>
           <button type="submit" class="btn btn--primary" id="btn-calc-valider">Créer la colonne</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="dialog-tab-suivi-rubric-catalog" class="tab-suivi-dialog tab-suivi-dialog--rubric-catalog">
+      <form id="form-tab-suivi-rubric-catalog" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title" id="dlg-rubric-dialog-title">Grille d’évaluation</h2>
+            <p class="tab-suivi-dialog__intro" id="dlg-rubric-dialog-intro">
+              Choisissez un exemple, importez une grille CSV ou enregistrez votre propre modèle.
+            </p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-rubric-catalog-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body tab-suivi-rubric-catalog">
+          <div class="tab-suivi-rubric-online" id="dlg-rubric-online-status" role="status">
+            Catalogue en ligne : connexion nécessaire pour charger les grilles publiées.
+          </div>
+          <div class="field-group" id="dlg-rubric-search-wrap">
+            <label class="field-label" for="dlg-rubric-search">Rechercher une grille</label>
+            <input
+              type="search"
+              id="dlg-rubric-search"
+              autocomplete="off"
+              placeholder="APSA, cycle, lycée, badminton..."
+            />
+          </div>
+          <a
+            class="btn btn--ghost btn--labeled tab-suivi-rubric-page-link"
+            id="dlg-rubric-page-link"
+            href="grilles-evaluation.html"
+          >
+            <span class="btn__icon" aria-hidden="true">★</span>
+            <span class="btn__text">Gérer les grilles</span>
+          </a>
+          <section class="tab-suivi-dialog__block" id="dlg-rubric-catalog-section">
+            <h3 class="tab-suivi-dialog__block-title">Mes grilles</h3>
+            <div id="dlg-rubric-catalog-list" class="tab-suivi-rubric-cards"></div>
+            <p id="dlg-rubric-catalog-empty" class="tab-suivi-dialog__empty" hidden>
+              Aucun modèle disponible.
+            </p>
+          </section>
+
+          <section class="tab-suivi-dialog__block" id="dlg-rubric-editor-section">
+            <h3 class="tab-suivi-dialog__block-title" id="dlg-rubric-editor-section-title">Importer ou créer</h3>
+            <div class="tab-suivi-rubric-import-meta">
+              <div class="field-group">
+                <label class="field-label" for="dlg-rubric-title">Nom</label>
+                <input type="text" id="dlg-rubric-title" maxlength="80" placeholder="Ex. Badminton - opposition" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="dlg-rubric-apsa">APSA</label>
+                <input type="text" id="dlg-rubric-apsa" maxlength="60" placeholder="Badminton, Danse..." />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="dlg-rubric-cycle">Cycle</label>
+                <select id="dlg-rubric-cycle">
+                  <option value="3">Cycle 3</option>
+                  <option value="4">Cycle 4</option>
+                  <option value="lycee">Lycée</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="dlg-rubric-niveau">Niveau</label>
+                <input type="text" id="dlg-rubric-niveau" maxlength="40" placeholder="5e, 2de, 1re..." />
+              </div>
+            </div>
+            <div class="tab-suivi-rubric-editor-head">
+              <div>
+                <h4 class="tab-suivi-rubric-editor-title">Éditeur de grille</h4>
+                <p class="hint">
+                  Modifiez les intitulés, les points et les descriptions. Ajoutez autant de lignes et de colonnes que nécessaire.
+                </p>
+              </div>
+              <div class="tab-suivi-rubric-editor-actions">
+                <label class="btn btn--ghost btn--small tab-suivi-rubric-file-btn" for="dlg-rubric-file">
+                  Import CSV
+                </label>
+                <input type="file" id="dlg-rubric-file" accept=".csv,text/csv" hidden />
+                <button type="button" class="btn btn--ghost btn--small" id="btn-rubric-add-row">+ Ligne</button>
+                <button type="button" class="btn btn--ghost btn--small" id="btn-rubric-add-col">+ Colonne</button>
+              </div>
+            </div>
+            <div id="dlg-rubric-editor" class="tab-suivi-rubric-editor" aria-label="Éditeur de grille"></div>
+            <label class="tab-suivi-col-note-check tab-suivi-rubric-share">
+              <input type="checkbox" id="dlg-rubric-share" checked />
+              Proposer cette grille sur le catalogue enseignant
+            </label>
+            <p class="hint tab-suivi-rubric-share-hint">
+              Cette grille pourra être partagée anonymement dans le catalogue enseignant.
+            </p>
+            <div class="tab-suivi-rubric-import-actions">
+              <button type="button" class="btn btn--ghost" id="btn-rubric-test-import">Tester</button>
+              <button type="button" class="btn btn--primary" id="btn-rubric-create-import">
+                Créer la colonne
+              </button>
+            </div>
+          </section>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="dialog-tab-suivi-rubric-cell" class="tab-suivi-dialog tab-suivi-dialog--rubric-cell">
+      <form id="form-tab-suivi-rubric-cell" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title" id="dlg-rubric-cell-title">Évaluation</h2>
+            <p class="tab-suivi-dialog__intro" id="dlg-rubric-cell-meta"></p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-rubric-cell-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body tab-suivi-rubric-cell-body">
+          <div class="tab-suivi-rubric-score" id="dlg-rubric-score" aria-live="polite"></div>
+          <div id="dlg-rubric-grid" class="tab-suivi-rubric-grid-wrap"></div>
+        </div>
+        <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
+          <button type="button" class="btn btn--ghost" id="btn-rubric-cell-clear">Effacer</button>
+          <div class="tab-suivi-rubric-nav" id="dlg-rubric-nav" aria-label="Navigation entre élèves" hidden>
+            <button type="button" class="btn btn--ghost btn--small" id="btn-rubric-cell-prev">← Élève précédent</button>
+            <span class="tab-suivi-rubric-nav__count" id="dlg-rubric-nav-count" aria-live="polite"></span>
+            <button type="button" class="btn btn--ghost btn--small" id="btn-rubric-cell-next">Élève suivant →</button>
+          </div>
+          <button type="button" class="btn btn--primary" id="btn-rubric-cell-close">Fermer</button>
         </footer>
       </form>
     </dialog>
@@ -424,6 +561,17 @@
             </label>
             <p class="hint">Pour un rendu, un matériel… qui n’est pas un appel de présence.</p>
           </div>
+          <div class="field-group tab-suivi-col-rubric-opt" id="dlg-col-rubric-wrap" hidden>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-col-rubric-test">
+              <span class="btn__icon" aria-hidden="true">▦</span>
+              <span class="btn__text">Tester la grille</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-col-rubric-edit">
+              <span class="btn__icon" aria-hidden="true">✎</span>
+              <span class="btn__text">Modifier la grille</span>
+            </button>
+            <p class="hint">La note est calculée automatiquement à partir des cases sélectionnées.</p>
+          </div>
           <section class="tab-suivi-col-dlg-block" aria-labelledby="dlg-col-lbl-position">
             <h3 id="dlg-col-lbl-position" class="tab-suivi-dialog__block-title">Position</h3>
             <div class="tab-suivi-col-dlg-move">
@@ -462,6 +610,10 @@
     <script src="../shared/eleve-display.js"></script>
     <script src="../class-import.js"></script>
     <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="../shared/supabase-config.js"></script>
+    <script src="../shared/supabaseClient.js"></script>
+    <script src="../shared/catalog-grid-validation.js"></script>
+    <script src="../shared/catalog-grids.js"></script>
     <script src="tableau-suivi.js"></script>
     <script src="../tool-info.js"></script>
     <script>
@@ -483,6 +635,7 @@
               "Bouton 👟 : historique des oublis de tenue et ajout d’un nouvel oubli.",
               "Dans une case nombre, touche Entrée pour passer à l’élève suivant.",
               "Cochez « C’est une note » sur une colonne chiffre (▼) pour le barème /20 et les moyennes ; laissez décoché pour une mesure (VMA, temps…).",
+              "Colonne Grille d’évaluation : choisissez un exemple, importez un CSV, testez la grille puis cliquez la note d’un élève pour sélectionner ses niveaux.",
               "Filtrez l’affichage : Tout, Note, Appel ou Autre (mesures, sommes…).",
               "Le bouton ▼ au-dessus d’une colonne permet de la renommer, la déplacer ou la remplir.",
               "« Nouvelle colonne » ajoute une colonne ; « Tri » réordonne les élèves.",

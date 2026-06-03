@@ -142,6 +142,30 @@ npm test
 - **Date de fin** : dernier jour **inclus** d’une période de *N* jours à partir de la date de début (fin = début + *N* − 1 jour).
 - **Couleurs** : rouge = dispense **en cours** ; vert = **terminée** ; neutre = **à venir**.
 
+## Catalogue collaboratif de grilles (Supabase)
+
+Les grilles peuvent être proposées au **catalogue enseignant** sans compte utilisateur. Le stockage, les votes et l’archivage passent par **Supabase** (API REST + RLS). Seules l’**URL du projet** et la **clé anon publique** sont utilisées côté client — **jamais** la clé *service role*.
+
+### Configuration
+
+1. Créez un projet sur [supabase.com](https://supabase.com).
+2. Exécutez le script SQL `supabase/catalog-grids-schema.sql` dans l’éditeur SQL du projet.
+3. Collez vos identifiants dans `shared/supabase-config.js` :
+   - `SUPABASE_URL` — Project URL (Settings → API)
+   - `SUPABASE_ANON_KEY` — clé **anon** « public »
+
+Alternative sans modifier le fichier : avant les scripts, définir `window.OUTILS_EPS_SUPABASE_URL` et `window.OUTILS_EPS_SUPABASE_ANON_KEY`.
+
+### Comportement
+
+- Case **« Proposer cette grille sur le catalogue enseignant »** cochée par défaut à l’enregistrement (`grilles-evaluation`, `tableau-suivi`).
+- Validation côté navigateur puis contraintes SQL + RLS à l’insertion.
+- Votes 👍 / 👎 via la fonction RPC `vote_catalog_grid` (un vote par navigateur et par grille, modifiable).
+- À **10 pouces bas**, la grille passe en `archived` et disparaît du catalogue public.
+- Fichiers partagés : `shared/catalog-grid-validation.js`, `shared/catalog-grids.js`, `shared/supabaseClient.js`.
+
+Le JSON `shared/evaluation-rubrics-catalog.json` reste un **repli lecture seule** si Supabase n’est pas configuré ou si le catalogue en ligne est vide.
+
 ## Technologies
 
 - HTML5, CSS3, JavaScript (pas de modules : compatible ouverture fichier direct).

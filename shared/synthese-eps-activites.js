@@ -295,7 +295,7 @@
     });
     if (!pl) return null;
     var ladder = param.ladder || [];
-    var rang = ladder.indexOf(pl.id) + 1;
+    var rang = rankDefiAtpPlayer(param, pl);
     var total = players.length;
     var badges = badgeCountDefi(pl);
     var wins = pl.wins || 0;
@@ -335,6 +335,26 @@
       },
       subject: { kind: "eleve", label: matchedName },
     });
+  }
+
+  function rankDefiAtpPlayer(param, player) {
+    if (!param || !player) return 0;
+    var ladder = Array.isArray(param.ladder) ? param.ladder : [];
+    var ladderRank = ladder.indexOf(player.id) + 1;
+    if (ladderRank <= 0) return 0;
+    var formula = param.settings && param.settings.formula;
+    if (formula === "swap-only") return ladderRank;
+    var players = Array.isArray(param.players) ? param.players : [];
+    var byId = {};
+    players.forEach(function (p) {
+      if (p && p.id) byId[p.id] = p;
+    });
+    var points = Number(player.points || 0);
+    for (var i = 0; i < ladder.length; i++) {
+      var other = byId[ladder[i]];
+      if (other && Number(other.points || 0) === points) return i + 1;
+    }
+    return ladderRank;
   }
 
   function extractCompositionEleve(param, session, eleve, data) {

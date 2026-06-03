@@ -627,6 +627,308 @@ var DataManager = (function () {
     };
   }
 
+  var BACKUP_STORE_LABELS = {
+    classes: "Classes",
+    eleves: "Élèves",
+    dispenses: "Dispenses / inaptitudes",
+    oublisMateriel: "Oublis de matériel",
+    radarPerfs: "Radar vitesse",
+    sessions: "Séances",
+    championnats: "Championnats",
+    tournoisElimination: "Tournois / pyramides",
+    parametres: "Réglages et données d'outils",
+    importsEleves: "Imports élèves QR",
+    tableauxSuivi: "Tableaux de suivi",
+  };
+
+  var BACKUP_STORE_PREFIXES = {
+    classes: "classe",
+    eleves: "eleve",
+    dispenses: "dispense",
+    oublisMateriel: "oubli",
+    radarPerfs: "radar",
+    sessions: "session",
+    championnats: "championnat",
+    tournoisElimination: "tournoi",
+    parametres: "parametre",
+    importsEleves: "import",
+    tableauxSuivi: "tableau",
+  };
+
+  function stableStringify(value) {
+    if (value === null || typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) {
+      return (
+        "[" +
+        value
+          .map(function (item) {
+            return stableStringify(item);
+          })
+          .join(",") +
+        "]"
+      );
+    }
+    return (
+      "{" +
+      Object.keys(value)
+        .sort()
+        .map(function (key) {
+          return JSON.stringify(key) + ":" + stableStringify(value[key]);
+        })
+        .join(",") +
+      "}"
+    );
+  }
+
+  function sameStoredData(a, b) {
+    return stableStringify(a) === stableStringify(b);
+  }
+
+  function payloadFromStoreArrays(arrays) {
+    return {
+      classes: arrays[0],
+      eleves: arrays[1],
+      dispenses: arrays[2],
+      oublisMateriel: arrays[3],
+      radarPerfs: arrays[4],
+      sessions: arrays[5],
+      championnats: arrays[6],
+      tournoisElimination: arrays[7],
+      parametres: arrays[8],
+      importsEleves: arrays[9],
+      tableauxSuivi: arrays[10],
+    };
+  }
+
+  function getCurrentPayload() {
+    return Promise.all(STORE_NAMES.map(getAll)).then(payloadFromStoreArrays);
+  }
+
+  function buildIdIndexes(payload) {
+    var indexes = {};
+    STORE_NAMES.forEach(function (storeName) {
+      indexes[storeName] = {};
+      (payload[storeName] || []).forEach(function (item) {
+        if (item && item.id) indexes[storeName][item.id] = item;
+      });
+    });
+    return indexes;
+  }
+
+  function countPayloadItems(payload) {
+    return STORE_NAMES.reduce(function (total, storeName) {
+      return total + ((payload[storeName] || []).length || 0);
+    }, 0);
+  }
+
+  function emptyMergeStats() {
+    return {
+      imported: 0,
+      current: 0,
+      identical: 0,
+      added: 0,
+      different: 0,
+      skipped: 0,
+      willImport: 0,
+    };
+  }
+
+  function uniqueMergeId(storeName, oldId, usedIds) {
+    var prefix = BACKUP_STORE_PREFIXES[storeName] || "import";
+    var id = genererId(prefix);
+    while (usedIds[storeName][id]) {
+      id = genererId(prefix);
+    }
+    usedIds[storeName][id] = true;
+    return id;
+  }
+
+  function remapParametreId(id, sessionMap) {
+    var sessionId;
+    if (!id) return id;
+    if (id.indexOf("composition-equipes__") === 0) {
+      sessionId = id.slice("composition-equipes__".length);
+      return "composition-equipes__" + (sessionMap[sessionId] || sessionId);
+    }
+    if (id.indexOf("course-orientation__") === 0) {
+      sessionId = id.slice("course-orientation__".length);
+      return "course-orientation__" + (sessionMap[sessionId] || sessionId);
+    }
+    if (id.indexOf("defi-atp__") === 0) {
+      sessionId = id.slice("defi-atp__".length);
+      return "defi-atp__" + (sessionMap[sessionId] || sessionId);
+    }
+    return id;
+  }
+
+  function remapBackupItem(storeName, item, idMaps) {
+    var copy = cloneData(item);
+    if (storeName === "eleves" && copy.classeId) {
+      copy.classeId = idMaps.classes[copy.classeId] || copy.classeId;
+    }
+    if (storeName === "sessions" && copy.classeId) {
+      copy.classeId = idMaps.classes[copy.classeId] || copy.classeId;
+    }
+    if (
+      (storeName === "championnats" || storeName === "tournoisElimination") &&
+      copy.sessionId
+    ) {
+      copy.sessionId = idMaps.sessions[copy.sessionId] || copy.sessionId;
+    }
+    if (storeName === "parametres") {
+      if (copy.sessionId) copy.sessionId = idMaps.sessions[copy.sessionId] || copy.sessionId;
+      copy.id = remapParametreId(copy.id, idMaps.sessions);
+      if (copy.sessionId && copy.id.indexOf("active-session__") === 0) {
+        copy.sessionId = idMaps.sessions[copy.sessionId] || copy.sessionId;
+      }
+      if (copy.id === SYNTHESE_ALIASES_ID && Array.isArray(copy.aliases)) {
+        copy.aliases = copy.aliases.map(function (alias) {
+          var a = Object.assign({}, alias);
+          if (a.classeId) a.classeId = idMaps.classes[a.classeId] || a.classeId;
+          if (a.eleveId) a.eleveId = idMaps.eleves[a.eleveId] || a.eleveId;
+          return a;
+        });
+      }
+    }
+    return copy;
+  }
+
+  function buildBackupMergePlan(currentPayload, importedPayload, options) {
+    options = options || {};
+    var currentIndexes = buildIdIndexes(currentPayload);
+    var usedIds = {};
+    var idMaps = {};
+    var additions = {};
+    var stores = [];
+    var summary = emptyMergeStats();
+
+    STORE_NAMES.forEach(function (storeName) {
+      usedIds[storeName] = {};
+      idMaps[storeName] = {};
+      additions[storeName] = [];
+      (currentPayload[storeName] || []).forEach(function (item) {
+        if (item && item.id) usedIds[storeName][item.id] = true;
+      });
+    });
+
+    STORE_NAMES.forEach(function (storeName) {
+      var imported = importedPayload[storeName] || [];
+      var current = currentPayload[storeName] || [];
+      var stats = emptyMergeStats();
+      stats.imported = imported.length;
+      stats.current = current.length;
+
+      imported.forEach(function (item) {
+        if (!item || !item.id) return;
+        var existing = currentIndexes[storeName][item.id];
+        var next = remapBackupItem(storeName, item, idMaps);
+
+        if (!existing && !usedIds[storeName][next.id]) {
+          idMaps[storeName][item.id] = next.id;
+          usedIds[storeName][next.id] = true;
+          additions[storeName].push(next);
+          stats.added += 1;
+          return;
+        }
+
+        if (existing && sameStoredData(existing, next)) {
+          idMaps[storeName][item.id] = existing.id;
+          stats.identical += 1;
+          return;
+        }
+
+        next.id = uniqueMergeId(storeName, item.id, usedIds);
+        idMaps[storeName][item.id] = next.id;
+        additions[storeName].push(next);
+        stats.different += 1;
+      });
+
+      stats.willImport = additions[storeName].length;
+      stores.push({
+        storeName: storeName,
+        label: BACKUP_STORE_LABELS[storeName] || storeName,
+        current: stats.current,
+        imported: stats.imported,
+        identical: stats.identical,
+        added: stats.added,
+        different: stats.different,
+        skipped: stats.skipped,
+        willImport: stats.willImport,
+      });
+
+      summary.current += stats.current;
+      summary.imported += stats.imported;
+      summary.identical += stats.identical;
+      summary.added += stats.added;
+      summary.different += stats.different;
+      summary.skipped += stats.skipped;
+      summary.willImport += stats.willImport;
+    });
+
+    return {
+      metadata: importedPayload.metadata || null,
+      summary: summary,
+      stores: stores,
+      additions: options.includeAdditions === false ? null : additions,
+    };
+  }
+
+  function previewBackupImport(data) {
+    var err = validateBackup(data);
+    if (err) return Promise.reject(new Error(err));
+    var importedPayload = normalizeImportData(data);
+    importedPayload.metadata = data.metadata || null;
+    return getCurrentPayload().then(function (currentPayload) {
+      var plan = buildBackupMergePlan(currentPayload, importedPayload, { includeAdditions: false });
+      plan.replace = {
+        current: countPayloadItems(currentPayload),
+        imported: countPayloadItems(importedPayload),
+      };
+      return plan;
+    });
+  }
+
+  function importMergePayloadToStores(additions) {
+    return requireDb().then(function () {
+      return new Promise(function (resolve, reject) {
+        var tx = transaction(STORE_NAMES, "readwrite");
+        tx.onerror = function () {
+          reject(wrapDbError(tx.error));
+        };
+        tx.onabort = function () {
+          reject(tx.error || new Error("Fusion annulee : les donnees existantes ont ete conservees."));
+        };
+        tx.oncomplete = function () {
+          resolve();
+        };
+
+        STORE_NAMES.forEach(function (storeName) {
+          var store = tx.objectStore(storeName);
+          (additions[storeName] || []).forEach(function (item) {
+            store.put(cloneData(item));
+          });
+        });
+      }).then(function () {
+        return linkOrphanSessionData();
+      });
+    });
+  }
+
+  function importBackupMerge(data) {
+    var err = validateBackup(data);
+    if (err) return Promise.reject(new Error(err));
+    var importedPayload = normalizeImportData(data);
+    return getCurrentPayload().then(function (currentPayload) {
+      var plan = buildBackupMergePlan(currentPayload, importedPayload);
+      if (!plan.summary.willImport) {
+        return { success: true, merged: false, plan: plan };
+      }
+      return importMergePayloadToStores(plan.additions).then(function () {
+        return { success: true, merged: true, plan: plan };
+      });
+    });
+  }
+
   function exportAllData() {
     return Promise.all([
       getAll("classes"),
@@ -2265,6 +2567,8 @@ var DataManager = (function () {
     exportAllData: exportAllData,
     exportBackupFile: exportBackupFile,
     importAllData: importAllData,
+    previewBackupImport: previewBackupImport,
+    importBackupMerge: importBackupMerge,
     importBackupFromFile: importBackupFromFile,
     pickAndImportBackup: pickAndImportBackup,
     validateBackup: validateBackup,

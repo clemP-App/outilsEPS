@@ -533,14 +533,86 @@
     $("ptb-stats").scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  function matchHasData() {
+    if (state.history.length) return true;
+    return TEAM_IDS.some(function (id) {
+      var t = state.teams[id];
+      return t.losses || t.shots || t.goals;
+    });
+  }
+
+  function renderArchivedStats(snapshot, container) {
+    if (!snapshot || !snapshot.teams) return;
+    var table = document.createElement("div");
+    table.className = "ptb-stats-table";
+    table.style.setProperty("--ptb-color-a", snapshot.teams.a.color);
+    table.style.setProperty("--ptb-color-b", snapshot.teams.b.color);
+    var head = document.createElement("div");
+    head.className = "ptb-stats-head";
+    head.appendChild(document.createElement("span"));
+    var headA = document.createElement("strong");
+    headA.textContent = snapshot.teams.a.name;
+    var headB = document.createElement("strong");
+    headB.textContent = snapshot.teams.b.name;
+    head.appendChild(headA);
+    head.appendChild(headB);
+    table.appendChild(head);
+    var rows = [
+      { label: "Buts", a: snapshot.teams.a.goals, b: snapshot.teams.b.goals },
+      { label: "Tirs", a: snapshot.teams.a.shots, b: snapshot.teams.b.shots },
+      { label: "Pertes", a: snapshot.teams.a.losses, b: snapshot.teams.b.losses },
+      { label: "Possessions", a: snapshot.teams.a.possessions, b: snapshot.teams.b.possessions },
+      { label: "Efficacité au tir", a: snapshot.teams.a.efficiency + "%", b: snapshot.teams.b.efficiency + "%" },
+    ];
+    if (snapshot.timer) {
+      var meta = document.createElement("p");
+      meta.className = "hint";
+      meta.textContent =
+        snapshot.timer.statusLabel +
+        " · " +
+        (snapshot.timer.displayLabel || snapshot.timer.elapsedLabel || "");
+      container.appendChild(meta);
+    }
+    rows.forEach(function (row) {
+      var rowEl = document.createElement("div");
+      rowEl.className = "ptb-stats-row";
+      var label = document.createElement("span");
+      label.textContent = row.label;
+      var strongA = document.createElement("strong");
+      strongA.textContent = String(row.a);
+      var strongB = document.createElement("strong");
+      strongB.textContent = String(row.b);
+      rowEl.appendChild(label);
+      rowEl.appendChild(strongA);
+      rowEl.appendChild(strongB);
+      table.appendChild(rowEl);
+    });
+    container.appendChild(table);
+  }
+
+  var resultsHistory = null;
+
   function resetMatch() {
+    function doClear() {
+      state = createInitialState();
+      readConfig();
+      stopTick();
+      lastWarnSec = -1;
+      majWakeLock();
+      render();
+    }
+    if (resultsHistory) {
+      resultsHistory.archiveAndClear({
+        hasData: matchHasData,
+        getSnapshot: buildExportPayload,
+        clearFn: doClear,
+        confirmMessage:
+          "Réinitialiser le match ? Une copie des statistiques sera conservée dans l’historique.",
+      });
+      return;
+    }
     if (!confirm("Réinitialiser tout le match ? Les données non enregistrées seront perdues.")) return;
-    state = createInitialState();
-    readConfig();
-    stopTick();
-    lastWarnSec = -1;
-    majWakeLock();
-    render();
+    doClear();
   }
 
   function beep(kind) {
@@ -630,6 +702,30 @@
 
   bindEls();
   bindEvents();
+  if (typeof ToolResultsHistory !== "undefined") {
+    resultsHistory = ToolResultsHistory.mount({
+      toolId: TOOL_ID,
+      buildTitle: function (snap) {
+        return snap.teams.a.name + " — " + snap.teams.b.name;
+      },
+      buildSummary: function (snap) {
+        return snap.teams.a.goals + " - " + snap.teams.b.goals;
+      },
+      getSharePayload: function (entry) {
+        return entry.data;
+      },
+      getShareParticipantLabel: function (entry) {
+        var d = entry.data;
+        if (d && d.teams) {
+          return d.teams.a.name + " — " + d.teams.b.name;
+        }
+        return entry.title;
+      },
+      renderView: function (entry, container) {
+        renderArchivedStats(entry.data, container);
+      },
+    });
+  }
   els["ptb-duration-field"].hidden = true;
   chargerNoms();
   readConfig();

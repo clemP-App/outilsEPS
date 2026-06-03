@@ -32,6 +32,43 @@
   var dialogCalc = document.getElementById("dialog-tab-suivi-calc");
   var dlgCalcSources = document.getElementById("dlg-calc-sources");
   var dlgCalcSourcesEmpty = document.getElementById("dlg-calc-sources-empty");
+  var dialogRubricCatalog = document.getElementById("dialog-tab-suivi-rubric-catalog");
+  var dlgRubricDialogTitle = document.getElementById("dlg-rubric-dialog-title");
+  var dlgRubricDialogIntro = document.getElementById("dlg-rubric-dialog-intro");
+  var dlgRubricOnlineStatus = document.getElementById("dlg-rubric-online-status");
+  var dlgRubricSearchWrap = document.getElementById("dlg-rubric-search-wrap");
+  var dlgRubricSearch = document.getElementById("dlg-rubric-search");
+  var dlgRubricPageLink = document.getElementById("dlg-rubric-page-link");
+  var dlgRubricCatalogSection = document.getElementById("dlg-rubric-catalog-section");
+  var dlgRubricEditorSection = document.getElementById("dlg-rubric-editor-section");
+  var dlgRubricEditorSectionTitle = document.getElementById("dlg-rubric-editor-section-title");
+  var dlgRubricCatalogList = document.getElementById("dlg-rubric-catalog-list");
+  var dlgRubricCatalogEmpty = document.getElementById("dlg-rubric-catalog-empty");
+  var dlgRubricTitle = document.getElementById("dlg-rubric-title");
+  var dlgRubricApsa = document.getElementById("dlg-rubric-apsa");
+  var dlgRubricCycle = document.getElementById("dlg-rubric-cycle");
+  var dlgRubricNiveau = document.getElementById("dlg-rubric-niveau");
+  var dlgRubricEditor = document.getElementById("dlg-rubric-editor");
+  var dlgRubricFile = document.getElementById("dlg-rubric-file");
+  var btnRubricAddRow = document.getElementById("btn-rubric-add-row");
+  var btnRubricAddCol = document.getElementById("btn-rubric-add-col");
+  var dlgRubricShare = document.getElementById("dlg-rubric-share");
+  var dialogRubricCell = document.getElementById("dialog-tab-suivi-rubric-cell");
+  var dlgRubricCellTitle = document.getElementById("dlg-rubric-cell-title");
+  var dlgRubricCellMeta = document.getElementById("dlg-rubric-cell-meta");
+  var dlgRubricScore = document.getElementById("dlg-rubric-score");
+  var dlgRubricGrid = document.getElementById("dlg-rubric-grid");
+  var dlgRubricNav = document.getElementById("dlg-rubric-nav");
+  var dlgRubricNavCount = document.getElementById("dlg-rubric-nav-count");
+  var rubricCellRowId = null;
+  var rubricCellColId = null;
+  var rubricCellTest = null;
+  var rubriquesPersonnelles = [];
+  var rubriquesEnLigne = [];
+  var rubriqueEdition = null;
+  var rubriqueEditionMode = "create";
+  var rubriqueEditionColonneId = null;
+  var rubriqueEditionInitiale = null;
   var dialogColonne = document.getElementById("dialog-tab-suivi-colonne");
   var dlgColTitre = document.getElementById("dlg-col-titre");
   var dlgColTypeHint = document.getElementById("dlg-col-type-hint");
@@ -42,6 +79,9 @@
   var dlgColMax = document.getElementById("dlg-col-max");
   var dlgColCheckWrap = document.getElementById("dlg-col-check-wrap");
   var dlgColHorsSynthese = document.getElementById("dlg-col-hors-synthese");
+  var dlgColRubricWrap = document.getElementById("dlg-col-rubric-wrap");
+  var btnColRubricTest = document.getElementById("btn-col-rubric-test");
+  var btnColRubricEdit = document.getElementById("btn-col-rubric-edit");
   var dlgColRemplirSection = document.getElementById("dlg-col-remplir-section");
   var dlgColRemplirBody = document.getElementById("dlg-col-remplir-body");
   var dlgColCalcHint = document.getElementById("dlg-col-calc-hint");
@@ -82,6 +122,228 @@
     { id: "3", glyph: "3", label: "Repère 3", cls: "num" },
     { id: "4", glyph: "4", label: "Repère 4", cls: "num" },
     { id: "5", glyph: "5", label: "Repère 5", cls: "num" },
+  ];
+
+  var RUBRIQUES_PARAM_ID = "tableau-suivi-rubriques-v1";
+  var RUBRIQUES_CATALOG_URL = "../shared/evaluation-rubrics-catalog.json";
+  var RUBRIQUES_SUBMIT_MAIL = "mailto:clement.pignet@gmail.com";
+  var RUBRIQUE_MAX_DEFAUT = 20;
+  var RUBRIQUE_COULEURS = ["#fb7185", "#fdba74", "#fde68a", "#bbf7d0", "#bfdbfe", "#ddd6fe"];
+  var RUBRIQUES_EXEMPLES = [
+    {
+      id: "ex-cv-lycee",
+      title: "CV - presentation orale et ecrite",
+      apsa: "Accompagnement personnalise",
+      cycle: "lycee",
+      niveau: "2de / 1re",
+      source: "exemple",
+      levels: [
+        { id: "l1", label: "Insuffisant", color: "#fb7185" },
+        { id: "l2", label: "Fragile", color: "#fdba74" },
+        { id: "l3", label: "Satisfaisant", color: "#fde68a" },
+        { id: "l4", label: "Excellent", color: "#bbf7d0" },
+      ],
+      items: [
+        {
+          id: "i1",
+          label: "Mise en page et presentation",
+          cells: [
+            { text: "Le CV est mal structure et difficile a lire.", points: 0 },
+            { text: "La mise en page est basique, certains elements sont difficiles a reperer.", points: 1 },
+            { text: "La mise en page est propre et organisee.", points: 2 },
+            { text: "La mise en page est esthetique, claire et attire l'attention positivement.", points: 3 },
+          ],
+        },
+        {
+          id: "i2",
+          label: "Informations personnelles",
+          cells: [
+            { text: "Des informations essentielles sont manquantes ou inexactes.", points: 0 },
+            { text: "Les informations sont presentes mais a preciser.", points: 1 },
+            { text: "Les informations necessaires sont correctes et completes.", points: 2 },
+            { text: "Les informations sont completes, precises et adaptees.", points: 3 },
+          ],
+        },
+        {
+          id: "i3",
+          label: "Scolarite",
+          cells: [
+            { text: "Des informations importantes sont manquantes ou incorrectes.", points: 0 },
+            { text: "Les informations sont presentes mais peu detaillees.", points: 1 },
+            { text: "Les details sont presents mais peuvent etre ameliores.", points: 2 },
+            { text: "Le cursus scolaire est clairement presente avec des details pertinents.", points: 3 },
+          ],
+        },
+        {
+          id: "i4",
+          label: "Elements presents",
+          cells: [
+            { text: "Plusieurs elements attendus sont absents.", points: 0 },
+            { text: "Tous les elements sont presents mais pas toujours pertinents.", points: 1 },
+            { text: "Complet avec des details pertinents.", points: 2 },
+            { text: "Complet, pertinent, organise et coherent.", points: 3 },
+          ],
+        },
+      ],
+    },
+    {
+      id: "ex-badminton-c4",
+      title: "Badminton - construire le point",
+      apsa: "Badminton",
+      cycle: "4",
+      niveau: "4e / 3e",
+      source: "exemple",
+      levels: [
+        { id: "l1", label: "A consolider", color: "#fb7185" },
+        { id: "l2", label: "En progres", color: "#fdba74" },
+        { id: "l3", label: "Maitrise", color: "#fde68a" },
+        { id: "l4", label: "Tres maitrise", color: "#bbf7d0" },
+      ],
+      items: [
+        {
+          id: "i1",
+          label: "Servir et engager",
+          cells: [
+            { text: "Le service est irregulier ou non reglementaire.", points: 0 },
+            { text: "Le service met l'echange en jeu mais reste previsible.", points: 1 },
+            { text: "Le service est regulier et place.", points: 2 },
+            { text: "Le service est varie et met l'adversaire en difficulte.", points: 3 },
+          ],
+        },
+        {
+          id: "i2",
+          label: "Se deplacer",
+          cells: [
+            { text: "Les deplacements sont tardifs ou desorganises.", points: 0 },
+            { text: "Les deplacements permettent de renvoyer mais sans replacement stable.", points: 1 },
+            { text: "Les deplacements et replacements sont efficaces.", points: 2 },
+            { text: "Les deplacements anticipent les trajectoires et preparent l'attaque.", points: 3 },
+          ],
+        },
+        {
+          id: "i3",
+          label: "Varier les trajectoires",
+          cells: [
+            { text: "Les renvois sont peu controles.", points: 0 },
+            { text: "Quelques zones sont recherchees.", points: 1 },
+            { text: "Les trajectoires sont variees pour deplacer l'adversaire.", points: 2 },
+            { text: "Les choix de trajectoires construisent clairement la rupture.", points: 3 },
+          ],
+        },
+        {
+          id: "i4",
+          label: "Role d'arbitre",
+          cells: [
+            { text: "Les regles essentielles ne sont pas stabilisees.", points: 0 },
+            { text: "Les regles principales sont appliquees avec aide.", points: 1 },
+            { text: "L'arbitrage est fiable et calme.", points: 2 },
+            { text: "L'arbitrage est autonome, precis et explique les decisions.", points: 3 },
+          ],
+        },
+      ],
+    },
+    {
+      id: "ex-danse-c3",
+      title: "Danse - composer et presenter",
+      apsa: "Danse",
+      cycle: "3",
+      niveau: "CM2 / 6e",
+      source: "exemple",
+      levels: [
+        { id: "l1", label: "Debutant", color: "#fb7185" },
+        { id: "l2", label: "En cours", color: "#fdba74" },
+        { id: "l3", label: "Reussi", color: "#fde68a" },
+        { id: "l4", label: "Tres reussi", color: "#bbf7d0" },
+      ],
+      items: [
+        {
+          id: "i1",
+          label: "Presence scenique",
+          cells: [
+            { text: "L'eleve se montre hesitant et peu engage.", points: 0 },
+            { text: "L'eleve s'engage par moments.", points: 1 },
+            { text: "L'eleve est present et concentre.", points: 2 },
+            { text: "L'eleve capte l'attention et assume son role.", points: 3 },
+          ],
+        },
+        {
+          id: "i2",
+          label: "Relation au groupe",
+          cells: [
+            { text: "Les reperes collectifs sont peu respectes.", points: 0 },
+            { text: "Les reperes sont suivis avec quelques decalages.", points: 1 },
+            { text: "Les actions sont coordonnees avec le groupe.", points: 2 },
+            { text: "L'eleve enrichit la composition collective.", points: 3 },
+          ],
+        },
+        {
+          id: "i3",
+          label: "Utilisation de l'espace",
+          cells: [
+            { text: "L'espace est peu exploite.", points: 0 },
+            { text: "Quelques directions ou niveaux sont utilises.", points: 1 },
+            { text: "L'espace est varie et lisible.", points: 2 },
+            { text: "Les choix d'espace renforcent l'intention.", points: 3 },
+          ],
+        },
+      ],
+    },
+    {
+      id: "ex-musculation-lycee",
+      title: "Musculation - projet d'entrainement",
+      apsa: "Musculation",
+      cycle: "lycee",
+      niveau: "Lycee",
+      source: "exemple",
+      levels: [
+        { id: "l1", label: "Insuffisant", color: "#fb7185" },
+        { id: "l2", label: "Fragile", color: "#fdba74" },
+        { id: "l3", label: "Satisfaisant", color: "#fde68a" },
+        { id: "l4", label: "Tres satisfaisant", color: "#bbf7d0" },
+      ],
+      items: [
+        {
+          id: "i1",
+          label: "Projet personnel",
+          cells: [
+            { text: "Le projet n'est pas relie a un objectif clair.", points: 0 },
+            { text: "L'objectif est identifie mais peu justifie.", points: 1 },
+            { text: "Le projet est coherent avec l'objectif choisi.", points: 2 },
+            { text: "Le projet est precis, argumente et ajustable.", points: 3 },
+          ],
+        },
+        {
+          id: "i2",
+          label: "Parametres de charge",
+          cells: [
+            { text: "Les charges, series ou recuperations sont inadaptees.", points: 0 },
+            { text: "Les parametres sont partiellement adaptes.", points: 1 },
+            { text: "Les parametres sont adaptes et suivis.", points: 2 },
+            { text: "Les parametres sont pilotes avec finesse selon les ressentis.", points: 3 },
+          ],
+        },
+        {
+          id: "i3",
+          label: "Securite et posture",
+          cells: [
+            { text: "Les placements mettent en difficulte la securite.", points: 0 },
+            { text: "Les placements sont securises avec rappels.", points: 1 },
+            { text: "Les placements sont maitrises sur les exercices.", points: 2 },
+            { text: "L'eleve anticipe, pare et conseille de facon fiable.", points: 3 },
+          ],
+        },
+        {
+          id: "i4",
+          label: "Analyse de la seance",
+          cells: [
+            { text: "Le bilan est absent ou tres descriptif.", points: 0 },
+            { text: "Le bilan repere quelques sensations.", points: 1 },
+            { text: "Le bilan relie sensations, charges et objectif.", points: 2 },
+            { text: "Le bilan permet d'ajuster precisement la seance suivante.", points: 3 },
+          ],
+        },
+      ],
+    },
   ];
 
   function genererId(prefix) {
@@ -145,6 +407,529 @@
 
   function normaliserNom(s) {
     return (s || "").trim().replace(/\s+/g, " ");
+  }
+
+  function normaliserRechercheRubrique(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function clonerObjet(obj) {
+    return JSON.parse(JSON.stringify(obj || {}));
+  }
+
+  function idCourt(prefix, index) {
+    return (prefix || "id") + String(index + 1);
+  }
+
+  function normaliserCycleRubrique(cycle) {
+    var s = String(cycle || "").toLowerCase().trim();
+    if (s === "3" || s === "cycle 3") return "3";
+    if (s === "4" || s === "cycle 4") return "4";
+    if (s === "lycee" || s === "lycée" || s === "lycÃ©e") return "lycee";
+    return s || "4";
+  }
+
+  function labelCycleRubrique(cycle) {
+    var c = normaliserCycleRubrique(cycle);
+    if (c === "3") return "Cycle 3";
+    if (c === "4") return "Cycle 4";
+    if (c === "lycee") return "Lycee";
+    return c;
+  }
+
+  function normaliserRubrique(rubrique) {
+    var r = rubrique && typeof rubrique === "object" ? clonerObjet(rubrique) : {};
+    r.id = r.id || genererId("rubric");
+    r.title = normaliserNom(r.title || r.label || "Grille d'evaluation");
+    r.apsa = normaliserNom(r.apsa || "");
+    r.cycle = normaliserCycleRubrique(r.cycle);
+    r.niveau = normaliserNom(r.niveau || "");
+    r.source = r.source || "local";
+    r.author = normaliserNom(r.author || r.auteur || "");
+    r.rating = r.rating && typeof r.rating === "object" ? r.rating : {};
+    r.rating.score = typeof r.rating.score === "number" && !isNaN(r.rating.score) ? r.rating.score : 0;
+    r.rating.votes = typeof r.rating.votes === "number" && !isNaN(r.rating.votes) ? r.rating.votes : 0;
+    r.max = RUBRIQUE_MAX_DEFAUT;
+    r.levels = Array.isArray(r.levels) ? r.levels : [];
+    r.levels = r.levels
+      .map(function (level, index) {
+        var l = level && typeof level === "object" ? level : {};
+        return {
+          id: l.id || idCourt("l", index),
+          label: normaliserNom(l.label || "Niveau " + (index + 1)),
+          color: l.color || RUBRIQUE_COULEURS[index % RUBRIQUE_COULEURS.length],
+        };
+      })
+      .filter(function (l) {
+        return !!l.label;
+      });
+    if (!r.levels.length) {
+      r.levels = [
+        { id: "l1", label: "Insuffisant", color: RUBRIQUE_COULEURS[0] },
+        { id: "l2", label: "Fragile", color: RUBRIQUE_COULEURS[1] },
+        { id: "l3", label: "Satisfaisant", color: RUBRIQUE_COULEURS[2] },
+        { id: "l4", label: "Excellent", color: RUBRIQUE_COULEURS[3] },
+      ];
+    }
+    r.items = Array.isArray(r.items) ? r.items : [];
+    r.items = r.items
+      .map(function (item, itemIndex) {
+        var it = item && typeof item === "object" ? item : {};
+        var cells = Array.isArray(it.cells) ? it.cells : [];
+        return {
+          id: it.id || idCourt("i", itemIndex),
+          label: normaliserNom(it.label || "Item " + (itemIndex + 1)),
+          cells: r.levels.map(function (level, levelIndex) {
+            var cell = cells[levelIndex] && typeof cells[levelIndex] === "object" ? cells[levelIndex] : {};
+            var rawPoints = cell.points;
+            var points = parseFloat(String(rawPoints == null ? levelIndex : rawPoints).replace(",", "."));
+            return {
+              text: normaliserNom(cell.text || ""),
+              points: !isNaN(points) ? points : levelIndex,
+            };
+          }),
+        };
+      })
+      .filter(function (it) {
+        return !!it.label;
+      });
+    if (!r.items.length) {
+      r.items = [
+        {
+          id: "i1",
+          label: "Item 1",
+          cells: r.levels.map(function (_, i) {
+            return { text: "", points: i };
+          }),
+        },
+      ];
+    }
+    return r;
+  }
+
+  function grilleBasket4eExemple() {
+    return {
+      id: "local-basket-4e-exemple",
+      title: "Basket-ball 4e - jouer vite et juste",
+      apsa: "Basket-ball",
+      cycle: "4",
+      niveau: "4e",
+      source: "local",
+      author: "Outils EPS",
+      levels: [
+        { id: "l1", label: "A consolider", color: "#fb7185" },
+        { id: "l2", label: "En progres", color: "#fdba74" },
+        { id: "l3", label: "Maitrise", color: "#fde68a" },
+        { id: "l4", label: "Tres maitrise", color: "#bbf7d0" },
+      ],
+      items: [
+        {
+          id: "i1",
+          label: "Se demarquer",
+          cells: [
+            { text: "Reste souvent arrete ou cache par un defenseur.", points: 0 },
+            { text: "Propose parfois une solution mais sans timing regulier.", points: 1 },
+            { text: "Se rend disponible dans un espace utile.", points: 2 },
+            { text: "Enchaine appels, replacements et aide au porteur.", points: 3 },
+          ],
+        },
+        {
+          id: "i2",
+          label: "Choisir passer, dribbler ou tirer",
+          cells: [
+            { text: "Choix souvent precipites ou peu adaptes.", points: 0 },
+            { text: "Quelques choix pertinents avec du temps.", points: 1 },
+            { text: "Choisit une action adaptee a la situation.", points: 2 },
+            { text: "Lit vite le jeu et cree un avantage pour l'equipe.", points: 3 },
+          ],
+        },
+        {
+          id: "i3",
+          label: "Defendre",
+          cells: [
+            { text: "Suit peu son adversaire ou oublie le repli.", points: 0 },
+            { text: "Gene par moments mais se replace tardivement.", points: 1 },
+            { text: "Se replace, gene le porteur et protege le panier.", points: 2 },
+            { text: "Anticipe, aide et recupere des ballons sans faute.", points: 3 },
+          ],
+        },
+        {
+          id: "i4",
+          label: "Cooperer",
+          cells: [
+            { text: "Joue surtout seul ou se demobilise.", points: 0 },
+            { text: "Participe avec des partenaires proches.", points: 1 },
+            { text: "Communique et respecte l'organisation collective.", points: 2 },
+            { text: "Encourage, organise et rend ses partenaires efficaces.", points: 3 },
+          ],
+        },
+      ],
+    };
+  }
+
+  function rubriquesCatalogue() {
+    var seen = {};
+    var list = RUBRIQUES_EXEMPLES.map(normaliserRubrique)
+      .concat(rubriquesEnLigne.map(normaliserRubrique))
+      .concat(rubriquesPersonnelles.map(normaliserRubrique))
+      .filter(function (rubrique) {
+        if (!rubrique.id || seen[rubrique.id]) return false;
+        seen[rubrique.id] = true;
+        return true;
+      });
+    return list.sort(function (a, b) {
+      var sa = (a.rating.score || 0) * Math.log((a.rating.votes || 0) + 1);
+      var sb = (b.rating.score || 0) * Math.log((b.rating.votes || 0) + 1);
+      if (sb !== sa) return sb - sa;
+      return String(a.title || "").localeCompare(String(b.title || ""), "fr", { sensitivity: "base" });
+    });
+  }
+
+  function totalPointsRubrique(rubrique) {
+    var r = normaliserRubrique(rubrique);
+    return r.items.reduce(function (sum, item) {
+      var maxItem = item.cells.reduce(function (m, cell) {
+        var p = parseFloat(cell.points);
+        return !isNaN(p) && p > m ? p : m;
+      }, 0);
+      return sum + maxItem;
+    }, 0);
+  }
+
+  function normaliserSelectionRubrique(raw) {
+    if (!raw || typeof raw !== "object") return { selected: {}, points: 0, note: null };
+    return {
+      selected: raw.selected && typeof raw.selected === "object" ? Object.assign({}, raw.selected) : {},
+      points: typeof raw.points === "number" && !isNaN(raw.points) ? raw.points : 0,
+      note: typeof raw.note === "number" && !isNaN(raw.note) ? raw.note : null,
+    };
+  }
+
+  function calculerScoreRubrique(rubrique, rawCell) {
+    var r = normaliserRubrique(rubrique);
+    var cell = normaliserSelectionRubrique(rawCell);
+    var selected = {};
+    var points = 0;
+    var selectedCount = 0;
+    r.items.forEach(function (item) {
+      var levelId = cell.selected[item.id];
+      if (!levelId) return;
+      var idx = r.levels.findIndex(function (level) {
+        return level.id === levelId;
+      });
+      if (idx < 0) return;
+      var rubCell = item.cells[idx] || {};
+      var p = parseFloat(rubCell.points);
+      points += !isNaN(p) ? p : 0;
+      selected[item.id] = levelId;
+      selectedCount++;
+    });
+    var total = totalPointsRubrique(r);
+    var note = selectedCount && total > 0 ? (points / total) * RUBRIQUE_MAX_DEFAUT : null;
+    return {
+      selected: selected,
+      points: points,
+      total: total,
+      note: note === null ? null : Math.round(note * 100) / 100,
+      selectedCount: selectedCount,
+      itemCount: r.items.length,
+    };
+  }
+
+  function formatNoteRubrique(score) {
+    if (!score || score.note === null || score.note === undefined || isNaN(score.note)) return "";
+    return formatNombreAffiche(score.note);
+  }
+
+  function parseCsvLineRubrique(line) {
+    var cells = [];
+    var cur = "";
+    var inQuotes = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line.charAt(i);
+      if (ch === '"') {
+        if (inQuotes && line.charAt(i + 1) === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if ((ch === ";" || ch === ",") && !inQuotes) {
+        cells.push(cur.trim());
+        cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    cells.push(cur.trim());
+    return cells;
+  }
+
+  function splitTextePoints(raw, fallbackPoints) {
+    var s = String(raw || "").trim();
+    var idx = s.lastIndexOf("|");
+    if (idx < 0) return { text: s, points: fallbackPoints };
+    var txt = s.slice(0, idx).trim();
+    var p = parseFloat(s.slice(idx + 1).trim().replace(",", "."));
+    return { text: txt, points: !isNaN(p) ? p : fallbackPoints };
+  }
+
+  function parseRubriqueCsv(csv, meta) {
+    var lines = String(csv || "")
+      .split(/\r?\n/)
+      .map(function (line) {
+        return line.trim();
+      })
+      .filter(Boolean);
+    if (lines.length < 2) throw new Error("Ajoutez au moins une ligne de niveaux et une ligne d'item.");
+    var header = parseCsvLineRubrique(lines[0]);
+    if (header.length < 3) throw new Error("La premiere ligne doit contenir Item + au moins deux niveaux.");
+    var levels = header.slice(1).map(function (raw, index) {
+      var p = splitTextePoints(raw, index);
+      return {
+        id: idCourt("l", index),
+        label: p.text || "Niveau " + (index + 1),
+        color: RUBRIQUE_COULEURS[index % RUBRIQUE_COULEURS.length],
+        defaultPoints: p.points,
+      };
+    });
+    var items = lines.slice(1).map(function (line, itemIndex) {
+      var parts = parseCsvLineRubrique(line);
+      var label = parts[0] || "Item " + (itemIndex + 1);
+      var cells = levels.map(function (level, levelIndex) {
+        var p = splitTextePoints(parts[levelIndex + 1] || "", level.defaultPoints);
+        return { text: p.text, points: p.points };
+      });
+      return { id: idCourt("i", itemIndex), label: label, cells: cells };
+    });
+    return normaliserRubrique({
+      id: genererId("rubric"),
+      title: meta && meta.title ? meta.title : "Grille importee",
+      apsa: meta && meta.apsa ? meta.apsa : "",
+      cycle: meta && meta.cycle ? meta.cycle : "4",
+      niveau: meta && meta.niveau ? meta.niveau : "",
+      source: "local",
+      levels: levels,
+      items: items,
+    });
+  }
+
+  function rubriqueVierge(meta) {
+    return normaliserRubrique({
+      id: genererId("rubric"),
+      title: meta && meta.title ? meta.title : "Nouvelle grille",
+      apsa: meta && meta.apsa ? meta.apsa : "",
+      cycle: meta && meta.cycle ? meta.cycle : "4",
+      niveau: meta && meta.niveau ? meta.niveau : "",
+      source: "local",
+      levels: [
+        { id: "l1", label: "Insuffisant", color: RUBRIQUE_COULEURS[0] },
+        { id: "l2", label: "Fragile", color: RUBRIQUE_COULEURS[1] },
+        { id: "l3", label: "Satisfaisant", color: RUBRIQUE_COULEURS[2] },
+        { id: "l4", label: "Excellent", color: RUBRIQUE_COULEURS[3] },
+      ],
+      items: [
+        {
+          id: "i1",
+          label: "Item 1",
+          cells: [
+            { text: "", points: 0 },
+            { text: "", points: 1 },
+            { text: "", points: 2 },
+            { text: "", points: 3 },
+          ],
+        },
+      ],
+    });
+  }
+
+  function metaRubriqueEdition() {
+    return {
+      title: normaliserNom(dlgRubricTitle && dlgRubricTitle.value) || "Nouvelle grille",
+      apsa: normaliserNom(dlgRubricApsa && dlgRubricApsa.value),
+      cycle: dlgRubricCycle ? dlgRubricCycle.value : "4",
+      niveau: normaliserNom(dlgRubricNiveau && dlgRubricNiveau.value),
+    };
+  }
+
+  function appliquerMetaRubriqueEdition(rubrique) {
+    var meta = metaRubriqueEdition();
+    var r = normaliserRubrique(rubrique || rubriqueEdition || rubriqueVierge(meta));
+    r.title = meta.title;
+    r.apsa = meta.apsa;
+    r.cycle = meta.cycle;
+    r.niveau = meta.niveau;
+    return r;
+  }
+
+  function lireRubriqueDepuisEditeur() {
+    if (!dlgRubricEditor) return appliquerMetaRubriqueEdition(rubriqueEdition);
+    var base = normaliserRubrique(rubriqueEdition || rubriqueVierge(metaRubriqueEdition()));
+    var levels = [];
+    dlgRubricEditor.querySelectorAll("[data-rubric-level]").forEach(function (col) {
+      var levelId = col.getAttribute("data-rubric-level");
+      var idx = levels.length;
+      var labelInput = col.querySelector("[data-rubric-level-label]");
+      levels.push({
+        id: levelId || idCourt("l", idx),
+        label: normaliserNom(labelInput ? labelInput.value : "") || "Niveau " + (idx + 1),
+        color: RUBRIQUE_COULEURS[idx % RUBRIQUE_COULEURS.length],
+      });
+    });
+    var items = [];
+    dlgRubricEditor.querySelectorAll("[data-rubric-row]").forEach(function (row) {
+      var itemId = row.getAttribute("data-rubric-row") || idCourt("i", items.length);
+      var itemInput = row.querySelector("[data-rubric-item-label]");
+      var cells = [];
+      row.querySelectorAll("[data-rubric-cell]").forEach(function (cellWrap, index) {
+        var txt = cellWrap.querySelector("[data-rubric-cell-text]");
+        var pts = cellWrap.querySelector("[data-rubric-cell-points]");
+        var parsed = parseFloat(String(pts && pts.value ? pts.value : index).replace(",", "."));
+        cells.push({
+          text: normaliserNom(txt ? txt.value : ""),
+          points: !isNaN(parsed) ? parsed : index,
+        });
+      });
+      items.push({
+        id: itemId,
+        label: normaliserNom(itemInput ? itemInput.value : "") || "Item " + (items.length + 1),
+        cells: cells,
+      });
+    });
+    base.levels = levels.length ? levels : base.levels;
+    base.items = items.length ? items : base.items;
+    rubriqueEdition = appliquerMetaRubriqueEdition(base);
+    return normaliserRubrique(rubriqueEdition);
+  }
+
+  function rendreEditeurRubrique() {
+    if (!dlgRubricEditor) return;
+    var r = normaliserRubrique(rubriqueEdition || rubriqueVierge(metaRubriqueEdition()));
+    rubriqueEdition = r;
+    dlgRubricEditor.innerHTML = "";
+    var table = document.createElement("table");
+    table.className = "tab-suivi-rubric-edit-table";
+
+    var thead = document.createElement("thead");
+    var trHead = document.createElement("tr");
+    var thItem = document.createElement("th");
+    thItem.textContent = "Item";
+    trHead.appendChild(thItem);
+    r.levels.forEach(function (level, levelIndex) {
+      var th = document.createElement("th");
+      th.setAttribute("data-rubric-level", level.id);
+      var levelInput = document.createElement("input");
+      levelInput.type = "text";
+      levelInput.value = level.label;
+      levelInput.setAttribute("data-rubric-level-label", "");
+      levelInput.setAttribute("aria-label", "Nom du niveau " + (levelIndex + 1));
+      th.appendChild(levelInput);
+      if (r.levels.length > 2) {
+        var del = document.createElement("button");
+        del.type = "button";
+        del.className = "tab-suivi-rubric-edit-del";
+        del.textContent = "×";
+        del.setAttribute("aria-label", "Supprimer ce niveau");
+        del.addEventListener("click", function () {
+          var draft = lireRubriqueDepuisEditeur();
+          draft.levels.splice(levelIndex, 1);
+          draft.items.forEach(function (item) {
+            item.cells.splice(levelIndex, 1);
+          });
+          rubriqueEdition = normaliserRubrique(draft);
+          rendreEditeurRubrique();
+        });
+        th.appendChild(del);
+      }
+      trHead.appendChild(th);
+    });
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    r.items.forEach(function (item, itemIndex) {
+      var tr = document.createElement("tr");
+      tr.setAttribute("data-rubric-row", item.id);
+      var th = document.createElement("th");
+      var itemInput = document.createElement("input");
+      itemInput.type = "text";
+      itemInput.value = item.label;
+      itemInput.setAttribute("data-rubric-item-label", "");
+      itemInput.setAttribute("aria-label", "Nom de l'item " + (itemIndex + 1));
+      th.appendChild(itemInput);
+      if (r.items.length > 1) {
+        var delRow = document.createElement("button");
+        delRow.type = "button";
+        delRow.className = "tab-suivi-rubric-edit-del";
+        delRow.textContent = "×";
+        delRow.setAttribute("aria-label", "Supprimer cette ligne");
+        delRow.addEventListener("click", function () {
+          var draft = lireRubriqueDepuisEditeur();
+          draft.items.splice(itemIndex, 1);
+          rubriqueEdition = normaliserRubrique(draft);
+          rendreEditeurRubrique();
+        });
+        th.appendChild(delRow);
+      }
+      tr.appendChild(th);
+      r.levels.forEach(function (level, levelIndex) {
+        var td = document.createElement("td");
+        td.setAttribute("data-rubric-cell", level.id);
+        var cell = item.cells[levelIndex] || { text: "", points: levelIndex };
+        var text = document.createElement("textarea");
+        text.rows = 3;
+        text.value = cell.text || "";
+        text.setAttribute("data-rubric-cell-text", "");
+        text.setAttribute("aria-label", item.label + " - " + level.label);
+        var points = document.createElement("input");
+        points.type = "number";
+        points.step = "0.5";
+        points.value = cell.points == null ? levelIndex : cell.points;
+        points.setAttribute("data-rubric-cell-points", "");
+        points.setAttribute("aria-label", "Points");
+        td.appendChild(text);
+        td.appendChild(points);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    dlgRubricEditor.appendChild(table);
+  }
+
+  function ajouterLigneRubriqueEdition() {
+    var draft = lireRubriqueDepuisEditeur();
+    var idx = draft.items.length;
+    draft.items.push({
+      id: idCourt("i", idx),
+      label: "Item " + (idx + 1),
+      cells: draft.levels.map(function (_, levelIndex) {
+        return { text: "", points: levelIndex };
+      }),
+    });
+    rubriqueEdition = normaliserRubrique(draft);
+    rendreEditeurRubrique();
+  }
+
+  function ajouterColonneRubriqueEdition() {
+    var draft = lireRubriqueDepuisEditeur();
+    var idx = draft.levels.length;
+    var level = {
+      id: idCourt("l", idx),
+      label: "Niveau " + (idx + 1),
+      color: RUBRIQUE_COULEURS[idx % RUBRIQUE_COULEURS.length],
+    };
+    draft.levels.push(level);
+    draft.items.forEach(function (item) {
+      item.cells.push({ text: "", points: idx });
+    });
+    rubriqueEdition = normaliserRubrique(draft);
+    rendreEditeurRubrique();
   }
 
   function eleveVersLabel(e) {
@@ -745,11 +1530,15 @@
         } else {
           c.max = null;
         }
+      } else if (c.type === "rubric") {
+        c.rubric = normaliserRubrique(c.rubric || { title: c.label || "Grille d'evaluation" });
+        c.estNote = true;
+        c.max = RUBRIQUE_MAX_DEFAUT;
       } else {
         delete c.estNote;
         delete c.max;
       }
-      if (c.type !== "check" && c.type !== "number" && c.type !== "calc") {
+      if (c.type !== "check" && c.type !== "number" && c.type !== "calc" && c.type !== "rubric") {
         c.type = "number";
       }
     });
@@ -759,6 +1548,7 @@
   function colonneEstNote(col) {
     if (!col) return false;
     if (col.type === "number" || col.type === "calc") return col.estNote === true;
+    if (col.type === "rubric") return true;
     return false;
   }
 
@@ -807,6 +1597,7 @@
 
   function baremeColonne(t, col) {
     if (!col || !colonneEstNote(col)) return null;
+    if (col.type === "rubric") return RUBRIQUE_MAX_DEFAUT;
     if ((col.type === "number" || col.type === "calc") && col.max > 0) return col.max;
     if (col.type === "calc" && col.calcOp === "avg") {
       var maxs = [];
@@ -883,6 +1674,10 @@
 
   function valeurCellule(t, rowId, col) {
     if (col.type === "calc") return valeurCalculee(t, rowId, col);
+    if (col.type === "rubric") {
+      var score = calculerScoreRubrique(col.rubric, getCell(t, rowId, col.id));
+      return score.note;
+    }
     return getCell(t, rowId, col.id);
   }
 
@@ -976,6 +1771,9 @@
       if (v === true) return "✓";
       if (v === false) return "✗";
       return "";
+    }
+    if (col.type === "rubric") {
+      return v === null || v === undefined || isNaN(v) ? "" : formatNombreAffiche(v);
     }
     if (v === null || v === undefined || v === "") return "";
     return formatNombreAffiche(v);
@@ -1082,6 +1880,228 @@
     majStatsColonneDom(col.id, syntheseColonne(t, col));
     rafraichirColonnesCalcLiees(t, col.id);
     planifierSauvegarde();
+  }
+
+  function classeScoreRubrique(score) {
+    if (!score || score.note === null || score.note === undefined || isNaN(score.note)) {
+      return "tab-suivi-rubric-cell-btn--empty";
+    }
+    if (score.note >= 16) return "tab-suivi-rubric-cell-btn--high";
+    if (score.note >= 10) return "tab-suivi-rubric-cell-btn--mid";
+    return "tab-suivi-rubric-cell-btn--low";
+  }
+
+  function libelleScoreRubrique(score) {
+    if (!score || score.note === null || score.note === undefined || isNaN(score.note)) {
+      return "·";
+    }
+    return formatNombreAffiche(score.note);
+  }
+
+  function majBoutonRubriqueCellule(t, rowId, col) {
+    if (!tbodyEl || !t || !col) return;
+    var btn = tbodyEl.querySelector(
+      'tr[data-row-id="' +
+        rowId +
+        '"] td[data-col-id="' +
+        col.id +
+        '"] .tab-suivi-rubric-cell-btn'
+    );
+    if (!btn) return;
+    var score = calculerScoreRubrique(col.rubric, getCell(t, rowId, col.id));
+    btn.className = "tab-suivi-rubric-cell-btn " + classeScoreRubrique(score);
+    btn.textContent = libelleScoreRubrique(score);
+    btn.setAttribute("aria-label", "Ouvrir la grille " + (col.label || "") + " : " + btn.textContent);
+  }
+
+  function metaRubriqueTexte(rubrique) {
+    var r = normaliserRubrique(rubrique);
+    return [r.apsa, labelCycleRubrique(r.cycle), r.niveau].filter(Boolean).join(" · ");
+  }
+
+  function obtenirContexteRubriqueActif() {
+    if (rubricCellTest) return rubricCellTest;
+    var t = getActif();
+    if (!t || !rubricCellRowId || !rubricCellColId) return null;
+    var row = getRowParId(t, rubricCellRowId);
+    var col = t.cols.filter(function (c) {
+      return c.id === rubricCellColId;
+    })[0];
+    if (!row || !col || col.type !== "rubric") return null;
+    return {
+      mode: "cell",
+      tableau: t,
+      row: row,
+      col: col,
+      rubrique: normaliserRubrique(col.rubric),
+      value: normaliserSelectionRubrique(getCell(t, row.id, col.id)),
+    };
+  }
+
+  function majScoreDialogRubrique(ctx) {
+    if (!dlgRubricScore || !ctx) return;
+    var score = calculerScoreRubrique(ctx.rubrique, ctx.value);
+    var note = score.note === null ? "—" : formatNombreAffiche(score.note) + "/20";
+    dlgRubricScore.innerHTML =
+      '<span class="tab-suivi-rubric-score__note">' +
+      note +
+      '</span><span class="tab-suivi-rubric-score__detail">' +
+      formatNombreAffiche(score.points) +
+      " / " +
+      formatNombreAffiche(score.total) +
+      " points · " +
+      score.selectedCount +
+      " / " +
+      score.itemCount +
+      " items</span>";
+  }
+
+  function enregistrerSelectionRubrique(ctx) {
+    var score = calculerScoreRubrique(ctx.rubrique, ctx.value);
+    ctx.value = { selected: score.selected, points: score.points, note: score.note };
+    if (ctx.mode === "test") {
+      rubricCellTest.value = ctx.value;
+      majScoreDialogRubrique(ctx);
+      return;
+    }
+    setCell(ctx.tableau, ctx.row.id, ctx.col.id, ctx.value);
+    majStatsColonneDom(ctx.col.id, syntheseColonne(ctx.tableau, ctx.col));
+    majBoutonRubriqueCellule(ctx.tableau, ctx.row.id, ctx.col);
+    planifierSauvegarde();
+    majScoreDialogRubrique(ctx);
+  }
+
+  function rendreGrilleRubriqueDialog(ctx) {
+    if (!dlgRubricGrid || !ctx) return;
+    var r = ctx.rubrique;
+    dlgRubricGrid.innerHTML = "";
+    var table = document.createElement("table");
+    table.className = "tab-suivi-rubric-grid";
+    var thead = document.createElement("thead");
+    var headRow = document.createElement("tr");
+    var thItem = document.createElement("th");
+    thItem.textContent = r.title;
+    headRow.appendChild(thItem);
+    r.levels.forEach(function (level) {
+      var th = document.createElement("th");
+      th.textContent = level.label;
+      th.style.setProperty("--rubric-level", level.color);
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    r.items.forEach(function (item) {
+      var tr = document.createElement("tr");
+      var rowHead = document.createElement("th");
+      rowHead.scope = "row";
+      rowHead.textContent = item.label;
+      tr.appendChild(rowHead);
+      r.levels.forEach(function (level, levelIndex) {
+        var td = document.createElement("td");
+        var cell = item.cells[levelIndex] || {};
+        var selected = ctx.value.selected[item.id] === level.id;
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "tab-suivi-rubric-option" + (selected ? " is-selected" : "");
+        btn.style.setProperty("--rubric-level", level.color);
+        btn.innerHTML =
+          '<span class="tab-suivi-rubric-option__text"></span><span class="tab-suivi-rubric-option__points"></span>';
+        btn.querySelector(".tab-suivi-rubric-option__text").textContent = cell.text || level.label;
+        btn.querySelector(".tab-suivi-rubric-option__points").textContent =
+          formatNombreAffiche(cell.points) + " pt";
+        btn.addEventListener("click", function () {
+          if (ctx.value.selected[item.id] === level.id) {
+            delete ctx.value.selected[item.id];
+          } else {
+            ctx.value.selected[item.id] = level.id;
+          }
+          enregistrerSelectionRubrique(ctx);
+          rendreGrilleRubriqueDialog(ctx);
+        });
+        td.appendChild(btn);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    dlgRubricGrid.appendChild(table);
+    majScoreDialogRubrique(ctx);
+  }
+
+  function indexEleveRubriqueActif(t) {
+    if (!t || !rubricCellRowId) return -1;
+    for (var i = 0; i < t.rows.length; i++) {
+      if (t.rows[i].id === rubricCellRowId) return i;
+    }
+    return -1;
+  }
+
+  function majNavigationRubriqueCellule() {
+    var t = getActif();
+    var isTest = !!rubricCellTest;
+    var idx = indexEleveRubriqueActif(t);
+    var total = t && t.rows ? t.rows.length : 0;
+    var showNav = !isTest && idx >= 0 && total > 1;
+    var btnPrev = document.getElementById("btn-rubric-cell-prev");
+    var btnNext = document.getElementById("btn-rubric-cell-next");
+    if (dlgRubricNav) dlgRubricNav.hidden = !showNav;
+    if (dlgRubricNavCount) dlgRubricNavCount.textContent = showNav ? idx + 1 + " / " + total : "";
+    if (btnPrev) btnPrev.disabled = !showNav || idx <= 0;
+    if (btnNext) btnNext.disabled = !showNav || idx >= total - 1;
+  }
+
+  function naviguerRubriqueEleve(delta) {
+    var t = getActif();
+    if (!t || !rubricCellColId || rubricCellTest) return;
+    var idx = indexEleveRubriqueActif(t);
+    if (idx < 0) return;
+    var next = idx + delta;
+    if (next < 0 || next >= t.rows.length) return;
+    ouvrirDialogRubriqueCellule(t.rows[next].id, rubricCellColId);
+  }
+
+  function ouvrirDialogRubriqueCellule(rowId, colId) {
+    var t = getActif();
+    if (!t || !dialogRubricCell || !dialogRubricCell.showModal) return;
+    var row = getRowParId(t, rowId);
+    var col = t.cols.filter(function (c) {
+      return c.id === colId;
+    })[0];
+    if (!row || !col || col.type !== "rubric") return;
+    rubricCellTest = null;
+    rubricCellRowId = rowId;
+    rubricCellColId = colId;
+    var rubrique = normaliserRubrique(col.rubric);
+    if (dlgRubricCellTitle) dlgRubricCellTitle.textContent = (col.label || rubrique.title) + " · " + labelEleveRow(row);
+    if (dlgRubricCellMeta) dlgRubricCellMeta.textContent = metaRubriqueTexte(rubrique);
+    rendreGrilleRubriqueDialog(obtenirContexteRubriqueActif());
+    majNavigationRubriqueCellule();
+    if (!dialogRubricCell.open) dialogRubricCell.showModal();
+  }
+
+  function ouvrirDialogRubriqueTest(rubrique) {
+    if (!dialogRubricCell || !dialogRubricCell.showModal) return;
+    rubricCellRowId = null;
+    rubricCellColId = null;
+    rubricCellTest = {
+      mode: "test",
+      rubrique: normaliserRubrique(rubrique),
+      value: { selected: {}, points: 0, note: null },
+    };
+    if (dlgRubricCellTitle) dlgRubricCellTitle.textContent = "Test · " + rubricCellTest.rubrique.title;
+    if (dlgRubricCellMeta) dlgRubricCellMeta.textContent = metaRubriqueTexte(rubricCellTest.rubrique);
+    rendreGrilleRubriqueDialog(rubricCellTest);
+    majNavigationRubriqueCellule();
+    dialogRubricCell.showModal();
+  }
+
+  function fermerDialogRubriqueCellule() {
+    rubricCellRowId = null;
+    rubricCellColId = null;
+    rubricCellTest = null;
+    if (dialogRubricCell && dialogRubricCell.open) dialogRubricCell.close();
   }
 
   function focusCelluleNombre(rowIndex, colId) {
@@ -1311,7 +2331,9 @@
       cols.forEach(function (col) {
         var th = document.createElement("th");
         th.className =
-          "tab-suivi-th tab-suivi-th--col" + (col.type === "calc" ? " tab-suivi-th--calc" : "");
+          "tab-suivi-th tab-suivi-th--col" +
+          (col.type === "calc" ? " tab-suivi-th--calc" : "") +
+          (col.type === "rubric" ? " tab-suivi-th--rubric" : "");
         th.scope = "col";
         th.setAttribute("data-col-id", col.id);
 
@@ -1407,6 +2429,20 @@
               ? "—"
               : formatNombreAffiche(cv) || "—";
           td.appendChild(spanCalc);
+        } else if (col.type === "rubric") {
+          var btnRubric = document.createElement("button");
+          btnRubric.type = "button";
+          var scoreRubric = calculerScoreRubrique(col.rubric, getCell(t, row.id, col.id));
+          btnRubric.className = "tab-suivi-rubric-cell-btn " + classeScoreRubrique(scoreRubric);
+          btnRubric.textContent = libelleScoreRubrique(scoreRubric);
+          btnRubric.setAttribute(
+            "aria-label",
+            "Ouvrir la grille " + (col.label || "") + " pour " + labelEleveRow(row)
+          );
+          btnRubric.addEventListener("click", function () {
+            ouvrirDialogRubriqueCellule(row.id, col.id);
+          });
+          td.appendChild(btnRubric);
         } else if (col.type === "check") {
           var btn = document.createElement("button");
           btn.type = "button";
@@ -1491,7 +2527,7 @@
     var t = getActif();
     if (!t) return null;
     options = options || {};
-    if (type !== "check" && type !== "number" && type !== "calc") return null;
+    if (type !== "check" && type !== "number" && type !== "calc" && type !== "rubric") return null;
     var col = {
       id: genererId("col"),
       label: labelColonneDefaut(t),
@@ -1505,6 +2541,12 @@
     }
     if (type === "number") {
       col.estNote = false;
+    }
+    if (type === "rubric") {
+      col.rubric = normaliserRubrique(options.rubric || {});
+      col.label = normaliserNom(options.label || col.rubric.title || "Evaluation");
+      col.estNote = true;
+      col.max = RUBRIQUE_MAX_DEFAUT;
     }
     t.cols.push(col);
     rendreGrille(scrollTo ? col.id : null);
@@ -1715,6 +2757,10 @@
       if (col.estNote) return op + " (note" + (col.max > 0 ? " /" + col.max : "") + ")";
       return op + " calculée (notes et mesures possibles)";
     }
+    if (col.type === "rubric") {
+      var r = normaliserRubrique(col.rubric);
+      return "Grille d'évaluation — " + metaRubriqueTexte(r) + " — note /20";
+    }
     if (col.estNote) {
       return "Note" + (col.max > 0 ? " /" + col.max : "");
     }
@@ -1801,8 +2847,9 @@
     majDialogColonneNoteUi();
     if (dlgColCheckWrap) dlgColCheckWrap.hidden = col.type !== "check";
     if (dlgColHorsSynthese) dlgColHorsSynthese.checked = col.type === "check" && col.horsSynthese === true;
+    if (dlgColRubricWrap) dlgColRubricWrap.hidden = col.type !== "rubric";
 
-    var peutRemplir = col.type !== "calc" && t.rows.length > 0;
+    var peutRemplir = col.type !== "calc" && col.type !== "rubric" && t.rows.length > 0;
     if (dlgColRemplirSection) dlgColRemplirSection.hidden = !peutRemplir;
     if (dlgColCalcHint) dlgColCalcHint.hidden = col.type !== "calc";
     if (col.type === "calc" && dlgColCalcHint && !t.rows.length) {
@@ -1812,7 +2859,7 @@
       dlgColCalcHint.textContent =
         "Colonne calculée automatiquement — les valeurs ne peuvent pas être remplies à la main.";
     }
-    if (!peutRemplir && col.type !== "calc" && dlgColRemplirSection) {
+    if (!peutRemplir && col.type !== "calc" && col.type !== "rubric" && dlgColRemplirSection) {
       if (dlgColRemplirBody) {
         dlgColRemplirBody.innerHTML = "";
         var p = document.createElement("p");
@@ -1866,6 +2913,483 @@
     rendreGrille();
     planifierSauvegarde();
     montrerOk("Colonne mise à jour.");
+  }
+
+  function chargerRubriquesPersonnelles() {
+    if (typeof DataManager === "undefined" || !DataManager.getParametre) {
+      rubriquesPersonnelles = [];
+      return Promise.resolve([]);
+    }
+    return DataManager.getParametre(RUBRIQUES_PARAM_ID)
+      .then(function (rec) {
+        if (rec && Array.isArray(rec.rubrics)) {
+          rubriquesPersonnelles = rec.rubrics.map(normaliserRubrique);
+          return rubriquesPersonnelles;
+        }
+        rubriquesPersonnelles = [normaliserRubrique(grilleBasket4eExemple())];
+        return sauverRubriquesPersonnelles().then(function () {
+          return rubriquesPersonnelles;
+        });
+      })
+      .catch(function () {
+        rubriquesPersonnelles = [];
+        return rubriquesPersonnelles;
+      });
+  }
+
+  function sauverRubriquesPersonnelles() {
+    if (typeof DataManager === "undefined" || !DataManager.saveParametre) return Promise.resolve();
+    return DataManager.saveParametre({
+      id: RUBRIQUES_PARAM_ID,
+      rubrics: rubriquesPersonnelles.map(normaliserRubrique),
+      updatedAt: maintenant(),
+    });
+  }
+
+  function ajouterRubriquePersonnelle(rubrique) {
+    var r = normaliserRubrique(rubrique);
+    r.source = "local";
+    rubriquesPersonnelles = rubriquesPersonnelles.filter(function (item) {
+      return item.id !== r.id;
+    });
+    rubriquesPersonnelles.push(r);
+    return sauverRubriquesPersonnelles().then(function () {
+      return r;
+    });
+  }
+
+  function urlCatalogueRubriques() {
+    return window.OUTILS_EPS_EVAL_CATALOG_URL || RUBRIQUES_CATALOG_URL;
+  }
+
+  function majStatutCatalogueEnLigne(etat, texte) {
+    if (!dlgRubricOnlineStatus) return;
+    dlgRubricOnlineStatus.classList.remove("is-ok", "is-error", "is-warn");
+    if (etat) dlgRubricOnlineStatus.classList.add("is-" + etat);
+    dlgRubricOnlineStatus.textContent = texte;
+  }
+
+  function chargerCatalogueEnLigne() {
+    rubriquesEnLigne = [];
+    if (typeof fetch !== "function") {
+      majStatutCatalogueEnLigne("error", "Catalogue en ligne indisponible sur ce navigateur.");
+      return Promise.resolve([]);
+    }
+    if (navigator && navigator.onLine === false) {
+      majStatutCatalogueEnLigne("error", "Catalogue en ligne indisponible hors ligne. Connexion nécessaire.");
+      return Promise.resolve([]);
+    }
+    majStatutCatalogueEnLigne("warn", "Chargement du catalogue en ligne...");
+    var loader =
+      window.OutilsEPS &&
+      window.OutilsEPS.catalog &&
+      window.OutilsEPS.catalog.loadCatalogWithLegacyFallback
+        ? window.OutilsEPS.catalog.loadCatalogWithLegacyFallback(urlCatalogueRubriques())
+        : fetch(urlCatalogueRubriques(), { cache: "no-store" })
+            .then(function (res) {
+              if (!res.ok) throw new Error("Catalogue en ligne introuvable.");
+              return res.json();
+            })
+            .then(function (data) {
+              return Array.isArray(data) ? data : Array.isArray(data.rubrics) ? data.rubrics : [];
+            });
+    return loader
+      .then(function (arr) {
+        rubriquesEnLigne = (arr || []).map(function (r) {
+          var rub = normaliserRubrique(r);
+          rub.source = "en ligne";
+          return rub;
+        });
+        majStatutCatalogueEnLigne(
+          "ok",
+          rubriquesEnLigne.length
+            ? rubriquesEnLigne.length + " grille(s) publiée(s) chargée(s)."
+            : "Catalogue en ligne vide pour le moment."
+        );
+        return rubriquesEnLigne;
+      })
+      .catch(function () {
+        rubriquesEnLigne = [];
+        majStatutCatalogueEnLigne("error", "Catalogue en ligne non chargé. Connexion nécessaire.");
+        return [];
+      });
+  }
+
+  function urlPropositionRubrique(rubrique, typeAvis) {
+    var r = normaliserRubrique(rubrique);
+    var titre = typeAvis
+      ? "Avis catalogue evaluation - " + r.title
+      : "Proposition grille evaluation - " + r.title;
+    var body =
+      (typeAvis ? "Avis : " + typeAvis + "\n\n" : "Merci de proposer cette grille au catalogue.\n\n") +
+      "APSA : " +
+      r.apsa +
+      "\nCycle : " +
+      labelCycleRubrique(r.cycle) +
+      "\nNiveau : " +
+      r.niveau +
+      "\n\nJSON :\n" +
+      JSON.stringify(r, null, 2);
+    var configured = window.OUTILS_EPS_EVAL_SUBMIT_URL || "";
+    if (configured) {
+      return (
+        configured +
+        (configured.indexOf("?") === -1 ? "?" : "&") +
+        "title=" +
+        encodeURIComponent(titre) +
+        "&body=" +
+        encodeURIComponent(body)
+      );
+    }
+    return RUBRIQUES_SUBMIT_MAIL + "?subject=" + encodeURIComponent(titre) + "&body=" + encodeURIComponent(body);
+  }
+
+  function proposerPublicationRubrique(rubrique) {
+    if (
+      window.OutilsEPS &&
+      window.OutilsEPS.catalog &&
+      window.OutilsEPS.catalog.submitGridToCatalog
+    ) {
+      return window.OutilsEPS.catalog
+        .submitGridToCatalog(normaliserRubrique(rubrique), { shareToCatalog: true, source: "teacher" })
+        .then(function (res) {
+          if (res && res.message) {
+            if (res.submitted) montrerOk(res.message);
+            else if (res.duplicate) montrerMsg(res.message);
+            else if (!res.skipped) montrerMsg(res.message);
+          }
+          return res;
+        })
+        .catch(function (err) {
+          montrerMsg(err && err.message ? err.message : "Publication impossible.");
+        });
+    }
+    montrerMsg("Catalogue en ligne non configuré (Supabase).");
+    return Promise.resolve({ submitted: false });
+  }
+
+  function creerColonneRubriqueDepuisModele(rubrique, options) {
+    options = options || {};
+    var r = normaliserRubrique(rubrique);
+    var col = ajouterColonne("rubric", true, { rubric: r, label: r.title });
+    if (!col) return;
+    if (dialogRubricCatalog && dialogRubricCatalog.open) dialogRubricCatalog.close();
+    fermerDialogGestionSansPrompt();
+    if (options.saveLocal) {
+      ajouterRubriquePersonnelle(r).catch(function (err) {
+        montrerMsg(err && err.message ? err.message : "Impossible d'enregistrer cette grille.");
+      });
+    }
+    if (options.share) {
+      proposerPublicationRubrique(r).finally(function () {
+        montrerOk("Grille « " + r.title + " » ajoutée.");
+      });
+    } else {
+      montrerOk("Grille « " + r.title + " » ajoutée.");
+    }
+  }
+
+  function rendreCarteRubrique(rubrique) {
+    var r = normaliserRubrique(rubrique);
+    var card = document.createElement("article");
+    card.className = "tab-suivi-rubric-card";
+    var head = document.createElement("div");
+    head.className = "tab-suivi-rubric-card__head";
+    var title = document.createElement("h4");
+    title.className = "tab-suivi-rubric-card__title";
+    title.textContent = r.title;
+    var badge = document.createElement("span");
+    badge.className = "tab-suivi-rubric-card__badge";
+    badge.textContent = r.source === "exemple" ? "Exemple" : r.source === "en ligne" ? "Publié" : "Perso";
+    head.appendChild(title);
+    head.appendChild(badge);
+    card.appendChild(head);
+
+    var meta = document.createElement("p");
+    meta.className = "tab-suivi-rubric-card__meta";
+    meta.textContent = metaRubriqueTexte(r);
+    card.appendChild(meta);
+
+    var desc = document.createElement("p");
+    desc.className = "tab-suivi-rubric-card__desc";
+    desc.textContent = r.items.length + " items · " + r.levels.length + " niveaux · note /20";
+    card.appendChild(desc);
+
+    var rating = document.createElement("p");
+    rating.className = "tab-suivi-rubric-card__rating";
+    var score = r.rating && r.rating.score ? r.rating.score : 0;
+    var votes = r.rating && r.rating.votes ? r.rating.votes : 0;
+    rating.textContent =
+      score > 0 ? "★ " + formatNombreAffiche(score) + "/5 · " + votes + " avis" : "☆ Pas encore d'avis";
+    card.appendChild(rating);
+    if (r.source === "local") rating.remove();
+
+    var actions = document.createElement("div");
+    actions.className = "tab-suivi-rubric-card__actions";
+    var test = document.createElement("button");
+    test.type = "button";
+    test.className = "btn btn--ghost btn--small";
+    test.textContent = "Tester";
+    test.addEventListener("click", function () {
+      ouvrirDialogRubriqueTest(r);
+    });
+    var use = document.createElement("button");
+    use.type = "button";
+    use.className = "btn btn--primary btn--small";
+    use.textContent = "Utiliser";
+    use.addEventListener("click", function () {
+      creerColonneRubriqueDepuisModele(r);
+    });
+    var avis = document.createElement("a");
+    avis.className = "btn btn--ghost btn--small";
+    avis.href = urlPropositionRubrique(r, "utile");
+    avis.target = "_blank";
+    avis.rel = "noopener";
+    avis.textContent = "Avis ★";
+    actions.appendChild(test);
+    actions.appendChild(use);
+    actions.appendChild(avis);
+    if (r.source === "local") avis.remove();
+    card.appendChild(actions);
+    return card;
+  }
+
+  function rendreCatalogueRubriques() {
+    if (!dlgRubricCatalogList) return;
+    dlgRubricCatalogList.innerHTML = "";
+    var query = normaliserRechercheRubrique(dlgRubricSearch ? dlgRubricSearch.value : "");
+    var list = rubriquesPersonnelles.map(function (r) {
+      var rub = normaliserRubrique(r);
+      rub.source = "local";
+      return rub;
+    }).filter(function (r) {
+      if (!query) return true;
+      var hay = normaliserRechercheRubrique(
+        [r.title, r.apsa, r.cycle, labelCycleRubrique(r.cycle), r.niveau, r.author, r.source].join(" ")
+      );
+      return hay.indexOf(query) !== -1;
+    });
+    if (dlgRubricCatalogEmpty) {
+      dlgRubricCatalogEmpty.textContent =
+        "Aucune grille personnelle disponible. Ouvrez Grilles d'evaluation pour en creer, importer ou dupliquer depuis le catalogue.";
+      dlgRubricCatalogEmpty.hidden = list.length > 0;
+    }
+    list.forEach(function (rubrique) {
+      dlgRubricCatalogList.appendChild(rendreCarteRubrique(rubrique));
+    });
+  }
+
+  function configDialogRubriqueEdition(mode) {
+    rubriqueEditionMode = mode === "edit-col" ? "edit-col" : "create";
+    var edition = rubriqueEditionMode === "edit-col";
+    if (dlgRubricDialogTitle) {
+      dlgRubricDialogTitle.textContent = edition ? "Modifier la grille" : "Grille d'évaluation";
+    }
+    if (dlgRubricDialogIntro) {
+      dlgRubricDialogIntro.textContent = edition
+        ? "Modifiez la grille de cette colonne. Les notes existantes seront recalculées."
+        : "Choisissez un exemple, importez une grille CSV ou enregistrez votre propre modèle.";
+    }
+    if (dlgRubricOnlineStatus) dlgRubricOnlineStatus.hidden = edition;
+    if (dlgRubricSearchWrap) dlgRubricSearchWrap.hidden = edition;
+    if (dlgRubricPageLink) dlgRubricPageLink.hidden = edition;
+    if (dlgRubricCatalogSection) dlgRubricCatalogSection.hidden = edition;
+    if (!edition && dlgRubricDialogIntro) {
+      dlgRubricDialogIntro.textContent =
+        "Choisissez une grille parmi Mes grilles. Pour créer, importer ou récupérer une grille du catalogue, ouvrez l'outil Grilles d'évaluation.";
+    }
+    if (dlgRubricOnlineStatus) dlgRubricOnlineStatus.hidden = true;
+    if (dlgRubricEditorSection) dlgRubricEditorSection.hidden = !edition;
+    if (dlgRubricEditorSectionTitle) {
+      dlgRubricEditorSectionTitle.textContent = edition ? "Grille de la colonne" : "Importer ou créer";
+    }
+    var btnSave = document.getElementById("btn-rubric-create-import");
+    if (btnSave) btnSave.textContent = edition ? "Enregistrer la grille" : "Créer la colonne";
+  }
+
+  function remplirFormulaireRubrique(rubrique) {
+    var r = normaliserRubrique(rubrique || rubriqueVierge(metaRubriqueEdition()));
+    if (dlgRubricTitle) dlgRubricTitle.value = r.title || "";
+    if (dlgRubricApsa) dlgRubricApsa.value = r.apsa || "";
+    if (dlgRubricCycle) dlgRubricCycle.value = normaliserCycleRubrique(r.cycle);
+    if (dlgRubricNiveau) dlgRubricNiveau.value = r.niveau || "";
+    if (dlgRubricShare) dlgRubricShare.checked = true;
+    rubriqueEdition = r;
+    rendreEditeurRubrique();
+  }
+
+  function ouvrirDialogRubriqueCatalog() {
+    if (!dialogRubricCatalog || !dialogRubricCatalog.showModal) {
+      montrerMsg("Fenêtre de grille indisponible sur ce navigateur.");
+      return;
+    }
+    rubriqueEditionColonneId = null;
+    rubriqueEditionInitiale = null;
+    configDialogRubriqueEdition("create");
+    chargerRubriquesPersonnelles().then(function () {
+      rendreCatalogueRubriques();
+      remplirFormulaireRubrique(rubriqueVierge({ title: "", apsa: "", cycle: "4", niveau: "" }));
+      dialogRubricCatalog.showModal();
+    });
+  }
+
+  function ouvrirDialogRubriqueColonne(colId) {
+    var t = getActif();
+    if (!t) return;
+    var col = t.cols.filter(function (c) {
+      return c.id === colId;
+    })[0];
+    if (!col || col.type !== "rubric") return;
+    if (colonneDialogId === colId && dlgColNom) {
+      col.label = normaliserNom(dlgColNom.value) || col.label;
+    }
+    try {
+      sessionStorage.setItem(
+        "outils_eps_rubric_edit_handoff_v1",
+        JSON.stringify({
+          tableId: t.id,
+          colId: col.id,
+          colLabel: col.label || "",
+          rubric: normaliserRubrique(col.rubric),
+          returnUrl: "tableau-suivi.html",
+          createdAt: maintenant(),
+        })
+      );
+    } catch (e) {
+      montrerMsg("Impossible de préparer l'ouverture de la grille.");
+      return;
+    }
+    if (dialogColonne && dialogColonne.open) dialogColonne.close();
+    persisterTableaux();
+    window.location.href = "grilles-evaluation.html?source=tableau-suivi";
+  }
+
+  function lireRubriqueImportee() {
+    return lireRubriqueDepuisEditeur();
+  }
+
+  function testerRubriqueImportee() {
+    try {
+      ouvrirDialogRubriqueTest(lireRubriqueImportee());
+      montrerMsg("");
+    } catch (err) {
+      montrerMsg(err && err.message ? err.message : "CSV invalide.");
+    }
+  }
+
+  function creerRubriqueImportee() {
+    try {
+      var r = lireRubriqueImportee();
+      creerColonneRubriqueDepuisModele(r, {
+        saveLocal: true,
+        share: dlgRubricShare && dlgRubricShare.checked,
+      });
+      montrerMsg("");
+    } catch (err) {
+      montrerMsg(err && err.message ? err.message : "CSV invalide.");
+    }
+  }
+
+  function compterCellulesRubriqueRenseignees(t, colId) {
+    if (!t || !colId) return 0;
+    var count = 0;
+    t.rows.forEach(function (row) {
+      var value = normaliserSelectionRubrique(getCell(t, row.id, colId));
+      if (Object.keys(value.selected || {}).length) count++;
+    });
+    return count;
+  }
+
+  function recalculerCellulesRubrique(t, col) {
+    if (!t || !col || col.type !== "rubric") return;
+    t.rows.forEach(function (row) {
+      var raw = getCell(t, row.id, col.id);
+      var selection = normaliserSelectionRubrique(raw);
+      if (!Object.keys(selection.selected || {}).length) {
+        setCell(t, row.id, col.id, null);
+        return;
+      }
+      var score = calculerScoreRubrique(col.rubric, selection);
+      if (!score.selectedCount) {
+        setCell(t, row.id, col.id, null);
+      } else {
+        setCell(t, row.id, col.id, {
+          selected: score.selected,
+          points: score.points,
+          note: score.note,
+        });
+      }
+    });
+  }
+
+  function enregistrerRubriqueColonne() {
+    try {
+      var t = getActif();
+      if (!t || !rubriqueEditionColonneId) return;
+      var col = t.cols.filter(function (c) {
+        return c.id === rubriqueEditionColonneId;
+      })[0];
+      if (!col || col.type !== "rubric") return;
+      var dejaRenseignees = compterCellulesRubriqueRenseignees(t, col.id);
+      if (dejaRenseignees) {
+        var ok = confirm(
+          dejaRenseignees +
+            " note(s) existent deja pour cette grille. Elles seront recalculees avec la nouvelle grille. Continuer ?"
+        );
+        if (!ok) return;
+      }
+      var ancienne = rubriqueEditionInitiale || normaliserRubrique(col.rubric);
+      var r = lireRubriqueImportee();
+      var doitRenommerColonne = !col.label || col.label === ancienne.title;
+      col.rubric = normaliserRubrique(r);
+      col.estNote = true;
+      col.max = RUBRIQUE_MAX_DEFAUT;
+      if (doitRenommerColonne) col.label = col.rubric.title;
+      recalculerCellulesRubrique(t, col);
+      if (dialogRubricCatalog && dialogRubricCatalog.open) dialogRubricCatalog.close();
+      rubriqueEditionColonneId = null;
+      rubriqueEditionInitiale = null;
+      configDialogRubriqueEdition("create");
+      rendreGrille(col.id);
+      planifierSauvegarde();
+      if (dlgRubricShare && dlgRubricShare.checked) proposerPublicationRubrique(col.rubric);
+      montrerMsg("");
+      montrerOk(dejaRenseignees ? "Grille mise a jour. Notes recalculees." : "Grille mise a jour.");
+    } catch (err) {
+      montrerMsg(err && err.message ? err.message : "Grille invalide.");
+    }
+  }
+
+  function enregistrerRubriqueEdition() {
+    if (rubriqueEditionMode === "edit-col") {
+      enregistrerRubriqueColonne();
+    } else {
+      creerRubriqueImportee();
+    }
+  }
+
+  function importerFichierRubriqueCsv(file) {
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var meta = metaRubriqueEdition();
+        if (!meta.title || meta.title === "Nouvelle grille") {
+          meta.title = normaliserNom(file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")) || "Grille importee";
+          if (dlgRubricTitle) dlgRubricTitle.value = meta.title;
+        }
+        rubriqueEdition = parseRubriqueCsv(reader.result || "", meta);
+        rendreEditeurRubrique();
+        montrerMsg("");
+        montrerOk("CSV importé dans l'éditeur.");
+      } catch (err) {
+        montrerMsg(err && err.message ? err.message : "CSV invalide.");
+      }
+    };
+    reader.onerror = function () {
+      montrerMsg("Impossible de lire ce fichier CSV.");
+    };
+    reader.readAsText(file, "UTF-8");
   }
 
   function ouvrirDialogGestion() {
@@ -2244,6 +3768,11 @@
         ouvrirDialogCalc();
         return;
       }
+      if (type === "rubric") {
+        if (dialogGestion && dialogGestion.open) dialogGestion.close();
+        ouvrirDialogRubriqueCatalog();
+        return;
+      }
       var col = ajouterColonne(type, true);
       if (!col) return;
       fermerDialogGestionSansPrompt();
@@ -2347,6 +3876,85 @@
     });
   }
 
+  var btnDialogRubricCatalogClose = document.getElementById("btn-dialog-rubric-catalog-close");
+  if (btnDialogRubricCatalogClose && dialogRubricCatalog) {
+    btnDialogRubricCatalogClose.addEventListener("click", function () {
+      dialogRubricCatalog.close();
+    });
+  }
+
+  var btnRubricTestImport = document.getElementById("btn-rubric-test-import");
+  if (btnRubricTestImport) btnRubricTestImport.addEventListener("click", testerRubriqueImportee);
+
+  var btnRubricCreateImport = document.getElementById("btn-rubric-create-import");
+  if (btnRubricCreateImport) btnRubricCreateImport.addEventListener("click", enregistrerRubriqueEdition);
+
+  if (dlgRubricSearch) {
+    dlgRubricSearch.addEventListener("input", rendreCatalogueRubriques);
+  }
+
+  if (btnRubricAddRow) btnRubricAddRow.addEventListener("click", ajouterLigneRubriqueEdition);
+  if (btnRubricAddCol) btnRubricAddCol.addEventListener("click", ajouterColonneRubriqueEdition);
+  if (dlgRubricFile) {
+    dlgRubricFile.addEventListener("change", function () {
+      var file = dlgRubricFile.files && dlgRubricFile.files[0];
+      importerFichierRubriqueCsv(file);
+      dlgRubricFile.value = "";
+    });
+  }
+  [dlgRubricTitle, dlgRubricApsa, dlgRubricCycle, dlgRubricNiveau].forEach(function (el) {
+    if (!el) return;
+    el.addEventListener("change", function () {
+      if (!rubriqueEdition) return;
+      rubriqueEdition = appliquerMetaRubriqueEdition(lireRubriqueDepuisEditeur());
+    });
+  });
+
+  var formRubricCatalog = document.getElementById("form-tab-suivi-rubric-catalog");
+  if (formRubricCatalog) {
+    formRubricCatalog.addEventListener("submit", function (e) {
+      e.preventDefault();
+    });
+  }
+
+  var btnDialogRubricCellClose = document.getElementById("btn-dialog-rubric-cell-close");
+  if (btnDialogRubricCellClose) btnDialogRubricCellClose.addEventListener("click", fermerDialogRubriqueCellule);
+
+  var btnRubricCellClose = document.getElementById("btn-rubric-cell-close");
+  if (btnRubricCellClose) btnRubricCellClose.addEventListener("click", fermerDialogRubriqueCellule);
+
+  var btnRubricCellPrev = document.getElementById("btn-rubric-cell-prev");
+  if (btnRubricCellPrev) {
+    btnRubricCellPrev.addEventListener("click", function () {
+      naviguerRubriqueEleve(-1);
+    });
+  }
+
+  var btnRubricCellNext = document.getElementById("btn-rubric-cell-next");
+  if (btnRubricCellNext) {
+    btnRubricCellNext.addEventListener("click", function () {
+      naviguerRubriqueEleve(1);
+    });
+  }
+
+  var btnRubricCellClear = document.getElementById("btn-rubric-cell-clear");
+  if (btnRubricCellClear) {
+    btnRubricCellClear.addEventListener("click", function () {
+      var ctx = obtenirContexteRubriqueActif();
+      if (!ctx) return;
+      ctx.value = { selected: {}, points: 0, note: null };
+      enregistrerSelectionRubrique(ctx);
+      rendreGrilleRubriqueDialog(ctx);
+    });
+  }
+
+  var formRubricCell = document.getElementById("form-tab-suivi-rubric-cell");
+  if (formRubricCell) {
+    formRubricCell.addEventListener("submit", function (e) {
+      e.preventDefault();
+    });
+  }
+
   var btnColAnnuler = document.getElementById("btn-col-annuler");
   if (btnColAnnuler && dialogColonne) {
     btnColAnnuler.addEventListener("click", function () {
@@ -2364,6 +3972,24 @@
     formColonne.addEventListener("submit", function (e) {
       e.preventDefault();
       enregistrerDialogColonne();
+    });
+  }
+
+  if (btnColRubricTest) {
+    btnColRubricTest.addEventListener("click", function () {
+      var t = getActif();
+      if (!t || !colonneDialogId) return;
+      var col = t.cols.filter(function (c) {
+        return c.id === colonneDialogId;
+      })[0];
+      if (col && col.type === "rubric") ouvrirDialogRubriqueTest(col.rubric);
+    });
+  }
+
+  if (btnColRubricEdit) {
+    btnColRubricEdit.addEventListener("click", function () {
+      if (!colonneDialogId) return;
+      ouvrirDialogRubriqueColonne(colonneDialogId);
     });
   }
 

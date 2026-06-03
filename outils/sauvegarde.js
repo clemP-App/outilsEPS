@@ -15,6 +15,17 @@
   var stockageQuotaBarEl = document.getElementById("stockage-quota-bar");
   var stockageQuotaFillEl = document.getElementById("stockage-quota-fill");
   var stockageQuotaHintEl = document.getElementById("stockage-quota-hint");
+  var importPanelEl = document.getElementById("import-backup-panel");
+  var importMetaEl = document.getElementById("import-backup-meta");
+  var importDetailsEl = document.getElementById("import-backup-details");
+  var importStatAddEl = document.getElementById("import-stat-add");
+  var importStatSameEl = document.getElementById("import-stat-same");
+  var importStatDiffEl = document.getElementById("import-stat-diff");
+  var btnImportMerge = document.getElementById("btn-import-merge");
+  var btnImportReplace = document.getElementById("btn-import-replace");
+  var btnImportCancel = document.getElementById("btn-import-cancel");
+  var pendingImportData = null;
+  var pendingImportPreview = null;
 
   var DELETE_CONFIRM = {
     "imports-eleves":
@@ -216,6 +227,224 @@
       });
   }
 
+  function formatCount(n) {
+    return String(n || 0);
+  }
+
+  function formatBackupDate(value) {
+    if (!value) return "date inconnue";
+    var d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "date inconnue";
+    return d.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  function setImportBusy(busy) {
+    [btnImportMerge, btnImportReplace, btnImportCancel].forEach(function (btn) {
+      if (btn) btn.disabled = !!busy;
+    });
+    if (!busy && btnImportMerge && pendingImportPreview) {
+      btnImportMerge.disabled = pendingImportPreview.summary.willImport === 0;
+    }
+  }
+
+  function hideImportPanel() {
+    pendingImportData = null;
+    pendingImportPreview = null;
+    if (importPanelEl) importPanelEl.hidden = true;
+    if (importDetailsEl) importDetailsEl.innerHTML = "";
+  }
+
+  function renderImportPreview(data, preview) {
+    pendingImportData = data;
+    pendingImportPreview = preview;
+
+    if (importPanelEl) importPanelEl.hidden = false;
+    if (importMetaEl) {
+      var meta = data && data.metadata ? data.metadata : {};
+      importMetaEl.textContent =
+        "Sauvegarde du " +
+        formatBackupDate(meta.exportedAt) +
+        " : " +
+        formatCount(preview.summary.imported) +
+        " donnée" +
+        (preview.summary.imported > 1 ? "s" : "") +
+        " dans le fichier, " +
+        formatCount(preview.summary.current) +
+        " déjà sur cet appareil.";
+    }
+    if (importStatAddEl) importStatAddEl.textContent = formatCount(preview.summary.willImport);
+    if (importStatSameEl) importStatSameEl.textContent = formatCount(preview.summary.identical);
+    if (importStatDiffEl) importStatDiffEl.textContent = formatCount(preview.summary.different);
+
+    if (btnImportMerge) {
+      btnImportMerge.disabled = preview.summary.willImport === 0;
+      btnImportMerge.textContent =
+        preview.summary.willImport > 0
+          ? "Fusionner " +
+            preview.summary.willImport +
+            " donnée" +
+            (preview.summary.willImport > 1 ? "s" : "")
+          : "Rien à fusionner";
+    }
+
+    if (importDetailsEl) {
+      importDetailsEl.innerHTML = "";
+      (preview.stores || [])
+        .filter(function (row) {
+          return row.current || row.imported;
+        })
+        .forEach(function (row) {
+          var tr = document.createElement("tr");
+          var addLabel = row.willImport
+            ? row.willImport +
+              " (" +
+              row.added +
+              " nouvelle" +
+              (row.added > 1 ? "s" : "") +
+              (row.different
+                ? ", " + row.different + " copie" + (row.different > 1 ? "s" : "")
+                : "") +
+              ")"
+            : "0";
+          [row.label, row.current, row.imported, row.identical, addLabel].forEach(function (
+            value,
+            index
+          ) {
+            var cell = document.createElement(index === 0 ? "th" : "td");
+            if (index === 0) cell.scope = "row";
+            cell.textContent = String(value);
+            tr.appendChild(cell);
+          });
+          importDetailsEl.appendChild(tr);
+        });
+    }
+
+    if (importPanelEl && importPanelEl.scrollIntoView) {
+      importPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function readBackupFile(file) {
+    if (!file) return Promise.resolve({ cancelled: true, reason: "no-file" });
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          resolve(JSON.parse(reader.result));
+        } catch (e) {
+          reject(new Error("Fichier JSON invalide."));
+        }
+      };
+      reader.onerror = function () {
+        reject(new Error("Impossible de lire le fichier."));
+      };
+      reader.readAsText(file, "UTF-8");
+    });
+  }
+
+  function pickBackupFile() {
+    return new Promise(function (resolve, reject) {
+      var input = document.createElement("input");
+      input.type = "file";
+      input.accept = "application/json,.json";
+      input.style.display = "none";
+      document.body.appendChild(input);
+      input.addEventListener("change", function () {
+        var file = input.files && input.files[0];
+        readBackupFile(file)
+          .then(function (data) {
+            input.remove();
+            resolve(data);
+          })
+          .catch(function (e) {
+            input.remove();
+            reject(e);
+          });
+      });
+      input.click();
+    });
+  }
+
+  function ouvrirImportSauvegarde() {
+    montrerErreur("");
+    montrerOk("");
+    hideImportPanel();
+    pickBackupFile()
+      .then(function (data) {
+        if (data && data.cancelled) return;
+        pendingImportData = data;
+        return DataManager.previewBackupImport(data).then(function (preview) {
+          renderImportPreview(data, preview);
+        });
+      })
+      .catch(function (e) {
+        montrerErreur(e.message || "Import impossible.");
+      });
+  }
+
+  function fusionnerSauvegarde() {
+    if (!pendingImportData) return;
+    montrerErreur("");
+    setImportBusy(true);
+    DataManager.importBackupMerge(pendingImportData)
+      .then(function (result) {
+        var plan = result && result.plan ? result.plan : pendingImportPreview;
+        var count = plan && plan.summary ? plan.summary.willImport : 0;
+        if (count) {
+          montrerOk(
+            "Fusion réussie : " +
+              count +
+              " donnée" +
+              (count > 1 ? "s" : "") +
+              " ajoutée" +
+              (count > 1 ? "s" : "") +
+              "."
+          );
+        } else {
+          montrerOk("Aucune donnée à ajouter : cette sauvegarde est déjà présente ici.");
+        }
+        hideImportPanel();
+        setImportBusy(false);
+        return renderStockage();
+      })
+      .catch(function (e) {
+        setImportBusy(false);
+        montrerErreur(e.message || "Fusion impossible.");
+      });
+  }
+
+  function remplacerParSauvegarde() {
+    if (!pendingImportData) return;
+    var msg =
+      "Remplacer toutes les données de cet appareil par cette sauvegarde ?\n\n" +
+      "Les données actuelles seront effacées avant import.";
+    if (!confirm(msg)) return;
+    montrerErreur("");
+    setImportBusy(true);
+    DataManager.importAllData(pendingImportData, { skipConfirm: true })
+      .then(function (result) {
+        if (result && result.success) {
+          montrerOk("Import réussi. Les données ont été restaurées.");
+          hideImportPanel();
+          renderStockage();
+          setTimeout(function () {
+            window.location.reload();
+          }, 1200);
+        }
+        setImportBusy(false);
+      })
+      .catch(function (e) {
+        setImportBusy(false);
+        montrerErreur(e.message || "Import impossible.");
+      });
+  }
+
   function supprimerCategorie(categoryId, label) {
     var msg = DELETE_CONFIRM[categoryId];
     if (!msg) {
@@ -274,32 +503,12 @@
 
   var btnImport = document.getElementById("btn-import-backup");
   if (btnImport) {
-    btnImport.addEventListener("click", function () {
-      montrerErreur("");
-      DataManager.pickAndImportBackup()
-        .then(function (result) {
-          if (result && result.cancelled) {
-            if (result.reason === "no-file") {
-              montrerErreur("");
-              return;
-            }
-            montrerErreur("Import annulé.");
-            return;
-          }
-          if (result && result.success) {
-            montrerOk("Import réussi. Les données ont été restaurées.");
-            renderStockage();
-            setTimeout(function () {
-              window.location.reload();
-            }, 1200);
-            return;
-          }
-        })
-        .catch(function (e) {
-          montrerErreur(e.message || "Import impossible.");
-        });
-    });
+    btnImport.addEventListener("click", ouvrirImportSauvegarde);
   }
+
+  if (btnImportMerge) btnImportMerge.addEventListener("click", fusionnerSauvegarde);
+  if (btnImportReplace) btnImportReplace.addEventListener("click", remplacerParSauvegarde);
+  if (btnImportCancel) btnImportCancel.addEventListener("click", hideImportPanel);
 
   init();
 })();

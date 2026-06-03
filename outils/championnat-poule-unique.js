@@ -383,16 +383,17 @@
   function setScore(matchId, side, value) {
     var m = state.matches.find(function (x) { return x.id === matchId; });
     if (!m) return;
-    if (side === "home") m.homeScore = parseScore(value);
-    else m.awayScore = parseScore(value);
-    if (m.homeScore == null && m.awayScore != null) {
-      m.homeScore = 0;
-      var homeInput = matchesEl.querySelector('input.match-row__score[data-match-id="' + matchId + '"][data-side="home"]');
-      if (homeInput) homeInput.value = "0";
-    } else if (m.awayScore == null && m.homeScore != null) {
-      m.awayScore = 0;
+    var val = parseScore(value);
+    if (side === "home") m.homeScore = val;
+    else m.awayScore = val;
+    if (val == null && side === "home" && m.awayScore === 0) {
+      m.awayScore = null;
       var awayInput = matchesEl.querySelector('input.match-row__score[data-match-id="' + matchId + '"][data-side="away"]');
-      if (awayInput) awayInput.value = "0";
+      if (awayInput) awayInput.value = "";
+    } else if (val == null && side === "away" && m.homeScore === 0) {
+      m.homeScore = null;
+      var homeInput = matchesEl.querySelector('input.match-row__score[data-match-id="' + matchId + '"][data-side="home"]');
+      if (homeInput) homeInput.value = "";
     }
     if (m.homeScore != null || m.awayScore != null) {
       closeGestionAccordionsOnScoreEntry();
@@ -449,7 +450,7 @@
       );
     });
     var remaining = filteredMatches.filter(function (m) {
-      return m.homeScore == null || m.awayScore == null;
+      return m.homeScore == null && m.awayScore == null;
     }).length;
     if (accordionEleveMatchsTitleEl) {
       accordionEleveMatchsTitleEl.textContent = "Matchs (" + remaining + " restants)";
@@ -537,7 +538,7 @@
 
   function buildQrPayload() {
     var entries = state.matches
-      .filter(function (m) { return m.homeScore != null && m.awayScore != null; })
+      .filter(function (m) { return m.homeScore != null || m.awayScore != null; })
       .map(function (m) {
         var home = state.teams.find(function (t) { return t.id === m.homeId; });
         var away = state.teams.find(function (t) { return t.id === m.awayId; });
@@ -550,8 +551,8 @@
           awayName: away ? away.name : "",
           homeEleveId: home ? home.eleveId || null : null,
           awayEleveId: away ? away.eleveId || null : null,
-          homeScore: m.homeScore,
-          awayScore: m.awayScore,
+          homeScore: m.homeScore == null ? 0 : m.homeScore,
+          awayScore: m.awayScore == null ? 0 : m.awayScore,
         };
       });
     if (!entries.length) throw new Error("Aucun match complété à partager.");

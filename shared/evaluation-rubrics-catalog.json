@@ -1,0 +1,372 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-03T00:00:00.000Z",
+  "rubrics": [
+    {
+      "id": "pub-badminton-c4-construire-point",
+      "title": "Badminton - construire le point",
+      "apsa": "Badminton",
+      "cycle": "4",
+      "niveau": "4e / 3e",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.6, "votes": 18 },
+      "levels": [
+        { "id": "l1", "label": "A consolider", "color": "#fb7185" },
+        { "id": "l2", "label": "En progres", "color": "#fdba74" },
+        { "id": "l3", "label": "Maitrise", "color": "#fde68a" },
+        { "id": "l4", "label": "Tres maitrise", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Servir et engager",
+          "cells": [
+            { "text": "Service irregulier ou non reglementaire.", "points": 0 },
+            { "text": "Service qui met l'echange en jeu mais reste previsible.", "points": 1 },
+            { "text": "Service regulier et place.", "points": 2 },
+            { "text": "Service varie qui met l'adversaire en difficulte.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Se deplacer et se replacer",
+          "cells": [
+            { "text": "Deplacements tardifs ou desorganises.", "points": 0 },
+            { "text": "Deplacements efficaces par moments, replacement fragile.", "points": 1 },
+            { "text": "Deplacements et replacements efficaces.", "points": 2 },
+            { "text": "Anticipe les trajectoires et prepare le coup suivant.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Varier les trajectoires",
+          "cells": [
+            { "text": "Renvois peu controles.", "points": 0 },
+            { "text": "Quelques zones sont recherchees.", "points": 1 },
+            { "text": "Trajectoires variees pour deplacer l'adversaire.", "points": 2 },
+            { "text": "Choix de trajectoires qui construisent la rupture.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i4",
+          "label": "Arbitrer",
+          "cells": [
+            { "text": "Regles essentielles peu stabilisees.", "points": 0 },
+            { "text": "Regles principales appliquees avec aide.", "points": 1 },
+            { "text": "Arbitrage fiable et calme.", "points": 2 },
+            { "text": "Arbitrage autonome, precis, explique les decisions.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-musculation-lycee-projet",
+      "title": "Musculation - projet d'entrainement",
+      "apsa": "Musculation",
+      "cycle": "lycee",
+      "niveau": "Lycée",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.8, "votes": 12 },
+      "levels": [
+        { "id": "l1", "label": "Insuffisant", "color": "#fb7185" },
+        { "id": "l2", "label": "Fragile", "color": "#fdba74" },
+        { "id": "l3", "label": "Satisfaisant", "color": "#fde68a" },
+        { "id": "l4", "label": "Tres satisfaisant", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Projet personnel",
+          "cells": [
+            { "text": "Projet non relie a un objectif clair.", "points": 0 },
+            { "text": "Objectif identifie mais peu justifie.", "points": 1 },
+            { "text": "Projet coherent avec l'objectif choisi.", "points": 2 },
+            { "text": "Projet precis, argumente et ajustable.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Parametres de charge",
+          "cells": [
+            { "text": "Charges, series ou recuperations inadaptees.", "points": 0 },
+            { "text": "Parametres partiellement adaptes.", "points": 1 },
+            { "text": "Parametres adaptes et suivis.", "points": 2 },
+            { "text": "Parametres pilotes selon les ressentis.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Securite et posture",
+          "cells": [
+            { "text": "Placements mettant en difficulte la securite.", "points": 0 },
+            { "text": "Placements securises avec rappels.", "points": 1 },
+            { "text": "Placements maitrises sur les exercices.", "points": 2 },
+            { "text": "Anticipe, pare et conseille de facon fiable.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i4",
+          "label": "Analyse de la seance",
+          "cells": [
+            { "text": "Bilan absent ou tres descriptif.", "points": 0 },
+            { "text": "Bilan qui repere quelques sensations.", "points": 1 },
+            { "text": "Bilan qui relie sensations, charges et objectif.", "points": 2 },
+            { "text": "Bilan qui ajuste precisement la seance suivante.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-danse-c3-composer",
+      "title": "Danse - composer et presenter",
+      "apsa": "Danse",
+      "cycle": "3",
+      "niveau": "CM2 / 6e",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.2, "votes": 7 },
+      "levels": [
+        { "id": "l1", "label": "Debutant", "color": "#fb7185" },
+        { "id": "l2", "label": "En cours", "color": "#fdba74" },
+        { "id": "l3", "label": "Reussi", "color": "#fde68a" },
+        { "id": "l4", "label": "Tres reussi", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Presence scenique",
+          "cells": [
+            { "text": "Hesitant et peu engage.", "points": 0 },
+            { "text": "S'engage par moments.", "points": 1 },
+            { "text": "Present et concentre.", "points": 2 },
+            { "text": "Capte l'attention et assume son role.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Relation au groupe",
+          "cells": [
+            { "text": "Reperes collectifs peu respectes.", "points": 0 },
+            { "text": "Reperes suivis avec quelques decalages.", "points": 1 },
+            { "text": "Actions coordonnees avec le groupe.", "points": 2 },
+            { "text": "Enrichit la composition collective.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Utilisation de l'espace",
+          "cells": [
+            { "text": "Espace peu exploite.", "points": 0 },
+            { "text": "Quelques directions ou niveaux utilises.", "points": 1 },
+            { "text": "Espace varie et lisible.", "points": 2 },
+            { "text": "Choix d'espace qui renforcent l'intention.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-basket-4e-jeu-rapide",
+      "title": "Basket-ball 4e - jouer vite et juste",
+      "apsa": "Basket-ball",
+      "cycle": "4",
+      "niveau": "4e",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.7, "votes": 16 },
+      "levels": [
+        { "id": "l1", "label": "A consolider", "color": "#fb7185" },
+        { "id": "l2", "label": "En progres", "color": "#fdba74" },
+        { "id": "l3", "label": "Maitrise", "color": "#fde68a" },
+        { "id": "l4", "label": "Tres maitrise", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Se demarquer",
+          "cells": [
+            { "text": "Reste souvent immobile ou proche du porteur.", "points": 0 },
+            { "text": "Se rend disponible par moments mais tarde a se replacer.", "points": 1 },
+            { "text": "Propose des solutions simples et lisibles.", "points": 2 },
+            { "text": "Enchaine appels, replacement et aide au porteur.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Choisir passer, dribbler ou tirer",
+          "cells": [
+            { "text": "Garde le ballon ou agit sans observer.", "points": 0 },
+            { "text": "Choix parfois adaptes mais encore tardifs.", "points": 1 },
+            { "text": "Choisit une action efficace selon la situation.", "points": 2 },
+            { "text": "Accelere le jeu par des choix rapides et justes.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Defendre",
+          "cells": [
+            { "text": "Defense peu active ou oublis de marquage.", "points": 0 },
+            { "text": "Gene l'adversaire direct par moments.", "points": 1 },
+            { "text": "Se place entre l'adversaire et le panier.", "points": 2 },
+            { "text": "Aide, communique et recupere des ballons sans faute.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i4",
+          "label": "Cooperer",
+          "cells": [
+            { "text": "Participe peu au projet collectif.", "points": 0 },
+            { "text": "Coopere avec quelques partenaires.", "points": 1 },
+            { "text": "S'inscrit dans un jeu collectif simple.", "points": 2 },
+            { "text": "Organise, encourage et ajuste avec l'equipe.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-handball-c4-monter-balle",
+      "title": "Handball - monter la balle et conclure",
+      "apsa": "Handball",
+      "cycle": "4",
+      "niveau": "5e / 4e",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.4, "votes": 9 },
+      "levels": [
+        { "id": "l1", "label": "Fragile", "color": "#fb7185" },
+        { "id": "l2", "label": "En cours", "color": "#fdba74" },
+        { "id": "l3", "label": "Solide", "color": "#fde68a" },
+        { "id": "l4", "label": "Expert", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Avancer collectivement",
+          "cells": [
+            { "text": "Progression souvent arretee ou individuelle.", "points": 0 },
+            { "text": "Progresse avec aide ou dans des couloirs peu varies.", "points": 1 },
+            { "text": "Utilise passes et courses pour avancer.", "points": 2 },
+            { "text": "Enchaine rapidement la montee de balle avec ses partenaires.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Tirer en situation favorable",
+          "cells": [
+            { "text": "Tirs precipites ou loin du but.", "points": 0 },
+            { "text": "Repere quelques occasions favorables.", "points": 1 },
+            { "text": "Tire dans une zone efficace et equilibree.", "points": 2 },
+            { "text": "Varie ses tirs et choisit le bon moment.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Se replacer en defense",
+          "cells": [
+            { "text": "Retour defensif rare ou tardif.", "points": 0 },
+            { "text": "Revient mais perd souvent son adversaire.", "points": 1 },
+            { "text": "Se replace vite et protege l'axe du but.", "points": 2 },
+            { "text": "Coordonne le repli et aide ses partenaires.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-acrosport-c4-composer-securiser",
+      "title": "Acrosport - composer et securiser",
+      "apsa": "Acrosport",
+      "cycle": "4",
+      "niveau": "3e",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.5, "votes": 11 },
+      "levels": [
+        { "id": "l1", "label": "Insuffisant", "color": "#fb7185" },
+        { "id": "l2", "label": "Fragile", "color": "#fdba74" },
+        { "id": "l3", "label": "Satisfaisant", "color": "#fde68a" },
+        { "id": "l4", "label": "Excellent", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Securite",
+          "cells": [
+            { "text": "Regles de placement et de pare peu respectees.", "points": 0 },
+            { "text": "Regles appliquees avec rappels.", "points": 1 },
+            { "text": "Montages et demontages controles.", "points": 2 },
+            { "text": "Anticipe les risques et assure le groupe.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Figures collectives",
+          "cells": [
+            { "text": "Figures instables ou peu lisibles.", "points": 0 },
+            { "text": "Figures tenues mais transitions fragiles.", "points": 1 },
+            { "text": "Figures stables, variees et bien enchainees.", "points": 2 },
+            { "text": "Figures ambitieuses, propres et adaptees au groupe.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Composition",
+          "cells": [
+            { "text": "Debut, fin ou espace peu structures.", "points": 0 },
+            { "text": "Composition lisible mais simple.", "points": 1 },
+            { "text": "Espace, rythme et roles organises.", "points": 2 },
+            { "text": "Projet artistique coherent et engage.", "points": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pub-course-duree-lycee-projet",
+      "title": "Course en duree - gerer son projet",
+      "apsa": "Course en duree",
+      "cycle": "lycee",
+      "niveau": "2de / 1re",
+      "source": "en ligne",
+      "author": "Outils EPS",
+      "rating": { "score": 4.3, "votes": 8 },
+      "levels": [
+        { "id": "l1", "label": "Non acquis", "color": "#fb7185" },
+        { "id": "l2", "label": "Partiel", "color": "#fdba74" },
+        { "id": "l3", "label": "Acquis", "color": "#fde68a" },
+        { "id": "l4", "label": "Depasse", "color": "#bbf7d0" }
+      ],
+      "items": [
+        {
+          "id": "i1",
+          "label": "Choisir une allure",
+          "cells": [
+            { "text": "Allure non reliee aux ressources.", "points": 0 },
+            { "text": "Allure choisie mais peu tenue.", "points": 1 },
+            { "text": "Allure realiste et globalement respectee.", "points": 2 },
+            { "text": "Allure ajustee finement selon les reperes.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i2",
+          "label": "Gerer l'effort",
+          "cells": [
+            { "text": "Depart trop rapide ou abandon de l'objectif.", "points": 0 },
+            { "text": "Effort gere par moments avec variations fortes.", "points": 1 },
+            { "text": "Effort regulier et adapte a la duree.", "points": 2 },
+            { "text": "Regule l'effort avec lucidite et relances maitrisees.", "points": 3 }
+          ]
+        },
+        {
+          "id": "i3",
+          "label": "Analyser",
+          "cells": [
+            { "text": "Bilan absent ou uniquement descriptif.", "points": 0 },
+            { "text": "Bilan qui identifie quelques ecarts.", "points": 1 },
+            { "text": "Bilan relie aux sensations et aux temps.", "points": 2 },
+            { "text": "Bilan precis qui prepare un ajustement pertinent.", "points": 3 }
+          ]
+        }
+      ]
+    }
+  ]
+}

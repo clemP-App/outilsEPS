@@ -79,7 +79,20 @@
   function id(prefix) { return (DataManager && DataManager.genererId ? DataManager.genererId(prefix) : prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8)); }
   function msg(t, ok) { if (!el["defi-msg"]) return; el["defi-msg"].hidden = !t; el["defi-msg"].textContent = t || ""; el["defi-msg"].classList.toggle("msg-ok", !!ok); el["defi-msg"].classList.toggle("msg-error", !ok); }
   function byId(pid) { return state.players.filter(function (p) { return p.id === pid; })[0] || null; }
-  function rankOf(pid) { return state.ladder.indexOf(pid) + 1; }
+  function ladderRankOf(pid) { return state.ladder.indexOf(pid) + 1; }
+  function rankOf(pid) {
+    var ladderRank = ladderRankOf(pid);
+    if (ladderRank <= 0) return 0;
+    if (state.settings && state.settings.formula === "swap-only") return ladderRank;
+    var p = byId(pid);
+    if (!p) return 0;
+    var points = Number(p.points || 0);
+    for (var i = 0; i < state.ladder.length; i++) {
+      var other = byId(state.ladder[i]);
+      if (other && Number(other.points || 0) === points) return i + 1;
+    }
+    return ladderRank;
+  }
 
   function ensureState() {
     state.settings = Object.assign({}, clone(DEFAULT_SETTINGS), state.settings || {});
@@ -294,12 +307,12 @@
       tbody.appendChild(tr0);
       return;
     }
-    state.ladder.forEach(function (pid, idx) {
+    state.ladder.forEach(function (pid) {
       var p = byId(pid);
       if (!p) return;
       var tr = document.createElement("tr");
       var series = p.currentStreak >= 2 ? "🔥 " + p.currentStreak + " victoires" : "—";
-      [idx + 1, p.name, p.points, p.wins, p.losses, "🏅 " + badgeCount(p), series].forEach(function (v) {
+      [rankOf(pid), p.name, p.points, p.wins, p.losses, "🏅 " + badgeCount(p), series].forEach(function (v) {
         var td = document.createElement("td");
         td.textContent = String(v);
         tr.appendChild(td);
@@ -496,6 +509,49 @@
       });
   }
 
+  function formatOpponentList(ids) {
+    return ids
+      .map(function (pid) {
+        var p = byId(pid);
+        return p ? p.name : "";
+      })
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  function formatMatchCount(n, singular, plural) {
+    return n + " " + (n > 1 ? plural : singular);
+  }
+
+  function playerNemesisStats(pid) {
+    var lostTo = {};
+    var beaten = {};
+    state.matches.forEach(function (m) {
+      if (m.loserId === pid && m.winnerId) {
+        lostTo[m.winnerId] = Number(lostTo[m.winnerId] || 0) + 1;
+      }
+      if (m.winnerId === pid && m.loserId) {
+        beaten[m.loserId] = Number(beaten[m.loserId] || 0) + 1;
+      }
+    });
+
+    function best(map) {
+      var max = 0;
+      Object.keys(map).forEach(function (id) {
+        if (map[id] > max) max = map[id];
+      });
+      return {
+        count: max,
+        ids: Object.keys(map).filter(function (id) { return map[id] === max && max > 0; }),
+      };
+    }
+
+    return {
+      nemesis: best(lostTo),
+      prey: best(beaten),
+    };
+  }
+
   function scoreDelta(winnerRank, loserRank) {
     var f = state.settings.formula;
     var cfg = state.settings.formulas[f] || {};
@@ -683,13 +739,13 @@
         o0.textContent = "—";
         node.appendChild(o0);
       }
-      state.ladder.forEach(function (pid, i) {
+      state.ladder.forEach(function (pid) {
         var p = byId(pid);
         if (!p) return;
         if (typeof filterFn === "function" && !filterFn(p.id)) return;
         var o = document.createElement("option");
         o.value = p.id;
-        o.textContent = (i + 1) + ". " + p.name;
+        o.textContent = rankOf(pid) + ". " + p.name;
         node.appendChild(o);
       });
     }
@@ -737,14 +793,36 @@
     });
 
     OutilsDom.clear(el["defi-player-perfs"]);
+    var nemesisStats = playerNemesisStats(p.id);
     [
       { label: "Série en cours", value: p.currentStreak + " victoires", icon: "🔥" },
       { label: "Série la plus longue", value: p.bestStreak + " victoires", icon: "🚀" },
       { label: "Badges obtenus", value: badgeCount(p), icon: "🏅" },
+      {
+        label: "Ma bête noire",
+        value: nemesisStats.nemesis.count
+          ? formatOpponentList(nemesisStats.nemesis.ids) + " (" + formatMatchCount(nemesisStats.nemesis.count, "défaite", "défaites") + ")"
+          : "Aucune défaite",
+        icon: "🎯",
+      },
+      {
+        label: "Je suis la bête noire de",
+        value: nemesisStats.prey.count
+          ? formatOpponentList(nemesisStats.prey.ids) + " (" + formatMatchCount(nemesisStats.prey.count, "victoire", "victoires") + ")"
+          : "Aucune victoire",
+        icon: "🥇",
+      },
     ].forEach(function (k) {
       var card2 = document.createElement("article");
       card2.className = "defi-kpi-card defi-kpi-card--sub";
-      card2.innerHTML = '<div class="defi-kpi-card__label">' + k.icon + " " + k.label + '</div><div class="defi-kpi-card__value">' + k.value + "</div>";
+      var label = document.createElement("div");
+      label.className = "defi-kpi-card__label";
+      label.textContent = k.icon + " " + k.label;
+      var value = document.createElement("div");
+      value.className = "defi-kpi-card__value";
+      value.textContent = k.value;
+      card2.appendChild(label);
+      card2.appendChild(value);
       el["defi-player-perfs"].appendChild(card2);
     });
     OutilsDom.clear(el["defi-player-badges-earned"]);
@@ -782,9 +860,9 @@
     var lines = [];
     if (kind === "standings") {
       lines.push("Rang;Joueur;Points;Victoires;Defaites;Badges;Serie");
-      state.ladder.forEach(function (pid, idx) {
+      state.ladder.forEach(function (pid) {
         var p = byId(pid);
-        lines.push([idx + 1, p.name, p.points, p.wins, p.losses, badgeCount(p), p.currentStreak].join(";"));
+        lines.push([rankOf(pid), p.name, p.points, p.wins, p.losses, badgeCount(p), p.currentStreak].join(";"));
       });
     } else {
       lines.push("Date;Gagnant;Perdant;Arbitre;Score;Delta gagnant;Delta perdant");

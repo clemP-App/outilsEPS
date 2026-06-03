@@ -63,6 +63,38 @@
     return (team && team.name && String(team.name).trim()) || fallback;
   }
 
+  function championnatEntries(payload) {
+    return Array.isArray(payload && payload.entries) ? payload.entries : [];
+  }
+
+  function championnatPouleName(payload) {
+    return (
+      (payload && payload.source && payload.source.pouleName) ||
+      (payload && payload.pouleName) ||
+      "Poule"
+    );
+  }
+
+  function championnatParticipantCount(entries) {
+    var seen = {};
+    (entries || []).forEach(function (match) {
+      [match.homeName, match.awayName].forEach(function (name) {
+        var key = name && String(name).trim().toLowerCase();
+        if (key) seen[key] = true;
+      });
+    });
+    return Object.keys(seen).length;
+  }
+
+  function championnatScoreLabel(match) {
+    if (!match) return "—";
+    var home = match.homeName || "Participant";
+    var away = match.awayName || "Participant";
+    var hs = match.homeScore != null ? match.homeScore : "—";
+    var as = match.awayScore != null ? match.awayScore : "—";
+    return home + " " + hs + " - " + as + " " + away;
+  }
+
   function humanSummary(rec) {
     var p = rec.payload || {};
     switch (rec.toolId) {
@@ -162,6 +194,10 @@
         var label = exp.seanceTitle || exp.titre || exp.porteeLabel || "Débrief";
         if (exp.dateLabel) label += " · " + exp.dateLabel;
         return label + " · " + nb + " réponse(s)";
+      }
+      case "championnat-poule-unique": {
+        var entriesChamp = championnatEntries(p);
+        return championnatPouleName(p) + " · " + entriesChamp.length + " match(s) transmis";
       }
       default:
         return "—";
@@ -300,6 +336,17 @@
           lines.push(theme + (i + 1) + ". " + q);
           lines.push("→ " + r);
         });
+        break;
+      }
+      case "championnat-poule-unique": {
+        var entriesLines = championnatEntries(p);
+        lines.push(championnatPouleName(p) + " : " + entriesLines.length + " match(s) transmis");
+        entriesLines.slice(0, 12).forEach(function (match) {
+          lines.push(championnatScoreLabel(match));
+        });
+        if (entriesLines.length > 12) {
+          lines.push("… et " + (entriesLines.length - 12) + " autre(s) match(s)");
+        }
         break;
       }
       case "table-marque":
@@ -451,6 +498,16 @@
           "Réponses renseignées",
           "Total questions",
         ];
+      case "championnat-poule-unique":
+        return [
+          "Date import",
+          "Classe",
+          "Participant",
+          "Poule",
+          "Matchs transmis",
+          "Participants concernés",
+          "Dernier score",
+        ];
       default:
         return ["Date import", "Classe", "Joueur / Équipe", "Résultat"];
     }
@@ -570,6 +627,15 @@
           cell(expCells.porteeLabel || expCells.portee),
           cell(nbDebrief),
           cell(repsDebrief.length),
+        ]);
+      }
+      case "championnat-poule-unique": {
+        var entriesUnique = championnatEntries(p);
+        return baseMeta(rec).concat([
+          cell(championnatPouleName(p)),
+          cell(entriesUnique.length),
+          cell(championnatParticipantCount(entriesUnique)),
+          cell(championnatScoreLabel(entriesUnique[entriesUnique.length - 1])),
         ]);
       }
       default:

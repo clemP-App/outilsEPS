@@ -69,6 +69,84 @@ test("Défi ATP — headline riche (rang, pts, V/D)", function () {
   assert.match(acts[0].headline, /3 badge/);
 });
 
+test("Defi ATP - meme rang en cas d'egalite de points", function () {
+  var eleve = { id: "e1", classeId: "c1", nom: "Andre", prenom: "Clara" };
+  var data = {
+    classes: [{ id: "c1", nom: "6e Test", eleves: [eleve] }],
+    eleves: [eleve],
+    identiteAliases: [],
+    sessions: [
+      {
+        id: "s1",
+        toolId: "defi-atp",
+        classeId: null,
+        archived: false,
+        lastOpenedAt: "2026-05-29T10:00:00.000Z",
+        nomSession: "Seance egalite",
+      },
+    ],
+    parametres: [
+      {
+        id: "defi-atp__s1",
+        sessionId: "s1",
+        toolId: "defi-atp",
+        players: [
+          { id: "p1", name: "Andre Clara", points: 1000, wins: 1, losses: 0, badges: {} },
+          { id: "p2", name: "Adam Fournier", points: 1000, wins: 1, losses: 0, badges: {} },
+          { id: "p3", name: "Lea Martin", points: 998, wins: 0, losses: 1, badges: {} },
+        ],
+        ladder: ["p2", "p1", "p3"],
+        matches: [{ id: "m1" }],
+      },
+    ],
+    championnats: [],
+    tournoisElimination: [],
+  };
+  var acts = Activites.collectActivitesEleve(eleve, data, {});
+  assert.equal(acts.length, 1);
+  assert.match(acts[0].headline, /1e\/3/);
+  assert.equal(acts[0].metrics.rang, 1);
+});
+
+test("Defi ATP - echange de place conserve le rang de la liste", function () {
+  var eleve = { id: "e1", classeId: "c1", nom: "Andre", prenom: "Clara" };
+  var data = {
+    classes: [{ id: "c1", nom: "6e Test", eleves: [eleve] }],
+    eleves: [eleve],
+    identiteAliases: [],
+    sessions: [
+      {
+        id: "s1",
+        toolId: "defi-atp",
+        classeId: null,
+        archived: false,
+        lastOpenedAt: "2026-05-29T10:00:00.000Z",
+        nomSession: "Seance swap",
+      },
+    ],
+    parametres: [
+      {
+        id: "defi-atp__s1",
+        sessionId: "s1",
+        toolId: "defi-atp",
+        settings: { formula: "swap-only" },
+        players: [
+          { id: "p1", name: "Andre Clara", points: 1000, wins: 1, losses: 0, badges: {} },
+          { id: "p2", name: "Adam Fournier", points: 1000, wins: 1, losses: 0, badges: {} },
+        ],
+        ladder: ["p2", "p1"],
+        matches: [{ id: "m1" }],
+      },
+    ],
+    championnats: [],
+    tournoisElimination: [],
+  };
+  var acts = Activites.collectActivitesEleve(eleve, data, {});
+  assert.equal(acts.length, 1);
+  assert.match(acts[0].headline, /2e\/2/);
+  assert.equal(acts[0].metrics.rang, 2);
+});
+
 test("Prénom seul — une seule Clara dans la classe", function () {
   var eleves = [
     { id: "e1", classeId: "c1", nom: "Andre", prenom: "Clara" },

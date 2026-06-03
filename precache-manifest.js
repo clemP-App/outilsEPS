@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "55";
+var APP_CACHE_VERSION = "67";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -23,6 +23,8 @@ var PRECACHE = [
   "./outils/cahier-texte.js",
   "./outils/calcul-1rm.html",
   "./outils/calcul-1rm.js",
+  "./outils/catalogue-evaluations.html",
+  "./outils/catalogue-evaluations.js",
   "./outils/championnat-poule-unique.html",
   "./outils/championnat-poule-unique.js",
   "./outils/championnat-poule.html",
@@ -51,6 +53,8 @@ var PRECACHE = [
   "./outils/ecartement-plots.html",
   "./outils/eps-referentiel-cycles.js",
   "./outils/eps-referentiel-data.js",
+  "./outils/grilles-evaluation.html",
+  "./outils/grilles-evaluation.js",
   "./outils/impact-badminton.html",
   "./outils/impact-badminton.js",
   "./outils/inducteur-danse.html",
@@ -107,6 +111,8 @@ var PRECACHE = [
   "./pwa-splash.js",
   "./script.js",
   "./session-manager.js",
+  "./shared/catalog-grid-validation.js",
+  "./shared/catalog-grids.js",
   "./shared/championnat-standings.js",
   "./shared/classe-csv-import.js",
   "./shared/eleve-display.js",
@@ -125,12 +131,15 @@ var PRECACHE = [
   "./shared/questions-debrief-core.js",
   "./shared/rm-formulas.js",
   "./shared/sessions-core.js",
+  "./shared/supabase-config.js",
+  "./shared/supabaseClient.js",
   "./shared/synthese-asns.js",
   "./shared/synthese-eps-activites.js",
   "./shared/synthese-eps-core.js",
   "./shared/synthese-facts.js",
   "./shared/synthese-identity.js",
   "./shared/tool-accueil.js",
+  "./shared/tool-results-history.js",
   "./shared/validation-asns-core.js",
   "./shared/validation-asns-pdf.js",
   "./style.css",

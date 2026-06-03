@@ -40,6 +40,16 @@
       publicCible: "prof",
     },
     {
+      id: "grilles-evaluation",
+      titre: "Grilles d'évaluation",
+      description:
+        "Catalogue, création, modification, duplication et publication de modèles de grilles d'évaluation.",
+      icone: "▦",
+      href: "outils/grilles-evaluation.html",
+      categorie: "Gestion de classe",
+      publicCible: "prof",
+    },
+    {
       id: "cahier-texte",
       titre: "Cahier de texte",
       description:

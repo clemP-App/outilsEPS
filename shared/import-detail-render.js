@@ -456,6 +456,50 @@ var ImportDetailRender = (function () {
     parent.appendChild(wrap);
   }
 
+  function renderChampionnatPouleUnique(payload, parent) {
+    var entries = Array.isArray(payload.entries) ? payload.entries : [];
+    var source = payload.source || {};
+    var wrap = el("div", "import-preview import-preview--championnat-poule-unique page-outil--champ");
+    wrap.appendChild(
+      el("h3", "debrief-preview-title", source.pouleName || payload.pouleName || "Championnat poule unique")
+    );
+    wrap.appendChild(el("p", "hint", entries.length + " match(s) transmis"));
+
+    if (!entries.length) {
+      wrap.appendChild(el("p", "empty-state", "Aucun match complété transmis."));
+      parent.appendChild(wrap);
+      return;
+    }
+
+    var tableWrap = el("div", "imports-table-wrap");
+    var table = el("table", "imports-table");
+    var thead = el("thead");
+    var headRow = el("tr");
+    ["Match", "Score"].forEach(function (label) {
+      var th = el("th");
+      th.textContent = label;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = el("tbody");
+    entries.forEach(function (match) {
+      var tr = el("tr");
+      var home = match.homeName || "Participant";
+      var away = match.awayName || "Participant";
+      var hs = match.homeScore != null ? match.homeScore : "—";
+      var as = match.awayScore != null ? match.awayScore : "—";
+      tr.appendChild(el("td", null, home + " / " + away));
+      tr.appendChild(el("td", null, hs + " - " + as));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    wrap.appendChild(tableWrap);
+    parent.appendChild(wrap);
+  }
+
   function formatRecordDateTime(iso) {
     if (!iso) return "";
     return new Date(iso).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" });
@@ -593,6 +637,7 @@ var ImportDetailRender = (function () {
     else if (record.toolId === "zone-impact") renderImpact(payload, parent);
     else if (record.toolId === "journal-musculation") renderJournalMusculation(record, parent);
     else if (record.toolId === "questions-debrief") renderQuestionsDebrief(payload, parent);
+    else if (record.toolId === "championnat-poule-unique") renderChampionnatPouleUnique(payload, parent);
     else parent.appendChild(el("p", "empty-state", "Aperçu non disponible pour cet outil."));
   }
 

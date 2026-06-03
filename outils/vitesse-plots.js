@@ -261,20 +261,163 @@
     majChrono();
   }
 
+  function buildExportPayloadFromArchive(data) {
+    if (!data) return {};
+    var dernier =
+      data.passages && data.passages.length
+        ? data.passages[data.passages.length - 1]
+        : null;
+    var reg = data.reglages || {};
+    return {
+      label: data.label || "",
+      vitesseMoyenne: dernier ? dernier.vitesseMoyenne : null,
+      vitesseDernier: dernier ? dernier.vitesseDernier : null,
+      config: {
+        vitesseObjectif: reg.vitesseObjectif,
+        distancePlot: reg.distancePlot,
+        mode: data.mode || "chrono",
+      },
+      passages: (data.passages || []).map(function (p) {
+        return {
+          numero: p.numero,
+          vitesseDernier: p.vitesseDernier,
+          vitesseMoyenne: p.vitesseMoyenne,
+          intervalLabel: formaterDuree(p.intervalleMs),
+          tempsTotalLabel: formaterDuree(p.tempsTotalMs),
+        };
+      }),
+    };
+  }
+
+  function buildSnapshot() {
+    return {
+      label: labelEl ? labelEl.value.trim() : "",
+      reglages: lireReglages(),
+      passages: passages.map(function (p) {
+        return Object.assign({}, p);
+      }),
+      mode: modeChrono(),
+    };
+  }
+
+  function renderArchivedPassages(snapshot, container) {
+    if (!snapshot || !snapshot.passages || !snapshot.passages.length) {
+      var vide = document.createElement("p");
+      vide.className = "hint";
+      vide.textContent = "Aucun passage enregistré.";
+      container.appendChild(vide);
+      return;
+    }
+    if (snapshot.label) {
+      var titre = document.createElement("p");
+      titre.className = "hint";
+      titre.textContent = snapshot.label;
+      container.appendChild(titre);
+    }
+    var wrap = document.createElement("div");
+    wrap.className = "vitesse-plots-table-wrap";
+    var table = document.createElement("table");
+    table.className = "vitesse-plots-table";
+    var thead = document.createElement("thead");
+    var hr = document.createElement("tr");
+    ["Plot", "Temps", "Intervalle", "Vitesse", "Moyenne"].forEach(function (h) {
+      var th = document.createElement("th");
+      th.scope = "col";
+      th.textContent = h;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    snapshot.passages.forEach(function (passage) {
+      var tr = document.createElement("tr");
+      [
+        passage.numero,
+        formaterDuree(passage.tempsTotalMs),
+        formaterDuree(passage.intervalleMs),
+        formaterNombre(passage.vitesseDernier, 2),
+        formaterNombre(passage.vitesseMoyenne, 2),
+      ].forEach(function (valeur) {
+        var td = document.createElement("td");
+        td.textContent = String(valeur);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    container.appendChild(wrap);
+    var dernier = snapshot.passages[snapshot.passages.length - 1];
+    if (dernier && snapshot.reglages && isFinite(snapshot.reglages.vitesseObjectif)) {
+      var recap = document.createElement("p");
+      recap.className = "hint";
+      recap.textContent =
+        "Dernier plot : " +
+        formaterNombre(dernier.vitesseDernier, 2) +
+        " km/h · moyenne " +
+        formaterNombre(dernier.vitesseMoyenne, 2) +
+        " km/h · objectif " +
+        formaterNombre(snapshot.reglages.vitesseObjectif, 1) +
+        " km/h";
+      container.appendChild(recap);
+    }
+  }
+
+  var resultsHistory =
+    typeof ToolResultsHistory !== "undefined"
+      ? ToolResultsHistory.mount({
+          toolId: TOOL_ID,
+          buildTitle: function (snap) {
+            var label = snap.label || "Séance vitesse";
+            var n = snap.passages ? snap.passages.length : 0;
+            return label + (n ? " (" + n + " plot" + (n > 1 ? "s" : "") + ")" : "");
+          },
+          buildSummary: function (snap) {
+            if (!snap.passages || !snap.passages.length) return "";
+            var dernier = snap.passages[snap.passages.length - 1];
+            return formaterNombre(dernier.vitesseMoyenne, 2) + " km/h moy.";
+          },
+          getSharePayload: function (entry) {
+            return buildExportPayloadFromArchive(entry.data);
+          },
+          getShareParticipantLabel: function (entry) {
+            return (entry.data && entry.data.label) || entry.title;
+          },
+          renderView: function (entry, container) {
+            renderArchivedPassages(entry.data, container);
+          },
+        })
+      : null;
+
   function reset() {
-    passages = [];
-    etat = "pret";
-    startTime = 0;
-    elapsedBeforeRunMs = 0;
-    lastPassageElapsedMs = 0;
-    timerDurationMs = 0;
-    stopTick();
-    resetAffichage();
-    montrerMsg("");
-    majTempsObjectif();
-    majMode();
-    majBoutons();
-    if (reglagesEl) reglagesEl.open = true;
+    function doClear() {
+      passages = [];
+      etat = "pret";
+      startTime = 0;
+      elapsedBeforeRunMs = 0;
+      lastPassageElapsedMs = 0;
+      timerDurationMs = 0;
+      stopTick();
+      resetAffichage();
+      montrerMsg("");
+      majTempsObjectif();
+      majMode();
+      majBoutons();
+      if (reglagesEl) reglagesEl.open = true;
+    }
+    if (resultsHistory) {
+      resultsHistory.archiveAndClear({
+        hasData: function () {
+          return passages.length > 0;
+        },
+        getSnapshot: buildSnapshot,
+        clearFn: doClear,
+        confirmMessage:
+          "Réinitialiser la séance ? Les passages seront archivés dans l’historique.",
+      });
+      return;
+    }
+    doClear();
   }
 
   function majEcart(vitesseDernier, vitesseObjectif) {

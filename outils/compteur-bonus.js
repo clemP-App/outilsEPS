@@ -205,10 +205,90 @@
     render();
   }
 
+  var resultsHistory =
+    typeof ToolResultsHistory !== "undefined"
+      ? ToolResultsHistory.mount({
+          toolId: TOOL_ID,
+          buildTitle: function (snap) {
+            return snap.players.A.name + " — " + snap.players.B.name;
+          },
+          buildSummary: function (snap) {
+            return snap.players.A.score + " - " + snap.players.B.score + " pts";
+          },
+          getSharePayload: function (entry) {
+            return entry.data;
+          },
+          getShareParticipantLabel: function (entry) {
+            var d = entry.data;
+            if (d && d.players) {
+              return d.players.A.name + " — " + d.players.B.name;
+            }
+            return entry.title;
+          },
+          renderView: function (entry, container) {
+            var d = entry.data;
+            if (!d || !d.players) return;
+            ["A", "B"].forEach(function (joueur) {
+              var p = d.players[joueur];
+              var card = document.createElement("article");
+              card.className = "card bonus-card tool-results-history-bonus-card";
+              card.style.setProperty("--bonus-color", p.color || "#0d9488");
+              card.innerHTML =
+                "<h3>" +
+                escapeHtml(p.name) +
+                '</h3><p class="bonus-result"><strong style="font-size:2rem">' +
+                escapeHtml(String(p.score)) +
+                '</strong> pts</p><p class="hint">👍 ' +
+                p.counts.bonus +
+                " · ➕ " +
+                p.counts.normal +
+                " · 👎 " +
+                p.counts.malus +
+                "</p>";
+              container.appendChild(card);
+            });
+            if (d.settings) {
+              var reg = document.createElement("p");
+              reg.className = "hint";
+              reg.textContent =
+                "Points : bonus " +
+                d.settings.ptsBonus +
+                ", normal " +
+                d.settings.ptsNormal +
+                ", malus " +
+                d.settings.ptsMalus;
+              container.appendChild(reg);
+            }
+          },
+        })
+      : null;
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
   function resetPartie() {
+    function doClear() {
+      history = [];
+      render();
+    }
+    if (resultsHistory) {
+      resultsHistory.archiveAndClear({
+        hasData: function () {
+          return history.length > 0;
+        },
+        getSnapshot: buildExportPayload,
+        clearFn: doClear,
+        confirmMessage:
+          "Remettre les scores à zéro ? Une copie sera conservée dans l’historique.",
+      });
+      return;
+    }
     if (history.length && !confirm("Remettre les scores des deux joueurs à zéro ?")) return;
-    history = [];
-    render();
+    doClear();
   }
 
   document.querySelectorAll(".bonus-btn").forEach(function (btn) {

@@ -36,8 +36,8 @@
         </p>
         <p class="hint">
           Pour ne rien perdre, exportez de temps en temps un fichier de sauvegarde et gardez-le (cloud, mail, clé USB…).
-          Le fichier s’appelle <strong>outilsEPS-backup.json</strong>. L’import sert à remettre une sauvegarde : il
-          remplace tout ce qui est enregistré ici, après votre accord.
+          Le fichier s’appelle <strong>outilsEPS-backup.json</strong>. Lors de l’import, vous choisissez ensuite entre
+          fusionner avec cet appareil ou remplacer toutes les données.
         </p>
         <p class="hint">
           Les données remontées par QR depuis les outils élèves se gèrent dans l’outil
@@ -57,6 +57,77 @@
             <span class="btn__text">Importer une sauvegarde</span>
           </button>
         </div>
+      </section>
+
+      <section
+        class="card sauvegarde-import-panel"
+        id="import-backup-panel"
+        aria-labelledby="lbl-import-backup"
+        hidden
+      >
+        <div class="sauvegarde-import-panel__head">
+          <div>
+            <h2 id="lbl-import-backup">Import de sauvegarde</h2>
+            <p class="hint" id="import-backup-meta"></p>
+          </div>
+          <button type="button" class="btn btn--ghost btn--small" id="btn-import-cancel">
+            Annuler
+          </button>
+        </div>
+
+        <div class="sauvegarde-import-summary" aria-live="polite">
+          <div class="sauvegarde-import-stat">
+            <span class="sauvegarde-import-stat__value" id="import-stat-add">0</span>
+            <span class="sauvegarde-import-stat__label">ajoutées par fusion</span>
+          </div>
+          <div class="sauvegarde-import-stat">
+            <span class="sauvegarde-import-stat__value" id="import-stat-same">0</span>
+            <span class="sauvegarde-import-stat__label">déjà identiques</span>
+          </div>
+          <div class="sauvegarde-import-stat sauvegarde-import-stat--warn">
+            <span class="sauvegarde-import-stat__value" id="import-stat-diff">0</span>
+            <span class="sauvegarde-import-stat__label">différentes, ajoutées en copie</span>
+          </div>
+        </div>
+
+        <div class="sauvegarde-import-choices">
+          <div class="sauvegarde-import-choice sauvegarde-import-choice--merge">
+            <h3>Fusionner avec cet appareil</h3>
+            <p class="hint">
+              Les données nouvelles sont ajoutées. Les données déjà présentes sont gardées. Si une donnée porte le même identifiant mais contient autre chose, elle est ajoutée comme copie.
+            </p>
+            <button type="button" class="btn btn--primary" id="btn-import-merge">
+              Fusionner
+            </button>
+          </div>
+          <div class="sauvegarde-import-choice sauvegarde-import-choice--replace">
+            <h3>Remplacer toutes les données</h3>
+            <p class="hint">
+              Les données actuelles de cet appareil sont effacées puis remplacées par le fichier. C’est utile pour restaurer une sauvegarde complète.
+            </p>
+            <button type="button" class="btn btn--danger" id="btn-import-replace">
+              Remplacer tout
+            </button>
+          </div>
+        </div>
+
+        <details class="sauvegarde-import-details" open>
+          <summary>Détail des différences</summary>
+          <div class="sauvegarde-import-table-wrap">
+            <table class="sauvegarde-import-table">
+              <thead>
+                <tr>
+                  <th scope="col">Données</th>
+                  <th scope="col">Cet appareil</th>
+                  <th scope="col">Sauvegarde</th>
+                  <th scope="col">Déjà là</th>
+                  <th scope="col">Ajout fusion</th>
+                </tr>
+              </thead>
+              <tbody id="import-backup-details"></tbody>
+            </table>
+          </div>
+        </details>
       </section>
 
       <section class="card" aria-labelledby="lbl-stockage">

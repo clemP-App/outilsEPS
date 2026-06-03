@@ -146,11 +146,131 @@
     render();
   }
 
+  function buildExportPayloadFromArchive(data) {
+    if (!data) return {};
+    var total = data.total || 0;
+    var counts = data.counts || [];
+    var touched = counts.filter(function (c) {
+      return c > 0;
+    }).length;
+    var max = Math.max.apply(Math, counts.concat([0]));
+    var mainIndex = counts.indexOf(max);
+    return {
+      label: data.label || "",
+      activity: data.activityId || "badminton",
+      activityLabel: data.activityLabel || "",
+      total: total,
+      coverage: touched + " / " + counts.length,
+      mainZone: total && data.zoneLabels ? data.zoneLabels[mainIndex] : null,
+      zones: counts.map(function (count, index) {
+        var pct = total ? Math.round((count / total) * 100) : 0;
+        return {
+          label: (data.zoneLabels && data.zoneLabels[index]) || "Zone",
+          count: count,
+          percent: pct,
+        };
+      }),
+      grid: data.grid || { cols: 3, rows: 3 },
+    };
+  }
+
+  function buildSnapshot() {
+    var cfg = gridConfig();
+    var counts = countsByZone();
+    var zoneLabels = [];
+    for (var i = 0; i < counts.length; i++) zoneLabels.push(zoneLabel(i));
+    var activity = currentActivity();
+    return {
+      label: labelEl ? labelEl.value.trim() : "",
+      activityId: activityEl ? activityEl.value : "badminton",
+      activityLabel: activity.label,
+      grid: { cols: cfg.cols, rows: cfg.rows },
+      zoneLabels: zoneLabels,
+      counts: counts,
+      total: impacts.length,
+    };
+  }
+
+  function renderArchivedImpactStats(snapshot, container) {
+    if (!snapshot) return;
+    if (snapshot.label) {
+      var titre = document.createElement("p");
+      titre.className = "hint";
+      titre.textContent =
+        (snapshot.label ? snapshot.label + " · " : "") +
+        (snapshot.activityLabel || "Activité");
+      container.appendChild(titre);
+    }
+    var stats = document.createElement("div");
+    stats.className = "bad-impact-zone-stats";
+    stats.style.setProperty("--bad-cols", String(snapshot.grid.cols));
+    var total = snapshot.total || 0;
+    (snapshot.counts || []).forEach(function (count, index) {
+      var pct = total ? Math.round((count / total) * 100) : 0;
+      var cell = document.createElement("div");
+      cell.className = "bad-impact-zone-stat" + (count ? " is-active" : "");
+      cell.style.setProperty("--bad-zone-alpha", String(Math.min(0.85, 0.16 + pct / 100)));
+      var label = document.createElement("span");
+      label.textContent = (snapshot.zoneLabels && snapshot.zoneLabels[index]) || "Zone";
+      var value = document.createElement("strong");
+      value.textContent = String(count);
+      var percent = document.createElement("small");
+      percent.textContent = pct + "%";
+      cell.appendChild(label);
+      cell.appendChild(value);
+      cell.appendChild(percent);
+      stats.appendChild(cell);
+    });
+    container.appendChild(stats);
+    var recap = document.createElement("p");
+    recap.className = "hint";
+    recap.textContent = total + " impact" + (total > 1 ? "s" : "") + " enregistré" + (total > 1 ? "s" : "");
+    container.appendChild(recap);
+  }
+
+  var resultsHistory =
+    typeof ToolResultsHistory !== "undefined"
+      ? ToolResultsHistory.mount({
+          toolId: TOOL_ID,
+          buildTitle: function (snap) {
+            var base = snap.label || snap.activityLabel || "Zone d’impact";
+            return base + (snap.total ? " (" + snap.total + ")" : "");
+          },
+          buildSummary: function (snap) {
+            return snap.total ? snap.total + " impact" + (snap.total > 1 ? "s" : "") : "";
+          },
+          getSharePayload: function (entry) {
+            return buildExportPayloadFromArchive(entry.data);
+          },
+          getShareParticipantLabel: function (entry) {
+            return (entry.data && entry.data.label) || entry.title;
+          },
+          renderView: function (entry, container) {
+            renderArchivedImpactStats(entry.data, container);
+          },
+        })
+      : null;
+
   function reset() {
     if (!impacts.length) return;
+    function doClear() {
+      impacts = [];
+      render();
+    }
+    if (resultsHistory) {
+      resultsHistory.archiveAndClear({
+        hasData: function () {
+          return impacts.length > 0;
+        },
+        getSnapshot: buildSnapshot,
+        clearFn: doClear,
+        confirmMessage:
+          "Effacer tous les impacts ? Une copie des statistiques sera conservée dans l’historique.",
+      });
+      return;
+    }
     if (!confirm("Effacer tous les impacts ?")) return;
-    impacts = [];
-    render();
+    doClear();
   }
 
   function undo() {

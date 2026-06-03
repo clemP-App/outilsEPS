@@ -75,18 +75,90 @@
     renderEleve(id);
   }
 
+  function hasStats() {
+    return !!(state.a.plus || state.a.minus || state.b.plus || state.b.minus);
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  var resultsHistory =
+    typeof ToolResultsHistory !== "undefined"
+      ? ToolResultsHistory.mount({
+          toolId: TOOL_ID,
+          buildTitle: function (snap) {
+            var s = snap.students || {};
+            return (s.a && s.a.name ? s.a.name : "Équipe A") + " — " + (s.b && s.b.name ? s.b.name : "Équipe B");
+          },
+          buildSummary: function (snap) {
+            var s = snap.students || {};
+            var ra = s.a && s.a.ratio != null ? s.a.ratio : 0;
+            var rb = s.b && s.b.ratio != null ? s.b.ratio : 0;
+            return ra + "% · " + rb + "%";
+          },
+          getSharePayload: function (entry) {
+            return entry.data;
+          },
+          getShareParticipantLabel: function (entry) {
+            var d = entry.data;
+            var s = d && d.students;
+            if (s) return (s.a && s.a.name ? s.a.name : "Équipe A") + " — " + (s.b && s.b.name ? s.b.name : "Équipe B");
+            return entry.title;
+          },
+          renderView: function (entry, container) {
+            var students = entry.data && entry.data.students;
+            if (!students) return;
+            var grid = document.createElement("section");
+            grid.className = "ratio-grid";
+            ["a", "b"].forEach(function (id) {
+              var s = students[id];
+              if (!s) return;
+              var card = document.createElement("article");
+              card.className = "card ratio-card";
+              card.style.setProperty("--ratio-color", s.color || (id === "a" ? "#0d9488" : "#6366f1"));
+              card.innerHTML =
+                '<div class="ratio-card__top"><span class="import-preview__team-name">' +
+                escapeHtml(s.name || "Équipe " + id.toUpperCase()) +
+                '</span></div><div class="ratio-result"><span class="ratio-result__label">Ratio réussite</span><strong>' +
+                escapeHtml(String(s.ratio != null ? s.ratio : 0)) +
+                '%</strong></div><div class="ratio-stats"><p><span>Réussites</span><strong>' +
+                escapeHtml(String(s.plus != null ? s.plus : 0)) +
+                '</strong></p><p><span>Échecs</span><strong>' +
+                escapeHtml(String(s.minus != null ? s.minus : 0)) +
+                '</strong></p><p><span>Total</span><strong>' +
+                escapeHtml(String(s.total != null ? s.total : 0)) +
+                "</strong></p></div>";
+              grid.appendChild(card);
+            });
+            container.appendChild(grid);
+          },
+        })
+      : null;
+
   function resetStats() {
-    if (
-      (state.a.plus || state.a.minus || state.b.plus || state.b.minus) &&
-      !confirm("Remettre les statistiques des deux élèves à zéro ?")
-    ) {
+    function doClear() {
+      state.a.plus = 0;
+      state.a.minus = 0;
+      state.b.plus = 0;
+      state.b.minus = 0;
+      render();
+    }
+    if (resultsHistory) {
+      resultsHistory.archiveAndClear({
+        hasData: hasStats,
+        getSnapshot: buildExportPayload,
+        clearFn: doClear,
+        confirmMessage:
+          "Remettre les statistiques à zéro ? Une copie sera conservée dans l’historique.",
+      });
       return;
     }
-    state.a.plus = 0;
-    state.a.minus = 0;
-    state.b.plus = 0;
-    state.b.minus = 0;
-    render();
+    if (hasStats() && !confirm("Remettre les statistiques des deux élèves à zéro ?")) return;
+    doClear();
   }
 
   function buildExportPayload() {

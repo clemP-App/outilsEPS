@@ -35,9 +35,13 @@
     (matches || []).forEach(function (m) {
       var hs = m.homeScore;
       var as = m.awayScore;
-      if (hs === null || as === null || typeof hs === "undefined" || typeof as === "undefined") {
+      var homeMissing = hs === null || typeof hs === "undefined";
+      var awayMissing = as === null || typeof as === "undefined";
+      if (homeMissing && awayMissing) {
         return;
       }
+      if (homeMissing) hs = 0;
+      if (awayMissing) as = 0;
       var H = map[m.homeId];
       var A = map[m.awayId];
       if (!H || !A) return;

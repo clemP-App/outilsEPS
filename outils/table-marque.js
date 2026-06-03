@@ -287,11 +287,79 @@
     majWakeLock();
   }
 
+  var resultsHistory =
+    typeof ToolResultsHistory !== "undefined"
+      ? ToolResultsHistory.mount({
+          toolId: TOOL_ID,
+          buildTitle: function (snap) {
+            return snap.teams.left.name + " — " + snap.teams.right.name;
+          },
+          buildSummary: function (snap) {
+            return snap.teams.left.score + " - " + snap.teams.right.score;
+          },
+          getSharePayload: function (entry) {
+            return entry.data;
+          },
+          getShareParticipantLabel: function (entry) {
+            var d = entry.data;
+            if (d && d.teams) {
+              return d.teams.left.name + " — " + d.teams.right.name;
+            }
+            return entry.title;
+          },
+          renderView: function (entry, container) {
+            var d = entry.data;
+            if (!d || !d.teams) return;
+            var wrap = document.createElement("div");
+            wrap.className = "tool-results-history-view-scores";
+            ["left", "right"].forEach(function (side) {
+              var col = document.createElement("div");
+              var name = document.createElement("span");
+              name.textContent = d.teams[side].name;
+              name.style.color = d.teams[side].color || "inherit";
+              var score = document.createElement("strong");
+              score.textContent = String(d.teams[side].score);
+              col.appendChild(name);
+              col.appendChild(score);
+              wrap.appendChild(col);
+            });
+            var sep = document.createElement("em");
+            sep.textContent = "–";
+            wrap.insertBefore(sep, wrap.children[1]);
+            container.appendChild(wrap);
+            if (d.timer) {
+              var hint = document.createElement("p");
+              hint.className = "hint";
+              hint.textContent =
+                "Timer : " +
+                (d.timer.displayLabel || "—") +
+                (d.timer.running ? " (en cours)" : d.timer.paused ? " (pause)" : "");
+              container.appendChild(hint);
+            }
+          },
+        })
+      : null;
+
   function effacerScores() {
+    function doClear() {
+      scores.left = 0;
+      scores.right = 0;
+      render();
+    }
+    if (resultsHistory) {
+      resultsHistory.archiveAndClear({
+        hasData: function () {
+          return !!(scores.left || scores.right);
+        },
+        getSnapshot: buildExportPayload,
+        clearFn: doClear,
+        confirmMessage:
+          "Effacer les scores des deux équipes ? Une copie sera conservée dans l’historique.",
+      });
+      return;
+    }
     if ((scores.left || scores.right) && !confirm("Effacer les scores des deux équipes ?")) return;
-    scores.left = 0;
-    scores.right = 0;
-    render();
+    doClear();
   }
 
   document.querySelectorAll(".table-score-btn").forEach(function (btn) {
