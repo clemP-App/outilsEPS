@@ -151,9 +151,14 @@
         },
       ];
     }
-    r.catalogVisible = !!r.catalogVisible;
     if (r.id === EXAMPLE_RUBRIC_ID) r.isExample = true;
     else if (r.isExample !== false) r.isExample = !!r.isExample;
+    if (isExampleRubric(r)) {
+      r.catalogVisible = false;
+      r.isExample = true;
+    } else {
+      r.catalogVisible = !!r.catalogVisible;
+    }
     return r;
   }
 
@@ -399,6 +404,16 @@
   function updateShareCatalogOption() {
     if (!shareEl || !shareWrapEl) return;
     var rubric = readEditor();
+    if (isExampleRubric(rubric)) {
+      shareEl.checked = false;
+      shareEl.disabled = true;
+      shareWrapEl.classList.add("ge-share-wrap--disabled");
+      if (shareReasonEl) {
+        shareReasonEl.textContent =
+          "La grille exemple reste locale. Dupliquez-la pour adapter le contenu et la publier au catalogue.";
+      }
+      return;
+    }
     var reasons = [];
     if (
       !window.OutilsEPS ||
@@ -439,6 +454,9 @@
     options = options || {};
     var share = options.shareToCatalog !== false;
     if (!share) return Promise.resolve({ submitted: false, skipped: true });
+    if (isExampleRubric(normalizeRubric(rubric))) {
+      return Promise.resolve({ submitted: false, skipped: true, message: "" });
+    }
     if (
       !window.OutilsEPS ||
       !window.OutilsEPS.catalog ||
@@ -709,8 +727,14 @@
     }
     if (cycleEl) cycleEl.value = normalizeCycle(draft.cycle);
     if (niveauEl) niveauEl.value = draft.niveau;
-    if (shareEl) shareEl.checked = !!draft.catalogVisible;
-    if (modeEl) modeEl.textContent = editingId ? "Modification d'une grille personnelle" : "Nouvelle grille";
+    if (shareEl) shareEl.checked = isExampleRubric(draft) ? false : !!draft.catalogVisible;
+    if (modeEl) {
+      modeEl.textContent = isExampleRubric(draft)
+        ? "Grille exemple (bibliothèque locale)"
+        : editingId
+          ? "Modification d'une grille personnelle"
+          : "Nouvelle grille";
+    }
     renderEditor();
     updateShareCatalogOption();
   }
@@ -784,7 +808,8 @@
   function saveDraft(copy) {
     var r = readEditor();
     r.source = "local";
-    r.catalogVisible = !!(shareEl && shareEl.checked);
+    var isExample = isExampleRubric(r) || editingId === EXAMPLE_RUBRIC_ID;
+    r.catalogVisible = isExample ? false : !!(shareEl && shareEl.checked);
     r.updatedAt = nowIso();
     if (copy || !editingId) {
       r.id = copy || !r.id ? id("rubric") : r.id;
@@ -810,7 +835,7 @@
         });
       }
       setStatus("ok", "Grille enregistrée. Elle est disponible dans Appel et notes.");
-      if (r.catalogVisible) {
+      if (r.catalogVisible && !isExampleRubric(r)) {
         proposeToCatalog(r, { shareToCatalog: true });
       }
     });

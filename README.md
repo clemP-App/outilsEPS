@@ -165,7 +165,7 @@ Alternative sans modifier le fichier : avant les scripts, définir `window.OUTIL
 - À **10 pouces bas**, la grille passe en `archived` et disparaît du catalogue public.
 - Fichiers partagés : `shared/catalog-grid-validation.js`, `shared/catalog-grids.js`, `shared/supabaseClient.js`.
 
-Le JSON `shared/evaluation-rubrics-catalog.json` reste un **repli lecture seule** si Supabase n’est pas configuré ou si le catalogue en ligne est vide.
+Le JSON `shared/evaluation-rubrics-catalog.json` sert au **seed SQL** et au repli **uniquement** si Supabase n’est pas configuré (sinon le catalogue affiche seulement les grilles Supabase, sans doublon).
 
 ## Technologies
 

@@ -115,10 +115,19 @@
    * @param {boolean} options.shareToCatalog - défaut true si omis
    * @param {string} options.source - 'teacher' | 'outilseps'
    */
+  var EXAMPLE_GRID_ID = "local-basket-4e-exemple";
+
   catalog.submitGridToCatalog = function (grid, options) {
     options = options || {};
     if (options.shareToCatalog === false) {
       return Promise.resolve({ submitted: false, skipped: true, message: "" });
+    }
+    if (grid && (grid.isExample || grid.id === EXAMPLE_GRID_ID)) {
+      return Promise.resolve({
+        submitted: false,
+        skipped: true,
+        message: "La grille exemple ne peut pas être publiée au catalogue.",
+      });
     }
     if (!ns.isSupabaseConfigured || !ns.isSupabaseConfigured()) {
       return Promise.resolve({
@@ -280,25 +289,20 @@
     return merged;
   }
 
-  /** Grilles OutilsEPS (JSON) + grilles publiées Supabase. */
+  /**
+   * Catalogue en ligne : uniquement Supabase si configuré.
+   * Le JSON local n'est utilisé qu'en repli lorsque Supabase n'est pas configuré.
+   */
   catalog.loadCatalogWithLegacyFallback = function (legacyUrl) {
     var configured = ns.isSupabaseConfigured && ns.isSupabaseConfigured();
-    var builtinP = fetchBuiltinCatalog(legacyUrl);
-    var onlineP = configured ? catalog.loadPublishedCatalogGrids() : Promise.resolve([]);
-    return Promise.all([builtinP, onlineP])
-      .then(function (parts) {
-        return mergeCatalogLists(parts[0], parts[1]);
-      })
-      .catch(function (err) {
-        return fetchBuiltinCatalog(legacyUrl).then(function (builtin) {
-          if (builtin.length) {
-            builtin.forEach(function (r) {
-              r.catalogLegacyFallback = true;
-            });
-            return builtin;
-          }
-          throw err;
-        });
+    if (configured) {
+      return catalog.loadPublishedCatalogGrids();
+    }
+    return fetchBuiltinCatalog(legacyUrl).then(function (builtin) {
+      builtin.forEach(function (r) {
+        r.catalogLegacyFallback = true;
       });
+      return builtin;
+    });
   };
 })(typeof window !== "undefined" ? window : global);
