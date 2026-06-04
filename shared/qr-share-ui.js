@@ -233,6 +233,10 @@ var EleveQrShare = (function () {
 
   function mountButton(container, options) {
     if (!container) return null;
+    var existing = container.querySelectorAll(".eleve-qr-share-btn");
+    existing.forEach(function (btn) {
+      btn.remove();
+    });
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "btn btn--ghost btn--labeled eleve-qr-share-btn";

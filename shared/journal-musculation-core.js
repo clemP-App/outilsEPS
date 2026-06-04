@@ -28,6 +28,14 @@
   var CATALOG_SORT_KEYS = ["category", "muscle", "bodyPart"];
   /** Limite notes (export QR + saisie élève). */
   var NOTES_MAX_LENGTH = 120;
+  var RPE_SCALE = {
+    5: { label: "Tr\u00e8s facile", reserve: "5 r\u00e9p\u00e9titions suppl\u00e9mentaires possibles" },
+    6: { label: "Facile", reserve: "4 r\u00e9p\u00e9titions suppl\u00e9mentaires possibles" },
+    7: { label: "Suffisant", reserve: "3 r\u00e9p\u00e9titions suppl\u00e9mentaires possibles" },
+    8: { label: "Difficile", reserve: "2 r\u00e9p\u00e9titions suppl\u00e9mentaires possibles" },
+    9: { label: "Tr\u00e8s difficile", reserve: "1 r\u00e9p\u00e9tition suppl\u00e9mentaire possible" },
+    10: { label: "Effort maximal", reserve: "aucune r\u00e9p\u00e9tition suppl\u00e9mentaire possible" },
+  };
 
   /** Catalogue par défaut : musculation générale + EPS (haltères, poids du corps, machines courantes). */
   var DEFAULT_CATALOG = [
@@ -134,6 +142,105 @@
     return isNaN(n) ? null : n;
   }
 
+  function normalizeRpe(value) {
+    if (value === "" || value == null) return null;
+    var n = parseInt(value, 10);
+    return RPE_SCALE[n] ? n : null;
+  }
+
+  function rpeInfo(value) {
+    var rpe = normalizeRpe(value);
+    if (rpe == null) return null;
+    return {
+      value: rpe,
+      label: RPE_SCALE[rpe].label,
+      reserve: RPE_SCALE[rpe].reserve,
+    };
+  }
+
+  function formatRpeLabel(value) {
+    var info = rpeInfo(value);
+    if (!info) return "";
+    return "RPE " + info.value + " - " + info.label + " - " + info.reserve;
+  }
+
+  function normalizeRpeList(values, count, fallback) {
+    var source = [];
+    if (Array.isArray(values)) {
+      source = values;
+    } else if (typeof values === "string") {
+      source = values.split(";");
+    }
+    count = Math.max(0, parseInt(count, 10) || 0);
+    var out = [];
+    var fallbackRpe = normalizeRpe(fallback);
+    var singleSourceRpe = source.length === 1 ? normalizeRpe(source[0]) : null;
+    var hasSourceValue = source.some(function (value) {
+      return normalizeRpe(value) != null;
+    });
+    for (var i = 0; i < count; i++) {
+      out.push(singleSourceRpe != null ? singleSourceRpe : normalizeRpe(source[i]));
+    }
+    if (!hasSourceValue && fallbackRpe != null) {
+      out = out.map(function () {
+        return fallbackRpe;
+      });
+    }
+    return out;
+  }
+
+  function formatRpeCompactList(values) {
+    var list = Array.isArray(values) ? values.map(normalizeRpe) : [];
+    if (!list.some(function (value) { return value != null; })) return "";
+    var filled = list.filter(function (value) {
+      return value != null;
+    });
+    if (
+      filled.length === list.length &&
+      filled.every(function (value) {
+        return value === filled[0];
+      })
+    ) {
+      return String(filled[0]);
+    }
+    return list
+      .map(function (value) {
+        return value != null ? String(value) : "";
+      })
+      .join(";");
+  }
+
+  function rpeListFromExercise(ex) {
+    ex = normalizeExercise(ex);
+    if (ex.setMode === "uniform") {
+      return normalizeRpeList(ex.rpes, parseNum(ex.setCount) || 0, ex.rpe);
+    }
+    return (ex.sets || []).map(function (set) {
+      return normalizeRpe(set.rpe);
+    });
+  }
+
+  function formatRpeListLabel(values) {
+    var list = Array.isArray(values) ? values.map(normalizeRpe) : [];
+    var filled = list.filter(function (value) {
+      return value != null;
+    });
+    if (!filled.length) return "";
+    if (
+      filled.length === list.length &&
+      filled.every(function (value) {
+        return value === filled[0];
+      })
+    ) {
+      return formatRpeLabel(filled[0]);
+    }
+    return list
+      .map(function (value, index) {
+        return "S" + (index + 1) + " " + (value != null ? "RPE " + value : "-");
+      })
+      .join(", ");
+  }
+
   function normalizeNameKey(name) {
     return String(name || "")
       .trim()
@@ -142,6 +249,7 @@
 
   function normalizeExercise(ex) {
     if (!ex || typeof ex !== "object") return ex;
+    var legacyRpe = normalizeRpe(ex.rpe);
     if (!ex.setMode) {
       if (ex.setCount != null || ex.uniformReps != null || ex.uniformWeightKg != null) {
         ex.setMode = "uniform";
@@ -154,9 +262,19 @@
       ex.setCount = parseNum(ex.setCount) != null ? parseNum(ex.setCount) : 0;
       ex.uniformReps = parseNum(ex.uniformReps);
       ex.uniformWeightKg = parseNum(ex.uniformWeightKg);
+      ex.rpes = normalizeRpeList(ex.rpes, ex.setCount, legacyRpe);
     } else {
       ex.sets = ex.sets || [];
+      ex.sets.forEach(function (set) {
+        set.rpe = normalizeRpe(set.rpe);
+      });
+      if (legacyRpe != null && !ex.sets.some(function (set) { return set.rpe != null; })) {
+        ex.sets.forEach(function (set) {
+          set.rpe = legacyRpe;
+        });
+      }
     }
+    ex.rpe = null;
     return ex;
   }
 
@@ -451,10 +569,11 @@
       var count = Math.max(0, parseNum(ex.setCount) || 0);
       var reps = parseNum(ex.uniformReps);
       var w = parseNum(ex.uniformWeightKg);
+      var rpes = normalizeRpeList(ex.rpes, count, ex.rpe);
       var out = [];
       var i;
       for (i = 0; i < count; i++) {
-        out.push({ reps: reps, weightKg: w });
+        out.push({ reps: reps, weightKg: w, rpe: rpes[i] });
       }
       return out;
     }
@@ -462,6 +581,7 @@
       return {
         reps: parseNum(set.reps),
         weightKg: parseNum(set.weightKg),
+        rpe: normalizeRpe(set.rpe),
       };
     });
   }
@@ -623,6 +743,7 @@
       setCount: options.setCount != null ? options.setCount : 3,
       uniformReps: options.uniformReps != null ? options.uniformReps : null,
       uniformWeightKg: options.uniformWeightKg != null ? options.uniformWeightKg : null,
+      rpes: [],
       sets: [],
     };
     if (ex.setMode === "individual") {
@@ -648,14 +769,26 @@
         if (ex.uniformReps == null) ex.uniformReps = parseNum(first.reps);
         if (ex.uniformWeightKg == null) ex.uniformWeightKg = parseNum(first.weightKg);
         if (!ex.setCount) ex.setCount = ex.sets.length;
+        ex.rpes = ex.sets.map(function (set) {
+          return normalizeRpe(set.rpe);
+        });
       }
       if (!ex.setCount) ex.setCount = 3;
       ex.sets = [];
     } else {
+      var rpes = normalizeRpeList(ex.rpes, parseNum(ex.setCount) || 0, ex.rpe);
+      var count = Math.max(1, parseNum(ex.setCount) || rpes.length || 1);
+      var reps = parseNum(ex.uniformReps);
+      var weight = parseNum(ex.uniformWeightKg);
       ex.setCount = null;
       ex.uniformReps = null;
       ex.uniformWeightKg = null;
-      if (!ex.sets || !ex.sets.length) addSet(ex);
+      if (!ex.sets || !ex.sets.length) {
+        for (var i = 0; i < count; i++) {
+          addSet(ex, { reps: reps, weightKg: weight, rpe: rpes[i] });
+        }
+      }
+      ex.rpes = [];
     }
     normalizeExercise(ex);
     return ex;
@@ -668,11 +801,13 @@
     touchSession(session);
   }
 
-  function addSet(exercise) {
+  function addSet(exercise, options) {
+    options = options || {};
     var set = {
       id: genererId("jms_"),
-      reps: null,
-      weightKg: null,
+      reps: options.reps != null ? options.reps : null,
+      weightKg: options.weightKg != null ? options.weightKg : null,
+      rpe: normalizeRpe(options.rpe),
     };
     exercise.sets = exercise.sets || [];
     exercise.sets.push(set);
@@ -768,6 +903,8 @@
       setCount: ex.setMode === "uniform" ? parseNum(ex.setCount) : null,
       uniformReps: ex.setMode === "uniform" ? parseNum(ex.uniformReps) : null,
       uniformWeightKg: ex.setMode === "uniform" ? parseNum(ex.uniformWeightKg) : null,
+      rpes: rpeListFromExercise(ex),
+      rpeLabel: formatRpeListLabel(rpeListFromExercise(ex)),
       setsLabel: ex.setMode === "uniform" ? formatUniformLabel(ex) : "",
       sets: expanded,
     };
@@ -810,6 +947,39 @@
     };
   }
 
+  function setsFromCompactLabel(label, rpes) {
+    var raw = String(label || "").trim();
+    if (!raw) return [];
+    rpes = Array.isArray(rpes) ? rpes : [];
+
+    var uniform = raw.match(/^(\d+)[×x](\d+)(?:@([\d.]+)kg)?$/i);
+    if (uniform) {
+      var n = parseInt(uniform[1], 10);
+      var reps = parseInt(uniform[2], 10);
+      var weight = uniform[3] != null ? parseFloat(uniform[3]) : null;
+      var out = [];
+      for (var i = 0; i < n; i++) {
+        out.push({ reps: reps, weightKg: weight, rpe: normalizeRpe(rpes[i]) });
+      }
+      return out;
+    }
+
+    return raw
+      .split(";")
+      .map(function (part, index) {
+        part = part.trim();
+        if (!part) return null;
+        var m = part.match(/^(\d+)(?:@([\d.]+)(?:kg)?)?$/i);
+        if (!m) return null;
+        return {
+          reps: parseInt(m[1], 10),
+          weightKg: m[2] != null ? parseFloat(m[2]) : null,
+          rpe: normalizeRpe(rpes[index]),
+        };
+      })
+      .filter(Boolean);
+  }
+
   function formatSetsCompact(ex) {
     ex = normalizeExercise(ex);
     if (ex.setMode === "uniform") {
@@ -841,7 +1011,11 @@
       t: String(session.title || "").trim().slice(0, 80),
       d: session.dateIso || "",
       e: (session.exercises || []).map(function (ex) {
-        return [String(ex.name || "").trim().slice(0, 60), formatSetsCompact(ex)];
+        ex = normalizeExercise(ex);
+        var row = [String(ex.name || "").trim().slice(0, 60), formatSetsCompact(ex)];
+        var rpeCompact = formatRpeCompactList(rpeListFromExercise(ex));
+        if (rpeCompact) row.push(rpeCompact);
+        return row;
       }),
     };
     if (notes) payload.n = notes;
@@ -860,13 +1034,17 @@
     var exercises = (payload.e || []).map(function (row, i) {
       var setsLabel = row[1] || "";
       var parsed = parseSetsCompactLabel(setsLabel);
+      var rpes = normalizeRpeList(row[2], parsed.setCount, row[2]);
+      var sets = setsFromCompactLabel(setsLabel, rpes);
       return {
         id: "ex_" + i,
         name: row[0] || "Exercice",
         setsLabel: setsLabel,
         setMode: setsLabel.indexOf(";") >= 0 ? "individual" : "uniform",
         setCount: parsed.setCount || null,
-        sets: [],
+        rpes: rpes,
+        rpeLabel: formatRpeListLabel(rpes),
+        sets: sets,
       };
     });
     var totalSets = 0;
@@ -915,8 +1093,14 @@
     TOOL_ID: TOOL_ID,
     STORAGE_KEY: STORAGE_KEY,
     NOTES_MAX_LENGTH: NOTES_MAX_LENGTH,
+    RPE_SCALE: RPE_SCALE,
     CATALOG_SORT_KEYS: CATALOG_SORT_KEYS,
     normalizeSessionNotes: normalizeSessionNotes,
+    normalizeRpe: normalizeRpe,
+    rpeInfo: rpeInfo,
+    formatRpeLabel: formatRpeLabel,
+    formatRpeListLabel: formatRpeListLabel,
+    rpeListFromExercise: rpeListFromExercise,
     DEFAULT_CATALOG: DEFAULT_CATALOG,
     loadState: loadState,
     saveState: saveState,

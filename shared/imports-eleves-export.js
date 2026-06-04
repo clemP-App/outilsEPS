@@ -37,6 +37,21 @@
     return toolTitleFn(toolId) || toolId;
   }
 
+  function journalCore() {
+    if (typeof JournalMusculationCore !== "undefined") return JournalMusculationCore;
+    if (typeof globalThis !== "undefined" && globalThis.JournalMusculationCore) {
+      return globalThis.JournalMusculationCore;
+    }
+    if (typeof module !== "undefined" && module.exports) {
+      try {
+        return require("./journal-musculation-core.js");
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
   function fmtDate(iso) {
     if (!iso) return "";
     try {
@@ -166,8 +181,9 @@
       }
       case "journal-musculation": {
         var sess = p;
-        if (typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.expandSharePayload) {
-          sess = JournalMusculationCore.expandSharePayload(p);
+        var JM = journalCore();
+        if (JM && JM.expandSharePayload) {
+          sess = JM.expandSharePayload(p);
         } else if (p.session) {
           sess = p.session;
         }
@@ -290,14 +306,20 @@
         break;
       case "journal-musculation": {
         var sess = p;
-        if (typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.expandSharePayload) {
-          sess = JournalMusculationCore.expandSharePayload(p);
+        var JM = journalCore();
+        if (JM && JM.expandSharePayload) {
+          sess = JM.expandSharePayload(p);
         } else if (p.session) {
           sess = p.session;
         }
         (sess.exercises || []).forEach(function (ex) {
+          var rpeLabel =
+            JM && JM.formatRpeListLabel
+              ? JM.formatRpeListLabel(ex.rpes || (ex.sets || []).map(function (set) { return set.rpe; }))
+              : "";
+          var rpeSuffix = rpeLabel ? " (" + rpeLabel + ")" : "";
           if (ex.setMode === "uniform" && ex.setsLabel) {
-            lines.push((ex.name || "Exercice") + " : " + ex.setsLabel);
+            lines.push((ex.name || "Exercice") + " : " + ex.setsLabel + rpeSuffix);
             return;
           }
           var bits = (ex.sets || []).map(function (set, i) {
@@ -310,7 +332,7 @@
               (set.weightKg != null ? set.weightKg + "kg" : "—")
             );
           });
-          lines.push((ex.name || "Exercice") + " : " + (bits.length ? bits.join(", ") : "—"));
+          lines.push((ex.name || "Exercice") + " : " + (bits.length ? bits.join(", ") : "—") + rpeSuffix);
         });
         if (sess.notes) lines.push("Notes : " + sess.notes);
         break;
@@ -597,8 +619,9 @@
         ]);
       case "journal-musculation": {
         var sess = p;
-        if (typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.expandSharePayload) {
-          sess = JournalMusculationCore.expandSharePayload(p);
+        var JM = journalCore();
+        if (JM && JM.expandSharePayload) {
+          sess = JM.expandSharePayload(p);
         } else if (p.session) {
           sess = p.session;
         }

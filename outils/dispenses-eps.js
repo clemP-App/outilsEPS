@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dispenses / Inaptitudes — stockage IndexedDB (DataManager).
  */
 
@@ -16,6 +16,18 @@
   var dureeJoursEl = document.getElementById("duree-jours");
   var dateFinEl = document.getElementById("date-fin");
   var motifEl = document.getElementById("motif");
+  var photoInputEl = document.getElementById("photo-dispense");
+  var photoPreviewEl = document.getElementById("photo-preview");
+  var photoPreviewImgEl = document.getElementById("photo-preview-img");
+  var photoPreviewMetaEl = document.getElementById("photo-preview-meta");
+  var btnOpenPhotoForm = document.getElementById("btn-open-photo-form");
+  var btnRemovePhoto = document.getElementById("btn-remove-photo");
+  var photoDialog = document.getElementById("dispense-photo-dialog");
+  var photoDialogImg = document.getElementById("dispense-photo-dialog-img");
+  var photoZoomOut = document.getElementById("photo-zoom-out");
+  var photoZoomIn = document.getElementById("photo-zoom-in");
+  var photoZoomReset = document.getElementById("photo-zoom-reset");
+  var photoZoomLabel = document.getElementById("photo-zoom-label");
   var btnSubmit = document.getElementById("btn-submit");
   var btnResetForm = document.getElementById("btn-reset-form");
   var formMsg = document.getElementById("form-msg");
@@ -38,6 +50,9 @@
 
   /** @type {string|null} id en cours d’édition */
   var editingId = null;
+  var currentPhoto = null;
+  var dialogPhoto = null;
+  var dialogZoom = "fit";
 
   function montrerErreur(msg) {
     formMsg.hidden = !msg;
@@ -68,6 +83,137 @@
     montrerFeedbackGlobal._timer = setTimeout(function () {
       feedbackEl.hidden = true;
     }, 4000);
+  }
+
+  function formatBytes(n) {
+    if (typeof DataManager !== "undefined" && DataManager.formatBytes) {
+      return DataManager.formatBytes(n);
+    }
+    if (!n) return "0 o";
+    if (n < 1024) return n + " o";
+    if (n < 1024 * 1024) return Math.round(n / 1024) + " Ko";
+    return (n / (1024 * 1024)).toFixed(1).replace(".", ",") + " Mo";
+  }
+
+  function dataUrlBytes(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== "string") return 0;
+    var i = dataUrl.indexOf(",");
+    var b64 = i >= 0 ? dataUrl.slice(i + 1) : dataUrl;
+    return Math.round((b64.length * 3) / 4);
+  }
+
+  function lireFichierImage(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        resolve(reader.result);
+      };
+      reader.onerror = function () {
+        reject(new Error("Impossible de lire la photo."));
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function chargerImage(src) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        resolve(img);
+      };
+      img.onerror = function () {
+        reject(new Error("Image illisible."));
+      };
+      img.src = src;
+    });
+  }
+
+  function redimensionnerPhoto(file) {
+    var MAX_SIDE = 2400;
+    var JPEG_QUALITY = 0.88;
+    if (!file || !/^image\//.test(file.type || "")) {
+      return Promise.reject(new Error("Choisissez une image ou prenez une photo."));
+    }
+
+    return lireFichierImage(file).then(function (src) {
+      return chargerImage(src).then(function (img) {
+        var sourceW = img.naturalWidth || img.width;
+        var sourceH = img.naturalHeight || img.height;
+        if (!sourceW || !sourceH) throw new Error("Image illisible.");
+
+        var ratio = Math.min(1, MAX_SIDE / Math.max(sourceW, sourceH));
+        var w = Math.max(1, Math.round(sourceW * ratio));
+        var h = Math.max(1, Math.round(sourceH * ratio));
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Redimensionnement indisponible.");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, w, h);
+
+        var dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+        return {
+          dataUrl: dataUrl,
+          type: "image/jpeg",
+          nom: file.name || "dispense.jpg",
+          width: w,
+          height: h,
+          bytes: dataUrlBytes(dataUrl),
+          sourceWidth: sourceW,
+          sourceHeight: sourceH,
+          addedAt: new Date().toISOString(),
+        };
+      });
+    });
+  }
+
+  function photoLabel(photo) {
+    if (!photo || !photo.width || !photo.height) return "Photo ajoutee";
+    return photo.width + " x " + photo.height + " px - " + formatBytes(photo.bytes || dataUrlBytes(photo.dataUrl));
+  }
+
+  function renderPhotoPreview() {
+    if (!photoPreviewEl || !photoPreviewImgEl) return;
+    if (!currentPhoto || !currentPhoto.dataUrl) {
+      photoPreviewEl.hidden = true;
+      photoPreviewImgEl.removeAttribute("src");
+      if (photoPreviewMetaEl) photoPreviewMetaEl.textContent = "";
+      return;
+    }
+    photoPreviewImgEl.src = currentPhoto.dataUrl;
+    if (photoPreviewMetaEl) photoPreviewMetaEl.textContent = photoLabel(currentPhoto);
+    photoPreviewEl.hidden = false;
+  }
+
+  function appliquerZoomPhoto() {
+    if (!photoDialogImg || !dialogPhoto) return;
+    if (dialogZoom === "fit") {
+      photoDialogImg.style.width = "";
+      photoDialogImg.style.maxWidth = "100%";
+      if (photoZoomLabel) photoZoomLabel.textContent = "Auto";
+      return;
+    }
+    var z = Math.max(0.5, Math.min(4, dialogZoom));
+    photoDialogImg.style.maxWidth = "none";
+    photoDialogImg.style.width = Math.round((dialogPhoto.width || 1200) * z) + "px";
+    if (photoZoomLabel) photoZoomLabel.textContent = Math.round(z * 100) + " %";
+  }
+
+  function ouvrirPhoto(photo) {
+    if (!photo || !photo.dataUrl || !photoDialog || !photoDialogImg) return;
+    dialogPhoto = photo;
+    dialogZoom = "fit";
+    photoDialogImg.src = photo.dataUrl;
+    appliquerZoomPhoto();
+    if (typeof photoDialog.showModal === "function") {
+      photoDialog.showModal();
+    } else {
+      window.open(photo.dataUrl, "_blank", "noopener");
+    }
   }
 
   /**
@@ -308,9 +454,12 @@
 
   function resetForm() {
     editingId = null;
+    currentPhoto = null;
     editIdEl.value = "";
     form.reset();
+    if (photoInputEl) photoInputEl.value = "";
     dateFinEl.value = "";
+    renderPhotoPreview();
     btnResetForm.hidden = true;
     btnSubmit.setAttribute("aria-label", "Enregistrer la dispense / inaptitude");
     formTitre.textContent = "Nouvelle dispense / inaptitude";
@@ -318,6 +467,65 @@
   }
 
   btnResetForm.addEventListener("click", resetForm);
+
+  if (photoInputEl) {
+    photoInputEl.addEventListener("change", function () {
+      var file = photoInputEl.files && photoInputEl.files[0];
+      if (!file) return;
+      montrerErreur("");
+      montrerOk("Photo en preparation...");
+      redimensionnerPhoto(file)
+        .then(function (photo) {
+          currentPhoto = photo;
+          renderPhotoPreview();
+          montrerOk("Photo ajoutee a la fiche.");
+        })
+        .catch(function (e) {
+          currentPhoto = null;
+          renderPhotoPreview();
+          montrerErreur(e.message || "Photo impossible a ajouter.");
+        })
+        .then(function () {
+          photoInputEl.value = "";
+        });
+    });
+  }
+
+  if (btnRemovePhoto) {
+    btnRemovePhoto.addEventListener("click", function () {
+      currentPhoto = null;
+      if (photoInputEl) photoInputEl.value = "";
+      renderPhotoPreview();
+      montrerOk("Photo retiree de la fiche.");
+    });
+  }
+
+  if (btnOpenPhotoForm) {
+    btnOpenPhotoForm.addEventListener("click", function () {
+      ouvrirPhoto(currentPhoto);
+    });
+  }
+
+  if (photoZoomOut) {
+    photoZoomOut.addEventListener("click", function () {
+      dialogZoom = dialogZoom === "fit" ? 0.75 : Math.max(0.5, dialogZoom - 0.25);
+      appliquerZoomPhoto();
+    });
+  }
+
+  if (photoZoomIn) {
+    photoZoomIn.addEventListener("click", function () {
+      dialogZoom = dialogZoom === "fit" ? 1.25 : Math.min(4, dialogZoom + 0.25);
+      appliquerZoomPhoto();
+    });
+  }
+
+  if (photoZoomReset) {
+    photoZoomReset.addEventListener("click", function () {
+      dialogZoom = "fit";
+      appliquerZoomPhoto();
+    });
+  }
 
   form.addEventListener("submit", function (ev) {
     ev.preventDefault();
@@ -359,6 +567,7 @@
       dureeJours: duree,
       dateFin: dateFin,
       motif: motif,
+      photo: currentPhoto,
     };
 
     if (editingId) {
@@ -445,6 +654,9 @@
     dateDebutEl.value = isoVersFr(d.dateDebut);
     dureeJoursEl.value = String(d.dureeJours);
     motifEl.value = d.motif || "";
+    currentPhoto = d.photo && d.photo.dataUrl ? d.photo : null;
+    if (photoInputEl) photoInputEl.value = "";
+    renderPhotoPreview();
     majDateFinChamps();
     btnResetForm.hidden = false;
     btnSubmit.setAttribute("aria-label", "Mettre à jour la dispense");
@@ -596,6 +808,22 @@
       bDel.addEventListener("click", function () {
         supprimer(d.id);
       });
+
+      if (d.photo && d.photo.dataUrl) {
+        var bPhoto = document.createElement("button");
+        bPhoto.type = "button";
+        bPhoto.className = "dispense-photo-action";
+        bPhoto.setAttribute("aria-label", "Voir la photo de la dispense");
+        var bPhotoImg = document.createElement("img");
+        bPhotoImg.src = d.photo.dataUrl;
+        bPhotoImg.alt = "";
+        bPhotoImg.loading = "lazy";
+        bPhoto.appendChild(bPhotoImg);
+        bPhoto.addEventListener("click", function () {
+          ouvrirPhoto(d.photo);
+        });
+        actions.appendChild(bPhoto);
+      }
 
       actions.appendChild(bEdit);
       actions.appendChild(bDel);

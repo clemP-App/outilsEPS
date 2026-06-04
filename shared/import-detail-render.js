@@ -548,6 +548,31 @@ var ImportDetailRender = (function () {
       .join(" · ");
   }
 
+  function formatExerciseSetsLabel(ex) {
+    var rpeLabel =
+      typeof JournalMusculationCore !== "undefined" && JournalMusculationCore.formatRpeListLabel
+        ? JournalMusculationCore.formatRpeListLabel(
+            ex.rpes || (ex.sets || []).map(function (set) { return set.rpe; })
+          )
+        : "";
+    var rpeSuffix = rpeLabel ? " (" + rpeLabel + ")" : "";
+    if (ex.setsLabel) return ex.setsLabel + rpeSuffix;
+    if (!ex.sets || !ex.sets.length) return "\u2014";
+    return ex.sets
+      .map(function (set, i) {
+        return (
+          "S" +
+          (i + 1) +
+          " " +
+          (set.reps != null ? set.reps : "\u2014") +
+          "\u00d7" +
+          (set.weightKg != null ? set.weightKg + " kg" : "\u2014") +
+          (set.rpe != null ? " RPE " + set.rpe : "")
+        );
+      })
+      .join(" \u00b7 ") + rpeSuffix;
+  }
+
   function renderJournalMusculation(record, parent) {
     var wrap = el("div", "import-preview import-preview--journal-muscu page-outil--journal-muscu");
     var payload = record.payload || {};

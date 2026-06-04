@@ -136,15 +136,44 @@ describe("journal-musculation-core", function () {
       uniformReps: 5,
       uniformWeightKg: 80,
     });
+    ex.rpes = [7, 8];
     var payload = JM.buildSharePayload(session);
     assert.equal(payload.c, 1);
     assert.equal(payload.t, "Legs");
     assert.equal(payload.e[0][0], "Squat");
     assert.match(payload.e[0][1], /2×5@80/);
+    assert.equal(payload.e[0][2], "7;8");
     var expanded = JM.expandSharePayload(payload);
     assert.equal(expanded.title, "Legs");
     assert.equal(expanded.exercises[0].name, "Squat");
     assert.match(expanded.exercises[0].setsLabel, /2×5@80/);
+    assert.deepEqual(expanded.exercises[0].rpes, [7, 8]);
+    assert.match(expanded.exercises[0].rpeLabel, /S1 RPE 7/);
+  });
+
+  it("normalise le RPE entre 5 et 10", function () {
+    assert.equal(JM.normalizeRpe("7"), 7);
+    assert.equal(JM.normalizeRpe(10), 10);
+    assert.equal(JM.normalizeRpe(4), null);
+    assert.match(JM.formatRpeLabel(9), /Tr\u00e8s difficile/);
+  });
+
+  it("compresse les RPE identiques dans le QR", function () {
+    var state = { sessions: [] };
+    var session = JM.createSession(state, { title: "Push" });
+    var ex = JM.addExercise(session, {
+      name: "Developpe couche",
+      setMode: "uniform",
+      setCount: 3,
+      uniformReps: 10,
+      uniformWeightKg: 50,
+    });
+    ex.rpes = [8, 8, 8];
+    var payload = JM.buildSharePayload(session);
+    assert.equal(payload.e[0][2], "8");
+    var expanded = JM.expandSharePayload(payload);
+    assert.deepEqual(expanded.exercises[0].rpes, [8, 8, 8]);
+    assert.deepEqual(expanded.exercises[0].sets.map(function (set) { return set.rpe; }), [8, 8, 8]);
   });
 });
 

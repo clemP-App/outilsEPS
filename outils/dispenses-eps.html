@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
@@ -150,6 +150,35 @@
               <label class="field-label" for="motif">Motif ou commentaire (facultatif)</label>
               <textarea id="motif" name="motif" rows="3"></textarea>
             </div>
+            <div class="field-group dispense-photo-field">
+              <label class="field-label" for="photo-dispense">Photo de la dispense (facultatif)</label>
+              <input
+                type="file"
+                id="photo-dispense"
+                name="photo-dispense"
+                accept="image/*"
+                capture="environment"
+              />
+              <p class="hint dispense-photo-hint">
+                La photo est redimensionnee pour rester lisible puis enregistree sur cet appareil avec la fiche.
+              </p>
+              <div id="photo-preview" class="dispense-photo-preview" hidden>
+                <button
+                  type="button"
+                  class="dispense-photo-preview__open"
+                  id="btn-open-photo-form"
+                  aria-label="Agrandir la photo de la dispense"
+                >
+                  <img id="photo-preview-img" alt="Apercu de la photo de la dispense" />
+                </button>
+                <div class="dispense-photo-preview__meta">
+                  <span id="photo-preview-meta">Photo ajoutee</span>
+                  <button type="button" class="btn btn--ghost btn--small" id="btn-remove-photo">
+                    Retirer
+                  </button>
+                </div>
+              </div>
+            </div>
             <div class="field-row field-row--actions">
               <button
                 type="submit"
@@ -173,6 +202,24 @@
         </section>
       </div>
     </div>
+
+    <dialog id="dispense-photo-dialog" class="dispense-photo-dialog" aria-labelledby="dispense-photo-dialog-title">
+      <form method="dialog" class="dispense-photo-dialog__form">
+        <div class="dispense-photo-dialog__header">
+          <h2 id="dispense-photo-dialog-title">Photo de la dispense</h2>
+          <button type="submit" class="dispense-photo-dialog__close" aria-label="Fermer">x</button>
+        </div>
+        <div class="dispense-photo-dialog__toolbar" aria-label="Zoom de la photo">
+          <button type="button" class="btn btn--ghost btn--small" id="photo-zoom-out">-</button>
+          <span id="photo-zoom-label" class="dispense-photo-dialog__zoom">Auto</span>
+          <button type="button" class="btn btn--ghost btn--small" id="photo-zoom-in">+</button>
+          <button type="button" class="btn btn--ghost btn--small" id="photo-zoom-reset">Adapter</button>
+        </div>
+        <div class="dispense-photo-dialog__viewport">
+          <img id="dispense-photo-dialog-img" alt="Photo agrandie de la dispense" />
+        </div>
+      </form>
+    </dialog>
 
     <script src="../shared/outils-dom.js"></script>
     <script src="../data-manager.js"></script>

@@ -1038,6 +1038,11 @@
       });
     }
     if (el["defi-add-dialog"]) {
+      el["defi-add-dialog"].querySelectorAll('[data-action="close-add-dialog"]').forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          el["defi-add-dialog"].close();
+        });
+      });
       el["defi-add-dialog"].addEventListener("close", function () {
         editingMatchId = null;
         if (el["defi-save-match"]) el["defi-save-match"].textContent = "Valider";

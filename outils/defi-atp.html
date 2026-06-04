@@ -144,7 +144,7 @@
 
     <dialog id="defi-add-dialog" class="session-dialog card">
       <form method="dialog" class="session-dialog__form">
-        <button type="submit" class="defi-dialog-close" aria-label="Fermer">✕</button>
+        <button type="button" class="defi-dialog-close" data-action="close-add-dialog" aria-label="Fermer">✕</button>
         <h2 class="session-dialog__title">⚡ Ajouter un résultat</h2>
         <p class="hint">Saisie rapide : le perdant est préfiltré selon le gagnant, et l’arbitre suggéré automatiquement.</p>
         <div class="field-group"><label class="field-label" for="defi-winner">Gagnant</label><select id="defi-winner"></select></div>
@@ -156,7 +156,7 @@
         </div>
         <div class="session-dialog__footer">
           <button id="defi-save-match" type="button" class="btn btn--primary">Valider</button>
-          <button type="submit" class="btn btn--ghost">Fermer</button>
+          <button type="button" class="btn btn--ghost" data-action="close-add-dialog">Fermer</button>
         </div>
       </form>
     </dialog>

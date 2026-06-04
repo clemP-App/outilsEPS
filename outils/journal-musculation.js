@@ -586,10 +586,90 @@
       hint.textContent = Core.formatUniformLabel(ex);
       block.appendChild(hint);
     }
+    block.appendChild(renderUniformRpeAccordion(ex));
     return block;
   }
 
-  function renderIndividualSets(ex) {
+  function rpeToneClass(value) {
+    value = Core.normalizeRpe(value);
+    return value != null ? " is-rpe-" + value : "";
+  }
+
+  function createRpeSelect(selectedValue, attrs) {
+    attrs = attrs || {};
+    var select = document.createElement("select");
+    select.className = "journal-muscu-rpe-select" + rpeToneClass(selectedValue);
+    select.setAttribute("data-field", attrs.field || "rpe");
+    if (attrs.exerciseId) select.setAttribute("data-exercise-id", attrs.exerciseId);
+    if (attrs.setId) select.setAttribute("data-set-id", attrs.setId);
+    if (attrs.setIndex != null) select.setAttribute("data-set-index", attrs.setIndex);
+    if (attrs.ariaLabel) select.setAttribute("aria-label", attrs.ariaLabel);
+
+    var empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "RPE";
+    select.appendChild(empty);
+
+    Object.keys(Core.RPE_SCALE || {}).forEach(function (value) {
+      var info = Core.rpeInfo(value);
+      var option = document.createElement("option");
+      option.value = value;
+      option.className = "journal-muscu-rpe-option is-rpe-" + value;
+      option.textContent = value + " - " + (info ? info.label : "");
+      option.selected = String(Core.normalizeRpe(selectedValue) || "") === String(value);
+      select.appendChild(option);
+    });
+
+    return select;
+  }
+
+  function renderUniformRpeAccordion(ex) {
+    var count = Math.max(0, Core.parseNum(ex.setCount) || 0);
+    var rpes = Array.isArray(ex.rpes) ? ex.rpes : [];
+    var details = document.createElement("details");
+    details.className = "journal-muscu-rpe-acc";
+
+    var summary = document.createElement("summary");
+    summary.textContent = "RPE par s\u00e9rie";
+    var summaryLabel = Core.formatRpeListLabel ? Core.formatRpeListLabel(rpes) : "";
+    if (summaryLabel) {
+      var badge = document.createElement("span");
+      badge.className = "journal-muscu-rpe-acc__badge";
+      badge.textContent = summaryLabel;
+      summary.appendChild(badge);
+    }
+    details.appendChild(summary);
+
+    var list = document.createElement("div");
+    list.className = "journal-muscu-rpe-list";
+    if (!count) {
+      var emptyMsg = document.createElement("p");
+      emptyMsg.className = "hint journal-muscu-rpe-hint";
+      emptyMsg.textContent = "Indiquez d'abord le nombre de s\u00e9ries.";
+      list.appendChild(emptyMsg);
+    } else {
+      for (var i = 0; i < count; i++) {
+        var row = document.createElement("div");
+        row.className = "journal-muscu-rpe-row";
+        var label = document.createElement("span");
+        label.textContent = "S\u00e9rie " + (i + 1);
+        row.appendChild(label);
+        row.appendChild(
+          createRpeSelect(rpes[i], {
+            field: "uniformRpe",
+            exerciseId: ex.id,
+            setIndex: i,
+            ariaLabel: "RPE s\u00e9rie " + (i + 1),
+          })
+        );
+        list.appendChild(row);
+      }
+    }
+    details.appendChild(list);
+    return details;
+  }
+
+  function renderIndividualSetsLegacy(ex) {
     var table = document.createElement("div");
     table.className = "journal-muscu-sets-table";
     var headRow = document.createElement("div");
@@ -635,6 +715,187 @@
     return frag;
   }
 
+  function renderRpeBlock(ex) {
+    ex = Core.normalizeExercise(ex);
+    var block = document.createElement("div");
+    block.className = "journal-muscu-rpe";
+
+    var selectId = "journal-rpe-" + ex.id;
+    var label = document.createElement("label");
+    label.className = "field-label";
+    label.setAttribute("for", selectId);
+    label.textContent = "RPE";
+
+    var select = document.createElement("select");
+    select.id = selectId;
+    select.setAttribute("data-field", "rpe");
+    select.setAttribute("data-exercise-id", ex.id);
+    var empty = document.createElement("option");
+    empty.value = "";
+    empty.textContent = "Non renseigne";
+    select.appendChild(empty);
+
+    Object.keys(Core.RPE_SCALE || {}).forEach(function (value) {
+      var info = Core.rpeInfo(value);
+      var option = document.createElement("option");
+      option.value = value;
+      option.textContent = "RPE " + value + " - " + (info ? info.label : "");
+      option.selected = String(ex.rpe || "") === String(value);
+      select.appendChild(option);
+    });
+
+    var hint = document.createElement("p");
+    hint.className = "hint journal-muscu-rpe-hint";
+    hint.textContent = Core.formatRpeLabel(ex.rpe) || "Effort percu apres les series.";
+
+    block.appendChild(label);
+    block.appendChild(select);
+    block.appendChild(hint);
+    return block;
+  }
+
+  function renderIndividualSets(ex) {
+    var table = document.createElement("div");
+    table.className = "journal-muscu-sets-table";
+    var headRow = document.createElement("div");
+    headRow.className = "journal-muscu-sets-head";
+    headRow.innerHTML = "<span>SÃ©rie</span><span>Reps</span><span>kg</span><span>RPE</span><span></span>";
+    table.appendChild(headRow);
+
+    (ex.sets || []).forEach(function (set, index) {
+      var row = document.createElement("div");
+      row.className = "journal-muscu-sets-row";
+      row.setAttribute("data-set-id", set.id);
+
+      var indexEl = document.createElement("span");
+      indexEl.textContent = String(index + 1);
+      row.appendChild(indexEl);
+
+      var repsInput = document.createElement("input");
+      repsInput.type = "number";
+      repsInput.inputMode = "numeric";
+      repsInput.min = "0";
+      repsInput.setAttribute("data-field", "reps");
+      repsInput.setAttribute("data-set-id", set.id);
+      repsInput.value = set.reps != null ? set.reps : "";
+      repsInput.setAttribute("aria-label", "Repetitions serie " + (index + 1));
+      row.appendChild(repsInput);
+
+      var kgInput = document.createElement("input");
+      kgInput.type = "number";
+      kgInput.inputMode = "decimal";
+      kgInput.min = "0";
+      kgInput.step = "0.5";
+      kgInput.setAttribute("data-field", "weightKg");
+      kgInput.setAttribute("data-set-id", set.id);
+      kgInput.value = set.weightKg != null ? set.weightKg : "";
+      kgInput.setAttribute("aria-label", "Charge serie " + (index + 1));
+      row.appendChild(kgInput);
+
+      row.appendChild(
+        createRpeSelect(set.rpe, {
+          field: "rpe",
+          setId: set.id,
+          ariaLabel: "RPE serie " + (index + 1),
+        })
+      );
+
+      var removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn btn--ghost btn--small";
+      removeBtn.setAttribute("data-action", "remove-set");
+      removeBtn.setAttribute("data-set-id", set.id);
+      removeBtn.setAttribute("aria-label", "Supprimer serie");
+      removeBtn.textContent = "âœ•";
+      row.appendChild(removeBtn);
+
+      table.appendChild(row);
+    });
+
+    var addSetBtn = document.createElement("button");
+    addSetBtn.type = "button";
+    addSetBtn.className = "btn btn--ghost journal-muscu-add-set";
+    addSetBtn.textContent = "+ SÃ©rie";
+    addSetBtn.setAttribute("data-action", "add-set");
+    addSetBtn.setAttribute("data-exercise-id", ex.id);
+
+    var frag = document.createDocumentFragment();
+    frag.appendChild(table);
+    frag.appendChild(addSetBtn);
+    return frag;
+  }
+
+  function renderIndividualSets(ex) {
+    var table = document.createElement("div");
+    table.className = "journal-muscu-sets-table";
+    var headRow = document.createElement("div");
+    headRow.className = "journal-muscu-sets-head";
+    headRow.innerHTML = "<span>S.</span><span>Reps</span><span>kg</span><span>RPE</span><span></span>";
+    table.appendChild(headRow);
+
+    (ex.sets || []).forEach(function (set, index) {
+      var row = document.createElement("div");
+      row.className = "journal-muscu-sets-row";
+      row.setAttribute("data-set-id", set.id);
+
+      var indexEl = document.createElement("span");
+      indexEl.textContent = String(index + 1);
+      row.appendChild(indexEl);
+
+      var repsInput = document.createElement("input");
+      repsInput.type = "number";
+      repsInput.inputMode = "numeric";
+      repsInput.min = "0";
+      repsInput.setAttribute("data-field", "reps");
+      repsInput.setAttribute("data-set-id", set.id);
+      repsInput.value = set.reps != null ? set.reps : "";
+      repsInput.setAttribute("aria-label", "R\u00e9p\u00e9titions s\u00e9rie " + (index + 1));
+      row.appendChild(repsInput);
+
+      var kgInput = document.createElement("input");
+      kgInput.type = "number";
+      kgInput.inputMode = "decimal";
+      kgInput.min = "0";
+      kgInput.step = "0.5";
+      kgInput.setAttribute("data-field", "weightKg");
+      kgInput.setAttribute("data-set-id", set.id);
+      kgInput.value = set.weightKg != null ? set.weightKg : "";
+      kgInput.setAttribute("aria-label", "Charge s\u00e9rie " + (index + 1));
+      row.appendChild(kgInput);
+
+      row.appendChild(
+        createRpeSelect(set.rpe, {
+          field: "rpe",
+          setId: set.id,
+          ariaLabel: "RPE s\u00e9rie " + (index + 1),
+        })
+      );
+
+      var removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn btn--ghost btn--small";
+      removeBtn.setAttribute("data-action", "remove-set");
+      removeBtn.setAttribute("data-set-id", set.id);
+      removeBtn.setAttribute("aria-label", "Supprimer s\u00e9rie");
+      removeBtn.textContent = "\u00d7";
+      row.appendChild(removeBtn);
+
+      table.appendChild(row);
+    });
+
+    var addSetBtn = document.createElement("button");
+    addSetBtn.type = "button";
+    addSetBtn.className = "btn btn--ghost journal-muscu-add-set";
+    addSetBtn.textContent = "+ S\u00e9rie";
+    addSetBtn.setAttribute("data-action", "add-set");
+    addSetBtn.setAttribute("data-exercise-id", ex.id);
+
+    var frag = document.createDocumentFragment();
+    frag.appendChild(table);
+    frag.appendChild(addSetBtn);
+    return frag;
+  }
+
   function scheduleExerciseFieldSave(session) {
     if (!session) return;
     if (exerciseFieldSaveTimer) clearTimeout(exerciseFieldSaveTimer);
@@ -656,6 +917,25 @@
     var oldRm = card.querySelector(".journal-muscu-exo-rm");
     if (oldRm) oldRm.remove();
     appendExerciseRm(card, ex);
+  }
+
+  function refreshUniformRpeAccordion(exerciseId) {
+    if (!exercisesEl || !exerciseId) return;
+    var session = currentSession();
+    if (!session) return;
+    var ex = findExerciseInSession(session, exerciseId);
+    if (!ex || ex.setMode !== "uniform") return;
+    Core.normalizeExercise(ex);
+    var card = exercisesEl.querySelector('.journal-muscu-exo-card[data-exercise-id="' + exerciseId + '"]');
+    if (!card) return;
+    var oldAccordion = card.querySelector(".journal-muscu-rpe-acc");
+    var newAccordion = renderUniformRpeAccordion(ex);
+    if (oldAccordion) {
+      oldAccordion.replaceWith(newAccordion);
+    } else {
+      var uniformBlock = card.querySelector(".journal-muscu-uniform");
+      if (uniformBlock) uniformBlock.appendChild(newAccordion);
+    }
   }
 
   function renderExercises(session) {
@@ -979,11 +1259,13 @@
         var uniformInput = e.target.closest("input[data-exercise-id][data-field]");
         if (uniformInput) {
           var exId = uniformInput.getAttribute("data-exercise-id");
+          var fieldName = uniformInput.getAttribute("data-field");
           var exU = findExerciseInSession(session, exId);
           if (exU) {
-            exU[uniformInput.getAttribute("data-field")] = uniformInput.value;
+            exU[fieldName] = uniformInput.value;
             Core.normalizeExercise(exU);
             Core.touchSession(session);
+            if (fieldName === "setCount") refreshUniformRpeAccordion(exId);
             scheduleExerciseFieldSave(session);
             refreshExerciseRmBlock(exId);
           }
@@ -1010,6 +1292,37 @@
       exercisesEl.addEventListener("change", function (e) {
         var session = currentSession();
         if (!session) return;
+        var uniformRpeSelect = e.target.closest('select[data-field="uniformRpe"][data-exercise-id]');
+        if (uniformRpeSelect) {
+          var exUniformRpe = findExerciseInSession(
+            session,
+            uniformRpeSelect.getAttribute("data-exercise-id")
+          );
+          if (exUniformRpe) {
+            Core.normalizeExercise(exUniformRpe);
+            var index = parseInt(uniformRpeSelect.getAttribute("data-set-index"), 10);
+            exUniformRpe.rpes = Array.isArray(exUniformRpe.rpes) ? exUniformRpe.rpes : [];
+            exUniformRpe.rpes[index] = Core.normalizeRpe(uniformRpeSelect.value);
+            Core.touchSession(session);
+            persist();
+            renderExercises(session);
+          }
+          return;
+        }
+
+        var rpeSelect = e.target.closest('select[data-field="rpe"][data-set-id]');
+        if (rpeSelect) {
+          var rpeSetId = rpeSelect.getAttribute("data-set-id");
+          session.exercises.forEach(function (ex) {
+            (ex.sets || []).forEach(function (set) {
+              if (set.id === rpeSetId) set.rpe = Core.normalizeRpe(rpeSelect.value);
+            });
+          });
+          Core.touchSession(session);
+          persist();
+          renderExercises(session);
+          return;
+        }
         if (!e.target.closest("input[data-field]")) return;
         if (exerciseFieldSaveTimer) clearTimeout(exerciseFieldSaveTimer);
         persist();
