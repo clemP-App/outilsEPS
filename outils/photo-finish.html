@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <title>Photo finish — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body class="app app--tool">
+    <div class="page-outil page-outil--photo-finish">
+      <header class="page-outil__header photo-finish-header">
+        <a class="tool-back" href="../index.html"
+          ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
+        >
+        <h1>Photo finish</h1>
+      </header>
+
+      <p id="pf-msg" class="msg-error photo-finish-msg" role="alert" hidden></p>
+
+      <section class="card" id="pf-section-prepare" aria-labelledby="lbl-prepare">
+        <h2 id="lbl-prepare">Préparation</h2>
+        <p class="hint">
+          Placez le téléphone de profil, caméra vers la piste : les coureurs passent devant l’appareil.
+          La ligne rouge indique l’arrivée. Lancez le chrono au départ de la course, arrêtez quand tout le
+          monde est passé.
+        </p>
+        <button
+          type="button"
+          class="btn btn--ghost btn--labeled"
+          id="btn-import-classe-pf"
+        >
+          <span class="btn__icon" aria-hidden="true">👥</span>
+          <span class="btn__text">Importer depuis une classe</span>
+        </button>
+        <p class="hint" id="pf-classe-info">Aucune classe importée — vous pourrez saisir les noms après la course.</p>
+
+        <div class="field-group">
+          <label class="field-label" for="pf-slit"
+            >Position de la ligne d’arrivée dans l’image :
+            <strong id="pf-slit-val">50</strong> %</label
+          >
+          <input type="range" id="pf-slit" min="10" max="90" step="1" value="50" />
+        </div>
+
+        <label class="photo-finish-opt">
+          <input type="checkbox" id="pf-mirror" />
+          <span>Miroir (selfie)</span>
+        </label>
+
+        <div class="field-row photo-finish-actions">
+          <button type="button" class="btn btn--primary btn--labeled" id="pf-btn-camera">
+            <span class="btn__icon" aria-hidden="true">📷</span>
+            <span class="btn__text">Activer la caméra</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-flip" hidden>
+            <span class="btn__icon" aria-hidden="true">🔄</span>
+            <span class="btn__text">Changer de caméra</span>
+          </button>
+        </div>
+      </section>
+
+      <section
+        class="photo-finish-stage"
+        id="pf-stage"
+        aria-label="Aperçu caméra"
+        hidden
+      >
+        <video
+          id="pf-video"
+          class="photo-finish-video"
+          playsinline
+          muted
+          autoplay
+        ></video>
+        <div
+          id="pf-slit-guide"
+          class="photo-finish-slit-guide"
+          aria-hidden="true"
+        ></div>
+        <p class="photo-finish-chrono-live" id="pf-chrono-live" aria-live="polite">00:00.00</p>
+        <p class="photo-finish-status" id="pf-status">Prêt</p>
+      </section>
+
+      <section class="card photo-finish-capture-card" id="pf-section-capture" hidden>
+        <div class="photo-finish-capture-actions">
+          <button type="button" class="btn btn--primary btn--labeled" id="pf-btn-start">
+            <span class="btn__icon" aria-hidden="true">▶</span>
+            <span class="btn__text">Démarrer le chrono</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-stop" hidden>
+            <span class="btn__icon" aria-hidden="true">■</span>
+            <span class="btn__text">Arrêter et créer la photo</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="card" id="pf-section-review" hidden aria-labelledby="lbl-review">
+        <h2 id="lbl-review">Lecture de la photo finish</h2>
+        <p class="hint">
+          Faites glisser la barre rouge sur le torse de chaque coureur, choisissez l’élève puis
+          enregistrez son temps.
+        </p>
+        <p class="photo-finish-bar-time" aria-live="polite">
+          Temps à la barre : <strong id="pf-bar-time">—</strong>
+        </p>
+
+        <div class="photo-finish-scroll" id="pf-scroll">
+          <div class="photo-finish-image-wrap" id="pf-image-wrap">
+            <canvas id="pf-result" class="photo-finish-result"></canvas>
+            <div
+              id="pf-bar"
+              class="photo-finish-bar"
+              role="slider"
+              aria-label="Barre de lecture du passage"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              tabindex="0"
+            ></div>
+          </div>
+        </div>
+
+        <div class="field-group" id="pf-eleve-wrap" hidden>
+          <label class="field-label" for="pf-eleve-select">Élève à ce passage</label>
+          <select id="pf-eleve-select"></select>
+        </div>
+        <input type="text" id="pf-nom-manuel" class="photo-finish-nom-manuel" placeholder="Ou saisir un nom…" />
+
+        <button type="button" class="btn btn--primary btn--labeled" id="pf-btn-marquer">
+          <span class="btn__icon" aria-hidden="true">✓</span>
+          <span class="btn__text">Enregistrer le passage ici</span>
+        </button>
+
+        <h3 class="photo-finish-classement-titre">Classement</h3>
+        <ol id="pf-classement" class="photo-finish-classement"></ol>
+        <p id="pf-classement-vide" class="hint">Aucun passage enregistré.</p>
+
+        <div class="field-row photo-finish-actions">
+          <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-export">
+            <span class="btn__icon" aria-hidden="true">⬇</span>
+            <span class="btn__text">Exporter CSV</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-nouvelle">
+            <span class="btn__icon" aria-hidden="true">↺</span>
+            <span class="btn__text">Nouvelle course</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <script src="../data-manager.js"></script>
+    <script src="../class-import.js"></script>
+    <script src="../shared/eleve-display.js"></script>
+    <script src="photo-finish.js"></script>
+    <script src="../tool-info.js"></script>
+    <script>
+      ToolInfo.init({
+        intro:
+          "Photo finish au smartphone : chronomètre + capture type ligne d’arrivée, puis lecture des temps en glissant une barre sur chaque coureur.",
+        sections: [
+          {
+            title: "L’intérêt principal",
+            text:
+              "Chronométrez une course sans plusieurs stoppeurs : une seule ligne d’arrivée virtuelle enregistre qui passe quand. Idéal pour le sprint, le relais ou les qualifications sur piste.",
+          },
+          {
+            title: "Comment s’en servir",
+            list: [
+              "Téléphone de profil, coureurs qui défilent devant la caméra.",
+              "Réglez la ligne d’arrivée (barre rouge), démarrez le chrono au signal de départ.",
+              "Arrêtez quand tous les coureurs sont passés : la photo finish se construit.",
+              "Glissez la barre sur chaque coureur, importez la classe et enregistrez chaque temps.",
+            ],
+          },
+        ],
+      });
+    </script>
+    <script src="../shared/tool-accueil.js"></script>
+    <script src="../goatcounter.js"></script>
+    <script src="../pwa-register.js" data-sw="../sw.js"></script>
+  </body>
+</html>
