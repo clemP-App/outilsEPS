@@ -665,6 +665,17 @@
     return n;
   }
 
+  function configureScoreInput(inp) {
+    inp.type = "text";
+    inp.inputMode = "numeric";
+    inp.pattern = "[0-9]*";
+    inp.autocomplete = "off";
+    inp.setAttribute("autocorrect", "off");
+    inp.setAttribute("autocapitalize", "off");
+    inp.spellcheck = false;
+    inp.maxLength = 3;
+  }
+
   function majScore(matchId, cote, valeurBrute) {
     var m = state.matches.find(function (x) {
       return x.id === matchId;
@@ -682,11 +693,17 @@
       var homeInput = matchListEl.querySelector('input.match-row__score[data-match-id="' + matchId + '"][data-side="home"]');
       if (homeInput) homeInput.value = "";
     }
-    if (m.homeScore != null || m.awayScore != null) {
+    sauverDebounced();
+    refreshScoresUi();
+  }
+
+  function maybeCloseGestionAfterScore(matchId) {
+    var m = state.matches.find(function (x) {
+      return x.id === matchId;
+    });
+    if (m && (m.homeScore != null || m.awayScore != null)) {
       closeGestionAccordionsOnScoreEntry();
     }
-    sauverDebounced();
-    renderStandingsOnly();
   }
 
   function computeStandingsByPool() {
@@ -1559,10 +1576,7 @@
     nHome.textContent = nomEquipe(m.homeId);
 
     var inpH = document.createElement("input");
-    inpH.type = "number";
-    inpH.min = "0";
-    inpH.step = "1";
-    inpH.inputMode = "numeric";
+    configureScoreInput(inpH);
     inpH.className = "match-row__score";
     inpH.setAttribute("aria-label", "Score " + nomEquipe(m.homeId));
     inpH.value = m.homeScore !== null && typeof m.homeScore !== "undefined" ? String(m.homeScore) : "";
@@ -1575,10 +1589,7 @@
     sep.textContent = "—";
 
     var inpA = document.createElement("input");
-    inpA.type = "number";
-    inpA.min = "0";
-    inpA.step = "1";
-    inpA.inputMode = "numeric";
+    configureScoreInput(inpA);
     inpA.className = "match-row__score";
     inpA.setAttribute("aria-label", "Score " + nomEquipe(m.awayId));
     inpA.value = m.awayScore !== null && typeof m.awayScore !== "undefined" ? String(m.awayScore) : "";
@@ -1626,11 +1637,38 @@
     );
   }
 
+  function getFilteredMatchesForDisplay() {
+    if (state.teams.length < 2 || !state.matches.length) return [];
+    var selected = standingsFilterEl && standingsFilterEl.value ? standingsFilterEl.value : "all";
+    var query = normalizeSearchText(matchSearchEl ? matchSearchEl.value : "");
+    return state.matches.filter(function (m) {
+      var poolOk = selected === "all" || (m.pouleId || DEFAULT_POULE_ID) === selected;
+      var searchOk = !query || matchSearchHaystack(m).indexOf(query) !== -1;
+      return poolOk && searchOk;
+    });
+  }
+
+  function updateMatchesAccordionTitle() {
+    if (!accordionMatchsTitleEl) return;
+    if (state.teams.length < 2) {
+      accordionMatchsTitleEl.textContent = "⚽ Matchs (0 restants)";
+      return;
+    }
+    var filtered = getFilteredMatchesForDisplay();
+    var remaining = filtered.filter(function (m) {
+      return m.homeScore == null && m.awayScore == null;
+    }).length;
+    accordionMatchsTitleEl.textContent = "⚽ Matchs (" + remaining + " restants)";
+  }
+
+  function refreshScoresUi() {
+    updateMatchesAccordionTitle();
+    renderStandings();
+  }
+
   function renderMatches() {
     OutilsDom.clear(matchListEl);
-    if (accordionMatchsTitleEl) {
-      accordionMatchsTitleEl.textContent = "⚽ Matchs (0 restants)";
-    }
+    updateMatchesAccordionTitle();
     if (state.teams.length < 2) {
       var p = document.createElement("p");
       p.className = "hint";
@@ -1646,19 +1684,7 @@
       return;
     }
 
-    var selected = standingsFilterEl && standingsFilterEl.value ? standingsFilterEl.value : "all";
-    var query = normalizeSearchText(matchSearchEl ? matchSearchEl.value : "");
-    var filtered = state.matches.filter(function (m) {
-      var poolOk = selected === "all" || (m.pouleId || DEFAULT_POULE_ID) === selected;
-      var searchOk = !query || matchSearchHaystack(m).indexOf(query) !== -1;
-      return poolOk && searchOk;
-    });
-    var remaining = filtered.filter(function (m) {
-      return m.homeScore == null && m.awayScore == null;
-    }).length;
-    if (accordionMatchsTitleEl) {
-      accordionMatchsTitleEl.textContent = "⚽ Matchs (" + remaining + " restants)";
-    }
+    var filtered = getFilteredMatchesForDisplay();
     if (!filtered.length) {
       var empty = document.createElement("p");
       empty.className = "hint champ-match-filter__empty";
@@ -1756,8 +1782,12 @@
   }
 
   function renderStandingsOnly() {
-    renderStandings();
+    refreshScoresUi();
+  }
+
+  function refreshMatchesAndStandings() {
     renderMatches();
+    renderStandings();
   }
 
   function render() {
@@ -1832,6 +1862,18 @@
     majScore(mid, side, el.value);
   });
 
+  matchListEl.addEventListener(
+    "blur",
+    function (e) {
+      var el = e.target;
+      if (!el || !el.classList || !el.classList.contains("match-row__score")) return;
+      var mid = el.getAttribute("data-match-id");
+      if (!mid) return;
+      maybeCloseGestionAfterScore(mid);
+    },
+    true
+  );
+
   if (matchSearchEl) {
     matchSearchEl.addEventListener("input", renderMatches);
   }
@@ -1901,44 +1943,61 @@
   }
   if (btnRenamePouleDialog) btnRenamePouleDialog.addEventListener("click", renameSelectedPouleFromDialog);
   if (btnDeletePouleDialog) btnDeletePouleDialog.addEventListener("click", deleteSelectedPouleFromDialog);
-  if (standingsFilterEl) standingsFilterEl.addEventListener("change", renderStandingsOnly);
+  if (standingsFilterEl) {
+    standingsFilterEl.addEventListener("change", refreshMatchesAndStandings);
+  }
 
   var btnImportClasse = document.getElementById("btn-import-classe-champ");
   if (btnImportClasse && typeof ClassImport !== "undefined") {
     btnImportClasse.addEventListener("click", function () {
       ClassImport.open({
         title: "Importer des participants depuis une classe",
-        hint: "Chaque élève coché devient un participant (nom prénom).",
-        onConfirm: function (eleves, classe) {
+        hint: "Les participants déjà dans le championnat sont grisés. Cochez les nouveaux à ajouter.",
+        dejaPresent: function (e) {
+          return (
+            typeof ImportElevePresence !== "undefined" &&
+            ImportElevePresence.eleveEstDansListe(state.teams, e)
+          );
+        },
+        defaultChecked: true,
+        onConfirm: function (eleves, classe, metaImport) {
           var ajout = 0;
           eleves.forEach(function (e) {
             var name =
-              typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
-                ? EleveDisplay.formatEleveListe(e, "")
-                : [e.nom, e.prenom].filter(Boolean).join(" ").trim();
+              typeof ImportElevePresence !== "undefined"
+                ? ImportElevePresence.labelEleveImport(e)
+                : typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+                  ? EleveDisplay.formatEleveListe(e, "")
+                  : [e.nom, e.prenom].filter(Boolean).join(" ").trim();
             if (!name) return;
-            var existe = state.teams.some(function (t) {
-              return t.name === name && t.eleveId === e.id;
+            state.teams.push({
+              id: genererId(),
+              name: name,
+              eleveId: e.id || null,
+              niveau: normalizeNiveau(e.niveau),
+              pouleId: state.poules[0].id,
             });
-            if (!existe) {
-              state.teams.push({
-                id: genererId(),
-                name: name,
-                eleveId: e.id || null,
-                niveau: normalizeNiveau(e.niveau),
-                pouleId: state.poules[0].id,
-              });
-              ajout++;
-            }
+            ajout++;
           });
+          var ignores = metaImport && metaImport.ignores ? metaImport.ignores : 0;
+          var msg =
+            typeof ImportElevePresence !== "undefined"
+              ? ImportElevePresence.messageImportEleves({
+                  ajoutes: ajout,
+                  ignores: ignores,
+                  contexte: "« " + classe.nom + " »",
+                })
+              : ajout
+                ? ajout + " participant(s) importé(s) depuis « " + classe.nom + " »."
+                : "Aucun nouveau participant à ajouter.";
           if (!ajout) {
-            montrerMsg("Aucun nouveau participant à ajouter.");
+            montrerMsg(msg);
             return;
           }
           reconstruireMatchsDepuisEquipes();
           sauverImmediate();
           render();
-          montrerMsg(ajout + " participant(s) importé(s) depuis « " + classe.nom + " ».");
+          montrerMsg(msg);
         },
       });
     });

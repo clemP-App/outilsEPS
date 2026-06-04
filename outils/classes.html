@@ -64,6 +64,13 @@
             <input type="search" id="recherche-eleve" placeholder="Nom, prénom…" autocomplete="off" />
           </div>
 
+          <p class="hint classes-reimport-hint">
+            <strong>Réimporter un CSV</strong> sur cette classe pour ajouter des élèves ou
+            <strong>compléter les fiches</strong> déjà présentes (niveau, équipe, VMA, commentaire…). Les
+            correspondances se font sur <strong>nom + prénom</strong> ; les champs vides dans le fichier ne
+            effacent pas une valeur déjà enregistrée.
+          </p>
+
           <div class="field-row classes-actions-row">
             <button type="button" class="btn btn--primary btn--labeled" id="btn-ajouter-eleve">
               <span class="btn__icon" aria-hidden="true">＋</span>
@@ -71,7 +78,7 @@
             </button>
             <button type="button" class="btn btn--ghost btn--labeled" id="btn-importer-liste">
               <span class="btn__icon" aria-hidden="true">📋</span>
-              <span class="btn__text">Importer liste</span>
+              <span class="btn__text">Importer / mettre à jour (CSV)</span>
             </button>
             <button type="button" class="btn btn--ghost btn--labeled" id="btn-exporter-csv">
               <span class="btn__icon" aria-hidden="true">📤</span>
@@ -119,6 +126,27 @@
           </div>
         </div>
         <div class="field-group">
+          <label class="field-label" for="eleve-equipe">Équipe (facultatif)</label>
+          <input
+            type="text"
+            id="eleve-equipe"
+            maxlength="80"
+            autocomplete="off"
+            placeholder="ex. Rouge, Bleue…"
+          />
+          <p class="hint">Un nom de couleur affiche une pastille de la même couleur dans la liste.</p>
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="eleve-vma">VMA (km/h, facultatif)</label>
+          <input
+            type="text"
+            id="eleve-vma"
+            inputmode="decimal"
+            autocomplete="off"
+            placeholder="ex. 12.5"
+          />
+        </div>
+        <div class="field-group">
           <label class="field-label" for="eleve-commentaire">Commentaire (facultatif)</label>
           <textarea id="eleve-commentaire" rows="2"></textarea>
         </div>
@@ -135,12 +163,15 @@
 
     <dialog class="classes-dialog classes-dialog--import card" id="dialog-import">
       <form id="form-import" novalidate>
-        <h2 class="classes-dialog-title">Importer une liste</h2>
+        <h2 class="classes-dialog-title">Importer ou mettre à jour la classe</h2>
 
         <div id="import-step-source">
           <p class="hint import-source-hint">
             Chargez un fichier CSV (Pronote, Excel, LibreOffice…) ou collez le contenu. Le séparateur
             (<strong>;</strong>, <strong>,</strong> ou tabulation) est détecté automatiquement.
+            Vous pouvez réutiliser le même fichier plus tard : les élèves déjà présents (même nom et prénom)
+            verront leurs informations <strong>complétées ou mises à jour</strong> (niveau, équipe, VMA…). En cas de
+            valeurs différentes, vous choisirez pour chaque colonne si vous gardez le CSV ou Outils EPS.
           </p>
           <div class="field-group">
             <label class="field-label" for="import-fichier">Fichier CSV</label>
@@ -165,7 +196,8 @@
         <div id="import-step-map" hidden>
           <p class="hint import-map-hint">
             Indiquez si la première ligne contient les titres, puis faites correspondre les colonnes du
-            fichier avec les champs élève.
+            fichier avec les champs élève (identité, niveau, équipe, VMA, commentaire…).
+            Seuls les champs renseignés dans le fichier sont importés.
           </p>
           <label class="import-entete-check">
             <input type="checkbox" id="import-a-entete" checked />
@@ -200,10 +232,28 @@
 
           <div class="field-row classes-dialog-actions">
             <button type="submit" class="btn btn--primary btn--labeled">
-              <span class="btn__text">Importer les élèves</span>
+              <span class="btn__text">Continuer</span>
             </button>
             <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-retour">
               <span class="btn__text">Retour</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="import-step-conflits" hidden>
+          <p class="hint import-conflits-hint">
+            Des élèves existants ont déjà des valeurs dans Outils EPS qui diffèrent du fichier CSV.
+            Pour <strong>chaque colonne</strong> concernée, choisissez la source à conserver pour toute la classe
+            (les nouveaux élèves ne sont pas affectés).
+          </p>
+          <div id="import-conflits-list" class="import-conflits-list" role="group" aria-label="Choix par colonne en cas de conflit"></div>
+          <p id="import-conflits-erreur" class="msg-error import-conflits-erreur" role="alert" hidden></p>
+          <div class="field-row classes-dialog-actions">
+            <button type="submit" class="btn btn--primary btn--labeled">
+              <span class="btn__text">Appliquer l’import</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-retour-map">
+              <span class="btn__text">Retour au mapping</span>
             </button>
           </div>
         </div>
@@ -211,27 +261,31 @@
     </dialog>
 
     <script src="../shared/eleve-display.js"></script>
+    <script src="../shared/equipe-couleur.js"></script>
     <script src="../shared/classe-csv-import.js"></script>
+    <script src="../shared/eleve-fusion.js"></script>
+    <script src="../shared/sync-classe-tableaux.js"></script>
     <script src="../data-manager.js"></script>
     <script src="classes.js"></script>
     <script src="../tool-info.js"></script>
     <script>
       ToolInfo.init({
         intro:
-          "Enregistrez vos classes une fois pour ne plus retaper les noms des élèves dans les autres outils.",
+          "Référentiel de vos classes : identité des élèves et données utiles (niveau, équipe, VMA…) réutilisables dans tous les outils.",
         sections: [
           {
             title: "L’intérêt principal",
             text:
-              "Vous créez des listes d’élèves (nom, prénom, classe) réutilisables pour le tirage au sort, les équipes, les dispenses, les championnats, etc.",
+              "Une seule liste par classe, enrichie au fil du temps. Les outils (appel, tournoi, composition, etc.) importent depuis cette base au lieu de retaper les noms.",
           },
           {
             title: "Comment s’en servir",
             list: [
-              "Créez une classe (ex. 6eA) puis ajoutez les élèves un par un ou importez un CSV.",
-              "À l’import, indiquez si le fichier a une ligne d’en-tête et faites correspondre les colonnes (nom, prénom, etc.).",
-              "Une colonne « Nom & Prénom » combinée est aussi acceptée.",
-              "Ensuite, dans un autre outil, choisissez « Importer une classe » pour récupérer les noms.",
+              "Créez une classe (ex. 6eA) puis ajoutez les élèves ou importez un premier CSV (nom, prénom).",
+              "Réimportez le même fichier ou un export enrichi pour compléter les fiches (niveau, équipe, VMA, commentaire…).",
+              "Si une colonne a des valeurs différentes entre le CSV et vos saisies manuelles, choisissez pour chaque colonne la source à garder.",
+              "La fusion se fait sur nom + prénom : nouveaux élèves ajoutés, existants mis à jour sans effacer les champs laissés vides dans le CSV.",
+              "Dans un autre outil, choisissez « Importer depuis une classe » pour récupérer noms et données liées.",
             ],
           },
         ],

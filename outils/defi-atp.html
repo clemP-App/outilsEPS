@@ -89,12 +89,21 @@
 
             <hr />
             <h3>👥 Joueurs</h3>
-            <button type="button" class="btn btn--ghost btn--labeled" id="defi-import-classe"><span class="btn__icon" aria-hidden="true">👥</span><span class="btn__text">Importer une classe</span></button>
-            <div class="field-group">
-              <label class="field-label" for="defi-players-raw">Ajouter des joueurs (1 par ligne)</label>
-              <textarea id="defi-players-raw" rows="5" placeholder="Nom Prénom"></textarea>
+            <div class="liste-import-toolbar field-row">
+              <button type="button" class="btn btn--ghost btn--labeled" id="defi-import-classe"><span class="btn__icon" aria-hidden="true">👥</span><span class="btn__text">Importer depuis une classe</span></button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-ajouter-manuel-defi" aria-expanded="false" aria-controls="liste-manuelle-panel-defi"><span class="btn__icon" aria-hidden="true">✎</span><span class="btn__text">Ajouter manuellement</span></button>
             </div>
-            <button id="defi-add-players" type="button" class="btn btn--primary">Ajouter</button>
+            <div id="liste-manuelle-panel-defi" class="liste-manuelle-panel" hidden>
+              <p class="hint liste-manuelle-ligne-hint" hidden>1 joueur par ligne.</p>
+              <div class="field-group">
+                <label class="field-label field-label--with-meta" for="defi-players-raw">
+                  <span class="field-label__main">Ajouter des joueurs ou équipes</span>
+                  <span class="field-label__meta" id="defi-players-raw-meta" aria-live="polite"></span>
+                </label>
+                <textarea id="defi-players-raw" rows="5" placeholder="Nom Prénom"></textarea>
+              </div>
+              <button id="defi-add-players" type="button" class="btn btn--primary">Ajouter</button>
+            </div>
 
             <hr />
             <h3>📤 Exports</h3>
@@ -233,12 +242,15 @@
     <script src="../shared/outils-dom.js"></script>
     <script src="../shared/eleve-display.js"></script>
     <script src="../class-import.js"></script>
+    <script src="../shared/import-eleve-presence.js"></script>
+    <script src="../shared/liste-saisie-ui.js"></script>
+    <script src="../shared/liste-manuelle-panel.js"></script>
     <script src="defi-atp.js"></script>
     <script src="../tool-info.js"></script>
     <script>
       ToolInfo.init({
         intro: "Défis en continu avec classement ATP paramétrable, badges et hall of fame.",
-        sections: [{ title: "Utilisation", list: ["Ajoutez des joueurs (ou importez une classe).", "Réglez la formule et les règles de saisie.", "Saisissez les résultats et suivez le classement live."] }],
+        sections: [{ title: "Utilisation", list: ["Ajoutez des joueurs (ou importez depuis une classe).", "Réglez la formule et les règles de saisie.", "Saisissez les résultats et suivez le classement live."] }],
       });
     </script>
     <script src="../shared/tool-accueil.js"></script>

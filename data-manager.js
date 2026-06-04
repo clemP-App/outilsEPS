@@ -400,7 +400,10 @@ var DataManager = (function () {
           dateNaissance: e.dateNaissance || "",
           sexe: e.sexe || "",
           niveau: e.niveau || "",
+          vma: e.vma || "",
           commentaire: e.commentaire || "",
+          equipe: e.equipe || "",
+          equipeCouleur: e.equipeCouleur || "",
         });
       });
     });
@@ -601,7 +604,10 @@ var DataManager = (function () {
               dateNaissance: e.dateNaissance || "",
               sexe: e.sexe || "",
               niveau: e.niveau || "",
+              vma: e.vma || "",
               commentaire: e.commentaire || "",
+              equipe: e.equipe || "",
+              equipeCouleur: e.equipeCouleur || "",
             });
           });
         }
@@ -1144,7 +1150,10 @@ var DataManager = (function () {
           dateNaissance: e.dateNaissance || "",
           sexe: e.sexe || "",
           niveau: e.niveau || "",
+          vma: e.vma || "",
           commentaire: e.commentaire || "",
+          equipe: e.equipe || "",
+          equipeCouleur: e.equipeCouleur || "",
         };
         if (existingIds[e.id]) ops.push(updateItem("eleves", item));
         else ops.push(addItem("eleves", item));
@@ -1227,6 +1236,38 @@ var DataManager = (function () {
   function getElevesFromClasse(id) {
     return getElevesByClasseId(id).then(function (list) {
       return sortElevesAlphabetique(list.map(mapEleveSansClasseId));
+    });
+  }
+
+  /**
+   * Met à jour un élève dans le store (fiche Classes).
+   * @param {string} eleveId
+   * @param {object} patch — champs partiels (sexe, niveau, vma, equipe, equipeCouleur…)
+   */
+  function updateEleve(eleveId, patch) {
+    if (!eleveId || !patch || typeof patch !== "object") {
+      return Promise.resolve(false);
+    }
+    return getById("eleves", eleveId).then(function (e) {
+      if (!e) return false;
+      var item = {
+        id: e.id,
+        classeId: e.classeId,
+        nom: e.nom || "",
+        prenom: e.prenom || "",
+        dateNaissance:
+          patch.dateNaissance !== undefined ? patch.dateNaissance : e.dateNaissance || "",
+        sexe: patch.sexe !== undefined ? patch.sexe : e.sexe || "",
+        niveau: patch.niveau !== undefined ? patch.niveau : e.niveau || "",
+        vma: patch.vma !== undefined ? patch.vma : e.vma || "",
+        commentaire: patch.commentaire !== undefined ? patch.commentaire : e.commentaire || "",
+        equipe: patch.equipe !== undefined ? patch.equipe : e.equipe || "",
+        equipeCouleur:
+          patch.equipeCouleur !== undefined ? patch.equipeCouleur : e.equipeCouleur || "",
+      };
+      return updateItem("eleves", item).then(function () {
+        return true;
+      });
     });
   }
 
@@ -1576,6 +1617,8 @@ var DataManager = (function () {
         players: Array.isArray(rec.players) ? rec.players.slice() : [],
         nbEquipes: rec.nbEquipes,
         assignments: rec.assignments,
+        teamNames: Array.isArray(rec.teamNames) ? rec.teamNames.slice() : [],
+        teamColors: Array.isArray(rec.teamColors) ? rec.teamColors.slice() : [],
       };
     });
   }
@@ -2579,6 +2622,7 @@ var DataManager = (function () {
     deleteClasse: deleteClasse,
     setClasseArchived: setClasseArchived,
     getElevesFromClasse: getElevesFromClasse,
+    updateEleve: updateEleve,
     getDispenses: getDispenses,
     saveDispenses: saveDispenses,
     getOublisMateriel: getOublisMateriel,

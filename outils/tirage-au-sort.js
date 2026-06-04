@@ -15,6 +15,27 @@
   var nomEl = document.getElementById("tirage-nom");
   var retirerEl = document.getElementById("retirer-apres-tirage");
 
+  var listeSaisieMeta =
+    typeof ListeSaisieUi !== "undefined" && listeBruteEl
+      ? ListeSaisieUi.bind({
+          metaEl: document.getElementById("liste-brute-meta"),
+          textareaEl: listeBruteEl,
+          getSessionCount: function () {
+            return participants.length;
+          },
+          sessionSingular: "participant",
+          sessionPlural: "participants",
+        })
+      : null;
+
+  if (typeof ListeManuellePanel !== "undefined" && listeBruteEl) {
+    ListeManuellePanel.bind({
+      toggleBtnId: "btn-ajouter-manuel-tirage",
+      panelId: "liste-manuelle-panel-tirage",
+      textareaEl: listeBruteEl,
+    });
+  }
+
   function montrerMsg(texte) {
     if (!msgEl) return;
     if (!texte) {
@@ -59,13 +80,18 @@
 
   function ajouterNoms(noms) {
     var ajoutes = 0;
+    var ignores = 0;
     noms.forEach(function (nom) {
       var n = normaliserNom(nom);
-      if (!n || contientNom(n)) return;
+      if (!n) return;
+      if (contientNom(n)) {
+        ignores++;
+        return;
+      }
       participants.push(n);
       ajoutes++;
     });
-    return ajoutes;
+    return { ajoutes: ajoutes, ignores: ignores };
   }
 
   function parserTextarea() {
@@ -78,6 +104,7 @@
 
   function majAffichage() {
     if (nbEl) nbEl.textContent = libelleNb(participants.length);
+    if (listeSaisieMeta) listeSaisieMeta.refresh();
 
     if (!participantsListEl || !participantsEmptyEl) return;
 
@@ -118,15 +145,18 @@
       montrerMsg("Saisissez au moins un nom (un par ligne).");
       return;
     }
-    var ajoutes = ajouterNoms(lignes);
+    var stats = ajouterNoms(lignes);
     listeBruteEl.value = "";
     majAffichage();
     montrerMsg("");
-    if (ajoutes) {
-      montrerOk(ajoutes + " participant(s) ajouté(s).");
-    } else {
-      montrerMsg("Aucun nouveau nom (doublons ignorés).");
-    }
+    var msg =
+      typeof ImportElevePresence !== "undefined"
+        ? ImportElevePresence.messageImportEleves(stats)
+        : stats.ajoutes
+          ? stats.ajoutes + " participant(s) ajouté(s)."
+          : "Aucun nouveau nom (doublons ignorés).";
+    if (stats.ajoutes) montrerOk(msg);
+    else montrerMsg(msg);
   }
 
   function viderListe() {
@@ -147,16 +177,31 @@
     }
     ClassImport.open({
       title: "Importer des participants",
-      hint: "Cochez les élèves à ajouter à la liste du tirage.",
-      onConfirm: function (eleves, classe) {
+      hint: "Les participants déjà dans la liste sont grisés. Cochez les nouveaux à ajouter.",
+      dejaPresent: function (e) {
+        return (
+          typeof ImportElevePresence !== "undefined" &&
+          ImportElevePresence.eleveEstDansListe(participants, e)
+        );
+      },
+      defaultChecked: true,
+      onConfirm: function (eleves, classe, metaImport) {
         var noms = eleves.map(eleveVersNom).filter(Boolean);
-        var ajoutes = ajouterNoms(noms);
+        var stats = ajouterNoms(noms);
+        var ignores = metaImport && metaImport.ignores ? metaImport.ignores : 0;
         majAffichage();
-        if (ajoutes) {
-          montrerOk(ajoutes + " participant(s) importé(s) depuis « " + classe.nom + " ».");
-        } else {
-          montrerMsg("Aucun nouveau participant (doublons ignorés).");
-        }
+        var msg =
+          typeof ImportElevePresence !== "undefined"
+            ? ImportElevePresence.messageImportEleves({
+                ajoutes: stats.ajoutes,
+                ignores: ignores,
+                contexte: "« " + classe.nom + " »",
+              })
+            : stats.ajoutes
+              ? stats.ajoutes + " participant(s) importé(s) depuis « " + classe.nom + " »."
+              : "Aucun nouveau participant (doublons ignorés).";
+        if (stats.ajoutes) montrerOk(msg);
+        else montrerMsg(msg);
       },
     });
   }

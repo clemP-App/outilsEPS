@@ -32,7 +32,7 @@ var ClassImport = (function () {
     var title = document.createElement("h2");
     title.className = "class-import-title";
     title.id = "class-import-title";
-    title.textContent = "Importer une classe";
+    title.textContent = "Importer depuis une classe";
 
     var hint = document.createElement("p");
     hint.className = "hint class-import-hint";
@@ -123,10 +123,18 @@ var ClassImport = (function () {
     return overlayEl;
   }
 
+  function estDejaPresentEleve(e) {
+    if (!e) return false;
+    if (typeof currentOpts.dejaPresent === "function") {
+      return !!currentOpts.dejaPresent(e);
+    }
+    return false;
+  }
+
   function cocherTous(etat) {
     var list = overlayEl.querySelector("#class-import-list");
     if (!list) return;
-    var cbs = list.querySelectorAll('input[type="checkbox"]');
+    var cbs = list.querySelectorAll('input[type="checkbox"]:not(:disabled)');
     var i;
     for (i = 0; i < cbs.length; i++) cbs[i].checked = etat;
   }
@@ -175,14 +183,22 @@ var ClassImport = (function () {
           return;
         }
 
+        var dejaLa = estDejaPresentEleve(e);
         var label = document.createElement("label");
-        label.className = "class-import-item";
+        label.className =
+          "class-import-item" + (dejaLa ? " class-import-item--deja-la" : "");
         var cb = document.createElement("input");
         cb.type = "checkbox";
-        cb.checked = currentOpts.defaultChecked !== false;
         cb.value = e.id;
+        cb.disabled = dejaLa;
+        if (dejaLa) {
+          cb.checked = false;
+          cb.setAttribute("aria-disabled", "true");
+        } else {
+          cb.checked = currentOpts.defaultChecked !== false;
+        }
         var span = document.createElement("span");
-        span.textContent = formatEleve(e);
+        span.textContent = formatEleve(e) + (dejaLa ? " — déjà présent" : "");
         label.appendChild(cb);
         label.appendChild(span);
         list.appendChild(label);
@@ -228,15 +244,31 @@ var ClassImport = (function () {
       });
 
       if (!ids.length) {
-        alert("Cochez au moins un élève.");
+        alert("Cochez au moins un élève à ajouter (les élèves déjà présents sont grisés).");
         return;
       }
 
-      var selection = classe.eleves.filter(function (e) {
-        return ids.indexOf(e.id) !== -1;
+      var selection = [];
+      var ignores = 0;
+      classe.eleves.forEach(function (e) {
+        if (estDejaPresentEleve(e)) ignores++;
+      });
+      classe.eleves.forEach(function (e) {
+        if (ids.indexOf(e.id) === -1) return;
+        if (estDejaPresentEleve(e)) return;
+        selection.push(e);
       });
 
-      if (onConfirmCb) onConfirmCb(selection, classe);
+      if (!selection.length) {
+        alert(
+          ignores
+            ? "Ces élèves sont déjà présents dans cet outil. Cochez uniquement les nouveaux élèves."
+            : "Cochez au moins un élève à ajouter."
+        );
+        return;
+      }
+
+      if (onConfirmCb) onConfirmCb(selection, classe, { ignores: ignores });
       fermer();
     });
   }

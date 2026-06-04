@@ -233,7 +233,7 @@
       id: "tirage-au-sort",
       titre: "Tirage au sort",
       description:
-        "Importez une classe ou saisissez une liste, puis tirez un nom au hasard parmi les participants.",
+        "Importez depuis une classe ou saisissez une liste, puis tirez un nom au hasard parmi les participants.",
       icone: "🎲",
       href: "outils/tirage-au-sort.html",
       categorie: "Séance",

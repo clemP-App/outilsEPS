@@ -18,9 +18,31 @@
   var btnGenererAleatoire = document.getElementById("tournoi-generer-aleatoire");
   var btnEffacerResultats = document.getElementById("tournoi-effacer-resultats");
   var btnEffacer = document.getElementById("tournoi-effacer");
+  var btnValiderListe = document.getElementById("tournoi-valider-liste");
+
+  var listeSaisieMeta =
+    typeof ListeSaisieUi !== "undefined" && textareaEl
+      ? ListeSaisieUi.bind({
+          metaEl: document.getElementById("tournoi-participants-meta"),
+          textareaEl: textareaEl,
+          getSessionCount: function () {
+            return state.participants.length;
+          },
+        })
+      : null;
+
+  var listeManuellePanel =
+    typeof ListeManuellePanel !== "undefined" && textareaEl
+      ? ListeManuellePanel.bind({
+          toggleBtnId: "btn-ajouter-manuel-tournoi",
+          panelId: "liste-manuelle-panel-tournoi",
+          textareaEl: textareaEl,
+        })
+      : null;
 
   var state = {
     format: "elimination",
+    participants: [],
     participantsText: "",
     levels: {},
     totalParticipants: 0,
@@ -29,6 +51,88 @@
     tables: [],
     placements: {},
   };
+
+  function normaliserNomParticipant(s) {
+    return String(s || "")
+      .trim()
+      .replace(/\s+/g, " ");
+  }
+
+  function cleNomParticipant(nom) {
+    return normaliserNomParticipant(nom).toLowerCase();
+  }
+
+  function parseNomsDepuisTexte(text) {
+    var seen = {};
+    var out = [];
+    String(text || "")
+      .split(/\r?\n/)
+      .forEach(function (ligne) {
+        var nom = normaliserNomParticipant(ligne);
+        if (!nom || seen[cleNomParticipant(nom)]) return;
+        seen[cleNomParticipant(nom)] = true;
+        out.push(nom);
+      });
+    return out;
+  }
+
+  function migrerParticipantsDepuisPayload(data) {
+    if (!data) return [];
+    if (Array.isArray(data.participants) && data.participants.length) {
+      return parseNomsDepuisTexte(data.participants.join("\n"));
+    }
+    if (typeof data.participantsText === "string" && data.participantsText.trim()) {
+      return parseNomsDepuisTexte(data.participantsText);
+    }
+    if (data.levels && typeof data.levels === "object") {
+      return Object.keys(data.levels).map(normaliserNomParticipant).filter(Boolean);
+    }
+    return [];
+  }
+
+  function participantEstPresent(nom) {
+    var cle = cleNomParticipant(nom);
+    if (!cle) return false;
+    return state.participants.some(function (n) {
+      return cleNomParticipant(n) === cle;
+    });
+  }
+
+  function ajouterParticipants(noms) {
+    var ajoutes = 0;
+    var ignores = 0;
+    (noms || []).forEach(function (nom) {
+      var n = normaliserNomParticipant(nom);
+      if (!n) return;
+      if (participantEstPresent(n)) {
+        ignores++;
+        return;
+      }
+      state.participants.push(n);
+      if (state.levels[n] === undefined) state.levels[n] = 3;
+      ajoutes++;
+    });
+    return { ajoutes: ajoutes, ignores: ignores };
+  }
+
+  function tableauDejaGenere() {
+    return !!(state.rounds && state.rounds.length) || !!(state.tables && state.tables.length);
+  }
+
+  function confirmerModificationListe() {
+    if (!tableauDejaGenere()) return true;
+    return confirm(
+      "Le tableau a déjà été généré. Modifier la liste des participants effacera les matchs et les résultats. Continuer ?"
+    );
+  }
+
+  function effacerTableauGenere() {
+    state.rounds = [];
+    state.tables = [];
+    state.placements = {};
+    state.totalParticipants = 0;
+    state.size = 0;
+  }
 
   function montrerMsg(msg) {
     if (!msgEl) return;
@@ -40,7 +144,8 @@
     if (!data || !Array.isArray(data.rounds)) return;
     state = {
       format: data.format === "classement" ? "classement" : "elimination",
-      participantsText: typeof data.participantsText === "string" ? data.participantsText : "",
+      participants: migrerParticipantsDepuisPayload(data),
+      participantsText: "",
       levels: data.levels && typeof data.levels === "object" ? data.levels : {},
       totalParticipants: typeof data.totalParticipants === "number" ? data.totalParticipants : 0,
       size: typeof data.size === "number" ? data.size : 0,
@@ -48,7 +153,8 @@
       tables: Array.isArray(data.tables) ? data.tables : [],
       placements: data.placements && typeof data.placements === "object" ? data.placements : {},
     };
-    if (textareaEl) textareaEl.value = state.participantsText;
+    syncLevels();
+    if (textareaEl) textareaEl.value = "";
     setFormat(state.format);
   }
 
@@ -89,17 +195,7 @@
   }
 
   function lireNomsParticipants() {
-    var seen = {};
-    return (textareaEl.value || "")
-      .split(/\r?\n/)
-      .map(function (nom) {
-        return nom.trim();
-      })
-      .filter(function (nom) {
-        if (!nom || seen[nom.toLowerCase()]) return false;
-        seen[nom.toLowerCase()] = true;
-        return true;
-      });
+    return state.participants.slice();
   }
 
   function syncLevels() {
@@ -297,7 +393,8 @@
 
     state = {
       format: state.format,
-      participantsText: (textareaEl.value || "").trim(),
+      participants: state.participants.slice(),
+      participantsText: "",
       levels: state.levels,
       totalParticipants: participants.length,
       size: size,
@@ -305,6 +402,7 @@
       tables: state.format === "classement" ? [mainTable] : [],
       placements: {},
     };
+    if (textareaEl) textareaEl.value = "";
     autoAdvanceByes();
     save();
     render();
@@ -715,6 +813,7 @@
     if (!confirm("Effacer le tournoi ?")) return;
     state = {
       format: state.format,
+      participants: [],
       participantsText: "",
       levels: {},
       totalParticipants: 0,
@@ -728,6 +827,45 @@
       renderSeedingList();
       render();
     });
+  }
+
+  function validerListeManuelle() {
+    if (!textareaEl) return;
+    var lignes = parseNomsDepuisTexte(textareaEl.value);
+    if (!lignes.length) {
+      montrerMsg("Saisissez au moins un nom (un par ligne).");
+      return;
+    }
+    if (!confirmerModificationListe()) return;
+    if (tableauDejaGenere()) effacerTableauGenere();
+    var stats = ajouterParticipants(lignes);
+    textareaEl.value = "";
+    if (listeSaisieMeta) listeSaisieMeta.refresh();
+    syncLevels();
+    renderSeedingList();
+    render();
+    save();
+    var msg =
+      typeof ImportElevePresence !== "undefined"
+        ? ImportElevePresence.messageImportEleves(stats)
+        : stats.ajoutes
+          ? stats.ajoutes + " participant(s) ajouté(s)."
+          : "Aucun nouveau participant (doublons ignorés).";
+    montrerMsg(msg);
+  }
+
+  function retirerParticipant(nom) {
+    if (!confirmerModificationListe()) return;
+    if (tableauDejaGenere()) effacerTableauGenere();
+    state.participants = state.participants.filter(function (n) {
+      return n !== nom;
+    });
+    delete state.levels[nom];
+    syncLevels();
+    renderSeedingList();
+    render();
+    save();
+    montrerMsg("");
   }
 
   function nomEleve(e) {
@@ -745,27 +883,38 @@
     }
     ClassImport.open({
       title: "Importer des participants",
-      hint: "Cochez les élèves à ajouter au tournoi.",
-      onConfirm: function (eleves) {
-        var existants = (textareaEl.value || "")
-          .split(/\r?\n/)
-          .map(function (nom) {
-            return nom.trim().toLowerCase();
-          });
-        var ajouts = [];
+      hint: "Les joueurs déjà dans la liste sont grisés. Cochez les nouveaux à ajouter.",
+      dejaPresent: function (e) {
+        return participantEstPresent(nomEleve(e));
+      },
+      defaultChecked: true,
+      onConfirm: function (eleves, classe, metaImport) {
+        if (!confirmerModificationListe()) return;
+        if (tableauDejaGenere()) effacerTableauGenere();
+        var noms = [];
         eleves.forEach(function (eleve) {
           var nom = nomEleve(eleve);
-          if (existants.indexOf(nom.toLowerCase()) !== -1) return;
-          ajouts.push(nom);
+          if (!nom) return;
+          noms.push(nom);
           state.levels[nom] = niveauDepuisEleve(eleve);
         });
-        if (!ajouts.length) return;
-        var actuel = (textareaEl.value || "").trim();
-        textareaEl.value = actuel ? actuel + "\n" + ajouts.join("\n") : ajouts.join("\n");
-        state.participantsText = textareaEl.value;
+        var stats = ajouterParticipants(noms);
+        var ignores = metaImport && metaImport.ignores ? metaImport.ignores : 0;
         syncLevels();
         renderSeedingList();
+        render();
         save();
+        montrerMsg(
+          typeof ImportElevePresence !== "undefined"
+            ? ImportElevePresence.messageImportEleves({
+                ajoutes: stats.ajoutes,
+                ignores: ignores,
+                contexte: classe && classe.nom ? "« " + classe.nom + " »" : "",
+              })
+            : stats.ajoutes
+              ? stats.ajoutes + " participant(s) importé(s)."
+              : "Aucun nouveau participant."
+        );
       },
     });
   }
@@ -773,6 +922,7 @@
   function renderSeedingList() {
     if (!seedingListEl) return;
     var noms = syncLevels();
+    if (listeSaisieMeta) listeSaisieMeta.refresh();
     if (seedingCountEl) {
       seedingCountEl.textContent = noms.length <= 1 ? noms.length + " joueur" : noms.length + " joueurs";
     }
@@ -789,6 +939,14 @@
       row.className = "tournoi-seeding-row";
       var span = document.createElement("span");
       span.textContent = nom;
+      var btnRetirer = document.createElement("button");
+      btnRetirer.type = "button";
+      btnRetirer.className = "btn btn--ghost btn--small btn--icon-only tournoi-seeding-remove";
+      btnRetirer.setAttribute("aria-label", "Retirer " + nom);
+      btnRetirer.textContent = "×";
+      btnRetirer.addEventListener("click", function () {
+        retirerParticipant(nom);
+      });
       var buttons = document.createElement("div");
       buttons.className = "tournoi-level-buttons";
       buttons.setAttribute("role", "group");
@@ -811,6 +969,7 @@
       }
       row.appendChild(span);
       row.appendChild(buttons);
+      row.appendChild(btnRetirer);
       seedingListEl.appendChild(row);
     });
   }
@@ -1074,12 +1233,10 @@
 
   if (textareaEl) {
     textareaEl.addEventListener("input", function () {
-      state.participantsText = textareaEl.value;
-      syncLevels();
-      renderSeedingList();
-      save();
+      if (listeSaisieMeta) listeSaisieMeta.refresh();
     });
   }
+  if (btnValiderListe) btnValiderListe.addEventListener("click", validerListeManuelle);
   formatEls.forEach(function (input) {
     input.addEventListener("change", function () {
       if (!input.checked) return;
@@ -1119,6 +1276,7 @@
       onSessionCleared: function () {
         state = {
           format: "elimination",
+          participants: [],
           participantsText: "",
           levels: {},
           totalParticipants: 0,

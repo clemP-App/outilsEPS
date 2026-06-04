@@ -31,6 +31,41 @@
   var assignments = null;
   var saveTimer = null;
 
+  var TEAM_COLORS_DEFAULT = [
+    "#ef4444",
+    "#2563eb",
+    "#16a34a",
+    "#ca8a04",
+    "#9333ea",
+    "#ea580c",
+    "#0891b2",
+    "#db2777",
+    "#64748b",
+    "#0d9488",
+  ];
+  var teamNames = [];
+  var teamColors = [];
+
+  var listeSaisieMeta =
+    typeof ListeSaisieUi !== "undefined" && listeBruteEl
+      ? ListeSaisieUi.bind({
+          metaEl: document.getElementById("liste-brute-meta"),
+          textareaEl: listeBruteEl,
+          getSessionCount: function () {
+            return players.length;
+          },
+        })
+      : null;
+
+  var listeManuellePanel =
+    typeof ListeManuellePanel !== "undefined" && listeBruteEl
+      ? ListeManuellePanel.bind({
+          toggleBtnId: "btn-ajouter-manuel-compo",
+          panelId: "liste-manuelle-panel-compo",
+          textareaEl: listeBruteEl,
+        })
+      : null;
+
   function genererId() {
     if (typeof crypto !== "undefined" && crypto.randomUUID) {
       return crypto.randomUUID();
@@ -71,6 +106,8 @@
       players: players,
       nbEquipes: parseInt(nbEquipesEl.value, 10) || 2,
       assignments: assignments,
+      teamNames: teamNames.slice(),
+      teamColors: teamColors.slice(),
     };
     return SessionManager.requireSessionId()
       .then(function (sessionId) {
@@ -105,6 +142,113 @@
     if (isNaN(n) || n < 2) return 2;
     if (n > 24) return 24;
     return n;
+  }
+
+  function ensureTeamArrays(k) {
+    while (teamNames.length < k) teamNames.push("");
+    while (teamColors.length < k) {
+      teamColors.push(TEAM_COLORS_DEFAULT[teamColors.length % TEAM_COLORS_DEFAULT.length]);
+    }
+    if (teamNames.length > k) teamNames.length = k;
+    if (teamColors.length > k) teamColors.length = k;
+  }
+
+  function getTeamLabel(ti) {
+    var raw = teamNames[ti];
+    if (raw != null && String(raw).trim()) return String(raw).trim();
+    return "Équipe " + (ti + 1);
+  }
+
+  function getTeamColor(ti) {
+    var c = teamColors[ti];
+    if (c && /^#[0-9a-fA-F]{6}$/.test(String(c))) return String(c);
+    return TEAM_COLORS_DEFAULT[ti % TEAM_COLORS_DEFAULT.length];
+  }
+
+  function reporterEquipesDansFiches() {
+    if (!assignments || !players.length) {
+      montrerMsg("Créez d’abord les équipes, puis réessayez.");
+      return;
+    }
+    if (typeof DataManager === "undefined") {
+      montrerMsg("Stockage indisponible.");
+      return;
+    }
+    var k = getNbEquipes();
+    ensureTeamArrays(k);
+    var avecEleveId = players.filter(function (p) {
+      return p.eleveId && typeof assignments[p.id] === "number";
+    });
+    if (!avecEleveId.length) {
+      montrerMsg(
+        "Aucun élève lié à une classe (importez la liste depuis « Importer depuis une classe » pour enregistrer les équipes)."
+      );
+      return;
+    }
+    var majEleves = 0;
+    var majLignes = 0;
+    var ops = avecEleveId.map(function (p) {
+      var ti = assignments[p.id];
+      if (typeof ti !== "number" || ti < 0 || ti >= k) return Promise.resolve();
+      var equipe = getTeamLabel(ti);
+      var equipeCouleur = getTeamColor(ti);
+      return DataManager.getById("eleves", p.eleveId).then(function (el) {
+        if (!el) return;
+        el.equipe = equipe;
+        el.equipeCouleur = equipeCouleur;
+        majEleves++;
+        return DataManager.updateItem("eleves", el);
+      });
+    });
+    Promise.all(ops)
+      .then(function () {
+        return DataManager.getTableauxSuivi ? DataManager.getTableauxSuivi() : [];
+      })
+      .then(function (tableaux) {
+        if (!Array.isArray(tableaux)) return;
+        var changed = false;
+        tableaux.forEach(function (tab) {
+          if (!tab || !Array.isArray(tab.rows)) return;
+          tab.rows.forEach(function (row) {
+            if (!row.meta || !row.meta.eleveId) return;
+            var p = avecEleveId.filter(function (x) {
+              return x.eleveId === row.meta.eleveId;
+            })[0];
+            if (!p) return;
+            var ti = assignments[p.id];
+            if (typeof ti !== "number" || ti < 0 || ti >= k) return;
+            var label = getTeamLabel(ti);
+            var couleur = getTeamColor(ti);
+            if (!row.meta) row.meta = {};
+            if (row.meta.equipe === label && row.meta.equipeCouleur === couleur) return;
+            row.meta.equipe = label;
+            row.meta.equipeCouleur = couleur;
+            majLignes++;
+            changed = true;
+          });
+        });
+        if (changed && DataManager.saveTableauxSuivi) {
+          return DataManager.saveTableauxSuivi(tableaux);
+        }
+      })
+      .then(function () {
+        var msg =
+          majEleves +
+          " fiche" +
+          (majEleves > 1 ? "s" : "") +
+          " élève" +
+          (majEleves > 1 ? "s" : "") +
+          " mise" +
+          (majEleves > 1 ? "s" : "") +
+          " à jour";
+        if (majLignes) {
+          msg += " · " + majLignes + " ligne" + (majLignes > 1 ? "s" : "") + " dans Appel et notes";
+        }
+        montrerMsg(msg + ".");
+      })
+      .catch(function () {
+        montrerMsg("Impossible d’enregistrer les équipes sur les fiches élèves.");
+      });
   }
 
   /**
@@ -226,7 +370,7 @@
       var n = parseInt(String(e.niveau), 10);
       if (!isNaN(n) && n >= 1 && n <= 5) level = n;
     }
-    return { id: genererId(), name: name, level: level };
+    return { id: genererId(), name: name, level: level, eleveId: e.id || "" };
   }
 
   function importerDepuisClasse() {
@@ -234,12 +378,31 @@
       montrerMsg("Import de classe indisponible.");
       return;
     }
+    function eleveDejaDansListe(e) {
+      if (typeof ImportElevePresence !== "undefined") {
+        return ImportElevePresence.eleveEstDansListe(players, e);
+      }
+      var cle = [e.nom, e.prenom].filter(Boolean).join(" ").trim().toLowerCase();
+      var pi;
+      for (pi = 0; pi < players.length; pi++) {
+        var p = players[pi];
+        if (p.eleveId && e.id && p.eleveId === e.id) return true;
+        if (p.name && String(p.name).trim().toLowerCase() === cle) return true;
+      }
+      return false;
+    }
+
     ClassImport.open({
       title: "Importer des élèves",
-      hint: "Cochez les élèves à ajouter à la liste des joueurs.",
-      onConfirm: function (eleves, classe) {
+      hint: "Les joueurs déjà dans la liste sont grisés. Cochez les nouveaux élèves à ajouter.",
+      dejaPresent: eleveDejaDansListe,
+      defaultChecked: true,
+      onConfirm: function (eleves, classe, metaImport) {
+        var ajoutes = 0;
+        var ignores = metaImport && metaImport.ignores ? metaImport.ignores : 0;
         eleves.forEach(function (e) {
           players.push(eleveVersJoueur(e));
+          ajoutes++;
         });
         assignments = null;
         majNbJoueursAffiche();
@@ -248,7 +411,17 @@
         OutilsDom.clear(equipesContainer);
         majBoutonTirage();
         sauverImmediate();
-        montrerMsg(eleves.length + " joueur(s) importé(s) depuis « " + classe.nom + " ».");
+        montrerMsg(
+          (typeof ImportElevePresence !== "undefined"
+            ? ImportElevePresence.messageImportEleves({
+                ajoutes: ajoutes,
+                ignores: ignores,
+                contexte: "« " + classe.nom + " »",
+              })
+            : ajoutes
+              ? ajoutes + " joueur(s) importé(s)."
+              : "Aucun changement")
+        );
       },
     });
   }
@@ -272,7 +445,7 @@
       }
     }
     if (!name) return null;
-    return { id: genererId(), name: name, level: level };
+    return { id: genererId(), name: name, level: level, eleveId: "" };
   }
 
   function lancerComposition(melanger) {
@@ -291,6 +464,7 @@
         return a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
       });
     }
+    ensureTeamArrays(k);
     assignments = composerGlouton(ordre, k);
     sauverImmediate();
     majBoutonTirage();
@@ -303,6 +477,7 @@
     if (!nbJoueursEl) return;
     var n = players.length;
     nbJoueursEl.textContent = n + " joueur" + (n !== 1 ? "s" : "");
+    if (listeSaisieMeta) listeSaisieMeta.refresh();
   }
 
   function trouverJoueur(pid) {
@@ -335,7 +510,13 @@
       list.forEach(function (p) {
         total += p.level;
       });
-      teams.push({ index: t + 1, players: list, total: total });
+      teams.push({
+        index: t + 1,
+        ti: t,
+        label: getTeamLabel(t),
+        players: list,
+        total: total,
+      });
     }
     return { k: k, teams: teams };
   }
@@ -378,13 +559,13 @@
     lines.push("Équipe;Joueur;Niveau");
     data.teams.forEach(function (team) {
       team.players.forEach(function (p) {
-        lines.push([team.index, p.name, p.level].map(csvEscapeCell).join(";"));
+        lines.push([team.label, p.name, p.level].map(csvEscapeCell).join(";"));
       });
     });
     lines.push("");
     lines.push("Équipe;Somme niveaux;Effectif");
     data.teams.forEach(function (team) {
-      lines.push([team.index, team.total, team.players.length].map(csvEscapeCell).join(";"));
+      lines.push([team.label, team.total, team.players.length].map(csvEscapeCell).join(";"));
     });
     var bom = "\uFEFF";
     var blob = new Blob([bom + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
@@ -471,8 +652,7 @@
 
     data.teams.forEach(function (team) {
       var title =
-        "Équipe " +
-        team.index +
+        team.label +
         " - Total niveau : " +
         team.total +
         " (" +
@@ -630,13 +810,64 @@
     if (assignments) renderEquipes();
   });
 
+  function refreshMoveSelectLabels() {
+    if (!equipesContainer || !assignments) return;
+    var k = getNbEquipes();
+    equipesContainer.querySelectorAll(".compo-move-select").forEach(function (sel) {
+      var pid = sel.id ? sel.id.replace(/^move-/, "") : "";
+      var cur = typeof assignments[pid] === "number" ? assignments[pid] : parseInt(sel.value, 10);
+      if (isNaN(cur) || cur < 0 || cur >= k) cur = 0;
+      sel.innerHTML = "";
+      for (var ti = 0; ti < k; ti++) {
+        var o = document.createElement("option");
+        o.value = String(ti);
+        o.textContent = getTeamLabel(ti);
+        if (ti === cur) o.selected = true;
+        if (pid && ti !== cur && !deplacementValide(assignments, k, pid, ti)) {
+          o.disabled = true;
+        }
+        sel.appendChild(o);
+      }
+      sel.value = String(cur);
+    });
+  }
+
+  function lierEquipesContainerEvents() {
+    if (!equipesContainer || equipesContainer.dataset.compoEventsLie === "1") return;
+    equipesContainer.dataset.compoEventsLie = "1";
+    equipesContainer.addEventListener("input", function (e) {
+      var inp = e.target;
+      if (!inp || !inp.classList) return;
+      if (inp.classList.contains("compo-team-name-input")) {
+        var card = inp.closest("[data-team-index]");
+        if (!card) return;
+        var ti = parseInt(card.getAttribute("data-team-index"), 10);
+        if (isNaN(ti)) return;
+        teamNames[ti] = inp.value;
+        sauverDebounced();
+        refreshMoveSelectLabels();
+        return;
+      }
+      if (inp.classList.contains("compo-team-color")) {
+        var cardColor = inp.closest("[data-team-index]");
+        if (!cardColor) return;
+        var tiColor = parseInt(cardColor.getAttribute("data-team-index"), 10);
+        if (isNaN(tiColor)) return;
+        teamColors[tiColor] = inp.value;
+        cardColor.style.borderLeftColor = inp.value;
+        sauverDebounced();
+      }
+    });
+  }
+
   function renderEquipes() {
+    var k = getNbEquipes();
+    ensureTeamArrays(k);
     OutilsDom.clear(equipesContainer);
     if (!assignments || players.length === 0) {
       sectionEquipes.hidden = true;
       return;
     }
-    var k = getNbEquipes();
     var byTeam = [];
     var t;
     for (t = 0; t < k; t++) byTeam.push([]);
@@ -655,17 +886,34 @@
 
       var card = document.createElement("article");
       card.className = "compo-team-card";
+      card.setAttribute("data-team-index", String(t));
 
       var head = document.createElement("header");
       head.className = "compo-team-head";
-      var h3 = document.createElement("h3");
-      h3.className = "compo-team-title";
-      h3.textContent = "Équipe " + (t + 1);
+      var titleWrap = document.createElement("div");
+      titleWrap.className = "compo-team-title-wrap";
+      var colorInp = document.createElement("input");
+      colorInp.type = "color";
+      colorInp.className = "compo-team-color";
+      colorInp.value = getTeamColor(t);
+      colorInp.setAttribute("aria-label", "Couleur de " + getTeamLabel(t));
+      var nameInp = document.createElement("input");
+      nameInp.type = "text";
+      nameInp.className = "compo-team-name-input";
+      nameInp.maxLength = 40;
+      nameInp.placeholder = "Équipe " + (t + 1);
+      nameInp.value = teamNames[t] ? String(teamNames[t]) : "";
+      nameInp.setAttribute("aria-label", "Nom de l’équipe " + (t + 1));
+      titleWrap.appendChild(colorInp);
+      titleWrap.appendChild(nameInp);
       var tot = document.createElement("span");
       tot.className = "compo-team-total";
       tot.textContent = "Total niveau : " + total;
-      head.appendChild(h3);
+      head.appendChild(titleWrap);
       head.appendChild(tot);
+      card.style.borderLeftWidth = "4px";
+      card.style.borderLeftStyle = "solid";
+      card.style.borderLeftColor = getTeamColor(t);
       card.appendChild(head);
 
       var ul = document.createElement("ul");
@@ -703,7 +951,7 @@
           for (var ti = 0; ti < k; ti++) {
             var o = document.createElement("option");
             o.value = String(ti);
-            o.textContent = "Équipe " + (ti + 1);
+            o.textContent = getTeamLabel(ti);
             if (ti === assignments[p.id]) o.selected = true;
             if (ti !== assignments[p.id] && !deplacementValide(assignments, k, p.id, ti)) {
               o.disabled = true;
@@ -739,8 +987,13 @@
     sectionEquipes.hidden = false;
   }
 
+  lierEquipesContainerEvents();
+
   var btnImportClasse = document.getElementById("btn-import-classe-compo");
   if (btnImportClasse) btnImportClasse.addEventListener("click", importerDepuisClasse);
+
+  var btnReporterEquipes = document.getElementById("btn-reporter-equipes-fiches");
+  if (btnReporterEquipes) btnReporterEquipes.addEventListener("click", reporterEquipesDansFiches);
 
   if (btnValider) {
     btnValider.addEventListener("click", function () {
@@ -831,8 +1084,13 @@
       majBoutonTirage();
       return;
     }
-    if (data.listeBrute && listeBruteEl) listeBruteEl.value = data.listeBrute;
+    if (data.listeBrute && listeBruteEl) {
+      listeBruteEl.value = data.listeBrute;
+      if (listeManuellePanel && listeManuellePanel.open) listeManuellePanel.open();
+    }
     if (Array.isArray(data.players)) players = data.players;
+    teamNames = Array.isArray(data.teamNames) ? data.teamNames.slice() : [];
+    teamColors = Array.isArray(data.teamColors) ? data.teamColors.slice() : [];
     if (nbEquipesEl && players.length >= 2) {
       var nb = typeof data.nbEquipes === "number" ? data.nbEquipes : 2;
       nb = Math.max(2, Math.min(24, players.length, nb));
@@ -856,6 +1114,7 @@
         if (ok && assignmentsGlobalementValides(as, k)) assignments = as;
       }
     }
+    if (assignments) ensureTeamArrays(parseInt(nbEquipesEl.value, 10) || 2);
     majBoutonTirage();
     renderJoueurs();
     if (assignments) renderEquipes();
@@ -883,6 +1142,8 @@
       onSessionCleared: function () {
         players = [];
         assignments = null;
+        teamNames = [];
+        teamColors = [];
         if (listeBruteEl) listeBruteEl.value = "";
         majBoutonTirage();
         renderJoueurs();

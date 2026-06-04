@@ -48,6 +48,29 @@
   var GRILLE_BP_TRES_GRAND = 1400;
 
   var msgEl = document.getElementById("orient-msg");
+  var listeBruteCoureursEl = document.getElementById("orient-liste-brute");
+
+  var listeSaisieMeta =
+    typeof ListeSaisieUi !== "undefined" && listeBruteCoureursEl
+      ? ListeSaisieUi.bind({
+          metaEl: document.getElementById("orient-liste-brute-meta"),
+          textareaEl: listeBruteCoureursEl,
+          getSessionCount: function () {
+            return state.coureurs.length;
+          },
+          sessionSingular: "coureur",
+          sessionPlural: "coureurs",
+        })
+      : null;
+
+  if (typeof ListeManuellePanel !== "undefined" && listeBruteCoureursEl) {
+    ListeManuellePanel.bind({
+      toggleBtnId: "btn-ajouter-manuel-orient",
+      panelId: "liste-manuelle-panel-orient",
+      textareaEl: listeBruteCoureursEl,
+    });
+  }
+
   var grilleEl = document.getElementById("orient-grille");
   var grilleVideEl = document.getElementById("orient-grille-vide");
   var ficheEl = document.getElementById("orient-fiche");
@@ -1671,6 +1694,7 @@
   }
 
   function renderAll() {
+    if (listeSaisieMeta) listeSaisieMeta.refresh();
     majLegende();
     renderGrille();
     renderParcoursGestion();
@@ -2148,26 +2172,40 @@
       return;
     }
     ClassImport.open({
-      onConfirm: function (eleves) {
-        var existants = {};
-        state.coureurs.forEach(function (c) {
-          existants[c.nom.toLowerCase()] = true;
-        });
+      title: "Importer des coureurs",
+      hint: "Les coureurs déjà dans la liste sont grisés. Cochez les nouveaux à ajouter.",
+      dejaPresent: function (e) {
+        return (
+          typeof ImportElevePresence !== "undefined" &&
+          ImportElevePresence.eleveEstDansListe(state.coureurs, e, { champNom: "nom" })
+        );
+      },
+      defaultChecked: true,
+      onConfirm: function (eleves, classe, metaImport) {
         var ajouts = 0;
         eleves.forEach(function (e) {
           var nom = eleveVersNom(e);
           if (!nom) return;
-          var key = nom.toLowerCase();
-          if (existants[key]) return;
-          existants[key] = true;
           state.coureurs.push(creerCoureur(nom));
           ajouts++;
         });
+        var ignores = metaImport && metaImport.ignores ? metaImport.ignores : 0;
         if (ajouts) {
           sauverDebounced();
           renderAll();
-          montrerOk(ajouts + " coureur(s) importé(s).");
         }
+        var msg =
+          typeof ImportElevePresence !== "undefined"
+            ? ImportElevePresence.messageImportEleves({
+                ajoutes: ajouts,
+                ignores: ignores,
+                contexte: classe && classe.nom ? "« " + classe.nom + " »" : "",
+              })
+            : ajouts
+              ? ajouts + " coureur(s) importé(s)."
+              : "Aucun nouveau coureur.";
+        if (ajouts) montrerOk(msg);
+        else montrerMsg(msg);
       },
     });
   }

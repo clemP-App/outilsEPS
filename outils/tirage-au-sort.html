@@ -29,28 +29,38 @@
 
       <section class="card" aria-labelledby="lbl-liste">
         <h2 id="lbl-liste">Liste des participants</h2>
-        <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-classe-tirage">
-          <span class="btn__icon" aria-hidden="true">👥</span>
-          <span class="btn__text">Importer une classe</span>
-        </button>
-        <p class="hint">
-          Une ligne = un participant (prénom, nom ou les deux). <strong>Valider la liste</strong> ajoute les noms à la
-          liste ci-dessous. Vous pouvez aussi importer des élèves depuis une classe enregistrée.
-        </p>
-        <div class="field-group">
-          <label class="field-label" for="liste-brute">Saisie manuelle</label>
-          <textarea
-            id="liste-brute"
-            rows="8"
-            placeholder="Martin&#10;Léa Dupont&#10;Paul&#10;…"
-            spellcheck="false"
-          ></textarea>
+        <div class="liste-import-toolbar field-row">
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-classe-tirage">
+            <span class="btn__icon" aria-hidden="true">👥</span>
+            <span class="btn__text">Importer depuis une classe</span>
+          </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-ajouter-manuel-tirage" aria-expanded="false" aria-controls="liste-manuelle-panel-tirage">
+            <span class="btn__icon" aria-hidden="true">✎</span>
+            <span class="btn__text">Ajouter manuellement</span>
+          </button>
+        </div>
+        <div id="liste-manuelle-panel-tirage" class="liste-manuelle-panel" hidden>
+          <p class="hint liste-manuelle-ligne-hint" hidden>1 participant par ligne. <strong>Valider la liste</strong> ajoute les noms ci-dessous.</p>
+          <div class="field-group">
+            <label class="field-label field-label--with-meta" for="liste-brute">
+              <span class="field-label__main">Ajouter des joueurs ou équipes</span>
+              <span class="field-label__meta" id="liste-brute-meta" aria-live="polite"></span>
+            </label>
+            <textarea
+              id="liste-brute"
+              rows="8"
+              placeholder="Martin&#10;Léa Dupont&#10;Paul&#10;…"
+              spellcheck="false"
+            ></textarea>
+          </div>
+          <div class="field-row tirage-actions-row">
+            <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste">
+              <span class="btn__icon" aria-hidden="true">✓</span>
+              <span class="btn__text">Valider la liste</span>
+            </button>
+          </div>
         </div>
         <div class="field-row tirage-actions-row">
-          <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste">
-            <span class="btn__icon" aria-hidden="true">✓</span>
-            <span class="btn__text">Valider la liste</span>
-          </button>
           <button type="button" class="btn btn--danger btn--labeled" id="btn-vider-liste">
             <span class="btn__icon" aria-hidden="true">🗑️</span>
             <span class="btn__text">Vider la liste</span>
@@ -84,6 +94,9 @@
     <script src="../data-manager.js"></script>
     <script src="../shared/eleve-display.js"></script>
     <script src="../class-import.js"></script>
+    <script src="../shared/import-eleve-presence.js"></script>
+    <script src="../shared/liste-saisie-ui.js"></script>
+    <script src="../shared/liste-manuelle-panel.js"></script>
     <script src="tirage-au-sort.js"></script>
     <script src="../tool-info.js"></script>
     <script>

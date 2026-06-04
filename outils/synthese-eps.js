@@ -487,6 +487,14 @@
       secondaires.push("Né(e) le " + formatDateNaissance(id.dateNaissance));
     }
     if (id.niveau) secondaires.push("Niveau " + id.niveau);
+    if (id.equipe) secondaires.push("Équipe " + id.equipe);
+    if (id.vma) {
+      secondaires.push(
+        typeof EleveDisplay !== "undefined" && EleveDisplay.formatVma
+          ? EleveDisplay.formatVma(id.vma)
+          : "VMA " + id.vma
+      );
+    }
     var html =
       '<div class="synthese-profile">' +
       '<div class="synthese-profile__avatar" aria-hidden="true">' +
@@ -983,7 +991,7 @@
       s.nbImports ||
       s.nbSessions;
     if (!hasData && !s.nbEleves) {
-      html = '<p class="synthese-empty-state">Aucune donnée enregistrée pour cette classe. Utilisez les autres outils ou importez une classe.</p>';
+      html = '<p class="synthese-empty-state">Aucune donnée enregistrée pour cette classe. Utilisez les autres outils ou importez depuis une classe.</p>';
     } else if (!hasData) {
       html =
         '<p class="hint synthese-hint-top">Classe enregistrée mais aucune activité liée pour l’instant.</p>' + html;

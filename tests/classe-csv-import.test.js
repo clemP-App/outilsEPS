@@ -2,6 +2,7 @@
 
 var { describe, it } = require("node:test");
 var assert = require("node:assert/strict");
+require("../shared/equipe-couleur.js");
 var ClasseCsvImport = require("../shared/classe-csv-import.js");
 
 describe("classe-csv-import", function () {
@@ -57,6 +58,34 @@ describe("classe-csv-import", function () {
     assert.equal(r.prenom, "Léa");
   });
 
+  it("devine la colonne Équipe", function () {
+    var mapping = ClasseCsvImport.devinerMapping(["Nom", "Prénom", "Équipe"], 3);
+    assert.equal(mapping.equipe, 2);
+  });
+
+  it("devine et importe la colonne VMA", function () {
+    var mapping = ClasseCsvImport.devinerMapping(["Nom", "Prénom", "VMA"], 3);
+    assert.equal(mapping.vma, 2);
+    var result = ClasseCsvImport.lignesVersEleves(
+      [["Martin", "Léa", "12,5"]],
+      mapping,
+      { genererId: function () { return "e1"; } }
+    );
+    assert.equal(result.eleves[0].vma, "12.5");
+  });
+
+  it("importe une équipe couleur et pose equipeCouleur", function () {
+    var mapping = ClasseCsvImport.devinerMapping(["Nom", "Prénom", "Équipe"], 3);
+    assert.equal(mapping.equipe, 2);
+    var result = ClasseCsvImport.lignesVersEleves(
+      [["Martin", "Léa", "Rouge"]],
+      mapping,
+      { genererId: function () { return "e1"; } }
+    );
+    assert.equal(result.eleves[0].equipe, "Rouge");
+    assert.equal(result.eleves[0].equipeCouleur, "#ef4444");
+  });
+
   it("convertit des lignes en élèves", function () {
     var rows = [
       ["Dupont", "Léa", "F", "4"],
@@ -71,6 +100,16 @@ describe("classe-csv-import", function () {
     assert.equal(result.eleves[0].nom, "Dupont");
     assert.equal(result.eleves[0].sexe, "F");
     assert.equal(result.eleves[0].niveau, "4");
+  });
+
+  it("importe la colonne équipe", function () {
+    var rows = [["Dupont", "Léa", "Rouge"]];
+    var result = ClasseCsvImport.lignesVersEleves(
+      rows,
+      { nom: 0, prenom: 1, equipe: 2 },
+      { genererId: function () { return "id1"; } }
+    );
+    assert.equal(result.eleves[0].equipe, "Rouge");
   });
 
   it("importe depuis une colonne combinée", function () {

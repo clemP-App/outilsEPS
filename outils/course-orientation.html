@@ -177,15 +177,26 @@
                 <span class="card--accordion__chev" aria-hidden="true"></span>
               </summary>
               <div class="card--accordion__panel orient-acc__panel">
-                <button type="button" class="orient-btn orient-btn--soft orient-btn--block orient-acc__lead" id="orient-import-classe">
-                  👥 Importer une classe
-                </button>
-                <div class="orient-field">
-                  <label class="orient-field__label" for="orient-liste-brute">Liste (un nom par ligne)</label>
-                  <textarea id="orient-liste-brute" class="orient-textarea" rows="5" placeholder="Martin&#10;Léa Dupont" spellcheck="false"></textarea>
+                <div class="liste-import-toolbar field-row orient-import-toolbar">
+                  <button type="button" class="orient-btn orient-btn--soft orient-acc__lead orient-import-toolbar__btn" id="orient-import-classe">
+                    <span aria-hidden="true">👥</span> Importer depuis une classe
+                  </button>
+                  <button type="button" class="orient-btn orient-btn--soft orient-acc__lead orient-import-toolbar__btn" id="btn-ajouter-manuel-orient" aria-expanded="false" aria-controls="liste-manuelle-panel-orient">
+                    <span aria-hidden="true">✎</span> Ajouter manuellement
+                  </button>
                 </div>
-                <div class="orient-actions-row">
-                  <button type="button" class="orient-btn orient-btn--primary" id="orient-valider-liste">Valider la liste</button>
+                <div id="liste-manuelle-panel-orient" class="liste-manuelle-panel" hidden>
+                  <p class="orient-card__hint liste-manuelle-ligne-hint" hidden>1 coureur par ligne.</p>
+                  <div class="orient-field">
+                    <label class="orient-field__label orient-field__label--with-meta" for="orient-liste-brute">
+                      <span class="orient-field__main">Ajouter des coureurs</span>
+                      <span class="orient-field__meta" id="orient-liste-brute-meta" aria-live="polite"></span>
+                    </label>
+                    <textarea id="orient-liste-brute" class="orient-textarea" rows="5" placeholder="Martin&#10;Léa Dupont" spellcheck="false"></textarea>
+                  </div>
+                  <div class="orient-actions-row">
+                    <button type="button" class="orient-btn orient-btn--primary" id="orient-valider-liste">Valider la liste</button>
+                  </div>
                 </div>
                 <p id="orient-nb-coureurs" class="orient-meta" aria-live="polite">0 coureur</p>
                 <ul class="orient-list orient-list--editable" id="orient-coureurs-gestion"></ul>
@@ -446,6 +457,9 @@
     <script src="../shared/eleve-display.js"></script>
     <script src="../shared/tool-accueil.js"></script>
     <script src="../class-import.js"></script>
+    <script src="../shared/import-eleve-presence.js"></script>
+    <script src="../shared/liste-saisie-ui.js"></script>
+    <script src="../shared/liste-manuelle-panel.js"></script>
     <script src="../vendor/jspdf.umd.min.js"></script>
     <script src="course-orientation.js"></script>
     <script src="../tool-info.js"></script>
@@ -471,7 +485,7 @@
           {
             title: "Côté enseignant",
             list: [
-              "Gestion : créer les parcours (un parcours ne peut être fait qu’une fois par coureur) et la liste des coureurs, avec import d’une classe.",
+              "Gestion : créer les parcours (un parcours ne peut être fait qu’une fois par coureur) et la liste des coureurs, avec import depuis une classe.",
               "Départs groupés : cocher plusieurs élèves, leur attribuer un parcours chacun, puis lancer un départ commun.",
               "Réglages : pénalité par balise fausse, bonus par balise correcte, seuil de retard, ordre des critères de classement, correction ou suppression d’un temps.",
               "Exporter le classement en CSV ou PDF (filtre par parcours ou général).",

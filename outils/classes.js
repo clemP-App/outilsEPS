@@ -27,6 +27,9 @@
   var importFichierEl = document.getElementById("import-fichier");
   var importStepSource = document.getElementById("import-step-source");
   var importStepMap = document.getElementById("import-step-map");
+  var importStepConflits = document.getElementById("import-step-conflits");
+  var importConflitsListEl = document.getElementById("import-conflits-list");
+  var importConflitsErreurEl = document.getElementById("import-conflits-erreur");
   var importAEnteteEl = document.getElementById("import-a-entete");
   var importMappingRowsEl = document.getElementById("import-mapping-rows");
   var importPreviewHeadEl = document.getElementById("import-preview-head");
@@ -41,6 +44,8 @@
   var importParseState = null;
   /** @type {Record<string, number|string>} */
   var importMappingState = {};
+  /** @type {{ eleves: object[], invalides: number, mapping: object, champsActifs: string[], conflits: object[] }|null} */
+  var importPending = null;
 
   function onError(e) {
     montrerErreur(e && e.message ? e.message : "Erreur lors de l'enregistrement.");
@@ -75,7 +80,23 @@
   }
 
   function sauverClasseCourante(classe) {
-    return DataManager.updateClasse(classe.id, { nom: classe.nom, eleves: classe.eleves });
+    return DataManager.updateClasse(classe.id, { nom: classe.nom, eleves: classe.eleves }).then(
+      function () {
+        if (typeof SyncClasseTableaux !== "undefined" && SyncClasseTableaux.apresMiseAJourClasse) {
+          return SyncClasseTableaux.apresMiseAJourClasse(classe.id).then(function (sync) {
+            if (sync && sync.ajoutes && sync.feuilles) {
+              montrerOk(
+                sync.ajoutes +
+                  " élève(s) ajouté(s) sur " +
+                  sync.feuilles +
+                  " feuille(s) Appel et notes liée(s)."
+              );
+            }
+            return sync;
+          });
+        }
+      }
+    );
   }
 
   function renderListeClasses() {
@@ -147,6 +168,8 @@
         e.nom,
         e.prenom,
         e.commentaire,
+        e.equipe,
+        e.vma,
         e.niveau,
         e.sexe,
         e.dateNaissance,
@@ -195,9 +218,37 @@
         if (e.sexe) parts.push(e.sexe);
         var nv = normaliserNiveau(e.niveau);
         if (nv) parts.push("niv. " + nv);
+        if (e.equipe) parts.push("Équipe : " + e.equipe);
         if (e.commentaire) parts.push(e.commentaire);
       }
-      meta.textContent = parts.join(" · ");
+      var metaFirst = true;
+      parts.forEach(function (p) {
+        if (p.indexOf("Équipe : ") === 0) {
+          if (!metaFirst) meta.appendChild(document.createTextNode(" · "));
+          metaFirst = false;
+          var equipeNom = p.slice("Équipe : ".length);
+          var equipeWrap = document.createElement("span");
+          equipeWrap.className = "classes-eleve-item__equipe";
+          var pinColor =
+            typeof EquipeCouleur !== "undefined" ? EquipeCouleur.couleurAffichageEquipe(e) : "";
+          if (pinColor) {
+            var pin = document.createElement("span");
+            pin.className = "classes-eleve-equipe-pin";
+            pin.style.backgroundColor = pinColor;
+            if (pinColor.toLowerCase() === "#e2e8f0") {
+              pin.classList.add("classes-eleve-equipe-pin--light");
+            }
+            pin.setAttribute("aria-hidden", "true");
+            equipeWrap.appendChild(pin);
+          }
+          equipeWrap.appendChild(document.createTextNode(equipeNom));
+          meta.appendChild(equipeWrap);
+        } else {
+          if (!metaFirst) meta.appendChild(document.createTextNode(" · "));
+          metaFirst = false;
+          meta.appendChild(document.createTextNode(p));
+        }
+      });
       main.appendChild(nom);
       if (parts.length) main.appendChild(meta);
       var actions = document.createElement("div");
@@ -354,6 +405,10 @@
     document.getElementById("eleve-sexe").value = "";
     document.getElementById("eleve-niveau").value = "";
     document.getElementById("eleve-commentaire").value = "";
+    var equipeEl = document.getElementById("eleve-equipe");
+    var vmaEl = document.getElementById("eleve-vma");
+    if (equipeEl) equipeEl.value = "";
+    if (vmaEl) vmaEl.value = "";
     if (naissanceEl) naissanceEl.value = "";
     var fill = getClasseCourante().then(function (classe) {
       if (!editingEleveId || !classe) return;
@@ -371,6 +426,8 @@
         document.getElementById("eleve-sexe").value = e.sexe || "";
         document.getElementById("eleve-niveau").value = e.niveau || "";
         document.getElementById("eleve-commentaire").value = e.commentaire || "";
+        if (equipeEl) equipeEl.value = e.equipe || "";
+        if (vmaEl) vmaEl.value = e.vma || "";
         if (naissanceEl) naissanceEl.value = e.dateNaissance || "";
       }
     });
@@ -409,6 +466,28 @@
         } else {
           dateNaissance = naissanceBrut;
         }
+        var equipe =
+          document.getElementById("eleve-equipe") &&
+          document.getElementById("eleve-equipe").value.trim();
+        var vmaBrut =
+          document.getElementById("eleve-vma") && document.getElementById("eleve-vma").value.trim();
+        var vma = "";
+        if (typeof EleveDisplay !== "undefined" && EleveDisplay.normaliserVma) {
+          vma = EleveDisplay.normaliserVma(vmaBrut);
+          if (vmaBrut && vma === null) {
+            montrerErreur("VMA invalide (nombre entre 0 et 30 km/h, ex. 12.5).");
+            return;
+          }
+          vma = vma || "";
+        } else {
+          vma = vmaBrut;
+        }
+        var precedent = null;
+        if (editingEleveId) {
+          precedent = classe.eleves.filter(function (x) {
+            return x.id === editingEleveId;
+          })[0];
+        }
         var eleve = {
           id: editingEleveId || DataManager.genererId("eleve"),
           nom: nom,
@@ -417,7 +496,22 @@
           sexe: document.getElementById("eleve-sexe").value || "",
           niveau: niveau,
           commentaire: document.getElementById("eleve-commentaire").value.trim() || "",
+          equipe: equipe || "",
+          vma: vma,
         };
+        var couleurEquipe =
+          typeof EquipeCouleur !== "undefined"
+            ? EquipeCouleur.couleurDepuisLibelleEquipe(eleve.equipe)
+            : "";
+        if (couleurEquipe) {
+          eleve.equipeCouleur = couleurEquipe;
+        } else if (precedent) {
+          if ((precedent.equipe || "") === eleve.equipe) {
+            eleve.equipeCouleur = precedent.equipeCouleur || "";
+          } else {
+            eleve.equipeCouleur = "";
+          }
+        }
         if (editingEleveId) {
           classe.eleves = classe.eleves.map(function (x) {
             return x.id === editingEleveId ? eleve : x;
@@ -445,13 +539,17 @@
   function reinitialiserImportDialog() {
     importParseState = null;
     importMappingState = {};
+    importPending = null;
     if (importTexteEl) importTexteEl.value = "";
     if (importFichierEl) importFichierEl.value = "";
     montrerErreurImport(importSourceErreurEl, "");
     montrerErreurImport(importMapErreurEl, "");
+    montrerErreurImport(importConflitsErreurEl, "");
     if (importMapInfoEl) importMapInfoEl.hidden = true;
+    if (importConflitsListEl) importConflitsListEl.innerHTML = "";
     if (importStepSource) importStepSource.hidden = false;
     if (importStepMap) importStepMap.hidden = true;
+    if (importStepConflits) importStepConflits.hidden = true;
   }
 
   function lireTexteImport() {
@@ -683,12 +781,178 @@
   function retourEtapeSource() {
     if (!importStepSource || !importStepMap) return;
     importStepMap.hidden = true;
+    if (importStepConflits) importStepConflits.hidden = true;
     importStepSource.hidden = false;
+    importPending = null;
     montrerErreurImport(importMapErreurEl, "");
+    montrerErreurImport(importConflitsErreurEl, "");
   }
 
+  function retourEtapeMapping() {
+    if (!importStepMap || !importStepConflits) return;
+    importStepConflits.hidden = true;
+    importStepMap.hidden = false;
+    importPending = null;
+    montrerErreurImport(importConflitsErreurEl, "");
+    if (importStepMap.scrollIntoView) {
+      importStepMap.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
 
-  function importerListe(e) {
+  function formatValeurConflit(champ, valeur) {
+    var v = valeur === null || valeur === undefined ? "" : String(valeur).trim();
+    if (!v) return "—";
+    if (
+      champ === "dateNaissance" &&
+      typeof EleveDisplay !== "undefined" &&
+      EleveDisplay.formatDateNaissanceFR
+    ) {
+      return EleveDisplay.formatDateNaissanceFR(v) || v;
+    }
+    if (champ === "vma" && typeof EleveDisplay !== "undefined" && EleveDisplay.formatVma) {
+      return EleveDisplay.formatVma(v) || v;
+    }
+    return v;
+  }
+
+  function afficherEtapeConflits(conflits) {
+    if (!importStepMap || !importStepConflits || !importConflitsListEl) return;
+    importStepMap.hidden = true;
+    importStepConflits.hidden = false;
+    montrerErreurImport(importConflitsErreurEl, "");
+    importConflitsListEl.innerHTML = "";
+    conflits.forEach(function (c) {
+      var card = document.createElement("fieldset");
+      card.className = "import-conflit-card";
+      var titre = document.createElement("p");
+      titre.className = "import-conflit-card__title";
+      titre.textContent = c.label;
+      var count = document.createElement("p");
+      count.className = "import-conflit-card__count";
+      count.textContent =
+        c.count +
+        " élève" +
+        (c.count > 1 ? "s" : "") +
+        " avec une valeur différente entre Outils EPS et le CSV";
+      card.appendChild(titre);
+      card.appendChild(count);
+      if (c.exemples && c.exemples.length) {
+        var ul = document.createElement("ul");
+        ul.className = "import-conflit-card__exemples";
+        c.exemples.forEach(function (ex) {
+          var li = document.createElement("li");
+          var nomAff = [ex.prenom, ex.nom].filter(Boolean).join(" ") || "Élève";
+          li.textContent =
+            nomAff +
+            " — Outils EPS : « " +
+            formatValeurConflit(c.champ, ex.eps) +
+            " » / CSV : « " +
+            formatValeurConflit(c.champ, ex.csv) +
+            " »";
+          ul.appendChild(li);
+        });
+        card.appendChild(ul);
+      }
+      var choix = document.createElement("div");
+      choix.className = "import-conflit-card__choix";
+      [
+        { value: "eps", label: "Garder Outils EPS (modifications manuelles)" },
+        { value: "csv", label: "Garder le fichier CSV" },
+      ].forEach(function (opt, idx) {
+        var lab = document.createElement("label");
+        lab.className = "import-conflit-radio";
+        var inp = document.createElement("input");
+        inp.type = "radio";
+        inp.name = "import-prio-" + c.champ;
+        inp.value = opt.value;
+        inp.checked = idx === 0;
+        lab.appendChild(inp);
+        lab.appendChild(document.createTextNode(opt.label));
+        choix.appendChild(lab);
+      });
+      card.appendChild(choix);
+      importConflitsListEl.appendChild(card);
+    });
+    if (importStepConflits.scrollIntoView) {
+      importStepConflits.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
+
+  function lirePrioritesConflits(conflits) {
+    var priorites = {};
+    if (!conflits || !conflits.length) return priorites;
+    var i;
+    for (i = 0; i < conflits.length; i++) {
+      var champ = conflits[i].champ;
+      var sel = document.querySelector('input[name="import-prio-' + champ + '"]:checked');
+      priorites[champ] = sel && sel.value === "csv" ? "csv" : "eps";
+    }
+    return priorites;
+  }
+
+  function syncEquipeCouleurApresImport(elevesImportes, classe) {
+    if (typeof EquipeCouleur === "undefined" || !classe || !elevesImportes) return;
+    elevesImportes.forEach(function (n) {
+      if (!n || (!n.nom && !n.prenom)) return;
+      var cle =
+        (n.nom || "").trim().toLowerCase() +
+        "|" +
+        (n.prenom || "").trim().toLowerCase();
+      classe.eleves.forEach(function (el) {
+        var cleEl =
+          (el.nom || "").trim().toLowerCase() +
+          "|" +
+          (el.prenom || "").trim().toLowerCase();
+        if (cleEl === cle) EquipeCouleur.syncEleveEquipeCouleur(el);
+      });
+    });
+  }
+
+  function appliquerImportFusion(classe, pending, priorites) {
+    var fusionOpts = null;
+    if (priorites && Object.keys(priorites).length > 0) {
+      fusionOpts = {
+        priorites: priorites,
+        champsActifs: pending.champsActifs || [],
+      };
+    }
+    var stats =
+      typeof EleveFusion !== "undefined" && EleveFusion.fusionnerElevesDansListe
+        ? EleveFusion.fusionnerElevesDansListe(classe.eleves, pending.eleves, fusionOpts)
+        : (function () {
+            pending.eleves.forEach(function (el) {
+              classe.eleves.push(el);
+            });
+            return { ajoutes: pending.eleves.length, maj: 0 };
+          })();
+    syncEquipeCouleurApresImport(pending.eleves, classe);
+    return sauverClasseCourante(classe).then(function () {
+      if (dialogImport) dialogImport.close();
+      reinitialiserImportDialog();
+      var msgParts = [];
+      if (stats.ajoutes) {
+        msgParts.push(
+          stats.ajoutes + " élève(s) ajouté" + (stats.ajoutes > 1 ? "s" : "")
+        );
+      }
+      if (stats.maj) {
+        msgParts.push(
+          stats.maj + " fiche" + (stats.maj > 1 ? "s" : "") + " mise" + (stats.maj > 1 ? "s" : "") + " à jour"
+        );
+      }
+      var msg = msgParts.join(" · ");
+      if (!msg) {
+        msg =
+          "Aucun changement : vérifiez nom et prénom, ou ajoutez de nouvelles colonnes (niveau, équipe…).";
+      }
+      if (pending.invalides) msg += " · " + pending.invalides + " ligne(s) ignorée(s)";
+      montrerOk(msg);
+      montrerErreur("");
+      return renderListeClasses();
+    });
+  }
+
+  function preparerImportListe(e) {
     e.preventDefault();
     if (typeof ClasseCsvImport === "undefined" || !importParseState) {
       montrerErreurImport(importMapErreurEl, "Analysez d'abord un fichier CSV.");
@@ -718,18 +982,51 @@
     run(
       getClasseCourante().then(function (classe) {
         if (!classe) return;
-        result.eleves.forEach(function (el) {
-          classe.eleves.push(el);
-        });
-        return sauverClasseCourante(classe).then(function () {
-          if (dialogImport) dialogImport.close();
-          reinitialiserImportDialog();
-          var msg = result.eleves.length + " élève(s) importé(s).";
-          if (result.invalides) msg += " " + result.invalides + " ligne(s) ignorée(s).";
-          montrerOk(msg);
-          montrerErreur("");
-          return renderListeClasses();
-        });
+        var champsActifs =
+          typeof EleveFusion !== "undefined" && EleveFusion.champsImportActifs
+            ? EleveFusion.champsImportActifs(mapping)
+            : [];
+        var conflits =
+          typeof EleveFusion !== "undefined" &&
+          EleveFusion.detecterConflitsColonnes &&
+          champsActifs.length
+            ? EleveFusion.detecterConflitsColonnes(classe.eleves, result.eleves, champsActifs)
+            : [];
+        if (conflits.length) {
+          importPending = {
+            eleves: result.eleves,
+            invalides: result.invalides,
+            mapping: mapping,
+            champsActifs: champsActifs,
+            conflits: conflits,
+          };
+          afficherEtapeConflits(conflits);
+          return;
+        }
+        return appliquerImportFusion(
+          classe,
+          {
+            eleves: result.eleves,
+            invalides: result.invalides,
+            champsActifs: champsActifs,
+          },
+          null
+        );
+      })
+    );
+  }
+
+  function confirmerImportAvecConflits(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!importPending) {
+      montrerErreurImport(importConflitsErreurEl, "Session d’import expirée. Recommencez l’analyse.");
+      return;
+    }
+    var priorites = lirePrioritesConflits(importPending.conflits);
+    run(
+      getClasseCourante().then(function (classe) {
+        if (!classe) return;
+        return appliquerImportFusion(classe, importPending, priorites);
       })
     );
   }
@@ -738,10 +1035,10 @@
     run(
       getClasseCourante().then(function (classe) {
         if (!classe) return;
-        var lines = ["nom;prenom;dateNaissance;sexe;niveau;commentaire"];
+        var lines = ["nom;prenom;dateNaissance;sexe;niveau;equipe;vma;commentaire"];
         classe.eleves.forEach(function (e) {
           lines.push(
-            [e.nom, e.prenom, e.dateNaissance, e.sexe, e.niveau, e.commentaire]
+            [e.nom, e.prenom, e.dateNaissance, e.sexe, e.niveau, e.equipe, e.vma, e.commentaire]
               .map(function (c) {
                 var s = String(c || "");
                 return /[;\r\n"]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
@@ -807,8 +1104,10 @@
   if (document.getElementById("form-import")) {
     document.getElementById("form-import").addEventListener("submit", function (e) {
       e.preventDefault();
-      if (importStepMap && !importStepMap.hidden) {
-        importerListe(e);
+      if (importStepConflits && !importStepConflits.hidden) {
+        confirmerImportAvecConflits(e);
+      } else if (importStepMap && !importStepMap.hidden) {
+        preparerImportListe(e);
       } else {
         analyserImport(e);
       }
@@ -816,6 +1115,9 @@
   }
   if (document.getElementById("btn-import-retour")) {
     document.getElementById("btn-import-retour").addEventListener("click", retourEtapeSource);
+  }
+  if (document.getElementById("btn-import-retour-map")) {
+    document.getElementById("btn-import-retour-map").addEventListener("click", retourEtapeMapping);
   }
   if (importAEnteteEl) {
     importAEnteteEl.addEventListener("change", function () {

@@ -223,6 +223,12 @@
   function nomsTournoi(payload) {
     var set = {};
     var p = payload || {};
+    if (Array.isArray(p.participants)) {
+      p.participants.forEach(function (n) {
+        var nom = String(n || "").trim();
+        if (nom) set[nom] = true;
+      });
+    }
     String(p.participantsText || "")
       .split(/\n/)
       .forEach(function (line) {

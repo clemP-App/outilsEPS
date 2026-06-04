@@ -533,7 +533,7 @@
     }
     var e = getEleveSelectionne();
     if (!e) {
-      montrerMsg("Importez une classe et choisissez l’élève concerné.");
+      montrerMsg("Importez depuis une classe et choisissez l’élève concerné.");
       return;
     }
 
@@ -895,7 +895,7 @@
       return;
     }
     ClassImport.open({
-      title: "Importer une classe",
+      title: "Importer depuis une classe",
       hint: "Cochez les élèves de la classe (ou tout cocher).",
       onConfirm: function (eleves, classe) {
         if (!eleves.length) {

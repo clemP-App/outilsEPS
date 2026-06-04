@@ -10,6 +10,27 @@
   var actifId = null;
   var saveTimer = null;
   var pret = false;
+  var cacheElevesParId = null;
+
+  var INFO_ELEVE_CHAMPS = [
+    { id: "equipe", label: "Équipe" },
+    { id: "niveau", label: "Niveau" },
+    { id: "sexe", label: "Sexe" },
+    { id: "vma", label: "VMA (km/h)" },
+  ];
+
+  var EQUIPE_COULEURS_FALLBACK = [
+    "#ef4444",
+    "#2563eb",
+    "#16a34a",
+    "#ca8a04",
+    "#9333ea",
+    "#ea580c",
+    "#0891b2",
+    "#db2777",
+    "#64748b",
+    "#0d9488",
+  ];
 
   var msgEl = document.getElementById("tab-suivi-msg");
   var okEl = document.getElementById("tab-suivi-ok");
@@ -17,6 +38,29 @@
   var titreEl = document.getElementById("titre-tableau");
   var listeBruteEl = document.getElementById("liste-brute-tab");
   var nbElevesEl = document.getElementById("tab-suivi-nb-eleves");
+
+  var listeSaisieMeta =
+    typeof ListeSaisieUi !== "undefined" && listeBruteEl
+      ? ListeSaisieUi.bind({
+          metaEl: document.getElementById("liste-brute-tab-meta"),
+          textareaEl: listeBruteEl,
+          getSessionCount: function () {
+            var t = getActif();
+            return t && t.rows ? t.rows.length : 0;
+          },
+          sessionSingular: "élève",
+          sessionPlural: "élèves",
+        })
+      : null;
+
+  if (typeof ListeManuellePanel !== "undefined" && listeBruteEl) {
+    ListeManuellePanel.bind({
+      toggleBtnId: "btn-ajouter-manuel-tab",
+      panelId: "liste-manuelle-panel-tab",
+      textareaEl: listeBruteEl,
+    });
+  }
+
   var scrollEl = document.getElementById("tab-suivi-scroll");
   var theadEl = document.getElementById("tab-suivi-thead");
   var tbodyEl = document.getElementById("tab-suivi-tbody");
@@ -83,6 +127,12 @@
   var dlgColCheckWrap = document.getElementById("dlg-col-check-wrap");
   var dlgColHorsSynthese = document.getElementById("dlg-col-hors-synthese");
   var dlgColRubricWrap = document.getElementById("dlg-col-rubric-wrap");
+  var dlgColInfoWrap = document.getElementById("dlg-col-info-wrap");
+  var dlgColInfoChamp = document.getElementById("dlg-col-info-champ");
+  var dlgColInfoEditable = document.getElementById("dlg-col-info-editable");
+  var dlgColInfoHint = document.getElementById("dlg-col-info-hint");
+  var dialogInfoEleve = document.getElementById("dialog-tab-suivi-info-eleve");
+  var dlgInfoEleveChamp = document.getElementById("dlg-info-eleve-champ");
   var btnColRubricTest = document.getElementById("btn-col-rubric-test");
   var btnColRubricEdit = document.getElementById("btn-col-rubric-edit");
   var btnColRubricPdf = document.getElementById("btn-col-rubric-pdf");
@@ -991,7 +1041,363 @@
       prenom: (e.prenom || "").trim(),
       dateNaissance: (e.dateNaissance || "").trim(),
       eleveId: e.id || "",
+      equipe: (e.equipe || "").trim(),
+      equipeCouleur: (e.equipeCouleur || "").trim(),
+      niveau: e.niveau !== undefined && e.niveau !== null ? String(e.niveau).trim() : "",
+      sexe: (e.sexe || "").trim(),
+      vma: (e.vma || "").trim(),
     };
+  }
+
+  function libelleChampInfoEleve(champId) {
+    var i;
+    for (i = 0; i < INFO_ELEVE_CHAMPS.length; i++) {
+      if (INFO_ELEVE_CHAMPS[i].id === champId) return INFO_ELEVE_CHAMPS[i].label;
+    }
+    return champId || "Info";
+  }
+
+  function normaliserChampInfoEleve(champId) {
+    var ids = INFO_ELEVE_CHAMPS.map(function (x) {
+      return x.id;
+    });
+    return ids.indexOf(champId) >= 0 ? champId : "equipe";
+  }
+
+  function metaEleveFusionnee(row) {
+    if (!row) return {};
+    if (!row.meta) row.meta = {};
+    var m = row.meta;
+    var eid = m.eleveId;
+    if (eid && cacheElevesParId && cacheElevesParId[eid]) {
+      var el = cacheElevesParId[eid];
+      return {
+        equipe: (el.equipe || m.equipe || "").trim(),
+        equipeCouleur: (el.equipeCouleur || m.equipeCouleur || "").trim(),
+        niveau: el.niveau !== undefined && el.niveau !== null ? String(el.niveau).trim() : String(m.niveau || "").trim(),
+        sexe: (el.sexe || m.sexe || "").trim(),
+        vma: (el.vma || m.vma || "").trim(),
+      };
+    }
+    return {
+      equipe: (m.equipe || "").trim(),
+      equipeCouleur: (m.equipeCouleur || "").trim(),
+      niveau: m.niveau !== undefined && m.niveau !== null ? String(m.niveau).trim() : "",
+      sexe: (m.sexe || "").trim(),
+      vma: (m.vma || "").trim(),
+    };
+  }
+
+  function valeurBruteInfoEleve(row, champ) {
+    var m = metaEleveFusionnee(row);
+    return m[champ] != null ? String(m[champ]).trim() : "";
+  }
+
+  function texteAfficheInfoEleve(row, champ) {
+    var v = valeurBruteInfoEleve(row, champ);
+    if (!v) return "";
+    if (champ === "vma" && typeof EleveDisplay !== "undefined" && EleveDisplay.formatVma) {
+      return EleveDisplay.formatVma(v) || v;
+    }
+    if (champ === "sexe") {
+      var s = v.toUpperCase();
+      if (s === "F" || s === "M") return s;
+    }
+    return v;
+  }
+
+  function invaliderCacheEleves() {
+    cacheElevesParId = null;
+  }
+
+  function chargerCacheEleves(force) {
+    if (!force && cacheElevesParId) return Promise.resolve(cacheElevesParId);
+    if (typeof DataManager === "undefined" || !DataManager.getAll) {
+      cacheElevesParId = {};
+      return Promise.resolve(cacheElevesParId);
+    }
+    return DataManager.getAll("eleves").then(function (all) {
+      cacheElevesParId = {};
+      (all || []).forEach(function (e) {
+        if (e && e.id) cacheElevesParId[e.id] = e;
+      });
+      return cacheElevesParId;
+    });
+  }
+
+  function couleurEquipeFallback(label) {
+    var s = String(label || "").trim();
+    if (!s) return "";
+    var h = 0;
+    for (var i = 0; i < s.length; i++) {
+      h = (h + s.charCodeAt(i) * (i + 1)) % EQUIPE_COULEURS_FALLBACK.length;
+    }
+    return EQUIPE_COULEURS_FALLBACK[h];
+  }
+
+  function couleurEquipeAffichage(row) {
+    if (!row) return "";
+    var m = metaEleveFusionnee(row);
+    if (typeof EquipeCouleur !== "undefined" && EquipeCouleur.couleurAffichageEquipe) {
+      return EquipeCouleur.couleurAffichageEquipe({
+        equipe: m.equipe,
+        equipeCouleur: m.equipeCouleur,
+      });
+    }
+    var c = m.equipeCouleur;
+    if (c && /^#[0-9a-fA-F]{6}$/i.test(String(c))) return String(c);
+    return "";
+  }
+
+  function couleurEquipeRow(row) {
+    var c = couleurEquipeAffichage(row);
+    if (c) return c;
+    var eq = row && row.meta && (row.meta.equipe || "").trim();
+    return eq ? couleurEquipeFallback(eq) : "";
+  }
+
+  function libelleEquipeRow(row) {
+    return valeurBruteInfoEleve(row, "equipe");
+  }
+
+  function normaliserValeurInfoEleveSaisie(champ, brut) {
+    var v = String(brut === null || brut === undefined ? "" : brut).trim();
+    if (champ === "sexe") {
+      if (!v) return "";
+      var s = v.toUpperCase();
+      if (s === "F" || s === "M") return s;
+      return null;
+    }
+    if (champ === "niveau") {
+      if (!v) return "";
+      var n = parseInt(v, 10);
+      if (isNaN(n) || n < 1 || n > 5) return null;
+      return String(n);
+    }
+    if (champ === "vma") {
+      if (!v) return "";
+      if (typeof EleveDisplay !== "undefined" && EleveDisplay.normaliserVma) {
+        var vma = EleveDisplay.normaliserVma(v);
+        return vma === null ? null : vma;
+      }
+      return v;
+    }
+    if (champ === "equipe") {
+      return v;
+    }
+    return v;
+  }
+
+  function persisterInfoEleveLigne(row, champ, valeur) {
+    if (!row.meta) row.meta = {};
+    row.meta[champ] = valeur;
+    if (champ === "equipe") {
+      if (typeof EquipeCouleur !== "undefined") {
+        var stub = { equipe: valeur };
+        EquipeCouleur.syncEleveEquipeCouleur(stub);
+        row.meta.equipeCouleur = stub.equipeCouleur || "";
+      } else {
+        row.meta.equipeCouleur = "";
+      }
+    }
+    var eid = row.meta.eleveId;
+    if (eid && cacheElevesParId && cacheElevesParId[eid]) {
+      cacheElevesParId[eid][champ] = valeur;
+      if (champ === "equipe") {
+        cacheElevesParId[eid].equipeCouleur = row.meta.equipeCouleur || "";
+      }
+    }
+    if (!eid || typeof DataManager === "undefined" || !DataManager.updateEleve) {
+      return Promise.resolve({ fiche: false });
+    }
+    var patch = {};
+    patch[champ] = valeur;
+    if (champ === "equipe") patch.equipeCouleur = row.meta.equipeCouleur || "";
+    return DataManager.updateEleve(eid, patch).then(function (ok) {
+      return { fiche: !!ok };
+    });
+  }
+
+  function appliquerInfoEleveDepuisInput(t, row, col, inputEl) {
+    var champ = normaliserChampInfoEleve(col.infoChamp);
+    var norm = normaliserValeurInfoEleveSaisie(champ, inputEl.value);
+    if (norm === null) {
+      montrerMsg(
+        "Valeur invalide pour « " +
+          libelleChampInfoEleve(champ) +
+          " »." +
+          (champ === "vma" ? " (ex. 12.5 km/h)" : champ === "niveau" ? " (1 à 5)" : "")
+      );
+      inputEl.value = valeurBruteInfoEleve(row, champ);
+      return;
+    }
+    persisterInfoEleveLigne(row, champ, norm).then(function (res) {
+      planifierSauvegarde();
+      if (!res.fiche) {
+        montrerOk("Enregistré sur cette feuille (élève non lié à une fiche Classes).");
+      }
+    });
+  }
+
+  function creerInputInfoEleve(t, row, col, champ, rowIndex) {
+    var inp;
+    var val = valeurBruteInfoEleve(row, champ);
+    var cls = "tab-suivi-cell-info-input";
+    if (champ === "niveau" || champ === "sexe") {
+      cls += " tab-suivi-cell-input";
+    }
+    if (champ === "sexe") {
+      inp = document.createElement("select");
+      inp.className = cls;
+      ["", "F", "M"].forEach(function (opt) {
+        var o = document.createElement("option");
+        o.value = opt;
+        o.textContent = opt || "—";
+        if (val === opt) o.selected = true;
+        inp.appendChild(o);
+      });
+    } else {
+      inp = document.createElement("input");
+      inp.className = cls;
+      if (champ === "niveau") {
+        inp.type = "text";
+        inp.inputMode = "numeric";
+        inp.pattern = "[1-5]";
+        inp.maxLength = 1;
+        inp.title = "Niveau de 1 à 5";
+      } else if (champ === "vma") {
+        inp.type = "text";
+        inp.inputMode = "decimal";
+        inp.placeholder = "km/h";
+      } else if (champ === "equipe") {
+        inp.type = "text";
+        inp.maxLength = 80;
+        cls += " tab-suivi-cell-info-input--equipe";
+        inp.className = cls;
+      } else {
+        inp.type = "text";
+        inp.maxLength = 80;
+      }
+      inp.setAttribute("value", val);
+      inp.value = val;
+    }
+    inp.setAttribute("data-col-id", col.id);
+    inp.setAttribute("aria-label", libelleChampInfoEleve(champ) + " — " + labelEleveRow(row));
+    var commit = function () {
+      appliquerInfoEleveDepuisInput(t, row, col, inp);
+    };
+    inp.addEventListener("change", commit);
+    inp.addEventListener("blur", commit);
+    inp.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      commit();
+      focusCelluleSaisie(rowIndex + 1, col.id);
+    });
+    return inp;
+  }
+
+  function creerCelluleInfoEleve(t, row, col, rowIndex) {
+    var wrap = document.createElement("div");
+    var champ = normaliserChampInfoEleve(col.infoChamp);
+    var editable = col.infoEditable === true;
+    wrap.className = "tab-suivi-cell-info";
+    if (editable) {
+      wrap.classList.add("tab-suivi-cell-info--edit");
+      if (champ === "equipe") wrap.classList.add("tab-suivi-cell-info--edit-equipe");
+    }
+
+    if (editable) {
+      wrap.appendChild(creerInputInfoEleve(t, row, col, champ, rowIndex));
+      return wrap;
+    }
+
+    if (champ === "equipe") {
+      var badge = creerBadgeEquipe(row, true);
+      if (badge) {
+        wrap.appendChild(badge);
+      } else {
+        var txtEq = texteAfficheInfoEleve(row, "equipe");
+        if (txtEq) {
+          var sp = document.createElement("span");
+          sp.textContent = txtEq;
+          wrap.appendChild(sp);
+        } else {
+          wrap.textContent = "—";
+          wrap.classList.add("tab-suivi-cell-info--vide");
+        }
+      }
+    } else {
+      var txt = texteAfficheInfoEleve(row, champ);
+      wrap.textContent = txt || "—";
+      if (!txt) wrap.classList.add("tab-suivi-cell-info--vide");
+    }
+    return wrap;
+  }
+
+  function majDialogColonneInfoUi(col) {
+    if (!col || col.type !== "eleveInfo") return;
+    if (dlgColInfoEditable) dlgColInfoEditable.checked = col.infoEditable === true;
+    if (dlgColInfoHint) {
+      dlgColInfoHint.textContent = col.infoEditable
+        ? "Les modifications dans le tableau mettent à jour la fiche élève dans Classes (élèves importés depuis une classe)."
+        : "Lecture seule : donnée issue de la fiche élève (Classes). Utilisez « Tri » pour ordonner selon cette colonne.";
+    }
+  }
+
+  function hydraterEquipesFeuilleSync(t) {
+    if (!t || !t.rows || !cacheElevesParId) return false;
+    var changed = false;
+    t.rows.forEach(function (row) {
+      if (!row.meta) row.meta = {};
+      var eid = row.meta.eleveId;
+      if (!eid || !cacheElevesParId[eid]) return;
+      var el = cacheElevesParId[eid];
+      var champs = [
+        ["equipe", el.equipe],
+        ["equipeCouleur", el.equipeCouleur],
+        ["niveau", el.niveau !== undefined && el.niveau !== null ? String(el.niveau) : ""],
+        ["sexe", el.sexe],
+        ["vma", el.vma],
+      ];
+      champs.forEach(function (pair) {
+        var k = pair[0];
+        var v = String(pair[1] == null ? "" : pair[1]).trim();
+        if (v && row.meta[k] !== v) {
+          row.meta[k] = v;
+          changed = true;
+        }
+      });
+    });
+    return changed;
+  }
+
+  function hydraterEquipesFeuille(t) {
+    return chargerCacheEleves().then(function () {
+      return hydraterEquipesFeuilleSync(t);
+    });
+  }
+
+  function creerBadgeEquipe(row, avecCouleur) {
+    var eq = libelleEquipeRow(row);
+    if (!eq) return null;
+    var badge = document.createElement("span");
+    badge.className = "tab-suivi-equipe-badge";
+    badge.textContent = eq;
+    badge.title = "Équipe : " + eq;
+    if (avecCouleur) {
+      var col = couleurEquipeAffichage(row);
+      if (col) {
+        badge.style.setProperty("--equipe-couleur", col);
+        badge.style.backgroundColor = col;
+        badge.style.borderColor = col;
+      } else {
+        badge.classList.add("tab-suivi-equipe-badge--sans-couleur");
+      }
+    } else {
+      badge.classList.add("tab-suivi-equipe-badge--sans-couleur");
+    }
+    return badge;
   }
 
   function aujourdhuiIso() {
@@ -1335,7 +1741,7 @@
       return;
     }
     if (!noms.prenom) {
-      montrerMsg("Prénom requis : utilisez les paramètres élèves (⚙) ou importez une classe.");
+      montrerMsg("Prénom requis : utilisez les paramètres élèves (⚙) ou importez depuis une classe.");
       return;
     }
     oubliRowId = row.id;
@@ -1528,6 +1934,8 @@
     if (!Array.isArray(t.rows)) t.rows = [];
     if (!Array.isArray(t.cols)) t.cols = [];
     if (!t.cells || typeof t.cells !== "object") t.cells = {};
+    t.affichageTriEquipe = t.affichageTriEquipe === true;
+    if (!t.classeId) t.classeId = "";
     t.rows.forEach(function (r) {
       if (!r.id) r.id = genererId("row");
       if (!r.label) r.label = "Sans nom";
@@ -1578,11 +1986,26 @@
         c.rubric = normaliserRubrique(c.rubric || { title: c.label || "Grille d'evaluation" });
         c.estNote = true;
         c.max = RUBRIQUE_MAX_DEFAUT;
+      } else if (c.type === "eleveInfo") {
+        c.infoChamp = normaliserChampInfoEleve(c.infoChamp);
+        c.infoEditable = c.infoEditable === true;
+        delete c.estNote;
+        delete c.max;
+        delete c.calcOp;
+        delete c.sourceIds;
+        delete c.rubric;
+        delete c.horsSynthese;
       } else {
         delete c.estNote;
         delete c.max;
       }
-      if (c.type !== "check" && c.type !== "number" && c.type !== "calc" && c.type !== "rubric") {
+      if (
+        c.type !== "check" &&
+        c.type !== "number" &&
+        c.type !== "calc" &&
+        c.type !== "rubric" &&
+        c.type !== "eleveInfo"
+      ) {
         c.type = "number";
       }
     });
@@ -1614,7 +2037,12 @@
     return col.type === "check" && col.horsSynthese !== true;
   }
 
+  function colonneInfoEleve(col) {
+    return col.type === "eleveInfo";
+  }
+
   function colonneAutre(col) {
+    if (col.type === "eleveInfo") return true;
     if (col.type === "number" || col.type === "calc") return col.estNote !== true;
     return false;
   }
@@ -1722,6 +2150,20 @@
       var score = calculerScoreRubrique(col.rubric, getCell(t, rowId, col.id));
       return score.note;
     }
+    if (col.type === "eleveInfo") {
+      var row = t.rows.filter(function (r) {
+        return r.id === rowId;
+      })[0];
+      if (!row) return "";
+      var champ = normaliserChampInfoEleve(col.infoChamp);
+      if (champ === "niveau" || champ === "vma") {
+        var nv = valeurBruteInfoEleve(row, champ);
+        if (!nv) return "";
+        var n = parseFloat(String(nv).replace(",", "."));
+        return isNaN(n) ? nv : n;
+      }
+      return texteAfficheInfoEleve(row, champ);
+    }
     return getCell(t, rowId, col.id);
   }
 
@@ -1753,7 +2195,20 @@
       rows: [],
       cols: [],
       cells: {},
+      affichageTriEquipe: false,
+      classeId: "",
     };
+  }
+
+  function eleveDejaSurFeuille(t, e) {
+    if (!t || !e) return false;
+    return !!trouverRowPourImport(t, {
+      label:
+        typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
+          ? EleveDisplay.formatEleveListe(e, "")
+          : [e.nom, e.prenom].filter(Boolean).join(" "),
+      meta: { eleveId: e.id || "" },
+    });
   }
 
   function cellKey(rowId, colId) {
@@ -1818,6 +2273,9 @@
     }
     if (col.type === "rubric") {
       return v === null || v === undefined || isNaN(v) ? "" : formatNombreAffiche(v);
+    }
+    if (col.type === "eleveInfo") {
+      return v === null || v === undefined ? "" : String(v);
     }
     if (v === null || v === undefined || v === "") return "";
     return formatNombreAffiche(v);
@@ -2148,7 +2606,7 @@
     if (dialogRubricCell && dialogRubricCell.open) dialogRubricCell.close();
   }
 
-  function focusCelluleNombre(rowIndex, colId) {
+  function focusCelluleSaisie(rowIndex, colId) {
     if (!tbodyEl || rowIndex < 0) return;
     var t = getActif();
     if (!t || rowIndex >= t.rows.length) return;
@@ -2156,18 +2614,23 @@
     var sel =
       'tr[data-row-id="' +
       rowId +
-      '"] input.tab-suivi-cell-input[data-col-id="' +
+      '"] td[data-col-id="' +
       colId +
-      '"]';
+      '"] input, tr[data-row-id="' +
+      rowId +
+      '"] td[data-col-id="' +
+      colId +
+      '"] select';
     var next = tbodyEl.querySelector(sel);
     if (next) {
       next.focus();
-      next.select();
+      if (typeof next.select === "function") next.select();
     }
   }
 
   function syntheseColonne(t, col) {
     if (!t.rows.length) return "—";
+    if (col.type === "eleveInfo") return "—";
     if (col.type === "check") {
       if (col.horsSynthese) return "—";
       var ok = 0;
@@ -2213,13 +2676,50 @@
     });
   }
 
-  function ajouterLignes(t, entrees) {
+  function trouverRowPourImport(t, ent) {
+    var meta = typeof ent === "string" ? {} : ent.meta || {};
+    if (meta.eleveId) {
+      for (var i = 0; i < t.rows.length; i++) {
+        if (t.rows[i].meta && t.rows[i].meta.eleveId === meta.eleveId) {
+          return t.rows[i];
+        }
+      }
+    }
+    var label = typeof ent === "string" ? ent : ent.label;
+    var l = normaliserNom(label).toLowerCase();
+    if (!l) return null;
+    for (var j = 0; j < t.rows.length; j++) {
+      if (normaliserNom(t.rows[j].label).toLowerCase() === l) {
+        return t.rows[j];
+      }
+    }
+    return null;
+  }
+
+  function importerOuFusionnerLignes(t, entrees) {
     var ajoutes = 0;
+    var maj = 0;
     entrees.forEach(function (ent) {
       var label = typeof ent === "string" ? ent : ent.label;
       var meta = typeof ent === "string" ? {} : ent.meta || {};
       var l = normaliserNom(label);
-      if (!l || contientLabel(t, l)) return;
+      if (!l) return;
+      var existant = trouverRowPourImport(t, ent);
+      if (existant) {
+        if (typeof EleveFusion !== "undefined" && EleveFusion.fusionnerMetaRow) {
+          EleveFusion.fusionnerMetaRow(existant, meta);
+        } else if (meta && typeof meta === "object") {
+          if (!existant.meta) existant.meta = {};
+          Object.keys(meta).forEach(function (k) {
+            if (meta[k] !== undefined && meta[k] !== null && String(meta[k]).trim() !== "") {
+              existant.meta[k] = meta[k];
+            }
+          });
+        }
+        existant.label = labelEleveRow(existant);
+        maj++;
+        return;
+      }
       t.rows.push({
         id: genererId("row"),
         label: l,
@@ -2227,7 +2727,11 @@
       });
       ajoutes++;
     });
-    return ajoutes;
+    return { ajoutes: ajoutes, maj: maj };
+  }
+
+  function ajouterLignes(t, entrees) {
+    return importerOuFusionnerLignes(t, entrees).ajoutes;
   }
 
   function parserTextarea() {
@@ -2292,6 +2796,13 @@
       rows.sort(function (a, b) {
         return comparateurTexte(a.label, b.label);
       });
+    } else if (mode === "equipe") {
+      rows.sort(function (a, b) {
+        var ea = (a.meta && a.meta.equipe) || "";
+        var eb = (b.meta && b.meta.equipe) || "";
+        var c = comparateurTexte(ea, eb);
+        return inv * (c !== 0 ? c : comparateurTexte(a.label, b.label));
+      });
     } else if (mode.indexOf("col:") === 0) {
       var parts = mode.split(":");
       var colId = parts[1];
@@ -2313,9 +2824,25 @@
           };
           return sens * (score(va) - score(vb));
         }
+        if (
+          col.type === "eleveInfo" &&
+          (normaliserChampInfoEleve(col.infoChamp) === "niveau" ||
+            normaliserChampInfoEleve(col.infoChamp) === "vma")
+        ) {
+          var naN = typeof va === "number" && !isNaN(va) ? va : -Infinity;
+          var nbN = typeof vb === "number" && !isNaN(vb) ? vb : -Infinity;
+          if (naN === nbN) return sens * comparateurTexte(a.label, b.label);
+          return sens * (naN - nbN);
+        }
+        if (col.type === "eleveInfo") {
+          var ta = va === null || va === undefined ? "" : String(va);
+          var tb = vb === null || vb === undefined ? "" : String(vb);
+          var ct = comparateurTexte(ta, tb);
+          return sens * (ct !== 0 ? ct : comparateurTexte(a.label, b.label));
+        }
         var na = typeof va === "number" && !isNaN(va) ? va : -Infinity;
         var nb = typeof vb === "number" && !isNaN(vb) ? vb : -Infinity;
-        if (na === nb) return comparateurTexte(a.label, b.label);
+        if (na === nb) return sens * comparateurTexte(a.label, b.label);
         return sens * (na - nb);
       });
     }
@@ -2329,6 +2856,7 @@
 
     if (titreEl) titreEl.value = t.titre || "";
     if (nbElevesEl) nbElevesEl.textContent = libelleNbEleves(t.rows.length);
+    if (listeSaisieMeta) listeSaisieMeta.refresh();
     majFiltreColonnesUi(t);
 
     var cols = colonnesVisibles(t);
@@ -2377,7 +2905,8 @@
         th.className =
           "tab-suivi-th tab-suivi-th--col" +
           (col.type === "calc" ? " tab-suivi-th--calc" : "") +
-          (col.type === "rubric" ? " tab-suivi-th--rubric" : "");
+          (col.type === "rubric" ? " tab-suivi-th--rubric" : "") +
+          (col.type === "eleveInfo" ? " tab-suivi-th--info-eleve" : "");
         th.scope = "col";
         th.setAttribute("data-col-id", col.id);
 
@@ -2438,9 +2967,18 @@
       theadEl.appendChild(trStats);
     }
 
+    var afficherTriEquipe = t.affichageTriEquipe === true;
+
     t.rows.forEach(function (row, rowIndex) {
       var tr = document.createElement("tr");
       tr.setAttribute("data-row-id", row.id);
+      if (afficherTriEquipe) {
+        var eqCol = couleurEquipeAffichage(row);
+        if (eqCol) {
+          tr.classList.add("tab-suivi-tr--equipe");
+          tr.style.setProperty("--tab-suivi-equipe-couleur", eqCol);
+        }
+      }
 
       var tdNom = document.createElement("td");
       tdNom.className = "tab-suivi-td tab-suivi-td--nom";
@@ -2450,6 +2988,11 @@
 
       nomWrap.appendChild(creerBoutonIconeEleve(t, row));
       nomWrap.appendChild(creerBoutonOubliTenue(row));
+
+      if (afficherTriEquipe) {
+        var badgeEquipe = creerBadgeEquipe(row, true);
+        if (badgeEquipe) nomWrap.appendChild(badgeEquipe);
+      }
 
       var nomLabel = document.createElement("span");
       nomLabel.className = "tab-suivi-nom-label";
@@ -2487,6 +3030,8 @@
             ouvrirDialogRubriqueCellule(row.id, col.id);
           });
           td.appendChild(btnRubric);
+        } else if (col.type === "eleveInfo") {
+          td.appendChild(creerCelluleInfoEleve(t, row, col, rowIndex));
         } else if (col.type === "check") {
           var btn = document.createElement("button");
           btn.type = "button";
@@ -2541,7 +3086,7 @@
             if (e.key !== "Enter") return;
             e.preventDefault();
             appliquerValeurDepuisInput(num, t, row, col);
-            focusCelluleNombre(rowIndex + 1, col.id);
+            focusCelluleSaisie(rowIndex + 1, col.id);
           });
           numWrap.appendChild(num);
           td.appendChild(numWrap);
@@ -2558,6 +3103,19 @@
 
   function toutRafraichir() {
     majSelectTableaux();
+    var t = getActif();
+    if (t && cacheElevesParId) {
+      if (hydraterEquipesFeuilleSync(t)) planifierSauvegarde();
+      rendreGrille();
+      return;
+    }
+    if (t) {
+      hydraterEquipesFeuille(t).then(function (changed) {
+        if (changed) planifierSauvegarde();
+        rendreGrille();
+      });
+      return;
+    }
     rendreGrille();
   }
 
@@ -2567,16 +3125,59 @@
     toutRafraichir();
   }
 
+  function ouvrirDialogInfoEleve() {
+    if (!dialogInfoEleve || typeof dialogInfoEleve.showModal !== "function") {
+      montrerMsg("Fenêtre indisponible sur ce navigateur.");
+      return;
+    }
+    if (dlgInfoEleveChamp) dlgInfoEleveChamp.value = "equipe";
+    if (dialogGestion && dialogGestion.open) dialogGestion.close();
+    dialogInfoEleve.showModal();
+  }
+
+  function creerColonneInfoEleve() {
+    var champ = normaliserChampInfoEleve(dlgInfoEleveChamp ? dlgInfoEleveChamp.value : "equipe");
+    var col = ajouterColonne("eleveInfo", true, {
+      infoChamp: champ,
+      label: libelleChampInfoEleve(champ),
+    });
+    if (!col) return;
+    if (dialogInfoEleve && dialogInfoEleve.open) dialogInfoEleve.close();
+    montrerOk("Colonne « " + col.label + " » ajoutée.");
+    chargerCacheEleves(true)
+      .then(function () {
+        var t = getActif();
+        if (t && hydraterEquipesFeuilleSync(t)) planifierSauvegarde();
+        rendreGrille(col.id);
+      })
+      .catch(function () {
+        rendreGrille(col.id);
+      });
+  }
+
   function ajouterColonne(type, scrollTo, options) {
     var t = getActif();
     if (!t) return null;
     options = options || {};
-    if (type !== "check" && type !== "number" && type !== "calc" && type !== "rubric") return null;
+    if (
+      type !== "check" &&
+      type !== "number" &&
+      type !== "calc" &&
+      type !== "rubric" &&
+      type !== "eleveInfo"
+    ) {
+      return null;
+    }
     var col = {
       id: genererId("col"),
       label: labelColonneDefaut(t),
       type: type,
     };
+    if (type === "eleveInfo") {
+      col.infoChamp = normaliserChampInfoEleve(options.infoChamp);
+      col.infoEditable = options.infoEditable === true;
+      col.label = normaliserNom(options.label || libelleChampInfoEleve(col.infoChamp));
+    }
     if (type === "calc") {
       col.calcOp = options.calcOp === "avg" ? "avg" : "sum";
       col.sourceIds = (options.sourceIds || []).slice();
@@ -2664,7 +3265,11 @@
       t.cols.forEach(function (col) {
         var opt = document.createElement("option");
         opt.value = col.id;
-        opt.textContent = col.label || "Colonne";
+        var lib = col.label || "Colonne";
+        if (col.type === "eleveInfo") {
+          lib += " (" + libelleChampInfoEleve(col.infoChamp) + ")";
+        }
+        opt.textContent = lib;
         dlgTriColonne.appendChild(opt);
       });
       var sansCol = !t.cols.length;
@@ -2687,28 +3292,78 @@
     }
     triSensDesc = false;
     if (dlgTriPar) dlgTriPar.value = "nom";
-    majAffichageDialogTri();
-    dialogTri.showModal();
+    chargerCacheEleves(true)
+      .then(function () {
+        var t = getActif();
+        if (t) {
+          if (hydraterEquipesFeuilleSync(t)) planifierSauvegarde();
+        }
+        majAffichageDialogTri();
+        dialogTri.showModal();
+      })
+      .catch(function () {
+        majAffichageDialogTri();
+        dialogTri.showModal();
+      });
   }
 
   function appliquerTriDialog() {
     var t = getActif();
     if (!t || !dlgTriPar) return;
     var par = dlgTriPar.value;
-    if (par === "colonne") {
-      if (!t.cols.length) {
-        montrerMsg("Ajoutez une colonne avant de trier par colonne.");
-        return;
+
+    function executerTri() {
+      t.affichageTriEquipe = par === "equipe";
+      if (par === "colonne") {
+        if (!t.cols.length) {
+          montrerMsg("Ajoutez une colonne avant de trier par colonne.");
+          return;
+        }
+        if (!dlgTriColonne || !dlgTriColonne.value) return;
+        var colTri = t.cols.filter(function (c) {
+          return c.id === dlgTriColonne.value;
+        })[0];
+        if (colTri && colTri.type === "eleveInfo") {
+          t.affichageTriEquipe = false;
+        }
+        trierLignes(t, "col:" + dlgTriColonne.value, triSensDesc);
+      } else {
+        trierLignes(t, par, triSensDesc);
       }
-      if (!dlgTriColonne || !dlgTriColonne.value) return;
-      trierLignes(t, "col:" + dlgTriColonne.value, triSensDesc);
-    } else {
-      trierLignes(t, par, triSensDesc);
+      if (dialogTri && dialogTri.open) dialogTri.close();
+      rendreGrille();
+      planifierSauvegarde();
+      if (par === "equipe") {
+        var avecEquipe = t.rows.filter(function (r) {
+          return libelleEquipeRow(r);
+        }).length;
+        if (!avecEquipe) {
+          montrerMsg(
+            "Aucune équipe sur cette feuille. Enregistrez les équipes depuis Composition d’équipes, puis réimportez la classe ou rouvrez la feuille."
+          );
+        } else {
+          montrerOk("Tri par équipe appliqué.");
+        }
+      } else {
+        montrerOk("Tri appliqué.");
+      }
     }
-    if (dialogTri && dialogTri.open) dialogTri.close();
-    rendreGrille();
-    planifierSauvegarde();
-    montrerOk("Tri appliqué.");
+
+    if (par === "colonne" || par === "equipe") {
+      chargerCacheEleves(true)
+        .then(function () {
+          return hydraterEquipesFeuille(t);
+        })
+        .then(function (changed) {
+          if (changed) planifierSauvegarde();
+          executerTri();
+        })
+        .catch(function () {
+          executerTri();
+        });
+      return;
+    }
+    executerTri();
   }
 
   function ouvrirDialogCalc() {
@@ -2805,6 +3460,11 @@
       var r = normaliserRubrique(col.rubric);
       return "Grille d'évaluation — " + metaRubriqueTexte(r) + " — note /20";
     }
+    if (col.type === "eleveInfo") {
+      var libInfo = "Info élève — " + libelleChampInfoEleve(col.infoChamp);
+      if (col.infoEditable) libInfo += " (modifiable)";
+      return libInfo;
+    }
     if (col.estNote) {
       return "Note" + (col.max > 0 ? " /" + col.max : "");
     }
@@ -2878,6 +3538,11 @@
     if (dlgColTitre) dlgColTitre.textContent = "Colonne « " + (col.label || "") + " »";
     if (dlgColTypeHint) dlgColTypeHint.textContent = typeColonneLabel(col);
     if (dlgColNom) dlgColNom.value = col.label || "";
+    if (dlgColInfoWrap) dlgColInfoWrap.hidden = col.type !== "eleveInfo";
+    if (dlgColInfoChamp) {
+      dlgColInfoChamp.value = normaliserChampInfoEleve(col.infoChamp);
+    }
+    majDialogColonneInfoUi(col);
     if (dlgColNoteWrap) dlgColNoteWrap.hidden = col.type !== "number" && col.type !== "calc";
     if (dlgColEstNote) {
       dlgColEstNote.checked =
@@ -2893,7 +3558,8 @@
     if (dlgColHorsSynthese) dlgColHorsSynthese.checked = col.type === "check" && col.horsSynthese === true;
     if (dlgColRubricWrap) dlgColRubricWrap.hidden = col.type !== "rubric";
 
-    var peutRemplir = col.type !== "calc" && col.type !== "rubric" && t.rows.length > 0;
+    var peutRemplir =
+      col.type !== "calc" && col.type !== "rubric" && col.type !== "eleveInfo" && t.rows.length > 0;
     if (dlgColRemplirSection) dlgColRemplirSection.hidden = !peutRemplir;
     if (dlgColCalcHint) dlgColCalcHint.hidden = col.type !== "calc";
     if (col.type === "calc" && dlgColCalcHint && !t.rows.length) {
@@ -2903,7 +3569,13 @@
       dlgColCalcHint.textContent =
         "Colonne calculée automatiquement — les valeurs ne peuvent pas être remplies à la main.";
     }
-    if (!peutRemplir && col.type !== "calc" && col.type !== "rubric" && dlgColRemplirSection) {
+    if (
+      !peutRemplir &&
+      col.type !== "calc" &&
+      col.type !== "rubric" &&
+      col.type !== "eleveInfo" &&
+      dlgColRemplirSection
+    ) {
       if (dlgColRemplirBody) {
         dlgColRemplirBody.innerHTML = "";
         var p = document.createElement("p");
@@ -2952,11 +3624,29 @@
     if (col && col.type === "check") {
       col.horsSynthese = dlgColHorsSynthese ? dlgColHorsSynthese.checked : false;
     }
+    if (col && col.type === "eleveInfo") {
+      if (dlgColInfoChamp) col.infoChamp = normaliserChampInfoEleve(dlgColInfoChamp.value);
+      if (dlgColInfoEditable) col.infoEditable = dlgColInfoEditable.checked;
+    }
     if (dialogColonne && dialogColonne.open) dialogColonne.close();
     colonneDialogId = null;
-    rendreGrille();
-    planifierSauvegarde();
-    montrerOk("Colonne mise à jour.");
+    var colInfo = col && col.type === "eleveInfo";
+    var finMajColonne = function () {
+      rendreGrille();
+      planifierSauvegarde();
+      montrerOk("Colonne mise à jour.");
+    };
+    if (colInfo) {
+      chargerCacheEleves(true)
+        .then(function () {
+          var tab = getActif();
+          if (tab && hydraterEquipesFeuilleSync(tab)) planifierSauvegarde();
+        })
+        .then(finMajColonne)
+        .catch(finMajColonne);
+    } else {
+      finMajColonne();
+    }
   }
 
   function chargerRubriquesPersonnelles() {
@@ -3958,21 +4648,39 @@
     if (!t) return;
     ClassImport.open({
       title: "Importer des élèves",
-      hint: "Choisissez une classe puis cochez les élèves à ajouter au tableau.",
-      onConfirm: function (eleves, classe) {
+      hint:
+        "Les élèves déjà sur la feuille sont grisés. Cochez les nouveaux à ajouter (les fiches classe sont synchronisées automatiquement).",
+      dejaPresent: function (e) {
+        return eleveDejaSurFeuille(t, e);
+      },
+      defaultChecked: true,
+      onConfirm: function (eleves, classe, metaImport) {
+        invaliderCacheEleves();
+        if (!t.classeId) t.classeId = classe.id;
         var entrees = [];
         eleves.forEach(function (e) {
           var l = eleveVersLabel(e);
           if (l) entrees.push({ label: l, meta: metaDepuisEleve(e, classe.nom, classe.id) });
         });
-        var ajoutes = ajouterLignes(t, entrees);
-        rendreGrille();
-        planifierSauvegarde();
-        if (ajoutes) {
-          montrerOk(ajoutes + " élève(s) importé(s) depuis « " + classe.nom + " ».");
-        } else {
-          montrerMsg("Aucun nouvel élève (doublons ignorés).");
-        }
+        var stats = importerOuFusionnerLignes(t, entrees);
+        var ignores = metaImport && metaImport.ignores ? metaImport.ignores : 0;
+        chargerCacheEleves(true).then(function () {
+          hydraterEquipesFeuilleSync(t);
+          rendreGrille();
+          planifierSauvegarde();
+          var msg =
+            typeof ImportElevePresence !== "undefined"
+              ? ImportElevePresence.messageImportEleves({
+                  ajoutes: stats.ajoutes,
+                  maj: stats.maj,
+                  ignores: ignores,
+                  contexte: "« " + classe.nom + " »",
+                })
+              : "";
+          if (stats.ajoutes || stats.maj) montrerOk(msg);
+          else if (ignores) montrerMsg(msg);
+          else montrerMsg("Aucun élève à importer.");
+        });
       },
     });
   }
@@ -4039,15 +4747,21 @@
         if (!tableaux.length) {
           tableaux.push(creerTableauVide("Mon appel"));
         }
-        var saved = chargerActifIdLocal();
-        var found = tableaux.some(function (t) {
-          return t.id === saved;
+        return chargerCacheEleves().then(function () {
+          var dirty = false;
+          tableaux.forEach(function (tab) {
+            if (hydraterEquipesFeuilleSync(tab)) dirty = true;
+          });
+          var saved = chargerActifIdLocal();
+          var found = tableaux.some(function (t) {
+            return t.id === saved;
+          });
+          actifId = found ? saved : tableaux[0].id;
+          sauverActifIdLocal(actifId);
+          pret = true;
+          toutRafraichir();
+          if (dirty) return DataManager.saveTableauxSuivi(tableaux);
         });
-        actifId = found ? saved : tableaux[0].id;
-        sauverActifIdLocal(actifId);
-        pret = true;
-        toutRafraichir();
-        return DataManager.saveTableauxSuivi(tableaux);
       })
       .catch(function (err) {
         montrerMsg(err && err.message ? err.message : "Impossible de charger les tableaux.");
@@ -4065,6 +4779,10 @@
       if (type === "rubric") {
         if (dialogGestion && dialogGestion.open) dialogGestion.close();
         ouvrirDialogRubriqueCatalog();
+        return;
+      }
+      if (type === "eleveInfo") {
+        ouvrirDialogInfoEleve();
         return;
       }
       var col = ajouterColonne(type, true);
@@ -4159,6 +4877,26 @@
   if (btnCalcAnnuler && dialogCalc) {
     btnCalcAnnuler.addEventListener("click", function () {
       dialogCalc.close();
+    });
+  }
+
+  var btnDialogInfoEleveClose = document.getElementById("btn-dialog-info-eleve-close");
+  if (btnDialogInfoEleveClose && dialogInfoEleve) {
+    btnDialogInfoEleveClose.addEventListener("click", function () {
+      dialogInfoEleve.close();
+    });
+  }
+  var btnInfoEleveAnnuler = document.getElementById("btn-info-eleve-annuler");
+  if (btnInfoEleveAnnuler && dialogInfoEleve) {
+    btnInfoEleveAnnuler.addEventListener("click", function () {
+      dialogInfoEleve.close();
+    });
+  }
+  var formInfoEleve = document.getElementById("form-tab-suivi-info-eleve");
+  if (formInfoEleve) {
+    formInfoEleve.addEventListener("submit", function (e) {
+      e.preventDefault();
+      creerColonneInfoEleve();
     });
   }
 
@@ -4265,6 +5003,15 @@
 
   if (dlgColEstNote) {
     dlgColEstNote.addEventListener("change", majDialogColonneNoteUi);
+  }
+
+  if (dlgColInfoEditable) {
+    dlgColInfoEditable.addEventListener("change", function () {
+      if (!dlgColInfoHint) return;
+      dlgColInfoHint.textContent = dlgColInfoEditable.checked
+        ? "Les modifications dans le tableau mettent à jour la fiche élève dans Classes (élèves importés depuis une classe)."
+        : "Lecture seule : donnée issue de la fiche élève (Classes). Utilisez « Tri » pour ordonner selon cette colonne.";
+    });
   }
 
   var formColonne = document.getElementById("form-tab-suivi-colonne");

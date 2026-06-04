@@ -3959,6 +3959,24 @@ label.field-label {
   margin-bottom: 0.35rem;
 }
 
+.field-label--with-meta,
+.orient-field__label--with-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.field-label__meta,
+.orient-field__meta {
+  font-weight: 500;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.orient-field__label--with-meta .orient-field__main {
+  font-weight: 600;
+}
+
 input[type="text"],
 input[type="number"],
 input[type="date"],
@@ -5731,7 +5749,7 @@ textarea {
 
 .tournoi-seeding-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.6rem;
   padding: 0.55rem 0.65rem;
@@ -5744,6 +5762,15 @@ textarea {
   min-width: 0;
   font-weight: 700;
   word-break: break-word;
+}
+
+.tournoi-seeding-remove {
+  flex-shrink: 0;
+  color: var(--danger, #b91c1c);
+}
+
+.tournoi-manuelle-actions {
+  margin-top: 0.5rem;
 }
 
 .tournoi-level-buttons {
@@ -6183,6 +6210,41 @@ textarea {
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid rgba(13, 148, 136, 0.25);
+}
+
+.compo-report-row {
+  margin-bottom: 0.75rem;
+}
+
+.compo-team-title-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.compo-team-color {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.compo-team-name-input {
+  flex: 1;
+  min-width: 6rem;
+  max-width: 100%;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--accent-deep);
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .compo-team-title {
@@ -7409,6 +7471,14 @@ textarea {
   color: var(--accent-deep);
 }
 
+.classes-reimport-hint {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: rgba(13, 148, 136, 0.08);
+  border: 1px solid rgba(13, 148, 136, 0.2);
+}
+
 .classes-detail-head {
   display: flex;
   flex-direction: column;
@@ -7505,6 +7575,26 @@ textarea {
   font-size: 0.82rem;
   color: var(--text-muted);
   margin-top: 0.15rem;
+}
+
+.classes-eleve-item__equipe {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.classes-eleve-equipe-pin {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  vertical-align: -0.05em;
+}
+
+.classes-eleve-equipe-pin--light {
+  border-color: rgba(15, 23, 42, 0.28);
 }
 
 .classes-eleve-item__actions {
@@ -7710,6 +7800,70 @@ textarea {
   font-size: 0.84rem;
 }
 
+.import-conflits-hint {
+  margin: 0 0 1rem;
+}
+
+.import-conflits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.import-conflit-card {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+.import-conflit-card__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.import-conflit-card__count {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.import-conflit-card__exemples {
+  margin: 0 0 0.65rem;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.import-conflit-card__exemples li + li {
+  margin-top: 0.2rem;
+}
+
+.import-conflit-card__choix {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.import-conflit-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.import-conflit-radio input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.import-conflits-erreur {
+  margin-bottom: 0.75rem;
+}
+
 .field-row--eleve-opt .field-group {
   flex: 1 1 10rem;
 }
@@ -7850,6 +8004,20 @@ body.class-import-open {
   flex-shrink: 0;
 }
 
+.class-import-item--deja-la {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.class-import-item--deja-la input:disabled {
+  cursor: not-allowed;
+}
+
+.class-import-item--deja-la span {
+  color: var(--text-muted);
+}
+
 .class-import-actions {
   flex-direction: column;
 }
@@ -7860,6 +8028,39 @@ body.class-import-open {
 
 .class-import-actions--single #class-import-ok {
   display: none;
+}
+
+.liste-import-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0 0 0.75rem;
+}
+
+.liste-import-toolbar .btn {
+  flex: 0 1 auto;
+}
+
+.liste-manuelle-panel {
+  margin-bottom: 0.75rem;
+}
+
+.liste-manuelle-panel[hidden] {
+  display: none !important;
+}
+
+.liste-manuelle-ligne-hint[hidden] {
+  display: none !important;
+}
+
+.liste-manuelle-ligne-hint {
+  margin: 0 0 0.5rem;
+}
+
+.orient-import-toolbar .orient-import-toolbar__btn {
+  flex: 1 1 12rem;
+  justify-content: center;
 }
 
 @media (min-width: 560px) {
@@ -11817,6 +12018,11 @@ dialog.tab-suivi-dialog .tab-suivi-type-card__icon--rubric {
   color: #c2410c;
 }
 
+dialog.tab-suivi-dialog .tab-suivi-type-card__icon--info {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
 dialog.tab-suivi-dialog--rubric-catalog,
 dialog.tab-suivi-dialog--rubric-cell {
   width: min(64rem, calc(100vw - 1.5rem));
@@ -13070,6 +13276,92 @@ dialog.tab-suivi-dialog .tab-suivi-dlg-col__type--calc {
   border-radius: 0.4rem;
 }
 
+.page-outil--tableau-suivi .tab-suivi-cell-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0.2rem 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+}
+
+.page-outil--tableau-suivi .tab-suivi-cell-info--vide {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.page-outil--tableau-suivi .tab-suivi-cell-info--edit {
+  padding: 0.15rem 0.2rem;
+}
+
+.page-outil--tableau-suivi .tab-suivi-cell-info-input {
+  width: 100%;
+  max-width: 6.5rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.4rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+  caret-color: var(--accent);
+  -webkit-text-fill-color: currentColor;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  -moz-appearance: textfield;
+}
+
+.page-outil--tableau-suivi .tab-suivi-cell-info-input:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.page-outil--tableau-suivi .tab-suivi-cell-info-input::-webkit-outer-spin-button,
+.page-outil--tableau-suivi .tab-suivi-cell-info-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.page-outil--tableau-suivi .tab-suivi-cell-info--edit-equipe {
+  justify-content: stretch;
+  min-width: 8rem;
+}
+
+.page-outil--tableau-suivi .tab-suivi-cell-info-input--equipe {
+  max-width: min(14rem, 48vw);
+  min-width: 7.5rem;
+  text-align: left;
+}
+
+.page-outil--tableau-suivi .tab-suivi-td--cell:has(.tab-suivi-cell-info--edit-equipe) {
+  min-width: 8.5rem;
+}
+
+.page-outil--tableau-suivi .tab-suivi-col-info-edit-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.page-outil--tableau-suivi .tab-suivi-col-info-edit-check input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.page-outil--tableau-suivi .tab-suivi-th--col.tab-suivi-th--info-eleve .tab-suivi-col-title::after {
+  content: " ℹ";
+  font-size: 0.7em;
+  opacity: 0.65;
+}
+
 .page-outil--tableau-suivi .tab-suivi-th--col.tab-suivi-th--calc .tab-suivi-col-title::after {
   content: " ƒ";
   font-size: 0.7em;
@@ -14130,6 +14422,33 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.page-outil--tableau-suivi .tab-suivi-tr--equipe .tab-suivi-td--nom {
+  box-shadow: inset 4px 0 0 var(--tab-suivi-equipe-couleur, transparent);
+}
+
+.page-outil--tableau-suivi .tab-suivi-equipe-badge {
+  flex-shrink: 0;
+  max-width: 5.5rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-outil--tableau-suivi .tab-suivi-equipe-badge--sans-couleur {
+  background: rgba(13, 148, 136, 0.12);
+  border-color: rgba(13, 148, 136, 0.35);
+  color: var(--accent-deep);
+  text-shadow: none;
 }
 
 .page-outil--tableau-suivi .tab-suivi-row-del {

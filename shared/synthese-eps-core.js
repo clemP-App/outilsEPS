@@ -1444,6 +1444,8 @@
       dateNaissance: eleve.dateNaissance || "",
       commentaire: eleve.commentaire || "",
       niveau: eleve.niveau || "",
+      equipe: eleve.equipe || "",
+      vma: eleve.vma || "",
     };
 
     var appel = agregerAppelEleve(records.tableauxLignes);

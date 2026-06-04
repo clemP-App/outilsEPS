@@ -88,8 +88,34 @@
     if (eleve.sexe) parts.push(eleve.sexe);
     var nv = normaliserNiveauClasse(eleve.niveau);
     if (nv) parts.push("niv. " + nv);
+    if (eleve.equipe) parts.push("Équipe : " + eleve.equipe);
+    if (eleve.vma) parts.push("VMA " + formatVma(eleve.vma));
     if (eleve.commentaire) parts.push(eleve.commentaire);
     return parts;
+  }
+
+  /**
+   * VMA en km/h (nombre positif, virgule ou point).
+   * @returns {string|null} null si valeur non vide mais invalide
+   */
+  function normaliserVma(valeur) {
+    var t = String(valeur === null || valeur === undefined ? "" : valeur)
+      .trim()
+      .replace(/,/g, ".")
+      .replace(/\s*km\s*\/?\s*h\s*/gi, "")
+      .trim();
+    if (!t) return "";
+    var n = parseFloat(t);
+    if (isNaN(n) || n <= 0 || n > 30) return null;
+    var arr = String(n).split(".");
+    if (arr[1]) return n.toFixed(1).replace(/\.0$/, "");
+    return String(n);
+  }
+
+  function formatVma(valeur) {
+    var t = normaliserVma(valeur);
+    if (!t) return "";
+    return t + " km/h";
   }
 
   /**
@@ -149,6 +175,8 @@
     formatEleveListe: formatEleveListe,
     normaliserDateNaissance: normaliserDateNaissance,
     formatDateNaissanceFR: formatDateNaissanceFR,
+    normaliserVma: normaliserVma,
+    formatVma: formatVma,
     metaEleveParts: metaEleveParts,
     parserLigneImportClasse: parserLigneImportClasse,
     estDateNaissance: estDateNaissance,

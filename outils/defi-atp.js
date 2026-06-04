@@ -75,6 +75,25 @@
   var el = {};
   ids.forEach(function (id) { el[id] = document.getElementById(id); });
 
+  var listeSaisieMeta =
+    typeof ListeSaisieUi !== "undefined" && el["defi-players-raw"]
+      ? ListeSaisieUi.bind({
+          metaEl: document.getElementById("defi-players-raw-meta"),
+          textareaEl: el["defi-players-raw"],
+          getSessionCount: function () {
+            return state.players.length;
+          },
+        })
+      : null;
+
+  if (typeof ListeManuellePanel !== "undefined" && el["defi-players-raw"]) {
+    ListeManuellePanel.bind({
+      toggleBtnId: "btn-ajouter-manuel-defi",
+      panelId: "liste-manuelle-panel-defi",
+      textareaEl: el["defi-players-raw"],
+    });
+  }
+
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function id(prefix) { return (DataManager && DataManager.genererId ? DataManager.genererId(prefix) : prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8)); }
   function msg(t, ok) { if (!el["defi-msg"]) return; el["defi-msg"].hidden = !t; el["defi-msg"].textContent = t || ""; el["defi-msg"].classList.toggle("msg-ok", !!ok); el["defi-msg"].classList.toggle("msg-error", !ok); }
@@ -457,21 +476,39 @@
     renderHof();
     renderMatchHistory();
     refreshAddDialog();
+    if (listeSaisieMeta) listeSaisieMeta.refresh();
   }
 
   function addPlayers(names) {
     var added = 0;
+    var ignores = 0;
     names.forEach(function (n) {
       var name = (n || "").trim().replace(/\s+/g, " ");
       if (!name) return;
-      var exists = state.players.some(function (p) { return p.name.toLowerCase() === name.toLowerCase(); });
-      if (exists) return;
-      var p = { id: id("player"), name: name, points: Number(state.settings.initialPoints || 0), wins: 0, losses: 0, matches: 0, refereed: 0, currentStreak: 0, bestStreak: 0, badges: {} };
+      var exists = state.players.some(function (p) {
+        return p.name.toLowerCase() === name.toLowerCase();
+      });
+      if (exists) {
+        ignores++;
+        return;
+      }
+      var p = {
+        id: id("player"),
+        name: name,
+        points: Number(state.settings.initialPoints || 0),
+        wins: 0,
+        losses: 0,
+        matches: 0,
+        refereed: 0,
+        currentStreak: 0,
+        bestStreak: 0,
+        badges: {},
+      };
       state.players.push(p);
       state.ladder.push(p.id);
       added++;
     });
-    return added;
+    return { added: added, ignores: ignores };
   }
 
   function moveWinnerLoser(winnerId, loserId, formula) {
@@ -883,24 +920,56 @@
   function bind() {
     document.getElementById("defi-add-players").addEventListener("click", function () {
       var raw = (el["defi-players-raw"].value || "").split(/\r?\n/);
-      var n = addPlayers(raw);
+      var stats = addPlayers(raw);
       el["defi-players-raw"].value = "";
       renderAll();
       save();
-      msg(n + " joueur(s) ajouté(s).", true);
+      msg(
+        typeof ImportElevePresence !== "undefined"
+          ? ImportElevePresence.messageImportEleves({
+              ajoutes: stats.added,
+              ignores: stats.ignores,
+            })
+          : stats.added + " joueur(s) ajouté(s).",
+        stats.added > 0
+      );
     });
     document.getElementById("defi-import-classe").addEventListener("click", function () {
       if (typeof ClassImport === "undefined") return;
       ClassImport.open({
         title: "Importer des élèves",
-        hint: "Cochez les élèves à ajouter au Défi ATP.",
-        onConfirm: function (eleves, classe) {
-          var n = addPlayers(eleves.map(function (e) {
-            return (EleveDisplay && EleveDisplay.formatEleveListe ? EleveDisplay.formatEleveListe(e, "") : [e.nom, e.prenom].filter(Boolean).join(" ")).trim();
-          }));
+        hint: "Les joueurs déjà dans le défi sont grisés. Cochez les nouveaux élèves à ajouter.",
+        dejaPresent: function (e) {
+          return (
+            typeof ImportElevePresence !== "undefined" &&
+            ImportElevePresence.eleveEstDansListe(state.players, e)
+          );
+        },
+        defaultChecked: true,
+        onConfirm: function (eleves, classe, metaImport) {
+          var stats = addPlayers(
+            eleves.map(function (e) {
+              return typeof ImportElevePresence !== "undefined"
+                ? ImportElevePresence.labelEleveImport(e)
+                : (EleveDisplay && EleveDisplay.formatEleveListe
+                    ? EleveDisplay.formatEleveListe(e, "")
+                    : [e.nom, e.prenom].filter(Boolean).join(" ")
+                  ).trim();
+            })
+          );
+          var ignores = metaImport && metaImport.ignores ? metaImport.ignores : 0;
           renderAll();
           save();
-          msg(n + " joueur(s) importé(s) depuis « " + classe.nom + " ».", true);
+          msg(
+            typeof ImportElevePresence !== "undefined"
+              ? ImportElevePresence.messageImportEleves({
+                  ajoutes: stats.added,
+                  ignores: ignores,
+                  contexte: "« " + classe.nom + " »",
+                })
+              : stats.added + " joueur(s) importé(s) depuis « " + classe.nom + " ».",
+            stats.added > 0
+          );
         },
       });
     });

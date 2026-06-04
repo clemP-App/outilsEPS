@@ -36,8 +36,7 @@
         </summary>
         <div class="card--accordion__panel">
           <p class="hint">
-            Saisissez un nom par ligne. Le tableau s’adapte automatiquement : 1/8, 1/4, demi-finale, finale, avec
-            des exempts si besoin.
+            Le tableau s’adapte automatiquement : 1/8, 1/4, demi-finale, finale, avec des exempts si besoin.
           </p>
           <fieldset class="tournoi-format-field debrief-portee">
             <legend class="field-label">Format du tournoi</legend>
@@ -57,18 +56,36 @@
               En reclassement, les perdants continuent dans des tableaux de places pour classer tout le monde.
             </p>
           </fieldset>
-          <button type="button" class="btn btn--ghost btn--labeled tournoi-import-classe" id="tournoi-import-classe">
-            <span class="btn__icon" aria-hidden="true">👥</span>
-            <span class="btn__text">Importer une classe</span>
-          </button>
-          <div class="field-group">
-            <label class="field-label" for="tournoi-participants">Liste des joueurs ou équipes</label>
-            <textarea
-              id="tournoi-participants"
-              rows="8"
-              placeholder="Alice&#10;Bilal&#10;Chloé&#10;Dorian"
-              autocomplete="off"
-            ></textarea>
+          <div class="liste-import-toolbar field-row">
+            <button type="button" class="btn btn--ghost btn--labeled tournoi-import-classe" id="tournoi-import-classe">
+              <span class="btn__icon" aria-hidden="true">👥</span>
+              <span class="btn__text">Importer depuis une classe</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-ajouter-manuel-tournoi" aria-expanded="false" aria-controls="liste-manuelle-panel-tournoi">
+              <span class="btn__icon" aria-hidden="true">✎</span>
+              <span class="btn__text">Ajouter manuellement</span>
+            </button>
+          </div>
+          <div id="liste-manuelle-panel-tournoi" class="liste-manuelle-panel" hidden>
+            <p class="hint liste-manuelle-ligne-hint" hidden>1 joueur par ligne.</p>
+            <div class="field-group">
+              <label class="field-label field-label--with-meta" for="tournoi-participants">
+                <span class="field-label__main">Ajouter des joueurs ou équipes</span>
+                <span class="field-label__meta" id="tournoi-participants-meta" aria-live="polite"></span>
+              </label>
+              <textarea
+                id="tournoi-participants"
+                rows="8"
+                placeholder="Alice&#10;Bilal&#10;Chloé&#10;Dorian"
+                autocomplete="off"
+              ></textarea>
+            </div>
+            <div class="field-row tournoi-manuelle-actions">
+              <button type="button" class="btn btn--primary btn--labeled" id="tournoi-valider-liste">
+                <span class="btn__icon" aria-hidden="true">✓</span>
+                <span class="btn__text">Valider la liste</span>
+              </button>
+            </div>
           </div>
           <div class="tournoi-seeding" aria-labelledby="tournoi-seeding-title">
             <h3 id="tournoi-seeding-title">
@@ -76,8 +93,9 @@
               <span class="tournoi-seeding-count" id="tournoi-seeding-count">0 joueur</span>
             </h3>
             <p class="hint">
-              Touchez 1 à 5 pour régler le niveau. Les niveaux les plus élevés sont répartis dans le tableau, et passent
-              en priorité sur les matchs avec un exempt.
+              Touchez 1 à 5 pour régler le niveau. Utilisez <strong>×</strong> pour retirer un participant de la liste.
+              Les niveaux les plus élevés sont répartis dans le tableau, et passent en priorité sur les matchs avec un
+              exempt.
             </p>
             <div class="tournoi-seeding-list" id="tournoi-seeding-list"></div>
           </div>
@@ -133,8 +151,11 @@
     <script src="../data-manager.js"></script>
     <script src="../session-manager.js"></script>
     <script src="../shared/outils-dom.js"></script>
+    <script src="../shared/liste-saisie-ui.js"></script>
+    <script src="../shared/liste-manuelle-panel.js"></script>
     <script src="../shared/eleve-display.js"></script>
     <script src="../class-import.js"></script>
+    <script src="../shared/import-eleve-presence.js"></script>
     <script src="tournoi-elimination.js"></script>
     <script src="../tool-info.js"></script>
     <script>

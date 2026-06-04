@@ -27,6 +27,8 @@
       { id: "dateNaissance", label: "Date de naissance", requis: false },
       { id: "sexe", label: "Sexe (F/M)", requis: false },
       { id: "niveau", label: "Niveau (1–5)", requis: false },
+      { id: "equipe", label: "Équipe", requis: false },
+      { id: "vma", label: "VMA (km/h)", requis: false },
       { id: "commentaire", label: "Commentaire", requis: false },
     ];
 
@@ -39,6 +41,8 @@
       dateNaissance: [/naissance|date.*naiss|ddn|born|birth|date\s*de\s*naissance/i],
       sexe: [/^(sexe|genre|gender|m\/f|civilite|civilit[eé])$/i],
       niveau: [/^(niveau|niv|level|niveau\s*eps)$/i],
+      equipe: [/^(equipe|[eé]quipe|team|groupe|couleur|color)$/i],
+      vma: [/^(vma|vitesse\s*max|vitesse\s*maximale|vmax|v\.?\s*max)/i],
       commentaire: [/comment|remarque|note|observation|info/i],
     };
 
@@ -134,7 +138,7 @@
             if (re.test(n) || re.test(c)) hits++;
           });
         });
-        if (/^(nom|prenom|pr[eé]nom|sexe|niveau|date|naissance|commentaire|eleve|[eé]l[eè]ve)/i.test(n)) {
+        if (/^(nom|prenom|pr[eé]nom|sexe|niveau|equipe|[eé]quipe|date|naissance|commentaire|eleve|[eé]l[eè]ve)/i.test(n)) {
           hits++;
         }
       });
@@ -336,15 +340,35 @@
           return;
         }
 
-        eleves.push({
+        var vmaBrut = lireCellule(row, mapping.vma);
+        var vma = "";
+        if (vmaBrut) {
+          if (EleveDisplay && EleveDisplay.normaliserVma) {
+            vma = EleveDisplay.normaliserVma(vmaBrut);
+            if (vma === null) {
+              invalides++;
+              return;
+            }
+          } else {
+            vma = vmaBrut.replace(/,/g, ".");
+          }
+        }
+
+        var eleve = {
           id: idFn ? idFn("eleve") : "",
           nom: nom,
           prenom: prenom,
           dateNaissance: dateNaissance || "",
           sexe: normaliserSexe(lireCellule(row, mapping.sexe)),
           niveau: niveau || "",
+          equipe: lireCellule(row, mapping.equipe),
+          vma: vma || "",
           commentaire: lireCellule(row, mapping.commentaire),
-        });
+        };
+        if (typeof EquipeCouleur !== "undefined") {
+          EquipeCouleur.syncEleveEquipeCouleur(eleve);
+        }
+        eleves.push(eleve);
       });
 
       return { eleves: eleves, invalides: invalides };

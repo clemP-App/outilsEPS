@@ -19,6 +19,25 @@
 
   var tournoi = { players: [], matches: [] };
 
+  var listeSaisieMeta =
+    typeof ListeSaisieUi !== "undefined" && listeBruteEl
+      ? ListeSaisieUi.bind({
+          metaEl: document.getElementById("pyramide-liste-brute-meta"),
+          textareaEl: listeBruteEl,
+          getSessionCount: function () {
+            return tournoi.players.length;
+          },
+        })
+      : null;
+
+  if (typeof ListeManuellePanel !== "undefined" && listeBruteEl) {
+    ListeManuellePanel.bind({
+      toggleBtnId: "btn-ajouter-manuel-pyramide",
+      panelId: "liste-manuelle-panel-pyramide",
+      textareaEl: listeBruteEl,
+    });
+  }
+
   function fermerAccordeonJoueurs() {
     if (joueursPanelEl) joueursPanelEl.open = false;
   }
@@ -178,13 +197,18 @@
 
   function ajouterNomsJoueurs(noms) {
     var ajouts = 0;
+    var ignores = 0;
     noms.forEach(function (nom) {
       var n = normaliserNom(nom);
-      if (!n || contientJoueur(n)) return;
+      if (!n) return;
+      if (contientJoueur(n)) {
+        ignores++;
+        return;
+      }
       tournoi.players.push(creerJoueur(n));
       ajouts++;
     });
-    return ajouts;
+    return { ajoutes: ajouts, ignores: ignores };
   }
 
   function parserTextarea() {
@@ -300,6 +324,7 @@
 
   function majNbJoueurs() {
     if (nbJoueursEl) nbJoueursEl.textContent = libelleNb(tournoi.players.length);
+    if (listeSaisieMeta) listeSaisieMeta.refresh();
   }
 
   function renderJoueurs() {
@@ -578,14 +603,17 @@
       montrerMsg("Saisissez au moins un nom (un par ligne).");
       return;
     }
-    var ajouts = ajouterNomsJoueurs(lignes);
+    var stats = ajouterNomsJoueurs(lignes);
     if (listeBruteEl) listeBruteEl.value = "";
     synchroniserEtat();
-    if (ajouts) {
-      montrerOk(ajouts + " joueur(s) ajouté(s).");
-    } else {
-      montrerMsg("Aucun nouveau joueur (doublons ignorés).");
-    }
+    var msg =
+      typeof ImportElevePresence !== "undefined"
+        ? ImportElevePresence.messageImportEleves(stats)
+        : stats.ajoutes
+          ? stats.ajoutes + " joueur(s) ajouté(s)."
+          : "Aucun nouveau joueur (doublons ignorés).";
+    if (stats.ajoutes) montrerOk(msg);
+    else montrerMsg(msg);
     sauver().then(render);
   }
 
@@ -666,16 +694,34 @@
     }
     ClassImport.open({
       title: "Importer des élèves",
-      hint: "Cochez les élèves à ajouter à la liste des joueurs.",
-      onConfirm: function (eleves, classe) {
+      hint: "Les joueurs déjà dans la liste sont grisés. Cochez les nouveaux élèves à ajouter.",
+      dejaPresent: function (e) {
+        return (
+          typeof ImportElevePresence !== "undefined" &&
+          ImportElevePresence.eleveEstDansListe(tournoi.players, e)
+        );
+      },
+      defaultChecked: true,
+      onConfirm: function (eleves, classe, metaImport) {
         var noms = eleves.map(eleveVersNom).filter(Boolean);
-        var ajouts = ajouterNomsJoueurs(noms);
+        var stats = ajouterNomsJoueurs(noms);
+        var ignores = metaImport && metaImport.ignores ? metaImport.ignores : 0;
         synchroniserEtat();
-        if (ajouts) {
-          montrerOk(ajouts + " joueur(s) importé(s) depuis « " + classe.nom + " ».");
+        var msg =
+          typeof ImportElevePresence !== "undefined"
+            ? ImportElevePresence.messageImportEleves({
+                ajoutes: stats.ajoutes,
+                ignores: ignores,
+                contexte: "« " + classe.nom + " »",
+              })
+            : stats.ajoutes
+              ? stats.ajoutes + " joueur(s) importé(s) depuis « " + classe.nom + " »."
+              : "Aucun nouveau joueur (doublons ignorés).";
+        if (stats.ajoutes) {
+          montrerOk(msg);
           sauver().then(render);
         } else {
-          montrerMsg("Aucun nouveau joueur (doublons ignorés).");
+          montrerMsg(msg);
           render();
         }
       },

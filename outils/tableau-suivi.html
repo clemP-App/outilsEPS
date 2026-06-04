@@ -61,28 +61,38 @@
           <span class="card--accordion__chev" aria-hidden="true"></span>
         </summary>
         <div class="card--accordion__panel tab-suivi-panel-eleves">
-          <button type="button" class="btn btn--ghost btn--labeled tab-suivi-btn-import" id="btn-import-classe-tab">
-            <span class="btn__icon" aria-hidden="true">👥</span>
-            <span class="btn__text">Importer depuis une classe</span>
-          </button>
-          <p class="hint">
-            Importez toute la classe ou seulement les élèves cochés. Vous pouvez aussi saisir des noms
-            manuellement (un par ligne).
-          </p>
-          <div class="field-group">
-            <label class="field-label" for="liste-brute-tab">Saisie manuelle</label>
-            <textarea
-              id="liste-brute-tab"
-              rows="5"
-              placeholder="Martin&#10;Léa Dupont&#10;Paul&#10;…"
-              spellcheck="false"
-            ></textarea>
+          <div class="liste-import-toolbar field-row">
+            <button type="button" class="btn btn--ghost btn--labeled tab-suivi-btn-import" id="btn-import-classe-tab">
+              <span class="btn__icon" aria-hidden="true">👥</span>
+              <span class="btn__text">Importer depuis une classe</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-ajouter-manuel-tab" aria-expanded="false" aria-controls="liste-manuelle-panel-tab">
+              <span class="btn__icon" aria-hidden="true">✎</span>
+              <span class="btn__text">Ajouter manuellement</span>
+            </button>
+          </div>
+          <div id="liste-manuelle-panel-tab" class="liste-manuelle-panel" hidden>
+            <p class="hint liste-manuelle-ligne-hint" hidden>1 élève par ligne.</p>
+            <div class="field-group">
+              <label class="field-label field-label--with-meta" for="liste-brute-tab">
+                <span class="field-label__main">Ajouter des élèves</span>
+                <span class="field-label__meta" id="liste-brute-tab-meta" aria-live="polite"></span>
+              </label>
+              <textarea
+                id="liste-brute-tab"
+                rows="5"
+                placeholder="Martin&#10;Léa Dupont&#10;Paul&#10;…"
+                spellcheck="false"
+              ></textarea>
+            </div>
+            <div class="field-row tab-suivi-eleves-actions">
+              <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste-tab">
+                <span class="btn__icon" aria-hidden="true">✓</span>
+                <span class="btn__text">Ajouter à la liste</span>
+              </button>
+            </div>
           </div>
           <div class="field-row tab-suivi-eleves-actions">
-            <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste-tab">
-              <span class="btn__icon" aria-hidden="true">✓</span>
-              <span class="btn__text">Ajouter à la liste</span>
-            </button>
             <span id="tab-suivi-nb-eleves" class="tab-suivi-nb" aria-live="polite">0 élève</span>
           </div>
         </div>
@@ -190,6 +200,15 @@
                   <span class="tab-suivi-type-card__hint">Items, niveaux de maîtrise et note calculée</span>
                 </span>
               </button>
+              <button type="button" class="tab-suivi-type-card" data-dlg-col-type="eleveInfo">
+                <span class="tab-suivi-type-card__icon tab-suivi-type-card__icon--info" aria-hidden="true"
+                  >ℹ</span
+                >
+                <span class="tab-suivi-type-card__text">
+                  <span class="tab-suivi-type-card__label">Info élève</span>
+                  <span class="tab-suivi-type-card__hint">Équipe, niveau, sexe, VMA… (fiche classe)</span>
+                </span>
+              </button>
             </div>
           </section>
         </div>
@@ -213,6 +232,7 @@
             <select id="dlg-tri-par">
               <option value="nom">Nom</option>
               <option value="prenom">Prénom</option>
+              <option value="equipe">Équipe</option>
               <option value="colonne">Colonne spécifique</option>
             </select>
           </div>
@@ -238,6 +258,37 @@
         <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
           <button type="button" class="btn btn--ghost" id="btn-tri-annuler">Annuler</button>
           <button type="submit" class="btn btn--primary" id="btn-tri-appliquer">Appliquer le tri</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="dialog-tab-suivi-info-eleve" class="tab-suivi-dialog tab-suivi-dialog--info-eleve">
+      <form id="form-tab-suivi-info-eleve" method="dialog" class="tab-suivi-dialog__form">
+        <header class="tab-suivi-dialog__header tab-suivi-dialog__header--compact">
+          <div class="tab-suivi-dialog__header-text">
+            <h2 class="tab-suivi-dialog__title">Colonne info élève</h2>
+            <p class="tab-suivi-dialog__intro">
+              Affiche une donnée de la fiche élève (Classes). Tri possible via le bouton « Tri ».
+            </p>
+          </div>
+          <button type="button" class="tab-suivi-dialog__close" id="btn-dialog-info-eleve-close" aria-label="Fermer">
+            ×
+          </button>
+        </header>
+        <div class="tab-suivi-dialog__body">
+          <div class="field-group">
+            <label class="field-label" for="dlg-info-eleve-champ">Donnée à afficher</label>
+            <select id="dlg-info-eleve-champ">
+              <option value="equipe">Équipe</option>
+              <option value="niveau">Niveau (1–5)</option>
+              <option value="sexe">Sexe</option>
+              <option value="vma">VMA (km/h)</option>
+            </select>
+          </div>
+        </div>
+        <footer class="tab-suivi-dialog__footer tab-suivi-dialog__footer--split">
+          <button type="button" class="btn btn--ghost" id="btn-info-eleve-annuler">Annuler</button>
+          <button type="submit" class="btn btn--primary">Ajouter la colonne</button>
         </footer>
       </form>
     </dialog>
@@ -558,6 +609,23 @@
               synthèse notes.
             </p>
           </div>
+          <div class="field-group tab-suivi-col-info-opt" id="dlg-col-info-wrap" hidden>
+            <label class="field-label" for="dlg-col-info-champ">Donnée affichée</label>
+            <select id="dlg-col-info-champ">
+              <option value="equipe">Équipe</option>
+              <option value="niveau">Niveau (1–5)</option>
+              <option value="sexe">Sexe</option>
+              <option value="vma">VMA (km/h)</option>
+            </select>
+            <label class="tab-suivi-col-note-check tab-suivi-col-info-edit-check">
+              <input type="checkbox" id="dlg-col-info-editable" />
+              Permettre la modification dans le tableau
+            </label>
+            <p class="hint" id="dlg-col-info-hint">
+              Lecture seule : donnée issue de la fiche élève (Classes). Utilisez « Tri » pour ordonner selon cette
+              colonne.
+            </p>
+          </div>
           <div class="field-group tab-suivi-col-check-opt" id="dlg-col-check-wrap" hidden>
             <label class="tab-suivi-col-note-check">
               <input type="checkbox" id="dlg-col-hors-synthese" />
@@ -623,6 +691,11 @@
     <script src="../shared/supabaseClient.js"></script>
     <script src="../shared/catalog-grid-validation.js"></script>
     <script src="../shared/catalog-grids.js"></script>
+    <script src="../shared/liste-saisie-ui.js"></script>
+    <script src="../shared/liste-manuelle-panel.js"></script>
+    <script src="../shared/eleve-fusion.js"></script>
+    <script src="../shared/import-eleve-presence.js"></script>
+    <script src="../shared/equipe-couleur.js"></script>
     <script src="tableau-suivi.js"></script>
     <script src="../tool-info.js"></script>
     <script>
@@ -638,14 +711,15 @@
           {
             title: "Comment s’en servir",
             list: [
-              "Importez une classe entière, une sélection d’élèves, ou saisissez les noms à la main.",
+              "Importez depuis une classe entière, une sélection d’élèves, ou saisissez les noms à la main.",
               "Icône à gauche du nom : PAI, PAP, alerte ou repère 1 à 5.",
               "Bouton ⚙ à côté de « Élève » : menu déroulant pour modifier un élève ou le retirer.",
               "Bouton 👟 : historique des oublis de tenue et ajout d’un nouvel oubli.",
               "Dans une case nombre, touche Entrée pour passer à l’élève suivant.",
               "Cochez « C’est une note » sur une colonne chiffre (▼) pour le barème /20 et les moyennes ; laissez décoché pour une mesure (VMA, temps…).",
               "Colonne Grille d’évaluation : choisissez un exemple, importez un CSV, testez la grille puis cliquez la note d’un élève pour sélectionner ses niveaux.",
-              "Filtrez l’affichage : Tout, Note, Appel ou Autre (mesures, sommes…).",
+              "Filtrez l’affichage : Tout, Note, Appel ou Autre (mesures, sommes, info élève…).",
+              "Colonne « Info élève » : équipe, niveau, sexe, VMA… Depuis ▼, cochez « Permettre la modification » pour mettre à jour les fiches Classes depuis le tableau.",
               "Le bouton ▼ au-dessus d’une colonne permet de la renommer, la déplacer ou la remplir.",
               "« Nouvelle colonne » ajoute une colonne ; « Tri » réordonne les élèves.",
               "Exportez le tableau en CSV ou PDF pour le conserver ou le partager.",

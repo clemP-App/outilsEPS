@@ -7,6 +7,7 @@
   var BYE = "__BYE__";
   var state = { teams: [], matches: [], source: null };
   var sessionsIndex = { activeId: null, sessions: [] };
+  var standingsRefreshTimer = null;
 
   var addInput = document.getElementById("champ-eleve-team");
   var addBtn = document.getElementById("champ-eleve-add");
@@ -276,6 +277,42 @@
     return isNaN(n) || n < 0 ? null : n;
   }
 
+  function configureScoreInput(inp) {
+    inp.type = "text";
+    inp.inputMode = "numeric";
+    inp.pattern = "[0-9]*";
+    inp.autocomplete = "off";
+    inp.setAttribute("autocorrect", "off");
+    inp.setAttribute("autocapitalize", "off");
+    inp.spellcheck = false;
+    inp.maxLength = 3;
+  }
+
+  function scheduleStandingsRefresh() {
+    if (standingsRefreshTimer) clearTimeout(standingsRefreshTimer);
+    standingsRefreshTimer = setTimeout(function () {
+      standingsRefreshTimer = null;
+      updateMatchesAccordionTitle();
+      renderStandings();
+    }, 200);
+  }
+
+  function updateMatchesAccordionTitle() {
+    if (!accordionEleveMatchsTitleEl) return;
+    var query = normalizeSearchText(matchSearchEl ? matchSearchEl.value : "");
+    var filteredMatches = state.matches.filter(function (m) {
+      if (!query) return true;
+      return (
+        normalizeSearchText(teamName(m.homeId)).indexOf(query) !== -1 ||
+        normalizeSearchText(teamName(m.awayId)).indexOf(query) !== -1
+      );
+    });
+    var remaining = filteredMatches.filter(function (m) {
+      return m.homeScore == null && m.awayScore == null;
+    }).length;
+    accordionEleveMatchsTitleEl.textContent = "Matchs (" + remaining + " restants)";
+  }
+
   function pairScore(homeId, awayId, old) {
     for (var i = 0; i < old.length; i++) {
       var m = old[i];
@@ -395,12 +432,18 @@
       var homeInput = matchesEl.querySelector('input.match-row__score[data-match-id="' + matchId + '"][data-side="home"]');
       if (homeInput) homeInput.value = "";
     }
-    if (m.homeScore != null || m.awayScore != null) {
-      closeGestionAccordionsOnScoreEntry();
-    }
     clearResultShareOutput();
     save();
-    renderStandings();
+    scheduleStandingsRefresh();
+  }
+
+  function maybeCloseGestionAfterScore(matchId) {
+    var m = state.matches.find(function (x) {
+      return x.id === matchId;
+    });
+    if (m && (m.homeScore != null || m.awayScore != null)) {
+      closeGestionAccordionsOnScoreEntry();
+    }
   }
 
   function renderTeams() {
@@ -441,6 +484,7 @@
 
   function renderMatches() {
     OutilsDom.clear(matchesEl);
+    updateMatchesAccordionTitle();
     var query = normalizeSearchText(matchSearchEl ? matchSearchEl.value : "");
     var filteredMatches = state.matches.filter(function (m) {
       if (!query) return true;
@@ -449,12 +493,6 @@
         normalizeSearchText(teamName(m.awayId)).indexOf(query) !== -1
       );
     });
-    var remaining = filteredMatches.filter(function (m) {
-      return m.homeScore == null && m.awayScore == null;
-    }).length;
-    if (accordionEleveMatchsTitleEl) {
-      accordionEleveMatchsTitleEl.textContent = "Matchs (" + remaining + " restants)";
-    }
     if (state.teams.length < 2) {
       var p = document.createElement("p");
       p.className = "hint";
@@ -493,13 +531,15 @@
         home.className = "match-row__name";
         home.textContent = teamName(m.homeId);
         var hs = document.createElement("input");
-        hs.type = "number"; hs.min = "0"; hs.className = "match-row__score";
+        configureScoreInput(hs);
+        hs.className = "match-row__score";
         hs.value = m.homeScore == null ? "" : String(m.homeScore);
         hs.dataset.matchId = m.id; hs.dataset.side = "home";
         var sep = document.createElement("span");
         sep.className = "match-row__sep"; sep.textContent = "—";
         var as = document.createElement("input");
-        as.type = "number"; as.min = "0"; as.className = "match-row__score";
+        configureScoreInput(as);
+        as.className = "match-row__score";
         as.value = m.awayScore == null ? "" : String(m.awayScore);
         as.dataset.matchId = m.id; as.dataset.side = "away";
         var away = document.createElement("span");
@@ -754,6 +794,16 @@
       if (!el.classList || !el.classList.contains("match-row__score")) return;
       setScore(el.dataset.matchId, el.dataset.side, el.value);
     });
+    matchesEl.addEventListener(
+      "blur",
+      function (e) {
+        var el = e.target;
+        if (!el.classList || !el.classList.contains("match-row__score")) return;
+        if (!el.dataset.matchId) return;
+        maybeCloseGestionAfterScore(el.dataset.matchId);
+      },
+      true
+    );
   }
   if (matchSearchEl) {
     matchSearchEl.addEventListener("input", renderMatches);

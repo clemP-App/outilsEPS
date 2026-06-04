@@ -35,34 +35,44 @@
           <span class="card--accordion__chev" aria-hidden="true"></span>
         </summary>
         <div class="card--accordion__panel">
-          <button
-            type="button"
-            class="btn btn--ghost btn--labeled pyramide-import-classe"
-            id="btn-import-classe-pyramide"
-          >
-            <span class="btn__icon" aria-hidden="true">👥</span>
-            <span class="btn__text">Importer une classe</span>
-          </button>
-          <p class="hint">
-            Une ligne = un joueur (prénom, nom ou les deux). <strong>Valider la liste</strong> ajoute les noms aux
-            joueurs déjà présents (le champ est ensuite vidé). Tous commencent au palier de départ : une victoire fait
-            monter, une défaite ne fait pas redescendre. Vous pouvez aussi importer des élèves depuis une classe
-            enregistrée.
-          </p>
-          <div class="field-group">
-            <label class="field-label" for="pyramide-liste-brute">Liste (un joueur par ligne)</label>
-            <textarea
-              id="pyramide-liste-brute"
-              rows="8"
-              placeholder="Martin&#10;Léa Dupont&#10;Paul&#10;…"
-              spellcheck="false"
-            ></textarea>
+          <div class="liste-import-toolbar field-row">
+            <button
+              type="button"
+              class="btn btn--ghost btn--labeled pyramide-import-classe"
+              id="btn-import-classe-pyramide"
+            >
+              <span class="btn__icon" aria-hidden="true">👥</span>
+              <span class="btn__text">Importer depuis une classe</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-ajouter-manuel-pyramide" aria-expanded="false" aria-controls="liste-manuelle-panel-pyramide">
+              <span class="btn__icon" aria-hidden="true">✎</span>
+              <span class="btn__text">Ajouter manuellement</span>
+            </button>
+          </div>
+          <div id="liste-manuelle-panel-pyramide" class="liste-manuelle-panel" hidden>
+            <p class="hint liste-manuelle-ligne-hint" hidden>
+              1 joueur par ligne. <strong>Valider la liste</strong> ajoute aux joueurs déjà présents.
+            </p>
+            <div class="field-group">
+              <label class="field-label field-label--with-meta" for="pyramide-liste-brute">
+                <span class="field-label__main">Ajouter des joueurs ou équipes</span>
+                <span class="field-label__meta" id="pyramide-liste-brute-meta" aria-live="polite"></span>
+              </label>
+              <textarea
+                id="pyramide-liste-brute"
+                rows="8"
+                placeholder="Martin&#10;Léa Dupont&#10;Paul&#10;…"
+                spellcheck="false"
+              ></textarea>
+            </div>
+            <div class="field-row pyramide-actions-row">
+              <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste-pyramide">
+                <span class="btn__icon" aria-hidden="true">✓</span>
+                <span class="btn__text">Valider la liste</span>
+              </button>
+            </div>
           </div>
           <div class="field-row pyramide-actions-row">
-            <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste-pyramide">
-              <span class="btn__icon" aria-hidden="true">✓</span>
-              <span class="btn__text">Valider la liste</span>
-            </button>
             <button type="button" class="btn btn--danger btn--labeled" id="btn-vider-joueurs-pyramide">
               <span class="btn__icon" aria-hidden="true">🗑️</span>
               <span class="btn__text">Vider la liste des joueurs</span>
@@ -125,8 +135,11 @@
     <script src="../data-manager.js"></script>
     <script src="../session-manager.js"></script>
     <script src="../shared/outils-dom.js"></script>
+    <script src="../shared/liste-saisie-ui.js"></script>
+    <script src="../shared/liste-manuelle-panel.js"></script>
     <script src="../shared/eleve-display.js"></script>
     <script src="../class-import.js"></script>
+    <script src="../shared/import-eleve-presence.js"></script>
     <script src="pyramide-victoires.js"></script>
     <script src="../tool-info.js"></script>
     <script>
@@ -142,7 +155,7 @@
           {
             title: "Utilisation",
             list: [
-              "Ajoutez les joueurs (liste ou import de classe).",
+              "Ajoutez les joueurs (liste ou import depuis une classe).",
               "Enregistrez chaque résultat : gagnant puis perdant.",
               "Consultez le classement et supprimez un match si besoin (retour au palier d’avant).",
             ],

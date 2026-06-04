@@ -35,32 +35,41 @@
           <span class="card--accordion__chev" aria-hidden="true"></span>
         </summary>
         <div class="card--accordion__panel">
-          <button type="button" class="btn btn--ghost btn--labeled compo-import-classe" id="btn-import-classe-compo">
-            <span class="btn__icon" aria-hidden="true">👥</span>
-            <span class="btn__text">Importer une classe</span>
-          </button>
-          <p class="hint">
-            Une ligne = un joueur. Vous pouvez écrire <strong>prénom ou nom</strong> seul, ou
-            <strong>prénom ou nom;niveau</strong> (niveau 1 à 5). Sans niveau après le point-virgule, le niveau
-            <strong>3</strong> est utilisé. <strong>Valider la liste</strong> ajoute les lignes aux joueurs déjà
-            présents (le champ est ensuite vidé). Si des équipes existaient, elles sont effacées pour que vous puissiez
-            recomposer. Pour tout retirer, utilisez <strong>Vider la liste des joueurs</strong>. Cliquez sur
-            <strong>1 à 5</strong> pour ajuster le niveau.
-          </p>
-          <div class="field-group">
-            <label class="field-label" for="liste-brute">Liste (un joueur par ligne)</label>
-            <textarea
-              id="liste-brute"
-              rows="8"
-              placeholder="Martin;4&#10;Léa&#10;Paul;2&#10;…"
-              spellcheck="false"
-            ></textarea>
+          <div class="liste-import-toolbar field-row">
+            <button type="button" class="btn btn--ghost btn--labeled compo-import-classe" id="btn-import-classe-compo">
+              <span class="btn__icon" aria-hidden="true">👥</span>
+              <span class="btn__text">Importer depuis une classe</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="btn-ajouter-manuel-compo" aria-expanded="false" aria-controls="liste-manuelle-panel-compo">
+              <span class="btn__icon" aria-hidden="true">✎</span>
+              <span class="btn__text">Ajouter manuellement</span>
+            </button>
+          </div>
+          <div id="liste-manuelle-panel-compo" class="liste-manuelle-panel" hidden>
+            <p class="hint liste-manuelle-ligne-hint" hidden>
+              1 joueur par ligne (option <strong>nom;niveau</strong> de 1 à 5, sinon niveau 3).
+              <strong>Valider la liste</strong> ajoute les lignes puis vide le champ.
+            </p>
+            <div class="field-group">
+              <label class="field-label field-label--with-meta" for="liste-brute">
+                <span class="field-label__main">Ajouter des joueurs ou équipes</span>
+                <span class="field-label__meta" id="liste-brute-meta" aria-live="polite"></span>
+              </label>
+              <textarea
+                id="liste-brute"
+                rows="8"
+                placeholder="Martin;4&#10;Léa&#10;Paul;2&#10;…"
+                spellcheck="false"
+              ></textarea>
+            </div>
+            <div class="field-row compo-actions-row">
+              <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste">
+                <span class="btn__icon" aria-hidden="true">✓</span>
+                <span class="btn__text">Valider la liste</span>
+              </button>
+            </div>
           </div>
           <div class="field-row compo-actions-row">
-            <button type="button" class="btn btn--primary btn--labeled" id="btn-valider-liste">
-              <span class="btn__icon" aria-hidden="true">✓</span>
-              <span class="btn__text">Valider la liste</span>
-            </button>
             <button type="button" class="btn btn--danger btn--labeled" id="btn-vider-joueurs">
               <span class="btn__icon" aria-hidden="true">🗑️</span>
               <span class="btn__text">Vider la liste des joueurs</span>
@@ -93,6 +102,16 @@
 
       <section class="card" id="section-equipes" aria-labelledby="lbl-equipes" hidden>
         <h2 id="lbl-equipes">Équipes</h2>
+        <p class="hint">
+          Renommez chaque équipe (ex. couleurs). Puis utilisez le bouton ci-dessous pour enregistrer l’équipe sur la
+          fiche de chaque élève importé depuis une classe — utile pour trier par équipe dans Appel et notes.
+        </p>
+        <div class="field-row compo-report-row">
+          <button type="button" class="btn btn--primary btn--labeled" id="btn-reporter-equipes-fiches">
+            <span class="btn__icon" aria-hidden="true">📋</span>
+            <span class="btn__text">Enregistrer l’équipe sur chaque élève</span>
+          </button>
+        </div>
         <div class="field-row compo-export-row">
           <button type="button" class="btn btn--ghost btn--labeled" id="btn-export-csv-compo">
             <span class="btn__icon" aria-hidden="true">📤</span>
@@ -114,6 +133,10 @@
     </div>
 
     <script src="../shared/outils-dom.js"></script>
+    <script src="../shared/liste-saisie-ui.js"></script>
+    <script src="../shared/liste-manuelle-panel.js"></script>
+    <script src="../shared/eleve-fusion.js"></script>
+    <script src="../shared/import-eleve-presence.js"></script>
     <script src="../dom-utils.js"></script>
     <script src="../shared/sessions-core.js"></script>
     <script src="../data-manager.js"></script>
@@ -135,7 +158,7 @@
           {
             title: "Comment s’en servir",
             list: [
-              "Saisissez la liste des élèves (un par ligne) ou importez une classe.",
+              "Saisissez la liste des élèves (un par ligne) ou importez depuis une classe.",
               "Donnez un niveau à chaque élève : 1 = débutant, 5 = très à l’aise.",
               "Choisissez le nombre d’équipes, puis « Composer » ou « Tirage » pour mélanger.",
               "Vous pouvez déplacer un élève d’une équipe à l’autre à la main si besoin.",
