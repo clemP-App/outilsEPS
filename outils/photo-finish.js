@@ -120,6 +120,7 @@
     lastFrameNow: 0,
     lastStopTap: 0,
     zoom: 1,
+    displayScaleX: 1,
     activeImageDataUrl: "",
     currentSessionId: "",
     currentResultDraft: null,
@@ -148,7 +149,7 @@
       highContrast: false,
       captureHeight: "full",
       renderHeight: "sprint",
-      qualityPatchVersion: 2,
+      qualityPatchVersion: 3,
     };
   }
 
@@ -186,6 +187,8 @@
       renderHeight: 0,
       qualityMode: "balancedEPS",
       pixelsPerSecond: 0,
+      visualPixelsPerSecond: 0,
+      displayScaleX: 1,
       densityLabel: "",
     };
   }
@@ -277,7 +280,7 @@
       highContrast: inputs.highContrast.checked,
       captureHeight: inputs.captureHeight.value,
       renderHeight: inputs.renderHeight.value,
-      qualityPatchVersion: 2,
+      qualityPatchVersion: 3,
     };
     state.sessionInfo = {
       name: inputs.sessionName.value.trim() || defaultSessionInfo().name,
@@ -347,7 +350,7 @@
       if (!raw) return;
       var data = JSON.parse(raw);
       state.settings = Object.assign(defaultSettings(), data.settings || {});
-      if (!data.settings || data.settings.qualityPatchVersion !== 2) {
+      if (!data.settings || data.settings.qualityPatchVersion !== 3) {
         state.settings.stripWidth = 4;
         state.settings.qualityMode = "balancedEPS";
         state.settings.startTriggerMode = "release";
@@ -355,7 +358,7 @@
         state.settings.renderHeight = "sprint";
         state.settings.debugEnabled = true;
         state.settings.direction = normalizeDirection(state.settings.direction);
-        state.settings.qualityPatchVersion = 2;
+        state.settings.qualityPatchVersion = 3;
       }
       state.sessionInfo = Object.assign(defaultSessionInfo(), data.sessionInfo || {});
       state.runners = Array.isArray(data.runners) ? data.runners : [];
@@ -515,6 +518,21 @@
     }
   }
 
+  function currentCameraDebugStats() {
+    var track = state.stream && state.stream.getVideoTracks ? state.stream.getVideoTracks()[0] : null;
+    var settings = track && track.getSettings ? track.getSettings() : {};
+    var profile = state.stream && state.stream._photoFinishProfile;
+    return {
+      cameraWidth: settings.width || els.video.videoWidth || state.debugStats.cameraWidth || 0,
+      cameraHeight: settings.height || els.video.videoHeight || state.debugStats.cameraHeight || 0,
+      cameraFrameRate: settings.frameRate || state.debugStats.cameraFrameRate || 0,
+      requestedFrameRate: profile ? profile.requestedFrameRate : state.debugStats.requestedFrameRate || 0,
+      cameraFacingMode: settings.facingMode || state.settings.preferredCamera || state.debugStats.cameraFacingMode || "",
+      cameraDeviceId: settings.deviceId || state.debugStats.cameraDeviceId || "",
+      cameraLabel: track && track.label ? track.label : state.debugStats.cameraLabel || (profile && profile.label) || "",
+    };
+  }
+
   function updateFinishGuide() {
     var pct = Number(inputs.finishRatio.value || 50);
     if (inputs.finishRatioVal) inputs.finishRatioVal.textContent = String(Math.round(pct));
@@ -620,11 +638,13 @@
   }
 
   function initComposite() {
+    var cameraStats = currentCameraDebugStats();
     state.currentSessionId = uid("session");
     state.strips = [];
-    state.debugStats = defaultDebugStats();
+    state.debugStats = Object.assign(defaultDebugStats(), cameraStats);
     state.activeImageDataUrl = "";
     state.zoom = 1;
+    state.displayScaleX = 1;
     compositeCanvas.width = 1;
     compositeCanvas.height = 1;
     compositeCtx.fillStyle = "#111";
@@ -777,6 +797,8 @@
     state.debugStats.stripWidth = state.settings.stripWidth;
     state.debugStats.sourceStripHeight = last && last.sourceHeight ? last.sourceHeight : 0;
     state.debugStats.renderHeight = last ? last.height : 0;
+    state.debugStats.displayScaleX = state.displayScaleX || 1;
+    state.debugStats.visualPixelsPerSecond = state.debugStats.pixelsPerSecond * state.debugStats.displayScaleX;
     state.debugStats.qualityMode = state.settings.qualityMode;
   }
 
@@ -785,6 +807,12 @@
     if (pixelsPerSecond < 160) return "faible";
     if (pixelsPerSecond <= 320) return "correcte";
     return "excessive";
+  }
+
+  function computeDisplayScaleX() {
+    var pps = state.debugStats.pixelsPerSecond || 0;
+    if (!pps) return 1;
+    return Math.max(1, Math.min(3, 240 / pps));
   }
 
   function qualityWarnings() {
@@ -812,11 +840,14 @@
       "Delta min/max": stats.minFrameDeltaMs.toFixed(1) + " / " + stats.maxFrameDeltaMs.toFixed(1) + " ms",
       "Largeur strip": stats.stripWidth + " px natifs",
       "Pixels par seconde": stats.pixelsPerSecond.toFixed(1),
+      "Pixels/s visuels": stats.visualPixelsPerSecond.toFixed(1),
+      "Scale visuel X": stats.displayScaleX.toFixed(2),
       "Densite temporelle": stats.densityLabel,
       "Resolution video": stats.cameraWidth + " x " + stats.cameraHeight,
       "Hauteur source strip": stats.sourceStripHeight + " px natifs",
       "Hauteur rendu": stats.renderHeight + " px",
       "Image finale": stats.imageWidth + " x " + stats.imageHeight,
+      "Image affichee": Math.round(stats.imageWidth * stats.displayScaleX) + " x " + stats.imageHeight,
       "Mode qualite": stats.qualityMode,
     };
     els.diagnosticList.innerHTML = Object.keys(rows).map(function (key) {
@@ -832,8 +863,9 @@
   function copyResultToQualityPreview() {
     if (!els.qualityResult || !els.resultCanvas.width) return;
     var maxWidth = 900;
-    var scale = Math.min(1, maxWidth / Math.max(1, els.resultCanvas.width));
-    els.qualityResult.width = Math.max(1, Math.round(els.resultCanvas.width * scale));
+    var visualWidth = els.resultCanvas.width * state.displayScaleX;
+    var scale = Math.min(1, maxWidth / Math.max(1, visualWidth));
+    els.qualityResult.width = Math.max(1, Math.round(visualWidth * scale));
     els.qualityResult.height = Math.max(1, Math.round(els.resultCanvas.height * scale));
     var ctx = els.qualityResult.getContext("2d", { alpha: false });
     ctx.imageSmoothingEnabled = scale < 1;
@@ -891,6 +923,10 @@
     resultCtx.drawImage(compositeCanvas, 0, 0, width, height, 0, 0, width, height);
     state.activeImageDataUrl = els.resultCanvas.toDataURL("image/png");
     state.zoom = 1;
+    state.displayScaleX = computeDisplayScaleX();
+    state.debugStats.displayScaleX = state.displayScaleX;
+    state.debugStats.visualPixelsPerSecond =
+      state.debugStats.pixelsPerSecond * state.displayScaleX;
     applyZoom();
     updateViewerPadding();
     els.scroll.scrollLeft = 0;
@@ -938,7 +974,7 @@
     // The scroll area has half-viewport padding before and after the image.
     // Therefore scrollLeft 0 puts imageX 0 exactly below the fixed central cursor.
     if (!els.scroll || !state.strips.length) return 0;
-    var raw = els.scroll.scrollLeft / Math.max(0.1, state.zoom);
+    var raw = els.scroll.scrollLeft / Math.max(0.1, state.zoom * state.displayScaleX);
     var max = state.strips[state.strips.length - 1].imageXEnd;
     return Math.max(0, Math.min(max, raw));
   }
@@ -956,7 +992,7 @@
 
   function applyZoom() {
     if (!els.resultCanvas) return;
-    var width = els.resultCanvas.width * state.zoom;
+    var width = els.resultCanvas.width * state.zoom * state.displayScaleX;
     els.resultCanvas.style.width = width + "px";
     els.resultCanvas.style.height = "auto";
     renderMarkers();
@@ -980,7 +1016,7 @@
 
   function scrollToImageX(imageX) {
     if (!els.scroll) return;
-    els.scroll.scrollLeft = Math.max(0, imageX * state.zoom);
+    els.scroll.scrollLeft = Math.max(0, imageX * state.zoom * state.displayScaleX);
     updateCursorReadout();
   }
 
@@ -1000,7 +1036,7 @@
         var marker = document.createElement("button");
         marker.type = "button";
         marker.className = "photo-finish-marker";
-        marker.style.left = timeToImageX(r.timeMs) * state.zoom + "px";
+        marker.style.left = timeToImageX(r.timeMs) * state.zoom * state.displayScaleX + "px";
         marker.innerHTML =
           "<span>" + escapeHtml(r.runnerName || "Non attribue") + "</span><strong>" + escapeHtml(r.formattedTime) + "</strong>";
         marker.addEventListener("click", function () {
@@ -1280,8 +1316,18 @@
       showMsg("Aucune image a exporter.");
       return;
     }
+    var exportCanvas = els.resultCanvas;
+    if (state.displayScaleX > 1.01) {
+      exportCanvas = document.createElement("canvas");
+      exportCanvas.width = Math.round(els.resultCanvas.width * state.displayScaleX);
+      exportCanvas.height = els.resultCanvas.height;
+      var exportCtx = exportCanvas.getContext("2d", { alpha: false });
+      exportCtx.imageSmoothingEnabled = true;
+      exportCtx.imageSmoothingQuality = "high";
+      exportCtx.drawImage(els.resultCanvas, 0, 0, exportCanvas.width, exportCanvas.height);
+    }
     var a = document.createElement("a");
-    a.href = els.resultCanvas.toDataURL("image/png");
+    a.href = exportCanvas.toDataURL("image/png");
     a.download = "photo-finish-" + new Date().toISOString().slice(0, 10) + ".png";
     a.click();
   }
@@ -1305,6 +1351,8 @@
       "Hauteur source": stats.sourceStripHeight || "-",
       "Hauteur rendu": stats.renderHeight || "-",
       "Pixels par seconde": stats.pixelsPerSecond.toFixed(1),
+      "Pixels/s visuels": stats.visualPixelsPerSecond.toFixed(1),
+      "Scale visuel X": stats.displayScaleX.toFixed(2),
       "Densite": stats.densityLabel,
       "Qualite": stats.qualityMode,
       "Demarrage": state.settings.startTriggerMode === "press" ? "appui" : "relachement",
