@@ -28,9 +28,8 @@
       <p id="pf-msg" class="msg-error photo-finish-msg" role="alert" hidden></p>
 
       <nav class="photo-finish-tabs" aria-label="Ecrans Photo Finish">
-        <button type="button" class="photo-finish-tab is-active" data-screen="home">Accueil</button>
+        <button type="button" class="photo-finish-tab is-active" data-screen="home">Seance</button>
         <button type="button" class="photo-finish-tab" data-screen="settings">Reglages</button>
-        <button type="button" class="photo-finish-tab" data-screen="quality">Test qualite</button>
         <button type="button" class="photo-finish-tab" data-screen="capture">Capture</button>
         <button type="button" class="photo-finish-tab" data-screen="analysis">Analyse</button>
         <button type="button" class="photo-finish-tab" data-screen="results">Resultats</button>
@@ -39,16 +38,36 @@
 
       <main class="photo-finish-shell">
         <section class="photo-finish-screen is-active" id="pf-screen-home" aria-labelledby="pf-home-title">
-          <div class="photo-finish-home">
-            <div>
-              <h2 id="pf-home-title">Chronometrer une arrivee avec une vraie image recomposée</h2>
-              <p class="hint">
-                L'appareil filme uniquement la ligne d'arrivee, extrait des bandeaux verticaux et les assemble
-                horizontalement. Le temps lu sous le curseur vient des timestamps reels de chaque bandeau.
-              </p>
+          <section class="card photo-finish-home-card">
+            <h2 id="pf-home-title">Seance</h2>
+            <div class="photo-finish-grid">
+              <div class="field-group">
+                <label class="field-label" for="pf-home-session-name">Nom de la seance</label>
+                <input type="text" id="pf-home-session-name" autocomplete="off" />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="pf-home-class-select">Classe</label>
+                <select id="pf-home-class-select">
+                  <option value="">Sans classe</option>
+                </select>
+              </div>
             </div>
+            <div class="photo-finish-inline-actions">
+              <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-home-import">
+                <span class="btn__icon" aria-hidden="true">&#9679;</span>
+                <span class="btn__text">Importer une classe</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" data-go="runners">
+                <span class="btn__icon" aria-hidden="true">+</span>
+                <span class="btn__text">Ajouter des coureurs</span>
+              </button>
+            </div>
+            <div class="photo-finish-home-runners" id="pf-home-runners"></div>
+            <p class="hint">
+              La classe et les eleves sont optionnels. Au moment d'ajouter une performance, vous aurez juste a choisir le coureur.
+            </p>
             <div class="photo-finish-home-actions">
-              <button type="button" class="btn btn--primary btn--labeled" data-go="settings">
+              <button type="button" class="btn btn--primary btn--labeled" data-go="capture">
                 <span class="btn__icon" aria-hidden="true">+</span>
                 <span class="btn__text">Nouvelle photo finish</span>
               </button>
@@ -56,47 +75,17 @@
                 <span class="btn__icon" aria-hidden="true">&#9776;</span>
                 <span class="btn__text">Resultats</span>
               </button>
-              <button type="button" class="btn btn--ghost btn--labeled" data-go="runners">
-                <span class="btn__icon" aria-hidden="true">&#9679;</span>
-                <span class="btn__text">Classes / coureurs</span>
-              </button>
               <button type="button" class="btn btn--ghost btn--labeled" data-go="settings">
                 <span class="btn__icon" aria-hidden="true">&#9881;</span>
-                <span class="btn__text">Parametres</span>
+                <span class="btn__text">Reglages</span>
               </button>
             </div>
-          </div>
+          </section>
         </section>
 
         <section class="photo-finish-screen" id="pf-screen-settings" aria-labelledby="pf-settings-title">
           <section class="card">
-            <h2 id="pf-settings-title">Session</h2>
-            <div class="photo-finish-grid">
-              <div class="field-group">
-                <label class="field-label" for="pf-session-name">Nom de la session</label>
-                <input type="text" id="pf-session-name" autocomplete="off" />
-              </div>
-              <div class="field-group">
-                <label class="field-label" for="pf-session-class">Classe / groupe</label>
-                <input type="text" id="pf-session-class" autocomplete="off" placeholder="ex. 5e A" />
-              </div>
-              <div class="field-group">
-                <label class="field-label" for="pf-event-type">Epreuve</label>
-                <input type="text" id="pf-event-type" autocomplete="off" placeholder="Sprint, relais..." />
-              </div>
-              <div class="field-group">
-                <label class="field-label" for="pf-distance">Distance</label>
-                <input type="text" id="pf-distance" autocomplete="off" placeholder="ex. 50 m" />
-              </div>
-            </div>
-            <div class="field-group">
-              <label class="field-label" for="pf-comment">Commentaire</label>
-              <textarea id="pf-comment" rows="2"></textarea>
-            </div>
-          </section>
-
-          <section class="card">
-            <h2>Chronometrage</h2>
+            <h2 id="pf-settings-title">Chronometrage</h2>
             <div class="photo-finish-grid">
               <div class="field-group">
                 <label class="field-label" for="pf-start-mode">Demarrage du chrono</label>
@@ -128,12 +117,31 @@
                 <label class="field-label" for="pf-auto-stop">Duree max (s)</label>
                 <input type="number" id="pf-auto-stop" min="1" step="1" inputmode="numeric" />
               </div>
+              <div class="field-group">
+                <label class="field-label" for="pf-direction">Sens du coureur</label>
+                <select id="pf-direction">
+                  <option value="leftToRight">Il arrive de la gauche</option>
+                  <option value="rightToLeft">Il arrive de la droite</option>
+                </select>
+              </div>
             </div>
           </section>
 
-          <section class="card">
-            <h2>Camera et photo finish</h2>
+          <details class="card photo-finish-advanced">
+            <summary>Reglages avances</summary>
+            <p class="hint">Ces reglages sont deja ajustes pour un usage normal. Modifiez-les seulement si besoin.</p>
             <div class="photo-finish-grid">
+              <input type="text" id="pf-session-name" autocomplete="off" hidden />
+              <input type="text" id="pf-session-class" autocomplete="off" hidden />
+              <textarea id="pf-comment" rows="2" hidden></textarea>
+              <div class="field-group">
+                <label class="field-label" for="pf-event-type">Epreuve</label>
+                <input type="text" id="pf-event-type" autocomplete="off" placeholder="Sprint, relais..." />
+              </div>
+              <div class="field-group">
+                <label class="field-label" for="pf-distance">Distance</label>
+                <input type="text" id="pf-distance" autocomplete="off" placeholder="ex. 50 m" />
+              </div>
               <div class="field-group">
                 <label class="field-label" for="pf-camera-facing">Camera</label>
                 <select id="pf-camera-facing">
@@ -153,9 +161,9 @@
               <div class="field-group">
                 <label class="field-label" for="pf-strip-width">Largeur du bandeau (px)</label>
                 <input type="number" id="pf-strip-width" min="1" max="8" step="1" inputmode="numeric" />
-                <div class="photo-finish-presets" aria-label="Préréglages de largeur">
-                  <button type="button" class="btn btn--ghost" data-strip-preset="2">Plus précis</button>
-                  <button type="button" class="btn btn--ghost" data-strip-preset="4">Équilibré</button>
+                <div class="photo-finish-presets" aria-label="Prereglages de largeur">
+                  <button type="button" class="btn btn--ghost" data-strip-preset="2">Plus precis</button>
+                  <button type="button" class="btn btn--ghost" data-strip-preset="4">Equilibre</button>
                   <button type="button" class="btn btn--ghost" data-strip-preset="6">Plus lisible</button>
                 </div>
               </div>
@@ -182,45 +190,6 @@
                   <option value="native">Hauteur native</option>
                 </select>
               </div>
-              <div class="field-group">
-                <label class="field-label" for="pf-direction">Sens d'arrivee</label>
-                <select id="pf-direction">
-                  <option value="leftToRight">Coureurs venant de gauche</option>
-                  <option value="rightToLeft">Coureurs venant de droite</option>
-                </select>
-              </div>
-            </div>
-            <div class="photo-finish-inline-actions">
-              <button type="button" class="btn btn--primary btn--labeled" id="pf-btn-camera">
-                <span class="btn__icon" aria-hidden="true">&#128247;</span>
-                <span class="btn__text">Activer la camera</span>
-              </button>
-              <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-quality-test">
-                <span class="btn__icon" aria-hidden="true">&#9673;</span>
-                <span class="btn__text">Test qualite 3 s</span>
-              </button>
-              <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-flip">
-                <span class="btn__icon" aria-hidden="true">&#8646;</span>
-                <span class="btn__text">Changer de camera</span>
-              </button>
-            </div>
-            <p class="photo-finish-camera-meta" id="pf-camera-meta">Camera inactive.</p>
-          </section>
-
-          <section class="card photo-finish-terrain">
-            <h2>Conseils terrain</h2>
-            <ul>
-              <li>Téléphone en paysage, caméra arrière, posé immobile sur support.</li>
-              <li>Caméra de profil, ligne rouge alignée avec la ligne d'arrivée.</li>
-              <li>Ne suivez pas les coureurs : ils doivent traverser la ligne fixe.</li>
-              <li>Évitez le contre-jour et choisissez un fond contrasté.</li>
-              <li>Placez-vous à au moins 3 m, idéalement 4 à 8 m selon les couloirs.</li>
-            </ul>
-          </section>
-
-          <section class="card">
-            <h2>Affichage</h2>
-            <div class="photo-finish-grid">
               <label class="photo-finish-toggle">
                 <input type="checkbox" id="pf-high-contrast" />
                 <span>Contraste eleve</span>
@@ -235,35 +204,42 @@
               </button>
             </div>
             <div class="photo-finish-inline-actions">
-              <button type="button" class="btn btn--primary btn--labeled" data-go="capture">
-                <span class="btn__icon" aria-hidden="true">&#9654;</span>
-                <span class="btn__text">Aller a la capture</span>
+              <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-reset-advanced">
+                <span class="btn__icon" aria-hidden="true">&#8634;</span>
+                <span class="btn__text">Reinitialiser par defaut</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-flip">
+                <span class="btn__icon" aria-hidden="true">&#8646;</span>
+                <span class="btn__text">Changer de camera</span>
+              </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-quality-test">
+                <span class="btn__icon" aria-hidden="true">&#9673;</span>
+                <span class="btn__text">Test qualite 3 s</span>
               </button>
             </div>
-          </section>
+            <button type="button" id="pf-btn-camera" hidden>Activer la camera</button>
+            <p class="photo-finish-camera-meta" id="pf-camera-meta">Camera inactive.</p>
+          </details>
         </section>
 
         <section class="photo-finish-screen" id="pf-screen-quality" aria-labelledby="pf-quality-title">
           <section class="card">
             <h2 id="pf-quality-title">Test qualite</h2>
-            <p class="hint">
-              Faites passer une personne devant la ligne rouge. Le test dure 3 secondes et produit un mini
-              diagnostic pour régler la largeur des bandeaux.
-            </p>
+            <p class="hint">Faites passer une personne devant la ligne rouge. Le test dure 3 secondes.</p>
             <div class="photo-finish-inline-actions">
               <button type="button" class="btn btn--primary btn--labeled" id="pf-btn-run-quality-test">
                 <span class="btn__icon" aria-hidden="true">&#9654;</span>
                 <span class="btn__text">Lancer le test</span>
               </button>
-              <button type="button" class="btn btn--ghost" data-strip-preset="2">Plus précis</button>
-              <button type="button" class="btn btn--ghost" data-strip-preset="4">Équilibré</button>
+              <button type="button" class="btn btn--ghost" data-strip-preset="2">Plus precis</button>
+              <button type="button" class="btn btn--ghost" data-strip-preset="4">Equilibre</button>
               <button type="button" class="btn btn--ghost" data-strip-preset="6">Plus lisible</button>
             </div>
             <div class="photo-finish-quality-preview">
               <canvas id="pf-quality-result"></canvas>
             </div>
             <div class="photo-finish-quality-report" id="pf-quality-report">
-              Activez la caméra, puis lancez un test.
+              Activez la camera, puis lancez un test.
             </div>
           </section>
         </section>
@@ -276,21 +252,18 @@
             </div>
             <div class="photo-finish-capture-hud">
               <p class="photo-finish-chrono-live" id="pf-chrono-live" aria-live="polite">00:00.000</p>
-              <p class="photo-finish-status" id="pf-status">Activez la camera pour commencer.</p>
+              <p class="photo-finish-status" id="pf-status">La camera va s'activer automatiquement.</p>
             </div>
-          </section>
-          <section class="card photo-finish-capture-card">
-            <h2 id="pf-capture-title">Capture</h2>
-            <div class="photo-finish-capture-actions">
-              <button type="button" class="btn btn--primary btn--labeled photo-finish-start" id="pf-btn-start">
+            <div class="photo-finish-capture-actions photo-finish-capture-actions--overlay">
+              <button type="button" class="btn btn--primary btn--labeled photo-finish-main-capture" id="pf-btn-start">
                 <span class="btn__icon" aria-hidden="true">&#9654;</span>
                 <span class="btn__text">Demarrer le chrono</span>
               </button>
-              <button type="button" class="btn btn--ghost btn--labeled photo-finish-stop" id="pf-btn-stop">
-                <span class="btn__icon" aria-hidden="true">&#9632;</span>
-                <span class="btn__text">Stop</span>
-              </button>
             </div>
+            <button type="button" id="pf-btn-stop" hidden>Stop</button>
+          </section>
+          <section class="card photo-finish-capture-card">
+            <h2 id="pf-capture-title">Capture</h2>
             <div class="photo-finish-live-stats">
               <span id="pf-delay-state">Capture : en attente</span>
               <span id="pf-strip-state">0 bandeau</span>
@@ -448,19 +421,16 @@
       <form method="dialog" class="photo-finish-dialog-card">
         <h2>Enregistrer un temps</h2>
         <p class="photo-finish-dialog-time" id="pf-dialog-time">-</p>
-        <div class="field-group">
-          <label class="field-label" for="pf-runner-search">Rechercher / saisir</label>
-          <input type="search" id="pf-runner-search" autocomplete="off" />
-        </div>
+        <input type="search" id="pf-runner-search" autocomplete="off" hidden />
         <div class="field-group">
           <label class="field-label" for="pf-runner-select">Coureur</label>
           <select id="pf-runner-select"></select>
         </div>
-        <label class="photo-finish-toggle">
+        <label class="photo-finish-toggle" hidden>
           <input type="checkbox" id="pf-unassigned" />
           <span>Enregistrer sans coureur</span>
         </label>
-        <div class="field-group">
+        <div class="field-group" hidden>
           <label class="field-label" for="pf-result-comment">Commentaire</label>
           <textarea id="pf-result-comment" rows="2"></textarea>
         </div>
@@ -479,20 +449,20 @@
     <script>
       ToolInfo.init({
         intro:
-          "Photo Finish crée une image recomposée de la ligne d'arrivée : chaque bandeau vertical est relié à son timestamp réel.",
+          "Photo Finish cree une image recomposee de la ligne d'arrivee : chaque bandeau vertical est relie a son timestamp reel.",
         sections: [
           {
             title: "L'interet principal",
             text:
-              "Un seul téléphone peut capturer une arrivée, puis vous lisez les temps précisément avec un curseur central fixe.",
+              "Un seul telephone peut capturer une arrivee, puis vous lisez les temps precisement avec un curseur central fixe.",
           },
           {
             title: "Comment s'en servir",
             list: [
-              "Placez la caméra de profil sur la ligne d'arrivée.",
-              "Choisissez le démarrage à l'appui ou au relâchement.",
-              "Arrêtez après le passage des coureurs, puis faites défiler l'image sous le curseur rouge.",
-              "Appuyez sur + pour enregistrer un temps attribué ou non attribué.",
+              "Preparez la seance et, si besoin, selectionnez une classe.",
+              "La camera s'active automatiquement en allant sur Capture.",
+              "Demarrez, puis appuyez sur le meme bouton pour stopper.",
+              "Appuyez sur + pour associer le temps a un coureur.",
             ],
           },
         ],

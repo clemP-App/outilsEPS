@@ -27,6 +27,8 @@
     btnCamera: $("pf-btn-camera"),
     btnQualityTest: $("pf-btn-quality-test"),
     btnRunQualityTest: $("pf-btn-run-quality-test"),
+    btnHomeImport: $("pf-btn-home-import"),
+    btnResetAdvanced: $("pf-btn-reset-advanced"),
     btnFlip: $("pf-btn-flip"),
     btnStart: $("pf-btn-start"),
     btnStop: $("pf-btn-stop"),
@@ -64,9 +66,12 @@
     resultsList: $("pf-results-list"),
     resultsEmpty: $("pf-results-empty"),
     runnersList: $("pf-runners-list"),
+    homeRunners: $("pf-home-runners"),
   };
 
   var inputs = {
+    homeSessionName: $("pf-home-session-name"),
+    homeClassSelect: $("pf-home-class-select"),
     sessionName: $("pf-session-name"),
     sessionClass: $("pf-session-class"),
     eventType: $("pf-event-type"),
@@ -108,6 +113,7 @@
   var state = {
     screen: "home",
     stream: null,
+    cameraStarting: false,
     timerState: "idle",
     startTime: 0,
     stopTime: 0,
@@ -128,6 +134,7 @@
     settings: defaultSettings(),
     sessionInfo: defaultSessionInfo(),
     runners: [],
+    selectedRunnerIds: [],
     sessions: [],
     results: [],
     strips: [],
@@ -146,11 +153,11 @@
       qualityMode: "balancedEPS",
       startTriggerMode: "release",
       className: "",
-      debugEnabled: true,
+      debugEnabled: false,
       highContrast: false,
       captureHeight: "full",
       renderHeight: "sprint",
-      qualityPatchVersion: 3,
+      qualityPatchVersion: 4,
     };
   }
 
@@ -257,8 +264,12 @@
       updateViewerPadding();
       updateCursorReadout();
     }
+    if (screen === "capture" && !state.stream && !state.cameraStarting) {
+      startCamera();
+    }
     if (screen === "results") renderResults();
     if (screen === "runners") renderRunners();
+    if (screen === "home") renderHomeSetup();
   }
 
   function readSettingsFromUi() {
@@ -277,17 +288,20 @@
       preferredCamera: inputs.cameraFacing.value,
       qualityMode: normalizeQuality(inputs.quality.value),
       startTriggerMode: inputs.startMode.value,
-      className: inputs.sessionClass.value.trim(),
+      className: (inputs.homeClassSelect && inputs.homeClassSelect.value) || inputs.sessionClass.value.trim(),
       debugEnabled: inputs.debugEnabled.checked,
       highContrast: inputs.highContrast.checked,
       captureHeight: inputs.captureHeight.value,
       renderHeight: inputs.renderHeight.value,
-      qualityPatchVersion: 3,
+      qualityPatchVersion: 4,
     };
     state.sessionInfo = {
-      name: inputs.sessionName.value.trim() || defaultSessionInfo().name,
+      name:
+        (inputs.homeSessionName && inputs.homeSessionName.value.trim()) ||
+        inputs.sessionName.value.trim() ||
+        defaultSessionInfo().name,
       date: state.sessionInfo.date || new Date().toISOString(),
-      className: inputs.sessionClass.value.trim(),
+      className: (inputs.homeClassSelect && inputs.homeClassSelect.value) || inputs.sessionClass.value.trim(),
       eventType: inputs.eventType.value.trim(),
       distance: inputs.distance.value.trim(),
       comment: inputs.comment.value.trim(),
@@ -300,6 +314,7 @@
 
   function writeSettingsToUi() {
     inputs.sessionName.value = state.sessionInfo.name || "";
+    if (inputs.homeSessionName) inputs.homeSessionName.value = state.sessionInfo.name || "";
     inputs.sessionClass.value = state.sessionInfo.className || "";
     inputs.eventType.value = state.sessionInfo.eventType || "";
     inputs.distance.value = state.sessionInfo.distance || "";
@@ -332,9 +347,10 @@
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          settings: state.settings,
-          sessionInfo: state.sessionInfo,
-          runners: state.runners,
+        settings: state.settings,
+        sessionInfo: state.sessionInfo,
+        runners: state.runners,
+        selectedRunnerIds: state.selectedRunnerIds,
           results: state.results,
           sessions: state.sessions.map(function (s) {
             return Object.assign({}, s, { imageDataUrl: "" });
@@ -352,18 +368,19 @@
       if (!raw) return;
       var data = JSON.parse(raw);
       state.settings = Object.assign(defaultSettings(), data.settings || {});
-      if (!data.settings || data.settings.qualityPatchVersion !== 3) {
+      if (!data.settings || data.settings.qualityPatchVersion !== 4) {
         state.settings.stripWidth = 4;
         state.settings.qualityMode = "balancedEPS";
         state.settings.startTriggerMode = "release";
         state.settings.captureHeight = "full";
         state.settings.renderHeight = "sprint";
-        state.settings.debugEnabled = true;
+        state.settings.debugEnabled = false;
         state.settings.direction = normalizeDirection(state.settings.direction);
-        state.settings.qualityPatchVersion = 3;
+        state.settings.qualityPatchVersion = 4;
       }
       state.sessionInfo = Object.assign(defaultSessionInfo(), data.sessionInfo || {});
       state.runners = Array.isArray(data.runners) ? data.runners : [];
+      state.selectedRunnerIds = Array.isArray(data.selectedRunnerIds) ? data.selectedRunnerIds : [];
       state.results = Array.isArray(data.results) ? data.results : [];
       state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
     } catch (err) {
@@ -405,6 +422,87 @@
           reject(tx.error);
         };
       });
+    });
+  }
+
+  function classNames() {
+    var names = {};
+    state.runners.forEach(function (runner) {
+      if (runner.className) names[runner.className] = true;
+    });
+    if (state.sessionInfo.className) names[state.sessionInfo.className] = true;
+    return Object.keys(names).sort(function (a, b) {
+      return a.localeCompare(b);
+    });
+  }
+
+  function runnersForCurrentClass() {
+    var className = inputs.homeClassSelect ? inputs.homeClassSelect.value : state.sessionInfo.className;
+    return state.runners.filter(function (runner) {
+      if (runner.active === false) return false;
+      return !className || runner.className === className;
+    });
+  }
+
+  function renderHomeSetup() {
+    if (inputs.homeClassSelect) {
+      var current = state.sessionInfo.className || inputs.homeClassSelect.value || "";
+      inputs.homeClassSelect.innerHTML = "<option value=\"\">Sans classe</option>";
+      classNames().forEach(function (name) {
+        var option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        inputs.homeClassSelect.appendChild(option);
+      });
+      inputs.homeClassSelect.value = classNames().indexOf(current) >= 0 ? current : "";
+    }
+    if (!els.homeRunners) return;
+    var runners = runnersForCurrentClass();
+    state.selectedRunnerIds = state.selectedRunnerIds.filter(function (id) {
+      return runners.some(function (runner) {
+        return runner.id === id;
+      });
+    });
+    if (!runners.length) {
+      els.homeRunners.innerHTML = "<p class=\"hint\">Aucun coureur selectionne. Vous pourrez quand meme enregistrer des temps non attribues.</p>";
+      return;
+    }
+    els.homeRunners.innerHTML =
+      "<p class=\"field-label\">Eleves de la seance</p>" +
+      runners.map(function (runner) {
+        var checked = !state.selectedRunnerIds.length || state.selectedRunnerIds.indexOf(runner.id) >= 0;
+        return (
+          "<label class=\"photo-finish-runner-check\"><input type=\"checkbox\" value=\"" +
+          escapeHtml(runner.id) +
+          "\"" +
+          (checked ? " checked" : "") +
+          " /> <span>" +
+          escapeHtml(runner.displayName) +
+          "</span></label>"
+        );
+      }).join("");
+    els.homeRunners.querySelectorAll("input[type='checkbox']").forEach(function (checkbox) {
+      checkbox.addEventListener("change", function () {
+        var checkedIds = Array.prototype.slice
+          .call(els.homeRunners.querySelectorAll("input[type='checkbox']:checked"))
+          .map(function (input) {
+            return input.value;
+          });
+        state.selectedRunnerIds = checkedIds.length === runners.length ? [] : checkedIds;
+        saveLocalShell();
+      });
+    });
+  }
+
+  function resultDialogRunners() {
+    var classRunners = runnersForCurrentClass();
+    if (state.selectedRunnerIds.length) {
+      return classRunners.filter(function (runner) {
+        return state.selectedRunnerIds.indexOf(runner.id) >= 0;
+      });
+    }
+    return classRunners.length ? classRunners : state.runners.filter(function (runner) {
+      return runner.active !== false;
     });
   }
 
@@ -469,14 +567,20 @@
       state.stream = null;
     }
     els.video.srcObject = null;
+    state.cameraStarting = false;
   }
 
   function startCamera() {
     readSettingsFromUi();
+    if (state.stream || state.cameraStarting) {
+      go("capture");
+      return;
+    }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showMsg("Ce navigateur ne permet pas d'acceder a la camera.");
       return;
     }
+    state.cameraStarting = true;
     setStatus("Demande d'acces a la camera...");
     requestCameraWithProfiles(cameraProfiles(), 0)
       .then(function (stream) {
@@ -488,12 +592,14 @@
         });
       })
       .then(function () {
+        state.cameraStarting = false;
         showMsg("");
         updateCameraMeta();
         setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
         go("capture");
       })
       .catch(function (err) {
+        state.cameraStarting = false;
         var msg = "Impossible d'acceder a la camera.";
         if (err && err.name === "NotAllowedError") msg = "Autorisez la camera, puis reessayez.";
         if (err && err.name === "NotFoundError") msg = "Aucune camera detectee.";
@@ -573,8 +679,7 @@
     initComposite();
     startDisplayLoop();
     scheduleCaptureLoop();
-    els.btnStart.disabled = true;
-    els.btnStop.disabled = false;
+    updateCaptureButton();
     setStatus("Chrono lance. Capture en attente du delai choisi.");
   }
 
@@ -586,11 +691,21 @@
     cancelAnimationFrame(state.rafId);
     finalizeImage();
     stopCamera();
-    els.btnStart.disabled = false;
-    els.btnStop.disabled = true;
+    updateCaptureButton();
     go("analysis");
     setStatus("Capture terminee.");
     if (!state.qualityTestMode) saveSession();
+  }
+
+  function updateCaptureButton() {
+    if (!els.btnStart) return;
+    var text = els.btnStart.querySelector(".btn__text");
+    var icon = els.btnStart.querySelector(".btn__icon");
+    var running = state.timerState === "running";
+    els.btnStart.disabled = false;
+    els.btnStart.classList.toggle("is-stop", running);
+    if (text) text.textContent = running ? "Stop" : "Demarrer le chrono";
+    if (icon) icon.textContent = running ? "\u25a0" : "\u25b6";
   }
 
   function getElapsedMs() {
@@ -859,6 +974,10 @@
 
   function renderDiagnostic() {
     if (!els.diagnosticPanel || !els.diagnosticList) return;
+    if (!state.settings.debugEnabled) {
+      els.diagnosticPanel.hidden = true;
+      return;
+    }
     var stats = state.debugStats;
     els.diagnosticPanel.hidden = false;
     var rows = {
@@ -1148,8 +1267,9 @@
 
   function fillRunnerSelect() {
     var query = (els.runnerSearch.value || "").toLowerCase();
+    var runners = resultDialogRunners();
     els.runnerSelect.innerHTML = "<option value=\"\">Temps non attribue</option>";
-    state.runners
+    runners
       .filter(function (r) {
         return r.active !== false && (!query || r.displayName.toLowerCase().indexOf(query) >= 0);
       })
@@ -1177,6 +1297,7 @@
     if (persist !== false) {
       saveLocalShell();
       renderRunners();
+      renderHomeSetup();
     }
     return runner;
   }
@@ -1405,6 +1526,10 @@
       title: "Importer depuis une classe",
       hint: "Cochez les coureurs a ajouter.",
       onConfirm: function (eleves, classe) {
+        if (classe && classe.nom) {
+          state.sessionInfo.className = classe.nom;
+          if (inputs.sessionClass) inputs.sessionClass.value = classe.nom;
+        }
         eleves.forEach(function (eleve) {
           var name =
             typeof EleveDisplay !== "undefined" && EleveDisplay.formatEleveListe
@@ -1414,6 +1539,7 @@
         });
         saveLocalShell();
         renderRunners();
+        renderHomeSetup();
         showMsg("");
       },
     });
@@ -1436,10 +1562,38 @@
       input.addEventListener("input", readSettingsFromUi);
       input.addEventListener("change", readSettingsFromUi);
     });
+    if (inputs.homeClassSelect) {
+      inputs.homeClassSelect.addEventListener("change", function () {
+        state.sessionInfo.className = inputs.homeClassSelect.value;
+        state.selectedRunnerIds = [];
+        readSettingsFromUi();
+        renderHomeSetup();
+      });
+    }
+    if (inputs.homeSessionName) {
+      inputs.homeSessionName.addEventListener("input", function () {
+        state.sessionInfo.name = inputs.homeSessionName.value.trim() || defaultSessionInfo().name;
+        if (inputs.sessionName) inputs.sessionName.value = state.sessionInfo.name;
+        saveLocalShell();
+      });
+    }
     inputs.delay.addEventListener("change", function () {
       inputs.delayCustomWrap.hidden = inputs.delay.value !== "custom";
     });
     els.btnCamera.addEventListener("click", startCamera);
+    if (els.btnHomeImport) els.btnHomeImport.addEventListener("click", importClassFromTool);
+    if (els.btnResetAdvanced) {
+      els.btnResetAdvanced.addEventListener("click", function () {
+        var keepName = state.sessionInfo.name;
+        var keepClass = state.sessionInfo.className;
+        state.settings = defaultSettings();
+        state.sessionInfo.name = keepName;
+        state.sessionInfo.className = keepClass;
+        writeSettingsToUi();
+        saveLocalShell();
+        showMsg("Reglages avances remis par defaut.");
+      });
+    }
     if (els.btnQualityTest) els.btnQualityTest.addEventListener("click", function () {
       go("quality");
     });
@@ -1463,6 +1617,11 @@
 
     // Pointer events give the start timestamp at the exact requested gesture moment.
     els.btnStart.addEventListener("pointerdown", function () {
+      if (state.timerState === "running") {
+        state.lastStopTap = performance.now();
+        stopTimer();
+        return;
+      }
       if (state.settings.startTriggerMode === "press" && state.timerState !== "running") {
         startTimer(performance.now());
       } else if (state.settings.startTriggerMode === "release") {
@@ -1471,6 +1630,7 @@
       }
     });
     els.btnStart.addEventListener("pointerup", function () {
+      if (state.timerState === "running" || performance.now() - state.lastStopTap < 600) return;
       if (state.settings.startTriggerMode === "release" && state.timerState !== "running") {
         els.btnStart.classList.remove("is-armed");
         els.btnStart.querySelector(".btn__text").textContent = "Demarrer le chrono";
@@ -1556,6 +1716,7 @@
       inputs.importText.value = "";
       saveLocalShell();
       renderRunners();
+      renderHomeSetup();
     });
     $("btn-import-classe-pf").addEventListener("click", importClassFromTool);
     window.addEventListener("resize", function () {
@@ -1571,9 +1732,11 @@
     els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
   }
   wireEvents();
+  renderHomeSetup();
   renderRunners();
   renderResults();
-  els.btnStop.disabled = true;
+  if (els.btnStop) els.btnStop.disabled = true;
+  updateCaptureButton();
   updateLiveStats();
 
   window.PhotoFinishApp = {
