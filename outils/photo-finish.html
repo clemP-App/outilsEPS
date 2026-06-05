@@ -30,6 +30,7 @@
       <nav class="photo-finish-tabs" aria-label="Ecrans Photo Finish">
         <button type="button" class="photo-finish-tab is-active" data-screen="home">Accueil</button>
         <button type="button" class="photo-finish-tab" data-screen="settings">Reglages</button>
+        <button type="button" class="photo-finish-tab" data-screen="quality">Test qualite</button>
         <button type="button" class="photo-finish-tab" data-screen="capture">Capture</button>
         <button type="button" class="photo-finish-tab" data-screen="analysis">Analyse</button>
         <button type="button" class="photo-finish-tab" data-screen="results">Resultats</button>
@@ -143,14 +144,20 @@
               <div class="field-group">
                 <label class="field-label" for="pf-quality">Qualite</label>
                 <select id="pf-quality">
+                  <option value="balancedEPS">Equilibre EPS - 1080p 60 fps</option>
                   <option value="max">Qualite maximale</option>
-                  <option value="balanced">Equilibre</option>
+                  <option value="highFps">FPS maximal</option>
                   <option value="performance">Performance</option>
                 </select>
               </div>
               <div class="field-group">
                 <label class="field-label" for="pf-strip-width">Largeur du bandeau (px)</label>
-                <input type="number" id="pf-strip-width" min="1" max="12" step="1" inputmode="numeric" />
+                <input type="number" id="pf-strip-width" min="1" max="8" step="1" inputmode="numeric" />
+                <div class="photo-finish-presets" aria-label="Préréglages de largeur">
+                  <button type="button" class="btn btn--ghost" data-strip-preset="2">Plus précis</button>
+                  <button type="button" class="btn btn--ghost" data-strip-preset="4">Équilibré</button>
+                  <button type="button" class="btn btn--ghost" data-strip-preset="6">Plus lisible</button>
+                </div>
               </div>
               <div class="field-group">
                 <label class="field-label" for="pf-finish-ratio"
@@ -169,8 +176,8 @@
               <div class="field-group">
                 <label class="field-label" for="pf-direction">Sens d'arrivee</label>
                 <select id="pf-direction">
-                  <option value="left-to-right">Coureurs venant de gauche</option>
-                  <option value="right-to-left">Coureurs venant de droite</option>
+                  <option value="leftToRight">Coureurs venant de gauche</option>
+                  <option value="rightToLeft">Coureurs venant de droite</option>
                 </select>
               </div>
             </div>
@@ -179,12 +186,27 @@
                 <span class="btn__icon" aria-hidden="true">&#128247;</span>
                 <span class="btn__text">Activer la camera</span>
               </button>
+              <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-quality-test">
+                <span class="btn__icon" aria-hidden="true">&#9673;</span>
+                <span class="btn__text">Test qualite 3 s</span>
+              </button>
               <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-flip">
                 <span class="btn__icon" aria-hidden="true">&#8646;</span>
                 <span class="btn__text">Changer de camera</span>
               </button>
             </div>
             <p class="photo-finish-camera-meta" id="pf-camera-meta">Camera inactive.</p>
+          </section>
+
+          <section class="card photo-finish-terrain">
+            <h2>Conseils terrain</h2>
+            <ul>
+              <li>Téléphone en paysage, caméra arrière, posé immobile sur support.</li>
+              <li>Caméra de profil, ligne rouge alignée avec la ligne d'arrivée.</li>
+              <li>Ne suivez pas les coureurs : ils doivent traverser la ligne fixe.</li>
+              <li>Évitez le contre-jour et choisissez un fond contrasté.</li>
+              <li>Placez-vous à au moins 3 m, idéalement 4 à 8 m selon les couloirs.</li>
+            </ul>
           </section>
 
           <section class="card">
@@ -208,6 +230,31 @@
                 <span class="btn__icon" aria-hidden="true">&#9654;</span>
                 <span class="btn__text">Aller a la capture</span>
               </button>
+            </div>
+          </section>
+        </section>
+
+        <section class="photo-finish-screen" id="pf-screen-quality" aria-labelledby="pf-quality-title">
+          <section class="card">
+            <h2 id="pf-quality-title">Test qualite</h2>
+            <p class="hint">
+              Faites passer une personne devant la ligne rouge. Le test dure 3 secondes et produit un mini
+              diagnostic pour régler la largeur des bandeaux.
+            </p>
+            <div class="photo-finish-inline-actions">
+              <button type="button" class="btn btn--primary btn--labeled" id="pf-btn-run-quality-test">
+                <span class="btn__icon" aria-hidden="true">&#9654;</span>
+                <span class="btn__text">Lancer le test</span>
+              </button>
+              <button type="button" class="btn btn--ghost" data-strip-preset="2">Plus précis</button>
+              <button type="button" class="btn btn--ghost" data-strip-preset="4">Équilibré</button>
+              <button type="button" class="btn btn--ghost" data-strip-preset="6">Plus lisible</button>
+            </div>
+            <div class="photo-finish-quality-preview">
+              <canvas id="pf-quality-result"></canvas>
+            </div>
+            <div class="photo-finish-quality-report" id="pf-quality-report">
+              Activez la caméra, puis lancez un test.
             </div>
           </section>
         </section>
@@ -297,6 +344,11 @@
           <section class="card photo-finish-debug" id="pf-debug-panel" hidden>
             <h2>Debug</h2>
             <dl id="pf-debug-list"></dl>
+          </section>
+          <section class="card photo-finish-diagnostic" id="pf-diagnostic-panel" hidden>
+            <h2>Diagnostic qualite</h2>
+            <dl id="pf-diagnostic-list"></dl>
+            <ul id="pf-diagnostic-warnings"></ul>
           </section>
         </section>
 

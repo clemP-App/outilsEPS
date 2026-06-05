@@ -8555,7 +8555,8 @@ body.video-retard-body-fs {
 .photo-finish-inline-actions,
 .photo-finish-capture-actions,
 .photo-finish-zoom-actions,
-.photo-finish-nudge {
+.photo-finish-nudge,
+.photo-finish-presets {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
@@ -8700,6 +8701,49 @@ body.video-retard-body-fs {
   padding: 0.25rem 0.45rem;
   border-radius: 0.35rem;
   background: rgba(15, 118, 110, 0.08);
+}
+
+.photo-finish-presets {
+  margin-top: 0.45rem;
+}
+
+.photo-finish-presets .btn {
+  flex: 1 1 6rem;
+  min-height: 2.25rem;
+  padding-inline: 0.45rem;
+}
+
+.photo-finish-terrain ul,
+.photo-finish-quality-report ul,
+.photo-finish-diagnostic ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.photo-finish-terrain li,
+.photo-finish-quality-report li,
+.photo-finish-diagnostic li {
+  margin: 0.25rem 0;
+}
+
+.photo-finish-quality-preview {
+  margin-top: 0.75rem;
+  overflow-x: auto;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+  border-radius: 0.5rem;
+  background: #111;
+}
+
+.photo-finish-quality-preview canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  image-rendering: auto;
+}
+
+.photo-finish-quality-report {
+  margin-top: 0.75rem;
+  color: var(--text, #111827);
 }
 
 .photo-finish-bar-time {
@@ -8963,7 +9007,8 @@ body.video-retard-body-fs {
   padding: 0;
 }
 
-.photo-finish-debug dl {
+.photo-finish-debug dl,
+.photo-finish-diagnostic dl {
   display: grid;
   grid-template-columns: minmax(8rem, 1fr) minmax(8rem, 1.4fr);
   gap: 0.35rem 0.75rem;
@@ -8971,11 +9016,13 @@ body.video-retard-body-fs {
   font-size: 0.88rem;
 }
 
-.photo-finish-debug dt {
+.photo-finish-debug dt,
+.photo-finish-diagnostic dt {
   color: var(--text-muted, #64748b);
 }
 
-.photo-finish-debug dd {
+.photo-finish-debug dd,
+.photo-finish-diagnostic dd {
   margin: 0;
   font-weight: 700;
   font-variant-numeric: tabular-nums;

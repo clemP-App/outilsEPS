@@ -25,6 +25,8 @@
     status: $("pf-status"),
     cameraMeta: $("pf-camera-meta"),
     btnCamera: $("pf-btn-camera"),
+    btnQualityTest: $("pf-btn-quality-test"),
+    btnRunQualityTest: $("pf-btn-run-quality-test"),
     btnFlip: $("pf-btn-flip"),
     btnStart: $("pf-btn-start"),
     btnStop: $("pf-btn-stop"),
@@ -46,6 +48,11 @@
     btnExportImage: $("pf-btn-export-image"),
     debugPanel: $("pf-debug-panel"),
     debugList: $("pf-debug-list"),
+    diagnosticPanel: $("pf-diagnostic-panel"),
+    diagnosticList: $("pf-diagnostic-list"),
+    diagnosticWarnings: $("pf-diagnostic-warnings"),
+    qualityResult: $("pf-quality-result"),
+    qualityReport: $("pf-quality-report"),
     resultDialog: $("pf-result-dialog"),
     dialogTime: $("pf-dialog-time"),
     runnerSearch: $("pf-runner-search"),
@@ -102,6 +109,8 @@
     startTime: 0,
     stopTime: 0,
     captureStarted: false,
+    qualityTestMode: false,
+    qualityTestStopId: 0,
     rafId: 0,
     videoFrameId: 0,
     fallbackCaptureId: 0,
@@ -125,16 +134,17 @@
       captureDelayMs: 0,
       autoStopEnabled: false,
       autoStopMs: 15000,
-      direction: "left-to-right",
-      stripWidth: 2,
+      direction: "leftToRight",
+      stripWidth: 4,
       finishLineXRatio: 0.5,
       preferredCamera: "environment",
-      qualityMode: "max",
-      startTriggerMode: "press",
+      qualityMode: "balancedEPS",
+      startTriggerMode: "release",
       className: "",
-      debugEnabled: false,
+      debugEnabled: true,
       highContrast: false,
-      captureHeight: "720",
+      captureHeight: "full",
+      qualityPatchVersion: 2,
     };
   }
 
@@ -162,8 +172,15 @@
       maxFrameDeltaMs: 0,
       cameraWidth: 0,
       cameraHeight: 0,
+      cameraFrameRate: 0,
+      requestedFrameRate: 0,
+      cameraFacingMode: "",
+      cameraDeviceId: "",
+      cameraLabel: "",
       stripWidth: 0,
-      qualityMode: "max",
+      qualityMode: "balancedEPS",
+      pixelsPerSecond: 0,
+      densityLabel: "",
     };
   }
 
@@ -205,6 +222,18 @@
       .replace(/"/g, "&quot;");
   }
 
+  function normalizeDirection(value) {
+    if (value === "right-to-left") return "rightToLeft";
+    if (value === "left-to-right") return "leftToRight";
+    return value === "rightToLeft" ? "rightToLeft" : "leftToRight";
+  }
+
+  function normalizeQuality(value) {
+    if (value === "balanced") return "balancedEPS";
+    if (value === "max" || value === "highFps" || value === "performance") return value;
+    return "balancedEPS";
+  }
+
   function go(screen) {
     state.screen = screen;
     els.tabs.forEach(function (tab) {
@@ -231,16 +260,17 @@
       captureDelayMs: delayMs,
       autoStopEnabled: inputs.autoStopEnabled.checked,
       autoStopMs: Math.max(1000, Number(inputs.autoStop.value || 15) * 1000),
-      direction: inputs.direction.value,
-      stripWidth: Math.max(1, Math.min(12, Number(inputs.stripWidth.value || 2))),
+      direction: normalizeDirection(inputs.direction.value),
+      stripWidth: Math.max(1, Math.min(8, Number(inputs.stripWidth.value || 4))),
       finishLineXRatio: Number(inputs.finishRatio.value || 50) / 100,
       preferredCamera: inputs.cameraFacing.value,
-      qualityMode: inputs.quality.value,
+      qualityMode: normalizeQuality(inputs.quality.value),
       startTriggerMode: inputs.startMode.value,
       className: inputs.sessionClass.value.trim(),
       debugEnabled: inputs.debugEnabled.checked,
       highContrast: inputs.highContrast.checked,
       captureHeight: inputs.captureHeight.value,
+      qualityPatchVersion: 2,
     };
     state.sessionInfo = {
       name: inputs.sessionName.value.trim() || defaultSessionInfo().name,
@@ -266,6 +296,8 @@
     inputs.autoStopEnabled.checked = state.settings.autoStopEnabled;
     inputs.autoStop.value = Math.round(state.settings.autoStopMs / 1000);
     inputs.cameraFacing.value = state.settings.preferredCamera;
+    state.settings.direction = normalizeDirection(state.settings.direction);
+    state.settings.qualityMode = normalizeQuality(state.settings.qualityMode);
     inputs.quality.value = state.settings.qualityMode;
     inputs.stripWidth.value = state.settings.stripWidth;
     inputs.finishRatio.value = Math.round(state.settings.finishLineXRatio * 100);
@@ -307,6 +339,15 @@
       if (!raw) return;
       var data = JSON.parse(raw);
       state.settings = Object.assign(defaultSettings(), data.settings || {});
+      if (!data.settings || data.settings.qualityPatchVersion !== 2) {
+        state.settings.stripWidth = 4;
+        state.settings.qualityMode = "balancedEPS";
+        state.settings.startTriggerMode = "release";
+        state.settings.captureHeight = "full";
+        state.settings.debugEnabled = true;
+        state.settings.direction = normalizeDirection(state.settings.direction);
+        state.settings.qualityPatchVersion = 2;
+      }
       state.sessionInfo = Object.assign(defaultSessionInfo(), data.sessionInfo || {});
       state.runners = Array.isArray(data.runners) ? data.runners : [];
       state.results = Array.isArray(data.results) ? data.results : [];
@@ -353,15 +394,44 @@
     });
   }
 
-  function cameraConstraints() {
-    var quality = state.settings.qualityMode;
-    var video = {
-      facingMode: { ideal: state.settings.preferredCamera },
-      width: { ideal: quality === "max" ? 3840 : quality === "balanced" ? 1920 : 1280 },
-      height: { ideal: quality === "max" ? 2160 : quality === "balanced" ? 1080 : 720 },
-      frameRate: { ideal: quality === "performance" ? 30 : 60 },
-    };
-    return { audio: false, video: video };
+  function cameraProfiles() {
+    var facing = { ideal: state.settings.preferredCamera };
+    var profiles = [];
+    if (state.settings.qualityMode === "highFps") {
+      profiles.push({ width: 1280, height: 720, frameRate: 240, label: "720p 240 fps" });
+      profiles.push({ width: 1280, height: 720, frameRate: 120, label: "720p 120 fps" });
+    }
+    profiles = profiles.concat([
+      { width: 1920, height: 1080, frameRate: 60, label: "1080p 60 fps" },
+      { width: 1280, height: 720, frameRate: 60, label: "720p 60 fps" },
+      { width: 1920, height: 1080, frameRate: 30, label: "1080p 30 fps" },
+      { width: 1280, height: 720, frameRate: 30, label: "720p 30 fps" },
+    ]);
+    if (state.settings.qualityMode === "performance") {
+      profiles = [
+        { width: 1280, height: 720, frameRate: 30, label: "720p 30 fps" },
+        { width: 960, height: 540, frameRate: 30, label: "540p 30 fps" },
+      ];
+    }
+    profiles.push({ label: "defaut" });
+    return profiles.map(function (profile) {
+      var video = { facingMode: facing };
+      if (profile.width) video.width = { ideal: profile.width };
+      if (profile.height) video.height = { ideal: profile.height };
+      if (profile.frameRate) video.frameRate = { ideal: profile.frameRate };
+      return { label: profile.label, requestedFrameRate: profile.frameRate || 0, constraints: { audio: false, video: video } };
+    });
+  }
+
+  function requestCameraWithProfiles(profiles, index) {
+    if (index >= profiles.length) return Promise.reject(new Error("Aucun profil camera accepte."));
+    return navigator.mediaDevices.getUserMedia(profiles[index].constraints).then(function (stream) {
+      stream._photoFinishProfile = profiles[index];
+      return stream;
+    }).catch(function (err) {
+      if (index === profiles.length - 1) throw err;
+      return requestCameraWithProfiles(profiles, index + 1);
+    });
   }
 
   function stopCamera() {
@@ -381,13 +451,14 @@
       return;
     }
     setStatus("Demande d'acces a la camera...");
-    navigator.mediaDevices
-      .getUserMedia(cameraConstraints())
+    requestCameraWithProfiles(cameraProfiles(), 0)
       .then(function (stream) {
         stopCamera();
         state.stream = stream;
         els.video.srcObject = stream;
-        return els.video.play();
+        return waitForVideoMetadata().then(function () {
+          return els.video.play();
+        });
       })
       .then(function () {
         showMsg("");
@@ -404,13 +475,34 @@
       });
   }
 
+  function waitForVideoMetadata() {
+    if (els.video.videoWidth && els.video.videoHeight) return Promise.resolve();
+    return new Promise(function (resolve) {
+      var done = function () {
+        els.video.removeEventListener("loadedmetadata", done);
+        resolve();
+      };
+      els.video.addEventListener("loadedmetadata", done);
+    });
+  }
+
   function updateCameraMeta() {
-    var w = els.video.videoWidth || 0;
-    var h = els.video.videoHeight || 0;
+    var track = state.stream && state.stream.getVideoTracks ? state.stream.getVideoTracks()[0] : null;
+    var settings = track && track.getSettings ? track.getSettings() : {};
+    var profile = state.stream && state.stream._photoFinishProfile;
+    var w = settings.width || els.video.videoWidth || 0;
+    var h = settings.height || els.video.videoHeight || 0;
     state.debugStats.cameraWidth = w;
     state.debugStats.cameraHeight = h;
+    state.debugStats.cameraFrameRate = settings.frameRate || 0;
+    state.debugStats.requestedFrameRate = profile ? profile.requestedFrameRate : 0;
+    state.debugStats.cameraFacingMode = settings.facingMode || state.settings.preferredCamera || "";
+    state.debugStats.cameraDeviceId = settings.deviceId || "";
+    state.debugStats.cameraLabel = track && track.label ? track.label : profile && profile.label ? profile.label : "";
     if (els.cameraMeta) {
-      els.cameraMeta.textContent = w && h ? "Resolution obtenue : " + w + " x " + h + "." : "Camera active.";
+      els.cameraMeta.textContent = w && h
+        ? "Camera : " + w + " x " + h + ", " + (settings.frameRate || "?") + " fps obtenus."
+        : "Camera active, attente des metadonnees video.";
     }
   }
 
@@ -423,6 +515,10 @@
   function startTimer(eventNow) {
     if (!state.stream) {
       showMsg("Activez d'abord la camera.");
+      return;
+    }
+    if (!els.video.videoWidth || !els.video.videoHeight) {
+      showMsg("La camera n'a pas encore transmis sa resolution native. Patientez une seconde puis relancez.");
       return;
     }
     readSettingsFromUi();
@@ -452,7 +548,7 @@
     els.btnStop.disabled = true;
     go("analysis");
     setStatus("Capture terminee.");
-    saveSession();
+    if (!state.qualityTestMode) saveSession();
   }
 
   function getElapsedMs() {
@@ -557,14 +653,22 @@
   }
 
   function captureStrip() {
-    if (state.timerState !== "running" || !els.video.videoWidth) return;
+    if (state.timerState !== "running") return;
+    var sourceWidth = els.video.videoWidth;
+    var sourceHeight = els.video.videoHeight;
+    if (!sourceWidth || !sourceHeight) {
+      setStatus("Attente des metadonnees video natives...");
+      return;
+    }
     var now = performance.now();
     var elapsed = now - state.startTime;
     if (elapsed < state.settings.captureDelayMs) return;
     if (!state.captureStarted) startCapture();
 
-    var vw = els.video.videoWidth;
-    var vh = els.video.videoHeight;
+    // Capture critique : toutes les coordonnees sont en pixels natifs video.
+    // Ne jamais utiliser clientWidth/clientHeight/getBoundingClientRect ici.
+    var vw = sourceWidth;
+    var vh = sourceHeight;
     var stripWidth = state.settings.stripWidth;
     var height = captureHeight(vh);
     var y = Math.max(0, Math.round((vh - height) / 2));
@@ -579,9 +683,13 @@
       return;
     }
 
+    // Plus le bandeau est large, plus l'image est lisible mais moins elle ressemble
+    // a une vraie photo finish. Plus il est fin, plus le rendu est realiste, mais
+    // il faut un bon fps et une bonne resolution.
     stripCanvas.width = stripWidth;
     stripCanvas.height = height;
     stripCtx.imageSmoothingEnabled = false;
+    stripCtx.imageSmoothingQuality = "high";
     stripCtx.drawImage(els.video, sx, y, stripWidth, height, 0, 0, stripWidth, height);
     appendStripToPhotoFinish(stripCanvas, imageXStart, imageXEnd, height);
 
@@ -623,6 +731,8 @@
       state.debugStats.captureDurationMs > 0
         ? (state.debugStats.stripCount / state.debugStats.captureDurationMs) * 1000
         : 0;
+    state.debugStats.pixelsPerSecond = state.debugStats.averageFps * state.settings.stripWidth;
+    state.debugStats.densityLabel = densityLabel(state.debugStats.pixelsPerSecond);
     if (delta > 0) {
       state.debugStats.minFrameDeltaMs = state.debugStats.minFrameDeltaMs
         ? Math.min(state.debugStats.minFrameDeltaMs, delta)
@@ -631,6 +741,101 @@
     }
     state.debugStats.stripWidth = state.settings.stripWidth;
     state.debugStats.qualityMode = state.settings.qualityMode;
+  }
+
+  function densityLabel(pixelsPerSecond) {
+    if (!pixelsPerSecond) return "en attente";
+    if (pixelsPerSecond < 160) return "faible";
+    if (pixelsPerSecond <= 320) return "correcte";
+    return "excessive";
+  }
+
+  function qualityWarnings() {
+    var stats = state.debugStats;
+    var warnings = [];
+    if (stats.averageFps && stats.averageFps < 35) warnings.push("FPS faible : le rendu sera moins fluide.");
+    if (stats.stripWidth >= 7) warnings.push("Slices trop larges : le coureur risque d'etre etire.");
+    if (stats.imageWidth > 12000) warnings.push("Image tres large : risque de ralentissement sur mobile.");
+    if (stats.cameraWidth && stats.cameraWidth < 1280) warnings.push("Resolution faible : rapprochez moins la camera ou augmentez la qualite.");
+    if (stats.pixelsPerSecond && stats.pixelsPerSecond < 160) warnings.push("Densite temporelle faible : augmentez le fps ou utilisez 4 px.");
+    if (stats.pixelsPerSecond > 320) warnings.push("Densite temporelle elevee : image large, surveillez la memoire.");
+    if (!warnings.length) warnings.push("Densite temporelle correcte : le compromis EPS est bon.");
+    return warnings;
+  }
+
+  function renderDiagnostic() {
+    if (!els.diagnosticPanel || !els.diagnosticList) return;
+    var stats = state.debugStats;
+    els.diagnosticPanel.hidden = false;
+    var rows = {
+      "Duree capturee": formatTime(stats.captureDurationMs),
+      "Nombre de strips": stats.stripCount,
+      "FPS moyen reel": stats.averageFps.toFixed(1),
+      "Delta min/max": stats.minFrameDeltaMs.toFixed(1) + " / " + stats.maxFrameDeltaMs.toFixed(1) + " ms",
+      "Largeur strip": stats.stripWidth + " px natifs",
+      "Pixels par seconde": stats.pixelsPerSecond.toFixed(1),
+      "Densite temporelle": stats.densityLabel,
+      "Resolution video": stats.cameraWidth + " x " + stats.cameraHeight,
+      "Image finale": stats.imageWidth + " x " + stats.imageHeight,
+      "Mode qualite": stats.qualityMode,
+    };
+    els.diagnosticList.innerHTML = Object.keys(rows).map(function (key) {
+      return "<dt>" + escapeHtml(key) + "</dt><dd>" + escapeHtml(rows[key]) + "</dd>";
+    }).join("");
+    if (els.diagnosticWarnings) {
+      els.diagnosticWarnings.innerHTML = qualityWarnings().map(function (warning) {
+        return "<li>" + escapeHtml(warning) + "</li>";
+      }).join("");
+    }
+  }
+
+  function copyResultToQualityPreview() {
+    if (!els.qualityResult || !els.resultCanvas.width) return;
+    var maxWidth = 900;
+    var scale = Math.min(1, maxWidth / Math.max(1, els.resultCanvas.width));
+    els.qualityResult.width = Math.max(1, Math.round(els.resultCanvas.width * scale));
+    els.qualityResult.height = Math.max(1, Math.round(els.resultCanvas.height * scale));
+    var ctx = els.qualityResult.getContext("2d", { alpha: false });
+    ctx.imageSmoothingEnabled = scale < 1;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(els.resultCanvas, 0, 0, els.qualityResult.width, els.qualityResult.height);
+  }
+
+  function renderQualityReport() {
+    if (!els.qualityReport) return;
+    var stats = state.debugStats;
+    els.qualityReport.innerHTML =
+      "<strong>Test termine.</strong> " +
+      escapeHtml(stats.cameraWidth + " x " + stats.cameraHeight + ", " + stats.averageFps.toFixed(1) + " fps, " + stats.stripWidth + " px, densite " + stats.densityLabel + ".") +
+      "<ul>" +
+      qualityWarnings().map(function (warning) {
+        return "<li>" + escapeHtml(warning) + "</li>";
+      }).join("") +
+      "<li>Si le corps est trop etire ou double, essayez Plus precis.</li>" +
+      "<li>Si le corps est trop compresse ou coupe, essayez Plus lisible.</li>" +
+      "<li>Si le mouvement semble partir dans le mauvais sens, utilisez Inverser le sens en analyse.</li>" +
+      "<li>Si l'image est floue, augmentez la lumiere et stabilisez le telephone.</li>" +
+      "</ul>";
+  }
+
+  function startQualityTest() {
+    if (!state.stream) {
+      startCamera();
+      go("quality");
+      showMsg("Camera activee : relancez le test quand l'image apparait.");
+      return;
+    }
+    state.qualityTestMode = true;
+    go("capture");
+    startTimer(performance.now());
+    clearTimeout(state.qualityTestStopId);
+    state.qualityTestStopId = setTimeout(function () {
+      if (state.timerState === "running") stopTimer();
+      state.qualityTestMode = false;
+      copyResultToQualityPreview();
+      renderQualityReport();
+      go("quality");
+    }, 3000);
   }
 
   function finalizeImage() {
@@ -651,6 +856,7 @@
     els.scroll.scrollLeft = 0;
     updateCursorReadout();
     renderMarkers();
+    renderDiagnostic();
   }
 
   function imageXToTime(imageX) {
@@ -1049,9 +1255,15 @@
       "Premier temps": formatTime(stats.firstStripTimeMs),
       "Dernier temps": formatTime(stats.lastStripTimeMs),
       "FPS moyen": stats.averageFps.toFixed(1),
+      "FPS demande / obtenu": (stats.requestedFrameRate || "?") + " / " + (stats.cameraFrameRate || "?"),
       "Delta min/max": stats.minFrameDeltaMs.toFixed(1) + " / " + stats.maxFrameDeltaMs.toFixed(1) + " ms",
       "Camera": stats.cameraWidth + " x " + stats.cameraHeight,
+      "Facing mode": stats.cameraFacingMode || "-",
+      "Device id": stats.cameraDeviceId || "-",
+      "Camera utilisee": stats.cameraLabel || "-",
       "Largeur bandeau": stats.stripWidth,
+      "Pixels par seconde": stats.pixelsPerSecond.toFixed(1),
+      "Densite": stats.densityLabel,
       "Qualite": stats.qualityMode,
       "Demarrage": state.settings.startTriggerMode === "press" ? "appui" : "relachement",
       "Scroll": els.scroll ? Math.round(els.scroll.scrollLeft) : 0,
@@ -1116,6 +1328,17 @@
       inputs.delayCustomWrap.hidden = inputs.delay.value !== "custom";
     });
     els.btnCamera.addEventListener("click", startCamera);
+    if (els.btnQualityTest) els.btnQualityTest.addEventListener("click", function () {
+      go("quality");
+    });
+    if (els.btnRunQualityTest) els.btnRunQualityTest.addEventListener("click", startQualityTest);
+    document.querySelectorAll("[data-strip-preset]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        inputs.stripWidth.value = btn.dataset.stripPreset;
+        readSettingsFromUi();
+        showMsg("Largeur de bandeau reglee a " + btn.dataset.stripPreset + " px natifs.");
+      });
+    });
     els.btnFlip.addEventListener("click", function () {
       inputs.cameraFacing.value = inputs.cameraFacing.value === "environment" ? "user" : "environment";
       readSettingsFromUi();
@@ -1182,9 +1405,9 @@
     });
     els.btnInvert.addEventListener("click", function () {
       state.settings.direction =
-        state.settings.direction === "left-to-right" ? "right-to-left" : "left-to-right";
+        state.settings.direction === "leftToRight" ? "rightToLeft" : "leftToRight";
       inputs.direction.value = state.settings.direction;
-      els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "right-to-left");
+      els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
       saveLocalShell();
       updateCursorReadout();
     });
@@ -1232,6 +1455,9 @@
 
   restoreSession();
   writeSettingsToUi();
+  if (els.imageWrap) {
+    els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
+  }
   wireEvents();
   renderRunners();
   renderResults();
