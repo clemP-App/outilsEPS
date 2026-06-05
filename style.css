@@ -868,6 +868,50 @@ main.container {
   line-height: 1.25;
 }
 
+.tool-list__icon-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.tool-list__badge,
+.tool-beta-badge {
+  display: inline-block;
+  padding: 0.12rem 0.42rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+  line-height: 1.15;
+  vertical-align: middle;
+}
+
+.tool-list__badge {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.45rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.tool-beta-badge {
+  margin-left: 0.35rem;
+  font-size: 0.55rem;
+  transform: translateY(-0.15em);
+}
+
+.tools-list--icons .tool-list__item .tool-list__badge {
+  top: -0.15rem;
+  right: -0.2rem;
+  font-size: 0.5rem;
+  padding: 0.08rem 0.3rem;
+}
+
 .tools-list--icons .tool-list__item .tool-list__title {
   display: -webkit-box;
   -webkit-line-clamp: 2;

@@ -6,6 +6,7 @@
  * 2. Ajoutez un objet dans OUTILS ci-dessous.
  * 3. publicCible : "prof" ou "eleve" — les outils élèves renvoient vers eleves.html.
  * 4. Outils prof : categorie (voir ACCUEIL_CATEGORIES_PROF pour l’ordre d’affichage).
+ * 5. badge (optionnel) : ex. "Beta" — pastille affichée sur la tuile d’accueil.
  */
 (function (global) {
   "use strict";
@@ -17,7 +18,7 @@
     { label: "Activités" },
   ];
 
-  /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string,publicCible:'prof'|'eleve'}>} */
+  /** @type {Array<{id:string,titre:string,description:string,icone:string,href:string,categorie:string,publicCible:'prof'|'eleve',badge?:string}>} */
   var OUTILS = [
     {
       id: "classes",
@@ -204,10 +205,11 @@
       titre: "Photo Finish",
       description:
         "Chronometrage avec vraie image recomposee de ligne d'arrivee : bandeaux horodates, curseur central, zoom, resultats et export.",
-      icone: "PF",
+      icone: "📷",
       href: "outils/photo-finish.html",
       categorie: "Activités",
       publicCible: "prof",
+      badge: "Beta",
     },
     {
       id: "course-orientation",

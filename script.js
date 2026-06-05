@@ -289,10 +289,21 @@
     link.href = o.href;
     link.setAttribute("data-tool-id", o.id);
 
+    var iconWrap = document.createElement("span");
+    iconWrap.className = "tool-list__icon-wrap";
+
     var icon = document.createElement("span");
     icon.className = "tool-list__icon";
     icon.setAttribute("aria-hidden", "true");
     icon.textContent = o.icone;
+
+    iconWrap.appendChild(icon);
+    if (o.badge) {
+      var badge = document.createElement("span");
+      badge.className = "tool-list__badge";
+      badge.textContent = o.badge;
+      iconWrap.appendChild(badge);
+    }
 
     var main = document.createElement("span");
     main.className = "tool-list__main";
@@ -309,7 +320,7 @@
 
     main.appendChild(title);
     main.appendChild(meta);
-    link.appendChild(icon);
+    link.appendChild(iconWrap);
     link.appendChild(main);
 
     var btnFav = document.createElement("button");
