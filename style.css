@@ -8454,50 +8454,111 @@ body.video-retard-body-fs {
 
 /* --- Photo finish --- */
 .page-outil--photo-finish {
-  max-width: min(48rem, 100%);
+  max-width: min(72rem, 100%);
 }
 
 .photo-finish-msg {
   margin-bottom: 0.5rem;
 }
 
-.photo-finish-opt {
+.photo-finish-tabs {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  margin: 0 0 0.75rem;
+  padding: 0.15rem 0 0.35rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.photo-finish-tab {
+  flex: 0 0 auto;
+  min-height: 2.45rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
+  border-radius: 0.45rem;
+  background: var(--surface, #fff);
+  color: var(--text, #111827);
+  font: inherit;
+  font-weight: 700;
+}
+
+.photo-finish-tab.is-active {
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #fff;
+}
+
+.photo-finish-screen {
+  display: none;
+}
+
+.photo-finish-screen.is-active {
+  display: block;
+}
+
+.photo-finish-home {
+  display: grid;
+  gap: 1rem;
+}
+
+.photo-finish-home h2 {
+  margin-top: 0;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  line-height: 1.15;
+}
+
+.photo-finish-home-actions,
+.photo-finish-inline-actions,
+.photo-finish-capture-actions,
+.photo-finish-zoom-actions,
+.photo-finish-nudge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.photo-finish-home-actions .btn,
+.photo-finish-inline-actions .btn,
+.photo-finish-capture-actions .btn {
+  flex: 1 1 12rem;
+}
+
+.photo-finish-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+
+.photo-finish-toggle {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin: 0.5rem 0 0.75rem;
+  min-height: 2.75rem;
   font-size: 0.92rem;
+  font-weight: 700;
 }
 
-.photo-finish-opt input {
+.photo-finish-toggle input {
   width: 1.1rem;
   height: 1.1rem;
-}
-
-.photo-finish-actions {
-  margin-top: 0.75rem;
-}
-
-.photo-finish-actions .btn {
-  flex: 1 1 auto;
-  min-width: 8rem;
 }
 
 .photo-finish-stage {
   position: relative;
   width: 100%;
-  min-height: min(42vh, 22rem);
+  min-height: min(58vh, 32rem);
   margin-bottom: 0.75rem;
   border-radius: var(--radius-md, 0.5rem);
   overflow: hidden;
   background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .photo-finish-video {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: min(42vh, 22rem);
+  min-height: min(58vh, 32rem);
   object-fit: contain;
   background: #000;
 }
@@ -8514,14 +8575,32 @@ body.video-retard-body-fs {
   z-index: 2;
 }
 
+.photo-finish-slit-guide span {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 18px;
+  transform: translateX(-50%);
+  border-left: 1px solid rgba(225, 29, 72, 0.5);
+  border-right: 1px solid rgba(225, 29, 72, 0.5);
+  background: rgba(225, 29, 72, 0.08);
+}
+
+.photo-finish-capture-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .photo-finish-chrono-live {
   position: absolute;
   top: 0.5rem;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
-  padding: 0.25rem 0.65rem;
-  font-size: 1.35rem;
+  padding: 0.35rem 0.75rem;
+  font-size: clamp(1.65rem, 8vw, 3.8rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #fff;
@@ -8546,15 +8625,37 @@ body.video-retard-body-fs {
   pointer-events: none;
 }
 
-.photo-finish-capture-card .photo-finish-capture-actions {
+.photo-finish-start,
+.photo-finish-stop {
+  min-height: 4rem;
+  font-size: 1.08rem;
+}
+
+.photo-finish-start.is-armed {
+  background: #e11d48;
+  border-color: #e11d48;
+  color: #fff;
+}
+
+.photo-finish-stop:not(:disabled) {
+  background: #111827;
+  color: #fff;
+}
+
+.photo-finish-live-stats,
+.photo-finish-camera-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  color: var(--text-muted, #64748b);
+  font-size: 0.9rem;
 }
 
-.photo-finish-capture-actions .btn {
-  flex: 1 1 auto;
-  min-width: 10rem;
+.photo-finish-live-stats span {
+  padding: 0.25rem 0.45rem;
+  border-radius: 0.35rem;
+  background: rgba(15, 118, 110, 0.08);
 }
 
 .photo-finish-bar-time {
@@ -8567,46 +8668,156 @@ body.video-retard-body-fs {
   color: var(--accent, #2563eb);
 }
 
+.photo-finish-analysis-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.photo-finish-analysis-head h2 {
+  margin-bottom: 0.15rem;
+}
+
+.photo-finish-zoom-actions .btn,
+.photo-finish-nudge .btn {
+  flex: 1 1 auto;
+  min-width: 4.4rem;
+}
+
+.photo-finish-viewer {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: #111;
+}
+
 .photo-finish-scroll {
+  position: relative;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
-  margin-bottom: 0.85rem;
-  border: 1px solid var(--border, rgba(0, 0, 0, 0.12));
-  border-radius: var(--radius-md, 0.5rem);
+  margin-bottom: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background: #111;
+  touch-action: pan-x pinch-zoom;
 }
 
 .photo-finish-image-wrap {
   position: relative;
   display: inline-block;
   line-height: 0;
+  padding-left: var(--pf-viewer-pad, 50vw);
+  padding-right: var(--pf-viewer-pad, 50vw);
+  min-height: min(55vh, 25rem);
+}
+
+.photo-finish-image-wrap.is-reversed {
+  transform: scaleX(-1);
+}
+
+.photo-finish-image-wrap.is-reversed .photo-finish-marker {
+  transform: translateX(-50%) scaleX(-1);
 }
 
 .photo-finish-result {
   display: block;
-  max-height: min(50vh, 20rem);
+  max-height: min(55vh, 25rem);
   width: auto;
   height: auto;
   image-rendering: auto;
 }
 
-.photo-finish-bar {
+.photo-finish-fixed-cursor {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 4px;
-  margin-left: -2px;
-  background: #e11d48;
-  box-shadow: 0 0 10px rgba(225, 29, 72, 0.9);
-  cursor: ew-resize;
-  touch-action: none;
-  z-index: 2;
+  left: 50%;
+  width: 0;
+  transform: translateX(-50%);
+  border-left: 4px solid #e11d48;
+  box-shadow: 0 0 12px rgba(225, 29, 72, 0.9);
+  pointer-events: none;
+  z-index: 4;
 }
 
-.photo-finish-bar:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
+.photo-finish-fixed-time {
+  position: absolute;
+  top: 0.45rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.25rem 0.45rem;
+  border-radius: 0.35rem;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.photo-finish-add {
+  position: absolute;
+  left: 50%;
+  bottom: 0.75rem;
+  width: 3.3rem;
+  height: 3.3rem;
+  transform: translateX(-50%);
+  border: none;
+  border-radius: 50%;
+  background: #e11d48;
+  color: #fff;
+  box-shadow: 0 0 0 5px rgba(225, 29, 72, 0.25);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: auto;
+}
+
+.photo-finish-slider {
+  width: 100%;
+  margin: 0.75rem 0;
+}
+
+.photo-finish-markers {
+  position: absolute;
+  top: 0;
+  left: var(--pf-viewer-pad, 50vw);
+  height: 100%;
+  pointer-events: none;
+}
+
+.photo-finish-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  transform: translateX(-50%);
+  border: none;
+  background: #fbbf24;
+  color: #111827;
+  pointer-events: auto;
+}
+
+.photo-finish-marker span,
+.photo-finish-marker strong {
+  position: absolute;
+  left: 0.25rem;
+  padding: 0.12rem 0.25rem;
+  border-radius: 0.25rem;
+  background: #fbbf24;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.photo-finish-marker span {
+  top: 0.4rem;
+}
+
+.photo-finish-marker strong {
+  top: 1.55rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .photo-finish-nom-manuel {
@@ -8618,22 +8829,19 @@ body.video-retard-body-fs {
   font-size: 1rem;
 }
 
-.photo-finish-classement-titre {
-  margin: 1rem 0 0.5rem;
-  font-size: 1rem;
-}
-
-.photo-finish-classement {
-  margin: 0 0 1rem;
+.photo-finish-results,
+.photo-finish-runners {
+  margin: 1rem 0 0;
   padding: 0;
   list-style: none;
 }
 
-.photo-finish-classement__item {
+.photo-finish-result-item,
+.photo-finish-runner {
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  padding: 0.45rem 0;
+  padding: 0.55rem 0;
   border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
 }
 
@@ -8650,10 +8858,110 @@ body.video-retard-body-fs {
   min-width: 0;
 }
 
+.photo-finish-result-main,
+.photo-finish-runner span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.photo-finish-result-main strong,
+.photo-finish-runner strong {
+  display: block;
+}
+
+.photo-finish-result-main small,
+.photo-finish-runner small {
+  display: block;
+  color: var(--text-muted, #64748b);
+}
+
 .photo-finish-classement__temps {
   flex-shrink: 0;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.photo-finish-dialog {
+  width: min(34rem, calc(100vw - 1rem));
+  padding: 0;
+  border: none;
+  border-radius: 0.5rem;
+  background: transparent;
+}
+
+.photo-finish-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.photo-finish-dialog-card {
+  padding: 1rem;
+  background: var(--surface, #fff);
+  border-radius: 0.5rem;
+}
+
+.photo-finish-dialog-card h2 {
+  margin-top: 0;
+}
+
+.photo-finish-dialog-time {
+  margin: 0 0 0.75rem;
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #0f766e;
+}
+
+.photo-finish-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+
+.photo-finish-debug dl {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(8rem, 1.4fr);
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+.photo-finish-debug dt {
+  color: var(--text-muted, #64748b);
+}
+
+.photo-finish-debug dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.photo-finish-contrast .page-outil--photo-finish {
+  --surface: #fff;
+  --text: #050505;
+  --text-muted: #263238;
+}
+
+@media (min-width: 52rem) {
+  .photo-finish-home {
+    grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 38rem) {
+  .photo-finish-analysis-head {
+    display: block;
+  }
+
+  .photo-finish-zoom-actions {
+    margin-top: 0.5rem;
+  }
+
+  .photo-finish-nudge .btn {
+    min-width: 5.5rem;
+  }
 }
 
 /* --- Inducteur danse --- */

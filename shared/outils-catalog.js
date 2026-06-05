@@ -200,6 +200,16 @@
       publicCible: "prof",
     },
     {
+      id: "photo-finish",
+      titre: "Photo Finish",
+      description:
+        "Chronometrage avec vraie image recomposee de ligne d'arrivee : bandeaux horodates, curseur central, zoom, resultats et export.",
+      icone: "PF",
+      href: "outils/photo-finish.html",
+      categorie: "Activités",
+      publicCible: "prof",
+    },
+    {
       id: "course-orientation",
       titre: "Course d’orientation",
       description:
