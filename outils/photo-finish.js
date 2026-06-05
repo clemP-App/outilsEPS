@@ -16,8 +16,8 @@
 
   var els = {
     msg: $("pf-msg"),
-    tabs: Array.prototype.slice.call(document.querySelectorAll(".photo-finish-tab")),
-    screens: Array.prototype.slice.call(document.querySelectorAll(".photo-finish-screen")),
+    tabs: Array.prototype.slice.call(document.querySelectorAll(".dispense-nav__btn[data-screen]")),
+    screens: Array.prototype.slice.call(document.querySelectorAll(".dispense-view[data-screen]")),
     video: $("pf-video"),
     stage: $("pf-stage"),
     slitGuide: $("pf-slit-guide"),
@@ -27,7 +27,6 @@
     btnCamera: $("pf-btn-camera"),
     btnQualityTest: $("pf-btn-quality-test"),
     btnRunQualityTest: $("pf-btn-run-quality-test"),
-    btnHomeImport: $("pf-btn-home-import"),
     btnResetAdvanced: $("pf-btn-reset-advanced"),
     btnFlip: $("pf-btn-flip"),
     btnStart: $("pf-btn-start"),
@@ -45,6 +44,7 @@
     cursorTimeFloating: $("pf-cursor-time-floating"),
     scrollSlider: $("pf-scroll-slider"),
     btnAddResult: $("pf-btn-add-result"),
+    btnUndoResult: $("pf-btn-undo-result"),
     btnInvert: $("pf-btn-invert"),
     btnSaveSession: $("pf-btn-save-session"),
     btnExportImage: $("pf-btn-export-image"),
@@ -67,6 +67,9 @@
     resultsEmpty: $("pf-results-empty"),
     runnersList: $("pf-runners-list"),
     homeRunners: $("pf-home-runners"),
+    accSession: $("pf-acc-session"),
+    accRunners: $("pf-acc-runners"),
+    accSettings: $("pf-acc-settings"),
   };
 
   var inputs = {
@@ -96,6 +99,7 @@
     filterClass: $("pf-filter-class"),
     filterRunner: $("pf-filter-runner"),
     filterAssigned: $("pf-filter-assigned"),
+    filterSeries: $("pf-filter-series"),
     sortResults: $("pf-sort-results"),
     runnerName: $("pf-runner-name"),
     runnerClass: $("pf-runner-class"),
@@ -130,7 +134,10 @@
     effectiveStripWidth: 4,
     activeImageDataUrl: "",
     currentSessionId: "",
+    currentSeriesNumber: 0,
+    seriesCounter: 0,
     currentResultDraft: null,
+    lastAddedResultId: "",
     settings: defaultSettings(),
     sessionInfo: defaultSessionInfo(),
     runners: [],
@@ -139,6 +146,7 @@
     results: [],
     strips: [],
     debugStats: defaultDebugStats(),
+    hasStoredData: false,
   };
 
   function defaultSettings() {
@@ -226,10 +234,10 @@
     if (!isFinite(ms) || ms < 0) return "-";
     var minutes = Math.floor(ms / 60000);
     var seconds = Math.floor((ms % 60000) / 1000);
-    var millis = Math.floor(ms % 1000);
+    var centis = Math.floor((ms % 1000) / 10);
     var ss = seconds < 10 ? "0" + seconds : String(seconds);
-    var mmm = String(millis).padStart(3, "0");
-    return minutes > 0 ? minutes + ":" + ss + "." + mmm : seconds + "." + mmm + " s";
+    var cc = String(centis).padStart(2, "0");
+    return minutes > 0 ? minutes + ":" + ss + "." + cc : seconds + "." + cc + " s";
   }
 
   function escapeHtml(text) {
@@ -255,10 +263,15 @@
   function go(screen) {
     state.screen = screen;
     els.tabs.forEach(function (tab) {
-      tab.classList.toggle("is-active", tab.dataset.screen === screen);
+      var active = tab.dataset.screen === screen;
+      tab.classList.toggle("dispense-nav__btn--active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+      tab.tabIndex = active ? 0 : -1;
     });
     els.screens.forEach(function (panel) {
-      panel.classList.toggle("is-active", panel.id === "pf-screen-" + screen);
+      var active = panel.dataset.screen === screen;
+      panel.hidden = !active;
+      panel.setAttribute("aria-hidden", active ? "false" : "true");
     });
     if (screen === "analysis") {
       updateViewerPadding();
@@ -351,6 +364,7 @@
         sessionInfo: state.sessionInfo,
         runners: state.runners,
         selectedRunnerIds: state.selectedRunnerIds,
+        seriesCounter: state.seriesCounter,
           results: state.results,
           sessions: state.sessions.map(function (s) {
             return Object.assign({}, s, { imageDataUrl: "" });
@@ -366,6 +380,7 @@
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
+      state.hasStoredData = true;
       var data = JSON.parse(raw);
       state.settings = Object.assign(defaultSettings(), data.settings || {});
       if (!data.settings || data.settings.qualityPatchVersion !== 4) {
@@ -381,8 +396,14 @@
       state.sessionInfo = Object.assign(defaultSessionInfo(), data.sessionInfo || {});
       state.runners = Array.isArray(data.runners) ? data.runners : [];
       state.selectedRunnerIds = Array.isArray(data.selectedRunnerIds) ? data.selectedRunnerIds : [];
+      state.seriesCounter = Number(data.seriesCounter || 0);
       state.results = Array.isArray(data.results) ? data.results : [];
       state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
+      if (!state.seriesCounter && state.results.length) {
+        state.seriesCounter = state.results.reduce(function (max, result) {
+          return Math.max(max, Number(result.seriesNumber || 0));
+        }, 0);
+      }
     } catch (err) {
       showMsg("Les anciennes donnees Photo Finish n'ont pas pu etre relues.");
     }
@@ -457,7 +478,13 @@
       inputs.homeClassSelect.value = classNames().indexOf(current) >= 0 ? current : "";
     }
     if (!els.homeRunners) return;
-    var runners = runnersForCurrentClass();
+    var badge = $("pf-acc-runners-badge");
+    var allRunners = runnersForCurrentClass();
+    if (badge) {
+      badge.textContent = String(allRunners.length);
+      badge.hidden = !allRunners.length;
+    }
+    var runners = allRunners;
     state.selectedRunnerIds = state.selectedRunnerIds.filter(function (id) {
       return runners.some(function (runner) {
         return runner.id === id;
@@ -467,31 +494,58 @@
       els.homeRunners.innerHTML = "<p class=\"hint\">Aucun coureur selectionne. Vous pourrez quand meme enregistrer des temps non attribues.</p>";
       return;
     }
+    var visibleRunners = state.selectedRunnerIds.length
+      ? runners.filter(function (runner) {
+          return state.selectedRunnerIds.indexOf(runner.id) >= 0;
+        })
+      : runners;
     els.homeRunners.innerHTML =
       "<p class=\"field-label\">Eleves de la seance</p>" +
-      runners.map(function (runner) {
-        var checked = !state.selectedRunnerIds.length || state.selectedRunnerIds.indexOf(runner.id) >= 0;
+      "<ul class=\"photo-finish-session-player-list\">" +
+      visibleRunners.map(function (runner) {
         return (
-          "<label class=\"photo-finish-runner-check\"><input type=\"checkbox\" value=\"" +
-          escapeHtml(runner.id) +
-          "\"" +
-          (checked ? " checked" : "") +
-          " /> <span>" +
+          "<li class=\"photo-finish-session-player\"><span><strong>" +
           escapeHtml(runner.displayName) +
-          "</span></label>"
+          "</strong><small>" +
+          escapeHtml(runner.className || "Sans classe") +
+          "</small></span><button type=\"button\" class=\"btn btn--ghost\" data-remove-runner=\"" +
+          escapeHtml(runner.id) +
+          "\">Retirer</button></li>"
         );
-      }).join("");
-    els.homeRunners.querySelectorAll("input[type='checkbox']").forEach(function (checkbox) {
-      checkbox.addEventListener("change", function () {
-        var checkedIds = Array.prototype.slice
-          .call(els.homeRunners.querySelectorAll("input[type='checkbox']:checked"))
-          .map(function (input) {
-            return input.value;
-          });
-        state.selectedRunnerIds = checkedIds.length === runners.length ? [] : checkedIds;
+      }).join("") +
+      "</ul>" +
+      (state.selectedRunnerIds.length
+        ? "<button type=\"button\" class=\"btn btn--ghost\" id=\"pf-btn-restore-runners\">Remettre tous</button>"
+        : "");
+    var restore = $("pf-btn-restore-runners");
+    if (restore) {
+      restore.addEventListener("click", function () {
+        state.selectedRunnerIds = [];
         saveLocalShell();
+        renderHomeSetup();
+      });
+    }
+    els.homeRunners.querySelectorAll("[data-remove-runner]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var currentIds = state.selectedRunnerIds.length
+          ? state.selectedRunnerIds.slice()
+          : runners.map(function (runner) {
+              return runner.id;
+            });
+        state.selectedRunnerIds = currentIds.filter(function (id) {
+          return id !== button.dataset.removeRunner;
+        });
+        saveLocalShell();
+        renderHomeSetup();
       });
     });
+  }
+
+  function setupHomeAccordions() {
+    if (!els.accSession || !els.accRunners || !els.accSettings) return;
+    els.accSession.open = false;
+    els.accRunners.open = !state.hasStoredData;
+    els.accSettings.open = state.hasStoredData;
   }
 
   function resultDialogRunners() {
@@ -690,7 +744,6 @@
     stopCapture();
     cancelAnimationFrame(state.rafId);
     finalizeImage();
-    stopCamera();
     updateCaptureButton();
     go("analysis");
     setStatus("Capture terminee.");
@@ -770,6 +823,8 @@
   function initComposite() {
     var cameraStats = currentCameraDebugStats();
     state.currentSessionId = uid("session");
+    state.seriesCounter += 1;
+    state.currentSeriesNumber = state.seriesCounter;
     state.strips = [];
     state.debugStats = Object.assign(defaultDebugStats(), cameraStats);
     state.activeImageDataUrl = "";
@@ -1170,9 +1225,11 @@
     updateCursorReadout();
   }
 
-  function nudgeBy(ms) {
-    var current = getTimeAtViewportCursor();
-    scrollToImageX(timeToImageX(Math.max(0, current + ms)));
+  function setZoomKeepingCursor(nextZoom) {
+    var time = getTimeAtViewportCursor();
+    state.zoom = nextZoom;
+    applyZoom();
+    scrollToImageX(timeToImageX(time));
   }
 
   function renderMarkers() {
@@ -1188,9 +1245,17 @@
         marker.className = "photo-finish-marker";
         marker.style.left = timeToImageX(r.timeMs) * state.zoom * state.displayScaleX + "px";
         marker.innerHTML =
-          "<span>" + escapeHtml(r.runnerName || "Non attribue") + "</span><strong>" + escapeHtml(r.formattedTime) + "</strong>";
+          "<span>" +
+          escapeHtml(r.runnerName || "Non attribue") +
+          "</span><strong>" +
+          escapeHtml(r.formattedTime) +
+          "</strong><em title=\"Supprimer\">x</em>";
         marker.addEventListener("click", function () {
           scrollToImageX(timeToImageX(r.timeMs));
+        });
+        marker.querySelector("em").addEventListener("click", function (event) {
+          event.stopPropagation();
+          deleteResult(r.id);
         });
         els.markers.appendChild(marker);
       });
@@ -1231,6 +1296,7 @@
       className: selected ? selected.className : state.sessionInfo.className,
       sessionId: state.currentSessionId,
       sessionName: state.sessionInfo.name,
+      seriesNumber: state.currentSeriesNumber || state.seriesCounter || 1,
       timeMs: draft.timeMs,
       formattedTime: formatTime(draft.timeMs),
       imageX: draft.imageX,
@@ -1240,12 +1306,50 @@
       isUnassigned: isUnassigned,
     };
     state.results.push(result);
+    state.lastAddedResultId = result.id;
     rankResults();
     saveLocalShell();
     renderMarkers();
     renderResults();
+    updateUndoButton();
     closeResultDialog();
     showMsg("");
+  }
+
+  function updateUndoButton() {
+    if (!els.btnUndoResult) return;
+    els.btnUndoResult.disabled = !state.lastAddedResultId;
+  }
+
+  function undoLastResult() {
+    if (!state.lastAddedResultId) return;
+    var removed = state.results.some(function (result) {
+      return result.id === state.lastAddedResultId;
+    });
+    state.results = state.results.filter(function (result) {
+      return result.id !== state.lastAddedResultId;
+    });
+    state.lastAddedResultId = "";
+    if (removed) {
+      rankResults();
+      saveLocalShell();
+      renderMarkers();
+      renderResults();
+      updateUndoButton();
+      showMsg("Dernier ajout annule.");
+    }
+  }
+
+  function deleteResult(resultId) {
+    state.results = state.results.filter(function (result) {
+      return result.id !== resultId;
+    });
+    if (state.lastAddedResultId === resultId) state.lastAddedResultId = "";
+    rankResults();
+    saveLocalShell();
+    renderMarkers();
+    renderResults();
+    updateUndoButton();
   }
 
   function rankResults() {
@@ -1334,49 +1438,97 @@
     var classQ = inputs.filterClass.value.trim().toLowerCase();
     var runnerQ = inputs.filterRunner.value.trim().toLowerCase();
     var assigned = inputs.filterAssigned.value;
+    var series = inputs.filterSeries ? inputs.filterSeries.value : "all";
     var list = state.results.filter(function (r) {
       if (classQ && String(r.className || "").toLowerCase().indexOf(classQ) < 0) return false;
       if (runnerQ && String(r.runnerName || "").toLowerCase().indexOf(runnerQ) < 0) return false;
       if (assigned === "assigned" && r.isUnassigned) return false;
       if (assigned === "unassigned" && !r.isUnassigned) return false;
+      if (series !== "all" && String(r.seriesNumber || 1) !== series) return false;
       return true;
     });
     var sort = inputs.sortResults.value;
     list.sort(function (a, b) {
       if (sort === "time-desc") return b.timeMs - a.timeMs;
-      if (sort === "name") return String(a.runnerName).localeCompare(String(b.runnerName));
+      if (sort === "alpha") return String(a.runnerName).localeCompare(String(b.runnerName)) || a.timeMs - b.timeMs;
       if (sort === "date") return String(b.date).localeCompare(String(a.date));
-      if (sort === "session") return String(a.sessionName).localeCompare(String(b.sessionName));
+      if (sort === "series") return Number(a.seriesNumber || 1) - Number(b.seriesNumber || 1) || a.timeMs - b.timeMs;
       return a.timeMs - b.timeMs;
     });
     return list;
   }
 
+  function refreshSeriesFilter() {
+    if (!inputs.filterSeries) return;
+    var current = inputs.filterSeries.value || "all";
+    var series = {};
+    state.results.forEach(function (result) {
+      series[result.seriesNumber || 1] = true;
+    });
+    inputs.filterSeries.innerHTML = "<option value=\"all\">Toutes</option>" +
+      Object.keys(series)
+        .sort(function (a, b) {
+          return Number(a) - Number(b);
+        })
+        .map(function (number) {
+          return "<option value=\"" + escapeHtml(number) + "\">Serie " + escapeHtml(number) + "</option>";
+        })
+        .join("");
+    inputs.filterSeries.value = series[current] ? current : "all";
+  }
+
   function renderResults() {
+    refreshSeriesFilter();
     var list = filteredResults();
     els.resultsList.innerHTML = "";
     els.resultsEmpty.hidden = list.length > 0;
-    list.forEach(function (r, index) {
+    var groups = {};
+    list.forEach(function (result) {
+      var key = result.runnerId || result.runnerName || "unassigned";
+      groups[key] = groups[key] || [];
+      groups[key].push(result);
+    });
+    var grouped = Object.keys(groups).map(function (key) {
+      var performances = groups[key].sort(function (a, b) {
+        return a.timeMs - b.timeMs;
+      });
+      return { key: key, best: performances[0], performances: performances };
+    });
+    var sort = inputs.sortResults.value;
+    grouped.sort(function (a, b) {
+      if (sort === "alpha") return String(a.best.runnerName).localeCompare(String(b.best.runnerName));
+      if (sort === "series") return Number(a.best.seriesNumber || 1) - Number(b.best.seriesNumber || 1) || a.best.timeMs - b.best.timeMs;
+      if (sort === "time-desc") return b.best.timeMs - a.best.timeMs;
+      if (sort === "date") return String(b.best.date).localeCompare(String(a.best.date));
+      return a.best.timeMs - b.best.timeMs;
+    });
+    grouped.forEach(function (group) {
       var li = document.createElement("li");
-      li.className = "photo-finish-result-item";
+      li.className = "photo-finish-result-group";
       li.innerHTML =
-        "<span class=\"photo-finish-classement__rang\">" +
-        (r.rank || index + 1) +
-        "</span><span class=\"photo-finish-result-main\"><strong>" +
-        escapeHtml(r.runnerName) +
+        "<div class=\"photo-finish-result-group__head\"><span><strong>" +
+        escapeHtml(group.best.runnerName) +
         "</strong><small>" +
-        escapeHtml([r.className, r.sessionName, r.comment].filter(Boolean).join(" - ")) +
+        escapeHtml(group.best.className || "Sans classe") +
         "</small></span><span class=\"photo-finish-classement__temps\">" +
-        escapeHtml(r.formattedTime) +
-        "</span><button type=\"button\" class=\"btn btn--ghost\">Supprimer</button>";
-      li.querySelector("button").addEventListener("click", function () {
-        state.results = state.results.filter(function (item) {
-          return item.id !== r.id;
+        escapeHtml(group.best.formattedTime) +
+        "</span></div><ol></ol>";
+      var inner = li.querySelector("ol");
+      group.performances.forEach(function (r) {
+        var row = document.createElement("li");
+        row.className = "photo-finish-result-item";
+        row.innerHTML =
+          "<span class=\"photo-finish-result-series\"><small>Serie</small><strong>" +
+          escapeHtml(r.seriesNumber || 1) +
+          "</strong></span><span class=\"photo-finish-result-main\"><small>" +
+          escapeHtml([r.sessionName, r.comment].filter(Boolean).join(" - ")) +
+          "</small></span><span class=\"photo-finish-classement__temps\">" +
+          escapeHtml(r.formattedTime) +
+          "</span><button type=\"button\" class=\"btn btn--ghost\">Supprimer</button>";
+        row.querySelector("button").addEventListener("click", function () {
+          deleteResult(r.id);
         });
-        rankResults();
-        saveLocalShell();
-        renderResults();
-        renderMarkers();
+        inner.appendChild(row);
       });
       els.resultsList.appendChild(li);
     });
@@ -1441,6 +1593,7 @@
       eventType: state.sessionInfo.eventType,
       distance: state.sessionInfo.distance,
       settings: Object.assign({}, state.settings),
+      seriesNumber: state.currentSeriesNumber || state.seriesCounter || 1,
       imageDataRef: state.currentSessionId,
       imageDataUrl: state.activeImageDataUrl,
       imageWidth: els.resultCanvas.width || 0,
@@ -1581,7 +1734,6 @@
       inputs.delayCustomWrap.hidden = inputs.delay.value !== "custom";
     });
     els.btnCamera.addEventListener("click", startCamera);
-    if (els.btnHomeImport) els.btnHomeImport.addEventListener("click", importClassFromTool);
     if (els.btnResetAdvanced) {
       els.btnResetAdvanced.addEventListener("click", function () {
         var keepName = state.sessionInfo.name;
@@ -1658,22 +1810,14 @@
       var max = Math.max(0, els.scroll.scrollWidth - els.scroll.clientWidth);
       els.scroll.scrollLeft = (Number(els.scrollSlider.value) / 1000) * max;
     });
-    document.querySelectorAll("[data-nudge]").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        nudgeBy(Number(btn.dataset.nudge));
-      });
-    });
     $("pf-zoom-out").addEventListener("click", function () {
-      state.zoom = Math.max(0.5, state.zoom / 1.25);
-      applyZoom();
+      setZoomKeepingCursor(Math.max(0.5, state.zoom / 1.25));
     });
     $("pf-zoom-in").addEventListener("click", function () {
-      state.zoom = Math.min(6, state.zoom * 1.25);
-      applyZoom();
+      setZoomKeepingCursor(Math.min(6, state.zoom * 1.25));
     });
     $("pf-zoom-reset").addEventListener("click", function () {
-      state.zoom = 1;
-      applyZoom();
+      setZoomKeepingCursor(1);
     });
     els.btnInvert.addEventListener("click", function () {
       state.settings.direction =
@@ -1684,6 +1828,7 @@
       updateCursorReadout();
     });
     els.btnAddResult.addEventListener("click", openResultDialog);
+    if (els.btnUndoResult) els.btnUndoResult.addEventListener("click", undoLastResult);
     els.dialogCancel.addEventListener("click", closeResultDialog);
     els.dialogSave.addEventListener("click", saveResultFromDialog);
     els.runnerSearch.addEventListener("input", fillRunnerSelect);
@@ -1694,7 +1839,8 @@
     els.btnExportImage.addEventListener("click", exportImage);
     $("pf-btn-export-csv").addEventListener("click", exportCsv);
     $("pf-btn-copy-results").addEventListener("click", copyResults);
-    [inputs.filterClass, inputs.filterRunner, inputs.filterAssigned, inputs.sortResults].forEach(function (input) {
+    [inputs.filterClass, inputs.filterRunner, inputs.filterAssigned, inputs.filterSeries, inputs.sortResults].forEach(function (input) {
+      if (!input) return;
       input.addEventListener("input", renderResults);
       input.addEventListener("change", renderResults);
     });
@@ -1718,7 +1864,8 @@
       renderRunners();
       renderHomeSetup();
     });
-    $("btn-import-classe-pf").addEventListener("click", importClassFromTool);
+    var importBtn = $("btn-import-classe-pf");
+    if (importBtn) importBtn.addEventListener("click", importClassFromTool);
     window.addEventListener("resize", function () {
       updateViewerPadding();
       applyZoom();
@@ -1728,15 +1875,24 @@
 
   restoreSession();
   writeSettingsToUi();
+  if (typeof ListeManuellePanel !== "undefined" && inputs.importText) {
+    ListeManuellePanel.bind({
+      toggleBtnId: "btn-ajouter-manuel-pf",
+      panelId: "liste-manuelle-panel-pf",
+      textareaEl: inputs.importText,
+    });
+  }
   if (els.imageWrap) {
     els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
   }
   wireEvents();
+  setupHomeAccordions();
   renderHomeSetup();
   renderRunners();
   renderResults();
   if (els.btnStop) els.btnStop.disabled = true;
   updateCaptureButton();
+  updateUndoButton();
   updateLiveStats();
 
   window.PhotoFinishApp = {
