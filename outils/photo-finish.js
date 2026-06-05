@@ -121,6 +121,7 @@
     lastStopTap: 0,
     zoom: 1,
     displayScaleX: 1,
+    effectiveStripWidth: 4,
     activeImageDataUrl: "",
     currentSessionId: "",
     currentResultDraft: null,
@@ -155,7 +156,7 @@
 
   function defaultSessionInfo() {
     return {
-      name: "Photo Finish " + new Date().toLocaleDateString("fr-FR"),
+      name: "Photo Finish V1 " + new Date().toLocaleDateString("fr-FR"),
       date: new Date().toISOString(),
       className: "",
       eventType: "Sprint",
@@ -183,6 +184,7 @@
       cameraDeviceId: "",
       cameraLabel: "",
       stripWidth: 0,
+      effectiveStripWidth: 0,
       sourceStripHeight: 0,
       renderHeight: 0,
       qualityMode: "balancedEPS",
@@ -439,6 +441,19 @@
     if (index >= profiles.length) return Promise.reject(new Error("Aucun profil camera accepte."));
     return navigator.mediaDevices.getUserMedia(profiles[index].constraints).then(function (stream) {
       stream._photoFinishProfile = profiles[index];
+      var track = stream.getVideoTracks && stream.getVideoTracks()[0];
+      var settings = track && track.getSettings ? track.getSettings() : {};
+      if (
+        profiles[index].requestedFrameRate >= 60 &&
+        settings.frameRate &&
+        settings.frameRate < 50 &&
+        index < profiles.length - 1
+      ) {
+        stream.getTracks().forEach(function (t) {
+          t.stop();
+        });
+        return requestCameraWithProfiles(profiles, index + 1);
+      }
       return stream;
     }).catch(function (err) {
       if (index === profiles.length - 1) throw err;
@@ -645,6 +660,7 @@
     state.activeImageDataUrl = "";
     state.zoom = 1;
     state.displayScaleX = 1;
+    state.effectiveStripWidth = chooseEffectiveStripWidth(cameraStats.cameraFrameRate);
     compositeCanvas.width = 1;
     compositeCanvas.height = 1;
     compositeCtx.fillStyle = "#111";
@@ -655,6 +671,12 @@
   function captureHeight(videoHeight) {
     if (state.settings.captureHeight === "full") return videoHeight;
     return Math.min(videoHeight, Number(state.settings.captureHeight || 720));
+  }
+
+  function chooseEffectiveStripWidth(cameraFrameRate) {
+    var configured = Math.max(1, Math.min(8, state.settings.stripWidth || 4));
+    if (cameraFrameRate && cameraFrameRate < 45 && configured > 2) return 2;
+    return configured;
   }
 
   function outputRenderHeight(sourceHeight) {
@@ -707,7 +729,7 @@
     // Ne jamais utiliser clientWidth/clientHeight/getBoundingClientRect ici.
     var vw = sourceWidth;
     var vh = sourceHeight;
-    var stripWidth = state.settings.stripWidth;
+    var stripWidth = state.effectiveStripWidth || state.settings.stripWidth;
     var sourceStripHeight = captureHeight(vh);
     var renderHeight = outputRenderHeight(sourceStripHeight);
     var y = Math.max(0, Math.round((vh - sourceStripHeight) / 2));
@@ -786,7 +808,7 @@
       state.debugStats.captureDurationMs > 0
         ? (state.debugStats.stripCount / state.debugStats.captureDurationMs) * 1000
         : 0;
-    state.debugStats.pixelsPerSecond = state.debugStats.averageFps * state.settings.stripWidth;
+    state.debugStats.pixelsPerSecond = state.debugStats.averageFps * (state.effectiveStripWidth || state.settings.stripWidth);
     state.debugStats.densityLabel = densityLabel(state.debugStats.pixelsPerSecond);
     if (delta > 0) {
       state.debugStats.minFrameDeltaMs = state.debugStats.minFrameDeltaMs
@@ -795,6 +817,7 @@
       state.debugStats.maxFrameDeltaMs = Math.max(state.debugStats.maxFrameDeltaMs, delta);
     }
     state.debugStats.stripWidth = state.settings.stripWidth;
+    state.debugStats.effectiveStripWidth = state.effectiveStripWidth || state.settings.stripWidth;
     state.debugStats.sourceStripHeight = last && last.sourceHeight ? last.sourceHeight : 0;
     state.debugStats.renderHeight = last ? last.height : 0;
     state.debugStats.displayScaleX = state.displayScaleX || 1;
@@ -819,11 +842,16 @@
     var stats = state.debugStats;
     var warnings = [];
     if (stats.averageFps && stats.averageFps < 35) warnings.push("FPS faible : le rendu sera moins fluide.");
-    if (stats.stripWidth >= 7) warnings.push("Slices trop larges : le coureur risque d'etre etire.");
+    if (stats.effectiveStripWidth >= 7) warnings.push("Slices trop larges : le coureur risque d'etre etire.");
+    if (stats.cameraFrameRate && stats.cameraFrameRate < 45 && stats.stripWidth !== stats.effectiveStripWidth) {
+      warnings.push("Mode 30 fps : bandeaux automatiquement affines pour reduire l'effet mosaique.");
+    }
     if (stats.renderHeight > 480) warnings.push("Image trop haute : utilisez Bande SprintTimer pour un rendu plus lisible.");
     if (stats.imageWidth > 12000) warnings.push("Image tres large : risque de ralentissement sur mobile.");
-    if (stats.cameraWidth && stats.cameraWidth < 1280) warnings.push("Resolution faible : rapprochez moins la camera ou augmentez la qualite.");
-    if (stats.pixelsPerSecond && stats.pixelsPerSecond < 160) warnings.push("Densite temporelle faible : augmentez le fps ou utilisez 4 px.");
+    if (stats.cameraWidth && stats.cameraHeight && Math.max(stats.cameraWidth, stats.cameraHeight) < 1280) {
+      warnings.push("Resolution faible : rapprochez moins la camera ou augmentez la qualite.");
+    }
+    if (stats.pixelsPerSecond && stats.pixelsPerSecond < 160) warnings.push("Densite temporelle brute faible : cherchez 60 fps si possible.");
     if (stats.pixelsPerSecond > 320) warnings.push("Densite temporelle elevee : image large, surveillez la memoire.");
     if (!warnings.length) warnings.push("Densite temporelle correcte : le compromis EPS est bon.");
     return warnings;
@@ -838,7 +866,8 @@
       "Nombre de strips": stats.stripCount,
       "FPS moyen reel": stats.averageFps.toFixed(1),
       "Delta min/max": stats.minFrameDeltaMs.toFixed(1) + " / " + stats.maxFrameDeltaMs.toFixed(1) + " ms",
-      "Largeur strip": stats.stripWidth + " px natifs",
+      "Largeur reglee": stats.stripWidth + " px natifs",
+      "Largeur utilisee": stats.effectiveStripWidth + " px natifs",
       "Pixels par seconde": stats.pixelsPerSecond.toFixed(1),
       "Pixels/s visuels": stats.visualPixelsPerSecond.toFixed(1),
       "Scale visuel X": stats.displayScaleX.toFixed(2),
@@ -863,7 +892,7 @@
   function copyResultToQualityPreview() {
     if (!els.qualityResult || !els.resultCanvas.width) return;
     var maxWidth = 900;
-    var visualWidth = els.resultCanvas.width * state.displayScaleX;
+    var visualWidth = els.resultCanvas.width;
     var scale = Math.min(1, maxWidth / Math.max(1, visualWidth));
     els.qualityResult.width = Math.max(1, Math.round(visualWidth * scale));
     els.qualityResult.height = Math.max(1, Math.round(els.resultCanvas.height * scale));
@@ -917,16 +946,18 @@
     }
     var width = state.strips[state.strips.length - 1].imageXEnd;
     var height = state.strips[state.strips.length - 1].height;
-    els.resultCanvas.width = width;
-    els.resultCanvas.height = height;
-    resultCtx.imageSmoothingEnabled = false;
-    resultCtx.drawImage(compositeCanvas, 0, 0, width, height, 0, 0, width, height);
-    state.activeImageDataUrl = els.resultCanvas.toDataURL("image/png");
     state.zoom = 1;
     state.displayScaleX = computeDisplayScaleX();
     state.debugStats.displayScaleX = state.displayScaleX;
     state.debugStats.visualPixelsPerSecond =
       state.debugStats.pixelsPerSecond * state.displayScaleX;
+    var visualWidth = Math.max(1, Math.round(width * state.displayScaleX));
+    els.resultCanvas.width = visualWidth;
+    els.resultCanvas.height = height;
+    resultCtx.imageSmoothingEnabled = state.displayScaleX > 1.01;
+    resultCtx.imageSmoothingQuality = "high";
+    resultCtx.drawImage(compositeCanvas, 0, 0, width, height, 0, 0, visualWidth, height);
+    state.activeImageDataUrl = els.resultCanvas.toDataURL("image/png");
     applyZoom();
     updateViewerPadding();
     els.scroll.scrollLeft = 0;
@@ -992,7 +1023,7 @@
 
   function applyZoom() {
     if (!els.resultCanvas) return;
-    var width = els.resultCanvas.width * state.zoom * state.displayScaleX;
+    var width = els.resultCanvas.width * state.zoom;
     els.resultCanvas.style.width = width + "px";
     els.resultCanvas.style.height = "auto";
     renderMarkers();
@@ -1316,18 +1347,8 @@
       showMsg("Aucune image a exporter.");
       return;
     }
-    var exportCanvas = els.resultCanvas;
-    if (state.displayScaleX > 1.01) {
-      exportCanvas = document.createElement("canvas");
-      exportCanvas.width = Math.round(els.resultCanvas.width * state.displayScaleX);
-      exportCanvas.height = els.resultCanvas.height;
-      var exportCtx = exportCanvas.getContext("2d", { alpha: false });
-      exportCtx.imageSmoothingEnabled = true;
-      exportCtx.imageSmoothingQuality = "high";
-      exportCtx.drawImage(els.resultCanvas, 0, 0, exportCanvas.width, exportCanvas.height);
-    }
     var a = document.createElement("a");
-    a.href = exportCanvas.toDataURL("image/png");
+    a.href = els.resultCanvas.toDataURL("image/png");
     a.download = "photo-finish-" + new Date().toISOString().slice(0, 10) + ".png";
     a.click();
   }
@@ -1347,7 +1368,8 @@
       "Facing mode": stats.cameraFacingMode || "-",
       "Device id": stats.cameraDeviceId || "-",
       "Camera utilisee": stats.cameraLabel || "-",
-      "Largeur bandeau": stats.stripWidth,
+      "Largeur reglee": stats.stripWidth,
+      "Largeur utilisee": stats.effectiveStripWidth || stats.stripWidth,
       "Hauteur source": stats.sourceStripHeight || "-",
       "Hauteur rendu": stats.renderHeight || "-",
       "Pixels par seconde": stats.pixelsPerSecond.toFixed(1),

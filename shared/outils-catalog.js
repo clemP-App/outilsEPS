@@ -202,7 +202,7 @@
     },
     {
       id: "photo-finish",
-      titre: "Photo Finish",
+      titre: "Photo Finish V1",
       description:
         "Chronometrage avec vraie image recomposee de ligne d'arrivee : bandeaux horodates, curseur central, zoom, resultats et export.",
       icone: "📷",
