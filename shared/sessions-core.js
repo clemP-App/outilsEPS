@@ -18,6 +18,7 @@
     CHAMPIONNAT: "championnat-poule",
     ORIENTATION: "course-orientation",
     DEFI_ATP: "defi-atp",
+    PHOTO_FINISH: "photo-finish",
   };
 
   var TOOL_LABELS = {
@@ -27,6 +28,7 @@
     "championnat-poule": "Championnat",
     "course-orientation": "Course d’orientation",
     "defi-atp": "Défi ATP",
+    "photo-finish": "Photo Finish V1",
   };
 
   var SESSION_TOOL_IDS = Object.keys(TOOL_LABELS);

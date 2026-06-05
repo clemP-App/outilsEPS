@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "79";
+var APP_CACHE_VERSION = "80";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -118,16 +118,21 @@ var PRECACHE = [
   "./shared/championnat-standings.js",
   "./shared/classe-csv-import.js",
   "./shared/eleve-display.js",
+  "./shared/eleve-fusion.js",
   "./shared/eleve-labels.js",
   "./shared/eps-apsa-list.js",
+  "./shared/equipe-couleur.js",
   "./shared/evaluation-rubric-library.js",
   "./shared/import-detail-render.js",
   "./shared/import-eleve-associate.js",
+  "./shared/import-eleve-presence.js",
   "./shared/import-record-core.js",
   "./shared/imports-eleves-export.js",
   "./shared/imports-eleves-ui.js",
   "./shared/journal-musculation-body.js",
   "./shared/journal-musculation-core.js",
+  "./shared/liste-manuelle-panel.js",
+  "./shared/liste-saisie-ui.js",
   "./shared/outils-catalog.js",
   "./shared/outils-dom.js",
   "./shared/qr-exchange-core.js",
@@ -137,6 +142,7 @@ var PRECACHE = [
   "./shared/sessions-core.js",
   "./shared/supabase-config.js",
   "./shared/supabaseClient.js",
+  "./shared/sync-classe-tableaux.js",
   "./shared/synthese-asns.js",
   "./shared/synthese-eps-activites.js",
   "./shared/synthese-eps-core.js",

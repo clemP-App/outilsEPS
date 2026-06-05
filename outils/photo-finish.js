@@ -9,6 +9,7 @@
   var DB_NAME = "outilseps-photo-finish";
   var DB_VERSION = 1;
   var MAX_IMAGE_WIDTH = 18000;
+  var managerSessionId = null;
 
   var $ = function (id) {
     return document.getElementById(id);
@@ -67,13 +68,11 @@
     resultsEmpty: $("pf-results-empty"),
     runnersList: $("pf-runners-list"),
     homeRunners: $("pf-home-runners"),
-    accSession: $("pf-acc-session"),
     accRunners: $("pf-acc-runners"),
     accSettings: $("pf-acc-settings"),
   };
 
   var inputs = {
-    homeSessionName: $("pf-home-session-name"),
     homeClassSelect: $("pf-home-class-select"),
     sessionName: $("pf-session-name"),
     sessionClass: $("pf-session-class"),
@@ -285,6 +284,158 @@
     if (screen === "home") renderHomeSetup();
   }
 
+  function activeManagerSessionName() {
+    if (typeof SessionManager !== "undefined" && SessionManager.getActiveSession) {
+      var s = SessionManager.getActiveSession();
+      if (s && s.nomSession) return s.nomSession;
+    }
+    return state.sessionInfo.name || defaultSessionInfo().name;
+  }
+
+  function applyQualityPatchIfNeeded() {
+    if (state.settings.qualityPatchVersion === 4) return;
+    state.settings.stripWidth = 4;
+    state.settings.qualityMode = "balancedEPS";
+    state.settings.startTriggerMode = "release";
+    state.settings.captureHeight = "full";
+    state.settings.renderHeight = "sprint";
+    state.settings.debugEnabled = false;
+    state.settings.direction = normalizeDirection(state.settings.direction);
+    state.settings.qualityPatchVersion = 4;
+  }
+
+  function serializeShell() {
+    return {
+      settings: state.settings,
+      sessionInfo: {
+        eventType: state.sessionInfo.eventType,
+        distance: state.sessionInfo.distance,
+        comment: state.sessionInfo.comment,
+        className: state.sessionInfo.className,
+        date: state.sessionInfo.date,
+      },
+      runners: state.runners,
+      selectedRunnerIds: state.selectedRunnerIds,
+      seriesCounter: state.seriesCounter,
+      results: state.results,
+      sessions: state.sessions.map(function (s) {
+        return Object.assign({}, s, { imageDataUrl: "" });
+      }),
+    };
+  }
+
+  function applyShellPayload(payload) {
+    payload = payload || {};
+    state.settings = Object.assign(defaultSettings(), payload.settings || {});
+    applyQualityPatchIfNeeded();
+    state.sessionInfo = Object.assign(defaultSessionInfo(), payload.sessionInfo || {});
+    state.sessionInfo.name = activeManagerSessionName();
+    state.runners = Array.isArray(payload.runners) ? payload.runners : [];
+    state.selectedRunnerIds = Array.isArray(payload.selectedRunnerIds)
+      ? payload.selectedRunnerIds
+      : [];
+    state.seriesCounter = Number(payload.seriesCounter || 0);
+    state.results = Array.isArray(payload.results) ? payload.results : [];
+    state.sessions = Array.isArray(payload.sessions) ? payload.sessions : [];
+    if (!state.seriesCounter && state.results.length) {
+      state.seriesCounter = state.results.reduce(function (max, result) {
+        return Math.max(max, Number(result.seriesNumber || 0));
+      }, 0);
+    }
+    state.hasStoredData = !!(state.runners.length || state.results.length || state.sessions.length);
+  }
+
+  function resetShellForManagerSession(session) {
+    state.settings = defaultSettings();
+    state.sessionInfo = defaultSessionInfo();
+    state.sessionInfo.name = (session && session.nomSession) || defaultSessionInfo().name;
+    state.sessionInfo.className = (session && session.classeNomSnapshot) || "";
+    state.runners = [];
+    state.selectedRunnerIds = [];
+    state.seriesCounter = 0;
+    state.results = [];
+    state.sessions = [];
+    state.hasStoredData = false;
+  }
+
+  function syncSessionInfoFromManager(session) {
+    if (!session) return;
+    state.sessionInfo.name = session.nomSession || state.sessionInfo.name;
+    if (session.classeNomSnapshot) state.sessionInfo.className = session.classeNomSnapshot;
+  }
+
+  function migrateLegacyToSession(sessionId) {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw || typeof DataManager === "undefined" || !DataManager.savePhotoFinishForSession) {
+        return Promise.resolve(false);
+      }
+      var data = JSON.parse(raw);
+      return DataManager.savePhotoFinishForSession(sessionId, {
+        settings: data.settings,
+        sessionInfo: data.sessionInfo,
+        runners: data.runners,
+        selectedRunnerIds: data.selectedRunnerIds,
+        seriesCounter: data.seriesCounter,
+        results: data.results,
+        sessions: data.sessions,
+      }).then(function () {
+        localStorage.removeItem(STORAGE_KEY);
+        return true;
+      });
+    } catch (err) {
+      return Promise.resolve(false);
+    }
+  }
+
+  function loadManagerSession(session) {
+    managerSessionId = session.id;
+    syncSessionInfoFromManager(session);
+    return migrateLegacyToSession(session.id)
+      .then(function () {
+        return DataManager.getPhotoFinishForSession(session.id);
+      })
+      .then(function (payload) {
+        if (payload) applyShellPayload(payload);
+        else resetShellForManagerSession(session);
+        writeSettingsToUi();
+        setupHomeAccordions();
+        renderHomeSetup();
+        renderRunners();
+        renderResults();
+        updateLiveStats();
+        refreshPhotoFinishUiAfterLoad();
+        showMsg("");
+      })
+      .catch(function () {
+        showMsg("Impossible de charger cette séance.");
+      });
+  }
+
+  function clearManagerSession() {
+    managerSessionId = null;
+    resetShellForManagerSession(null);
+    writeSettingsToUi();
+    setupHomeAccordions();
+    renderHomeSetup();
+    renderRunners();
+    renderResults();
+    refreshPhotoFinishUiAfterLoad();
+  }
+
+  function bootWithoutSessionManager() {
+    restoreSession();
+    writeSettingsToUi();
+    setupHomeAccordions();
+    renderHomeSetup();
+    renderRunners();
+    renderResults();
+    updateLiveStats();
+    refreshPhotoFinishUiAfterLoad();
+    var gated = document.querySelector(".tool-session-gated");
+    if (gated) gated.hidden = false;
+  }
+
   function readSettingsFromUi() {
     var delayValue = inputs.delay.value;
     var delayMs =
@@ -309,10 +460,7 @@
       qualityPatchVersion: 4,
     };
     state.sessionInfo = {
-      name:
-        (inputs.homeSessionName && inputs.homeSessionName.value.trim()) ||
-        inputs.sessionName.value.trim() ||
-        defaultSessionInfo().name,
+      name: activeManagerSessionName(),
       date: state.sessionInfo.date || new Date().toISOString(),
       className: (inputs.homeClassSelect && inputs.homeClassSelect.value) || inputs.sessionClass.value.trim(),
       eventType: inputs.eventType.value.trim(),
@@ -327,7 +475,6 @@
 
   function writeSettingsToUi() {
     inputs.sessionName.value = state.sessionInfo.name || "";
-    if (inputs.homeSessionName) inputs.homeSessionName.value = state.sessionInfo.name || "";
     inputs.sessionClass.value = state.sessionInfo.className || "";
     inputs.eventType.value = state.sessionInfo.eventType || "";
     inputs.distance.value = state.sessionInfo.distance || "";
@@ -356,21 +503,21 @@
   }
 
   function saveLocalShell() {
+    if (
+      managerSessionId &&
+      typeof DataManager !== "undefined" &&
+      DataManager.savePhotoFinishForSession
+    ) {
+      if (typeof SessionManager !== "undefined" && SessionManager.getActiveSession) {
+        syncSessionInfoFromManager(SessionManager.getActiveSession());
+      }
+      DataManager.savePhotoFinishForSession(managerSessionId, serializeShell()).catch(function () {
+        showMsg("Impossible d'enregistrer la séance.");
+      });
+      return;
+    }
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-        settings: state.settings,
-        sessionInfo: state.sessionInfo,
-        runners: state.runners,
-        selectedRunnerIds: state.selectedRunnerIds,
-        seriesCounter: state.seriesCounter,
-          results: state.results,
-          sessions: state.sessions.map(function (s) {
-            return Object.assign({}, s, { imageDataUrl: "" });
-          }),
-        })
-      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializeShell()));
     } catch (err) {
       showMsg("Sauvegarde locale impossible : espace insuffisant.");
     }
@@ -380,30 +527,7 @@
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      state.hasStoredData = true;
-      var data = JSON.parse(raw);
-      state.settings = Object.assign(defaultSettings(), data.settings || {});
-      if (!data.settings || data.settings.qualityPatchVersion !== 4) {
-        state.settings.stripWidth = 4;
-        state.settings.qualityMode = "balancedEPS";
-        state.settings.startTriggerMode = "release";
-        state.settings.captureHeight = "full";
-        state.settings.renderHeight = "sprint";
-        state.settings.debugEnabled = false;
-        state.settings.direction = normalizeDirection(state.settings.direction);
-        state.settings.qualityPatchVersion = 4;
-      }
-      state.sessionInfo = Object.assign(defaultSessionInfo(), data.sessionInfo || {});
-      state.runners = Array.isArray(data.runners) ? data.runners : [];
-      state.selectedRunnerIds = Array.isArray(data.selectedRunnerIds) ? data.selectedRunnerIds : [];
-      state.seriesCounter = Number(data.seriesCounter || 0);
-      state.results = Array.isArray(data.results) ? data.results : [];
-      state.sessions = Array.isArray(data.sessions) ? data.sessions : [];
-      if (!state.seriesCounter && state.results.length) {
-        state.seriesCounter = state.results.reduce(function (max, result) {
-          return Math.max(max, Number(result.seriesNumber || 0));
-        }, 0);
-      }
+      applyShellPayload(JSON.parse(raw));
     } catch (err) {
       showMsg("Les anciennes donnees Photo Finish n'ont pas pu etre relues.");
     }
@@ -542,10 +666,17 @@
   }
 
   function setupHomeAccordions() {
-    if (!els.accSession || !els.accRunners || !els.accSettings) return;
-    els.accSession.open = false;
+    if (!els.accRunners || !els.accSettings) return;
     els.accRunners.open = !state.hasStoredData;
     els.accSettings.open = state.hasStoredData;
+  }
+
+  function refreshPhotoFinishUiAfterLoad() {
+    if (els.imageWrap) {
+      els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
+    }
+    updateCaptureButton();
+    updateUndoButton();
   }
 
   function resultDialogRunners() {
@@ -1723,13 +1854,6 @@
         renderHomeSetup();
       });
     }
-    if (inputs.homeSessionName) {
-      inputs.homeSessionName.addEventListener("input", function () {
-        state.sessionInfo.name = inputs.homeSessionName.value.trim() || defaultSessionInfo().name;
-        if (inputs.sessionName) inputs.sessionName.value = state.sessionInfo.name;
-        saveLocalShell();
-      });
-    }
     inputs.delay.addEventListener("change", function () {
       inputs.delayCustomWrap.hidden = inputs.delay.value !== "custom";
     });
@@ -1873,8 +1997,7 @@
     });
   }
 
-  restoreSession();
-  writeSettingsToUi();
+  wireEvents();
   if (typeof ListeManuellePanel !== "undefined" && inputs.importText) {
     ListeManuellePanel.bind({
       toggleBtnId: "btn-ajouter-manuel-pf",
@@ -1882,18 +2005,18 @@
       textareaEl: inputs.importText,
     });
   }
-  if (els.imageWrap) {
-    els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
-  }
-  wireEvents();
-  setupHomeAccordions();
-  renderHomeSetup();
-  renderRunners();
-  renderResults();
   if (els.btnStop) els.btnStop.disabled = true;
-  updateCaptureButton();
-  updateUndoButton();
-  updateLiveStats();
+
+  if (typeof SessionManager !== "undefined" && typeof DataManager !== "undefined") {
+    SessionManager.init({
+      toolId: DataManager.SESSION_TOOLS.PHOTO_FINISH,
+      toolLabel: "Photo Finish V1",
+      onSessionReady: loadManagerSession,
+      onSessionCleared: clearManagerSession,
+    });
+  } else {
+    bootWithoutSessionManager();
+  }
 
   window.PhotoFinishApp = {
     startTimer: startTimer,

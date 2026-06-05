@@ -22,6 +22,7 @@ var DataManager = (function () {
             CHAMPIONNAT: "championnat-poule",
             ORIENTATION: "course-orientation",
             DEFI_ATP: "defi-atp",
+            PHOTO_FINISH: "photo-finish",
           },
           courseOrientationDataId: function (sid) {
             return "course-orientation__" + sid;
@@ -1770,6 +1771,53 @@ var DataManager = (function () {
     });
   }
 
+  function getPhotoFinishForSession(sessionId) {
+    return getBySession("tournoisElimination", sessionId).then(function (list) {
+      var r = list.filter(function (x) {
+        return x && x.kind === "photo-finish";
+      })[0];
+      if (!r) return null;
+      return {
+        dataId: r.id,
+        settings: r.settings || null,
+        sessionInfo: r.sessionInfo || null,
+        runners: Array.isArray(r.runners) ? r.runners.slice() : [],
+        selectedRunnerIds: Array.isArray(r.selectedRunnerIds) ? r.selectedRunnerIds.slice() : [],
+        seriesCounter: Number(r.seriesCounter || 0),
+        results: Array.isArray(r.results) ? r.results.slice() : [],
+        sessions: Array.isArray(r.sessions) ? r.sessions.slice() : [],
+      };
+    });
+  }
+
+  function savePhotoFinishForSession(sessionId, payload) {
+    if (!sessionId) return Promise.reject(new Error("Aucune séance active."));
+    payload = payload || {};
+    return getBySession("tournoisElimination", sessionId).then(function (list) {
+      var existing = list.filter(function (x) {
+        return x && x.kind === "photo-finish";
+      })[0];
+      var bloc = {
+        id: existing ? existing.id : genererId("photo-finish"),
+        sessionId: sessionId,
+        kind: "photo-finish",
+        nom: "Photo Finish V1",
+        settings: payload.settings || {},
+        sessionInfo: payload.sessionInfo || {},
+        runners: payload.runners || [],
+        selectedRunnerIds: payload.selectedRunnerIds || [],
+        seriesCounter: Number(payload.seriesCounter || 0),
+        results: payload.results || [],
+        sessions: payload.sessions || [],
+        updatedAt: new Date().toISOString(),
+      };
+      if (existing) return updateItem("tournoisElimination", bloc);
+      return addItem("tournoisElimination", bloc);
+    }).then(function () {
+      return touchSession(sessionId);
+    });
+  }
+
   function getPyramideVictoires() {
     return getActiveSessionId(SC.SESSION_TOOLS.PYRAMIDE).then(function (sid) {
       if (!sid) return { players: [], matches: [] };
@@ -2658,6 +2706,8 @@ var DataManager = (function () {
     saveCompositionForSession: saveCompositionForSession,
     getPyramideForSession: getPyramideForSession,
     savePyramideForSession: savePyramideForSession,
+    getPhotoFinishForSession: getPhotoFinishForSession,
+    savePhotoFinishForSession: savePhotoFinishForSession,
     getPyramideVictoires: getPyramideVictoires,
     savePyramideVictoires: savePyramideVictoires,
     getCourseOrientationForSession: getCourseOrientationForSession,

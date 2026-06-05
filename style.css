@@ -8938,19 +8938,21 @@ body.video-retard-body-fs {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 1px;
+  width: 0;
+  padding: 0;
   transform: translateX(-50%);
   border: none;
-  background: rgba(245, 158, 11, 0.48);
+  border-left: 2px solid #f59e0b;
+  background: transparent;
   color: #111827;
   pointer-events: auto;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.55);
 }
 
 .photo-finish-marker span,
 .photo-finish-marker strong {
   position: absolute;
-  left: 0.28rem;
+  left: 0.35rem;
   padding: 0.08rem 0.22rem;
   border-radius: 0.2rem;
   background: rgba(255, 255, 255, 0.88);
@@ -8993,7 +8995,9 @@ body.video-retard-body-fs {
 
 .photo-finish-marker:focus-visible,
 .photo-finish-marker:hover {
-  background: rgba(245, 158, 11, 0.72);
+  border-left-color: #fbbf24;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.75);
+  background: transparent;
 }
 
 .photo-finish-marker:focus-visible em,

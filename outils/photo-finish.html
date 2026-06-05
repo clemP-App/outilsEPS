@@ -25,6 +25,9 @@
         <h1>Photo Finish V1 <span class="tool-beta-badge">Beta</span></h1>
       </header>
 
+      <div id="session-manager-mount"></div>
+
+      <div class="tool-session-gated" hidden>
       <nav class="dispense-nav photo-finish-nav" role="tablist" aria-label="Écrans Photo Finish">
         <button
           type="button"
@@ -89,19 +92,6 @@
         role="tabpanel"
         aria-labelledby="pf-tab-home"
       >
-        <details class="card card--accordion" id="pf-acc-session" open>
-          <summary class="card--accordion__summary">
-            <span class="card--accordion__title">Séance</span>
-            <span class="card--accordion__chev" aria-hidden="true"></span>
-          </summary>
-          <div class="card--accordion__panel">
-            <div class="field-group">
-              <label class="field-label" for="pf-home-session-name">Nom de la séance</label>
-              <input type="text" id="pf-home-session-name" autocomplete="off" />
-            </div>
-          </div>
-        </details>
-
         <details class="card card--accordion" id="pf-acc-runners">
           <summary class="card--accordion__summary">
             <span class="card--accordion__title">Coureurs</span>
@@ -329,18 +319,8 @@
 
         <p class="hint">
           La classe et les élèves sont optionnels. Au moment d’ajouter une performance, vous aurez juste à
-          choisir le coureur.
+          choisir le coureur. Passez ensuite à l’onglet Capture pour chronométrer une course.
         </p>
-        <div class="field-row champ-gestion-actions">
-          <button type="button" class="btn btn--primary btn--labeled" data-go="capture">
-            <span class="btn__icon" aria-hidden="true">▶</span>
-            <span class="btn__text">Nouvelle photo finish</span>
-          </button>
-          <button type="button" class="btn btn--ghost btn--labeled" data-go="results">
-            <span class="btn__icon" aria-hidden="true">📋</span>
-            <span class="btn__text">Résultats</span>
-          </button>
-        </div>
       </div>
 
       <div
@@ -536,6 +516,7 @@
           <p id="pf-results-empty" class="hint">Aucun résultat pour l’instant.</p>
         </section>
       </div>
+      </div>
     </div>
 
     <dialog class="photo-finish-dialog" id="pf-result-dialog">
@@ -563,7 +544,9 @@
     </dialog>
 
     <script src="../data-manager.js"></script>
+    <script src="../session-manager.js"></script>
     <script src="../class-import.js"></script>
+    <script src="../shared/outils-dom.js"></script>
     <script src="../shared/eleve-display.js"></script>
     <script src="../shared/liste-manuelle-panel.js"></script>
     <script src="photo-finish.js"></script>
