@@ -84,6 +84,7 @@
     finishRatio: $("pf-finish-ratio"),
     finishRatioVal: $("pf-finish-ratio-val"),
     captureHeight: $("pf-capture-height"),
+    renderHeight: $("pf-render-height"),
     direction: $("pf-direction"),
     highContrast: $("pf-high-contrast"),
     debugEnabled: $("pf-debug-enabled"),
@@ -96,6 +97,8 @@
     importText: $("pf-import-text"),
   };
 
+  var nativeStripCanvas = document.createElement("canvas");
+  var nativeStripCtx = nativeStripCanvas.getContext("2d", { alpha: false });
   var stripCanvas = document.createElement("canvas");
   var stripCtx = stripCanvas.getContext("2d", { alpha: false });
   var compositeCanvas = document.createElement("canvas");
@@ -144,6 +147,7 @@
       debugEnabled: true,
       highContrast: false,
       captureHeight: "full",
+      renderHeight: "sprint",
       qualityPatchVersion: 2,
     };
   }
@@ -178,6 +182,8 @@
       cameraDeviceId: "",
       cameraLabel: "",
       stripWidth: 0,
+      sourceStripHeight: 0,
+      renderHeight: 0,
       qualityMode: "balancedEPS",
       pixelsPerSecond: 0,
       densityLabel: "",
@@ -270,6 +276,7 @@
       debugEnabled: inputs.debugEnabled.checked,
       highContrast: inputs.highContrast.checked,
       captureHeight: inputs.captureHeight.value,
+      renderHeight: inputs.renderHeight.value,
       qualityPatchVersion: 2,
     };
     state.sessionInfo = {
@@ -302,6 +309,7 @@
     inputs.stripWidth.value = state.settings.stripWidth;
     inputs.finishRatio.value = Math.round(state.settings.finishLineXRatio * 100);
     inputs.captureHeight.value = state.settings.captureHeight;
+    inputs.renderHeight.value = state.settings.renderHeight || "sprint";
     inputs.direction.value = state.settings.direction;
     inputs.debugEnabled.checked = state.settings.debugEnabled;
     inputs.highContrast.checked = state.settings.highContrast;
@@ -344,6 +352,7 @@
         state.settings.qualityMode = "balancedEPS";
         state.settings.startTriggerMode = "release";
         state.settings.captureHeight = "full";
+        state.settings.renderHeight = "sprint";
         state.settings.debugEnabled = true;
         state.settings.direction = normalizeDirection(state.settings.direction);
         state.settings.qualityPatchVersion = 2;
@@ -628,6 +637,15 @@
     return Math.min(videoHeight, Number(state.settings.captureHeight || 720));
   }
 
+  function outputRenderHeight(sourceHeight) {
+    var mode = state.settings.renderHeight || "sprint";
+    if (mode === "native") return sourceHeight;
+    if (mode === "sprint") {
+      return Math.max(160, Math.min(260, Math.round(sourceHeight * 0.28)));
+    }
+    return Math.min(sourceHeight, Math.max(120, Number(mode || 240)));
+  }
+
   function ensureCompositeSize(width, height) {
     if (compositeCanvas.height !== height) {
       var old = document.createElement("canvas");
@@ -670,8 +688,9 @@
     var vw = sourceWidth;
     var vh = sourceHeight;
     var stripWidth = state.settings.stripWidth;
-    var height = captureHeight(vh);
-    var y = Math.max(0, Math.round((vh - height) / 2));
+    var sourceStripHeight = captureHeight(vh);
+    var renderHeight = outputRenderHeight(sourceStripHeight);
+    var y = Math.max(0, Math.round((vh - sourceStripHeight) / 2));
     var centerX = Math.round(vw * state.settings.finishLineXRatio);
     var sx = Math.max(0, Math.min(vw - stripWidth, centerX - Math.floor(stripWidth / 2)));
     var imageXStart = state.strips.length ? state.strips[state.strips.length - 1].imageXEnd : 0;
@@ -686,12 +705,27 @@
     // Plus le bandeau est large, plus l'image est lisible mais moins elle ressemble
     // a une vraie photo finish. Plus il est fin, plus le rendu est realiste, mais
     // il faut un bon fps et une bonne resolution.
+    nativeStripCanvas.width = stripWidth;
+    nativeStripCanvas.height = sourceStripHeight;
+    nativeStripCtx.imageSmoothingEnabled = false;
+    nativeStripCtx.drawImage(
+      els.video,
+      sx,
+      y,
+      stripWidth,
+      sourceStripHeight,
+      0,
+      0,
+      stripWidth,
+      sourceStripHeight
+    );
+
     stripCanvas.width = stripWidth;
-    stripCanvas.height = height;
-    stripCtx.imageSmoothingEnabled = false;
+    stripCanvas.height = renderHeight;
+    stripCtx.imageSmoothingEnabled = renderHeight !== sourceStripHeight;
     stripCtx.imageSmoothingQuality = "high";
-    stripCtx.drawImage(els.video, sx, y, stripWidth, height, 0, 0, stripWidth, height);
-    appendStripToPhotoFinish(stripCanvas, imageXStart, imageXEnd, height);
+    stripCtx.drawImage(nativeStripCanvas, 0, 0, stripWidth, sourceStripHeight, 0, 0, stripWidth, renderHeight);
+    appendStripToPhotoFinish(stripCanvas, imageXStart, imageXEnd, renderHeight);
 
     var delta = state.lastFrameNow ? now - state.lastFrameNow : 0;
     state.lastFrameNow = now;
@@ -704,7 +738,8 @@
       imageXStart: imageXStart,
       imageXEnd: imageXEnd,
       width: stripWidth,
-      height: height,
+      height: renderHeight,
+      sourceHeight: sourceStripHeight,
     };
     state.strips.push(strip);
     updateDebugStats(delta);
@@ -740,6 +775,8 @@
       state.debugStats.maxFrameDeltaMs = Math.max(state.debugStats.maxFrameDeltaMs, delta);
     }
     state.debugStats.stripWidth = state.settings.stripWidth;
+    state.debugStats.sourceStripHeight = last && last.sourceHeight ? last.sourceHeight : 0;
+    state.debugStats.renderHeight = last ? last.height : 0;
     state.debugStats.qualityMode = state.settings.qualityMode;
   }
 
@@ -755,6 +792,7 @@
     var warnings = [];
     if (stats.averageFps && stats.averageFps < 35) warnings.push("FPS faible : le rendu sera moins fluide.");
     if (stats.stripWidth >= 7) warnings.push("Slices trop larges : le coureur risque d'etre etire.");
+    if (stats.renderHeight > 480) warnings.push("Image trop haute : utilisez Bande SprintTimer pour un rendu plus lisible.");
     if (stats.imageWidth > 12000) warnings.push("Image tres large : risque de ralentissement sur mobile.");
     if (stats.cameraWidth && stats.cameraWidth < 1280) warnings.push("Resolution faible : rapprochez moins la camera ou augmentez la qualite.");
     if (stats.pixelsPerSecond && stats.pixelsPerSecond < 160) warnings.push("Densite temporelle faible : augmentez le fps ou utilisez 4 px.");
@@ -776,6 +814,8 @@
       "Pixels par seconde": stats.pixelsPerSecond.toFixed(1),
       "Densite temporelle": stats.densityLabel,
       "Resolution video": stats.cameraWidth + " x " + stats.cameraHeight,
+      "Hauteur source strip": stats.sourceStripHeight + " px natifs",
+      "Hauteur rendu": stats.renderHeight + " px",
       "Image finale": stats.imageWidth + " x " + stats.imageHeight,
       "Mode qualite": stats.qualityMode,
     };
@@ -1262,6 +1302,8 @@
       "Device id": stats.cameraDeviceId || "-",
       "Camera utilisee": stats.cameraLabel || "-",
       "Largeur bandeau": stats.stripWidth,
+      "Hauteur source": stats.sourceStripHeight || "-",
+      "Hauteur rendu": stats.renderHeight || "-",
       "Pixels par seconde": stats.pixelsPerSecond.toFixed(1),
       "Densite": stats.densityLabel,
       "Qualite": stats.qualityMode,
