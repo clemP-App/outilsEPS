@@ -8538,11 +8538,26 @@ body.video-retard-body-fs {
 
 @media (orientation: landscape) {
   .page-outil--photo-finish {
-    --pf-image-area-h: clamp(10rem, calc(100dvh - 9.5rem), 100%);
-    --pf-analysis-min-h: clamp(9rem, calc(100dvh - 11rem), 100%);
-    --pf-analysis-max-h: clamp(10rem, calc(100dvh - 9rem), 100%);
+    --pf-image-area-h: clamp(12rem, calc(100dvh - 7rem), 100%);
+    --pf-analysis-min-h: clamp(10rem, calc(100dvh - 9rem), 100%);
+    --pf-analysis-max-h: clamp(12rem, calc(100dvh - 7rem), 100%);
     --pf-chrono-size: clamp(1rem, 3.8vh, 1.55rem);
     --pf-capture-btn-h: 2.65rem;
+  }
+
+  .page-outil--photo-finish #pf-panel-capture > .card {
+    display: none;
+  }
+
+  .page-outil--photo-finish .photo-finish-stage {
+    margin-bottom: 0;
+  }
+
+  .page-outil--photo-finish .dispense-nav__btn {
+    min-height: 2.35rem;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+    font-size: 0.82rem;
   }
 }
 
@@ -8922,10 +8937,6 @@ body.video-retard-body-fs {
 }
 
 @media (orientation: landscape) and (max-height: 520px) {
-  .page-outil--photo-finish #pf-panel-capture > .card {
-    display: none;
-  }
-
   .page-outil--photo-finish .photo-finish-stage {
     margin-bottom: 0;
   }
@@ -8984,7 +8995,7 @@ body.video-retard-body-fs {
   border-radius: 0.5rem;
   background: #111;
   flex: 1 1 auto;
-  min-height: var(--pf-image-area-h, var(--pf-analysis-min-h, min(44vh, 22rem)));
+  min-height: 0;
 }
 
 .photo-finish-scroll {
@@ -8997,7 +9008,6 @@ body.video-retard-body-fs {
   background: #111;
   touch-action: pan-x pinch-zoom;
   height: 100%;
-  min-height: var(--pf-image-area-h, var(--pf-analysis-min-h, min(44vh, 22rem)));
 }
 
 .photo-finish-image-wrap {
@@ -9006,7 +9016,6 @@ body.video-retard-body-fs {
   line-height: 0;
   padding-left: var(--pf-viewer-pad, 50vw);
   padding-right: var(--pf-viewer-pad, 50vw);
-  min-height: var(--pf-image-area-h, var(--pf-analysis-min-h, min(44vh, 22rem)));
   vertical-align: top;
 }
 
@@ -9022,7 +9031,6 @@ body.video-retard-body-fs {
   display: block;
   width: auto;
   height: auto;
-  max-height: var(--pf-image-area-h, var(--pf-analysis-max-h, min(72vh, 36rem)));
   image-rendering: auto;
   vertical-align: top;
 }

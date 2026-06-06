@@ -1512,18 +1512,30 @@
     var root = document.querySelector(".page-outil--photo-finish");
     var custom = root ? parseFloat(getComputedStyle(root).getPropertyValue("--pf-image-area-h")) : 0;
     if (custom > 0) {
-      return { maxH: Math.round(custom), minH: Math.round(custom * 0.92) };
+      return { maxH: Math.round(custom), minH: Math.round(custom) };
     }
     if (landscape) {
       return {
-        maxH: Math.min(Math.round(vh * 0.78), Math.max(160, vh - 100)),
-        minH: Math.min(Math.round(vh * 0.68), Math.max(140, vh - 120)),
+        maxH: Math.min(Math.round(vh * 0.82), Math.max(160, vh - 88)),
+        minH: Math.min(Math.round(vh * 0.82), Math.max(160, vh - 88)),
       };
     }
     return {
       maxH: Math.min(Math.round(vh * 0.62), 520),
-      minH: Math.min(Math.round(vh * 0.46), 400),
+      minH: Math.min(Math.round(vh * 0.62), 520),
     };
+  }
+
+  function analysisPanelChromeHeight() {
+    var card = document.querySelector(".photo-finish-analysis-card");
+    if (!card) return 110;
+    var total = 16;
+    var head = card.querySelector(".photo-finish-analysis-head");
+    var actions = card.querySelector(".champ-gestion-actions");
+    if (head) total += head.getBoundingClientRect().height;
+    if (els.scrollSlider) total += els.scrollSlider.getBoundingClientRect().height + 8;
+    if (actions) total += actions.getBoundingClientRect().height;
+    return Math.round(total);
   }
 
   function updatePhotoFinishImageArea() {
@@ -1540,21 +1552,21 @@
     if (session) chromeTop += session.getBoundingClientRect().height;
     if (nav) chromeTop += nav.getBoundingClientRect().height;
     var landscape = window.innerWidth > vh;
-    var reserved = 16;
+    var reserved = 8;
     if (state.screen === "capture") {
-      var statsCard = document.querySelector("#pf-panel-capture > .card");
-      if (statsCard && !(landscape && vh <= 520)) {
-        reserved += statsCard.getBoundingClientRect().height + 6;
+      if (!landscape) {
+        var statsCard = document.querySelector("#pf-panel-capture > .card");
+        if (statsCard) reserved += statsCard.getBoundingClientRect().height + 6;
       }
     } else if (state.screen === "analysis") {
-      var card = document.querySelector(".photo-finish-analysis-card");
-      if (card && els.viewer) {
-        reserved += Math.max(0, card.getBoundingClientRect().height - els.viewer.getBoundingClientRect().height) + 8;
-      } else {
-        reserved += landscape ? 96 : 120;
-      }
+      reserved += analysisPanelChromeHeight();
     }
-    var available = Math.max(landscape ? 132 : 168, Math.round(vh - chromeTop - reserved));
+    var available = Math.round(vh - chromeTop - reserved);
+    if (state.screen === "capture" && landscape) {
+      available = Math.max(180, available);
+    } else {
+      available = Math.max(landscape ? 140 : 168, available);
+    }
     root.style.setProperty("--pf-image-area-h", available + "px");
   }
 
@@ -1562,45 +1574,22 @@
     var cw = els.resultCanvas ? els.resultCanvas.width : 0;
     var ch = els.resultCanvas ? els.resultCanvas.height : 0;
     if (!cw || !ch) return { width: 0, height: 0 };
-    var limits = analysisHeightLimits();
-    var maxH = limits.maxH;
-    var minH = limits.minH;
-    var zoomedW = cw * state.zoom;
-    var viewerW = els.viewer && els.viewer.clientWidth > 0 ? els.viewer.clientWidth : zoomedW;
-    var displayW = zoomedW;
-    var displayH = Math.max(1, Math.round(ch * (displayW / cw)));
-    if (displayW > viewerW) {
-      displayW = viewerW;
-      displayH = Math.max(1, Math.round(ch * (displayW / cw)));
-    }
-    if (displayH < minH) {
-      displayH = minH;
-      displayW = Math.max(1, Math.round(cw * (displayH / ch) * state.zoom));
-      if (displayW > viewerW) {
-        displayW = viewerW;
-        displayH = Math.max(1, Math.round(ch * (displayW / cw)));
-      }
-    }
-    if (displayH > maxH) {
-      displayH = maxH;
-      displayW = Math.max(1, Math.round(cw * (displayH / ch) * state.zoom));
-      if (displayW > viewerW) {
-        displayW = viewerW;
-        displayH = Math.max(1, Math.round(ch * (displayW / cw)));
-      }
-    }
+    var targetH = analysisHeightLimits().maxH;
+    var displayH = Math.max(1, Math.round(targetH * state.zoom));
+    var displayW = Math.max(1, Math.round(cw * (displayH / ch)));
     return { width: displayW, height: displayH };
   }
 
   function schedulePhotoFinishLayout() {
     requestAnimationFrame(function () {
       updatePhotoFinishImageArea();
-      if (state.screen === "analysis") {
+      if (state.screen !== "analysis") return;
+      requestAnimationFrame(function () {
         updateViewerPadding(0);
         applyZoom();
         updateViewerPadding(0);
         updateCursorReadout();
-      }
+      });
     });
   }
 
@@ -1629,7 +1618,14 @@
       0;
     if (h > 0) {
       els.imageWrap.style.minHeight = h + "px";
-      if (els.scroll) els.scroll.style.minHeight = h + "px";
+      if (els.scroll) {
+        els.scroll.style.minHeight = h + "px";
+        els.scroll.style.height = h + "px";
+      }
+      if (els.viewer) {
+        els.viewer.style.height = h + "px";
+        els.viewer.style.minHeight = h + "px";
+      }
     }
   }
 
