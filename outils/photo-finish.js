@@ -430,7 +430,70 @@
   }
 
   function deferCameraAutostart() {
-    return isAppleTouchDevice() && isPwaStandalone();
+    return false;
+  }
+
+  function markPwaStandaloneUi() {
+    if (document.body && isPwaStandalone()) {
+      document.body.classList.add("pf-pwa-standalone");
+    }
+  }
+
+  function waitForStageLayout(maxMs) {
+    maxMs = maxMs || 2500;
+    return new Promise(function (resolve) {
+      var t0 = performance.now();
+      (function tick() {
+        if (els.stage && els.stage.clientWidth > 8 && els.stage.clientHeight > 8) {
+          resolve(true);
+          return;
+        }
+        if (performance.now() - t0 >= maxMs) {
+          resolve(false);
+          return;
+        }
+        requestAnimationFrame(tick);
+      })();
+    });
+  }
+
+  function reattachCameraStreamForPwa() {
+    if (!state.stream || !els.video) return Promise.resolve(false);
+    var stream = state.stream;
+    ensureVideoElementReady();
+    els.video.srcObject = null;
+    return new Promise(function (resolve) {
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          els.video.srcObject = stream;
+          if (els.stage) void els.stage.offsetHeight;
+          void els.video.offsetHeight;
+          schedulePhotoFinishLayout();
+          playVideoPreview()
+            .then(function () {
+              return waitForVideoMetadata();
+            })
+            .then(function () {
+              resolve(true);
+            })
+            .catch(function () {
+              resolve(false);
+            });
+        });
+      });
+    });
+  }
+
+  function wakeVideoPreview() {
+    if (!els.video || !state.stream) return Promise.resolve(false);
+    if (isPwaStandalone()) {
+      return waitForStageLayout().then(function () {
+        return reattachCameraStreamForPwa();
+      });
+    }
+    return playVideoPreview().then(function () {
+      return waitForVideoMetadata();
+    });
   }
 
   function captureStatusWhenIdle() {
@@ -493,7 +556,15 @@
     }
     state.stream = stream;
     ensureVideoElementReady();
+    if (isPwaStandalone()) {
+      els.video.classList.add("photo-finish-video--pwa");
+      els.video.srcObject = null;
+    }
     els.video.srcObject = stream;
+    if (isPwaStandalone() && els.stage) {
+      void els.stage.offsetHeight;
+      void els.video.offsetHeight;
+    }
   }
 
   function playVideoPreview() {
@@ -624,11 +695,16 @@
     }
     if (screen === "capture") {
       resetCaptureUi();
-      if (!state.stream && !state.cameraStarting && !deferCameraAutostart()) {
+      if (!state.stream && !state.cameraStarting) {
         startCamera();
-      } else if (deferCameraAutostart() && !state.stream && !state.cameraStarting) {
-        setStatus(captureStatusWhenIdle());
-        updateCaptureButton();
+      } else if (state.stream && isPwaStandalone()) {
+        wakeVideoPreview().then(function () {
+          updateFinishGuide();
+          if (els.video.videoWidth && els.video.videoHeight) {
+            setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
+            hidePreviewTapOverlay();
+          }
+        });
       }
     }
     if (screen === "capture" || screen === "analysis") {
@@ -1164,7 +1240,7 @@
     opts = opts || {};
     readSettingsFromUi();
     if (state.stream) {
-      return playVideoPreview().then(function () {
+      return wakeVideoPreview().then(function () {
         updateFinishGuide();
         updateCaptureButton();
         return true;
@@ -1183,14 +1259,11 @@
       .then(function (stream) {
         attachCameraStream(stream);
         setStatus("Demarrage de l'apercu...");
-        return playVideoPreview()
-          .then(function () {
-            return waitForVideoMetadata();
-          })
-          .then(function () {
-            updateFinishGuide();
-            return probeCameraFps();
-          });
+        return wakeVideoPreview();
+      })
+      .then(function () {
+        updateFinishGuide();
+        return probeCameraFps();
       })
       .then(function (probedFps) {
         state.probedCameraFps = probedFps;
@@ -1224,6 +1297,17 @@
   function ensureCameraThenRun(fn, eventNow) {
     if (state.stream && els.video.videoWidth && els.video.videoHeight) {
       fn(eventNow);
+      return;
+    }
+    if (state.stream) {
+      wakeVideoPreview().then(function () {
+        if (!state.stream) return;
+        if (!els.video.videoWidth || !els.video.videoHeight) {
+          setStatus("Camera active. Touchez l'ecran si l'apercu reste noir.");
+          return;
+        }
+        fn(eventNow);
+      });
       return;
     }
     startCamera({ skipGo: true }).then(function (ok) {
@@ -1354,15 +1438,8 @@
     var text = els.btnStart.querySelector(".btn__text");
     var icon = els.btnStart.querySelector(".btn__icon");
     var running = state.timerState === "running";
-    els.btnStart.disabled = state.cameraStarting;
+    els.btnStart.disabled = !!state.cameraStarting;
     els.btnStart.classList.toggle("is-stop", running);
-    if (!running && deferCameraAutostart() && !state.stream) {
-      if (text) {
-        text.textContent = state.cameraStarting ? "Activation camera..." : "Activer la camera";
-      }
-      if (icon) icon.textContent = state.cameraStarting ? "…" : "\u25b6";
-      return;
-    }
     if (text) text.textContent = running ? "Stop" : "Demarrer le chrono";
     if (icon) icon.textContent = running ? "\u25a0" : "\u25b6";
   }
@@ -2717,6 +2794,7 @@
   }
 
   wireEvents();
+  markPwaStandaloneUi();
   if (els.resultDialog && "inert" in els.resultDialog) els.resultDialog.inert = true;
   if (typeof ListeManuellePanel !== "undefined" && inputs.importText) {
     ListeManuellePanel.bind({

@@ -35,6 +35,10 @@ function isStaticAsset(url) {
   return /\.(css|js|png|jpe?g|webp|svg|woff2?|webmanifest)$/i.test(url.pathname);
 }
 
+function isNetworkFirstToolScript(url) {
+  return /\/outils\/photo-finish\.js$/i.test(url.pathname);
+}
+
 function isOnlineOnlyEvalCatalog(url) {
   return (
     url.pathname.endsWith("/outils/catalogue-evaluations.html") ||
@@ -134,6 +138,21 @@ self.addEventListener("fetch", function (event) {
   }
 
   if (isStaticAsset(url)) {
+    if (isNetworkFirstToolScript(url)) {
+      event.respondWith(
+        fetch(event.request)
+          .then(function (response) {
+            if (response && response.status === 200 && response.type === "basic") {
+              putInCache(event.request, response);
+            }
+            return response;
+          })
+          .catch(function () {
+            return caches.match(event.request);
+          })
+      );
+      return;
+    }
     event.respondWith(staleWhileRevalidate(event.request));
     return;
   }

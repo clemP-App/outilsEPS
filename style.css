@@ -8792,6 +8792,21 @@ body.video-retard-body-fs {
   display: none !important;
 }
 
+.pf-pwa-standalone .photo-finish-stage {
+  overflow: visible;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+.pf-pwa-standalone .photo-finish-video,
+.photo-finish-video--pwa {
+  object-fit: cover;
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 .photo-finish-slit-guide {
   position: absolute;
   top: 0;
