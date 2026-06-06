@@ -9067,18 +9067,22 @@ body.video-retard-body-fs {
 
 .photo-finish-fixed-time {
   position: absolute;
-  top: 0.55rem;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.35rem 0.65rem;
+  top: 0.45rem;
+  right: 0.45rem;
+  left: auto;
+  margin: 0;
+  transform: none;
+  padding: 0.28rem 0.55rem;
   border-radius: 0.4rem;
   background: rgba(0, 0, 0, 0.78);
   color: #fff;
-  font-size: clamp(1rem, 3.8vw, 1.35rem);
+  font-size: clamp(0.82rem, 2.8vw, 1.05rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  z-index: 5;
 }
 
 .photo-finish-add {

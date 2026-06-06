@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Outils EPS" />
+    <meta name="format-detection" content="telephone=no, email=no" />
     <title>Photo Finish V1 — Outils EPS</title>
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
@@ -132,6 +132,9 @@
                   id="pf-import-text"
                   rows="8"
                   spellcheck="false"
+                  autocomplete="off"
+                  autocorrect="off"
+                  autocapitalize="off"
                   placeholder="Dupont;Léa;6e1&#10;Martin;Paul&#10;Bernard;Sophie&#10;Durand Jean"
                 ></textarea>
               </div>
@@ -418,9 +421,9 @@
               </div>
             </div>
             <div class="photo-finish-fixed-cursor" aria-hidden="true">
-              <span class="photo-finish-fixed-time" id="pf-cursor-time-floating">—</span>
               <button type="button" class="photo-finish-add" id="pf-btn-add-result" aria-label="Ajouter ce temps">+</button>
             </div>
+            <p class="photo-finish-fixed-time" id="pf-cursor-time-floating" aria-live="polite">—</p>
           </div>
           <input type="range" id="pf-scroll-slider" class="photo-finish-slider" min="0" max="1000" value="0" />
           <div class="field-row champ-gestion-actions">
@@ -462,11 +465,29 @@
           <div class="photo-finish-grid">
             <div class="field-group">
               <label class="field-label" for="pf-filter-class">Classe</label>
-              <input type="search" id="pf-filter-class" autocomplete="off" />
+              <input
+                type="text"
+                id="pf-filter-class"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                inputmode="text"
+                tabindex="-1"
+              />
             </div>
             <div class="field-group">
               <label class="field-label" for="pf-filter-runner">Coureur</label>
-              <input type="search" id="pf-filter-runner" autocomplete="off" />
+              <input
+                type="text"
+                id="pf-filter-runner"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+                inputmode="text"
+                tabindex="-1"
+              />
             </div>
             <div class="field-group">
               <label class="field-label" for="pf-filter-assigned">Attribution</label>
@@ -511,10 +532,9 @@
     </div>
 
     <dialog class="photo-finish-dialog" id="pf-result-dialog">
-      <form method="dialog" class="photo-finish-dialog-card card">
+      <div class="photo-finish-dialog-card card">
         <h2>Enregistrer un temps</h2>
         <p class="photo-finish-dialog-time" id="pf-dialog-time">—</p>
-        <input type="search" id="pf-runner-search" autocomplete="off" hidden />
         <div class="field-group">
           <label class="field-label" for="pf-runner-select">Coureur</label>
           <select id="pf-runner-select"></select>
@@ -531,7 +551,7 @@
           <button type="button" class="btn btn--ghost" id="pf-dialog-cancel">Annuler</button>
           <button type="button" class="btn btn--primary" id="pf-dialog-save">Enregistrer</button>
         </menu>
-      </form>
+      </div>
     </dialog>
 
     <script src="../data-manager.js"></script>

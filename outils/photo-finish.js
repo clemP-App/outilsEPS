@@ -57,7 +57,6 @@
     qualityReport: $("pf-quality-report"),
     resultDialog: $("pf-result-dialog"),
     dialogTime: $("pf-dialog-time"),
-    runnerSearch: $("pf-runner-search"),
     runnerSelect: $("pf-runner-select"),
     unassigned: $("pf-unassigned"),
     resultComment: $("pf-result-comment"),
@@ -414,14 +413,28 @@
       var active = panel.dataset.screen === screen;
       panel.hidden = !active;
       panel.setAttribute("aria-hidden", active ? "false" : "true");
+      if ("inert" in panel) panel.inert = !active;
     });
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+    if (els.resultDialog && !els.resultDialog.open) {
+      els.resultDialog.inert = true;
+    }
     if (screen === "capture" && !state.stream && !state.cameraStarting) {
       startCamera();
     }
     if (screen === "capture" || screen === "analysis") {
       schedulePhotoFinishLayout();
     }
-    if (screen === "results") renderResults();
+    if (screen === "results") {
+      if (inputs.filterClass) inputs.filterClass.tabIndex = 0;
+      if (inputs.filterRunner) inputs.filterRunner.tabIndex = 0;
+      renderResults();
+    } else {
+      if (inputs.filterClass) inputs.filterClass.tabIndex = -1;
+      if (inputs.filterRunner) inputs.filterRunner.tabIndex = -1;
+    }
     if (screen === "runners") renderRunners();
     if (screen === "home") renderHomeSetup();
   }
@@ -1772,10 +1785,10 @@
     var time = getTimeAtViewportCursor();
     state.currentResultDraft = { timeMs: time, imageX: viewportCursorToImageX() };
     els.dialogTime.textContent = formatTime(time);
-    els.runnerSearch.value = "";
     els.resultComment.value = "";
     els.unassigned.checked = false;
     fillRunnerSelect();
+    if (els.resultDialog.inert) els.resultDialog.inert = false;
     if (typeof els.resultDialog.showModal === "function") els.resultDialog.showModal();
     else els.resultDialog.setAttribute("open", "open");
   }
@@ -1783,6 +1796,7 @@
   function closeResultDialog() {
     if (typeof els.resultDialog.close === "function") els.resultDialog.close();
     else els.resultDialog.removeAttribute("open");
+    if (els.resultDialog) els.resultDialog.inert = true;
   }
 
   function saveResultFromDialog() {
@@ -1791,10 +1805,6 @@
     var selected = state.runners.filter(function (r) {
       return r.id === els.runnerSelect.value;
     })[0];
-    var typed = els.runnerSearch.value.trim();
-    if (!els.unassigned.checked && !selected && typed) {
-      selected = addRunner(typed, state.sessionInfo.className, false);
-    }
     var isUnassigned = els.unassigned.checked || !selected;
     var result = {
       id: uid("result"),
@@ -1849,12 +1859,11 @@
   }
 
   function fillRunnerSelect() {
-    var query = (els.runnerSearch.value || "").toLowerCase();
     var runners = resultDialogRunners();
     els.runnerSelect.innerHTML = "<option value=\"\">Temps non attribue</option>";
     runners
       .filter(function (r) {
-        return r.active !== false && (!query || r.displayName.toLowerCase().indexOf(query) >= 0);
+        return r.active !== false;
       })
       .forEach(function (runner) {
         var option = document.createElement("option");
@@ -2426,7 +2435,6 @@
     els.btnAddResult.addEventListener("click", openResultDialog);
     els.dialogCancel.addEventListener("click", closeResultDialog);
     els.dialogSave.addEventListener("click", saveResultFromDialog);
-    els.runnerSearch.addEventListener("input", fillRunnerSelect);
     els.btnExportImage.addEventListener("click", exportImage);
     if (els.btnSaveGallery) els.btnSaveGallery.addEventListener("click", saveImageToGallery);
     $("pf-btn-export-csv").addEventListener("click", exportCsv);
@@ -2454,6 +2462,7 @@
   }
 
   wireEvents();
+  if (els.resultDialog && "inert" in els.resultDialog) els.resultDialog.inert = true;
   if (typeof ListeManuellePanel !== "undefined" && inputs.importText) {
     ListeManuellePanel.bind({
       toggleBtnId: "btn-ajouter-manuel-pf",
