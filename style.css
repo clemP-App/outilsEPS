@@ -3037,6 +3037,7 @@ main.container {
 }
 
 .relais-scene__zone {
+  position: relative;
   border-radius: 4px;
   opacity: 0;
   transition: opacity 0.3s ease, background 0.3s ease;
@@ -3049,8 +3050,10 @@ main.container {
 }
 
 .relais-scene__zone--zt.is-active {
-  background: linear-gradient(180deg, rgba(253, 224, 71, 0.55), rgba(245, 158, 11, 0.25));
-  box-shadow: inset 0 0 0 2px rgba(251, 191, 36, 0.9);
+  background: linear-gradient(180deg, rgba(253, 224, 71, 0.5), rgba(245, 158, 11, 0.22));
+  box-shadow:
+    inset 0 0 0 2px rgba(251, 191, 36, 0.9),
+    inset 0 -8px 16px rgba(245, 158, 11, 0.12);
 }
 
 .relais-scene__markers {
@@ -3094,18 +3097,19 @@ main.container {
   position: absolute;
   inset: 21% 4% 30% 4%;
   pointer-events: none;
+  z-index: 3;
 }
 
 .relais-runner {
   position: absolute;
   margin: 0;
-  width: clamp(2.75rem, 13vw, 3.85rem);
+  width: clamp(3.25rem, 15vw, 4.75rem);
   transition:
     left 0.45s cubic-bezier(0.22, 1, 0.36, 1),
     top 0.45s cubic-bezier(0.22, 1, 0.36, 1),
     opacity 0.25s ease,
     transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.28));
+  filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.2));
   z-index: 3;
 }
 
@@ -3113,67 +3117,160 @@ main.container {
   display: none;
 }
 
-.relais-runner__svg {
+.relais-runner__img {
   display: block;
   width: 100%;
   height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
 }
 
-.relais-runner--donneur .relais-runner__pose--recv {
+/* Scène transmission — 3 colonnes : donneur | témoin | receveur */
+.relais-transmission {
+  position: absolute;
+  top: 21%;
+  bottom: 30%;
+  left: 34.67%;
+  width: 30.67%;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.relais-transmission[hidden] {
   display: none;
 }
 
-.relais-runner--receveur .relais-runner__pose--pass {
-  display: none;
+.relais-transmission__stage {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  padding: 4% 2% 6%;
+  animation: relais-transmission-in 0.48s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.relais-runner[data-pose="sprint"] .relais-runner__pose--pass,
-.relais-runner[data-pose="sprint"] .relais-runner__pose--recv {
-  display: none;
+.relais-transmission__athlete {
+  margin: 0;
+  flex: 0 0 36%;
+  max-width: 36%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
 }
 
-.relais-runner[data-pose="pass"] .relais-runner__pose--sprint,
-.relais-runner[data-pose="recv"] .relais-runner__pose--sprint {
-  display: none;
+.relais-transmission__athlete img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: clamp(2.4rem, 10.5vw, 3.25rem);
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 5px 10px rgba(15, 23, 42, 0.28));
+  user-select: none;
+}
+
+.relais-transmission__athlete--donneur {
+  align-self: flex-end;
+  transform: translateY(6%);
+  opacity: 0.94;
+}
+
+.relais-transmission__athlete--receveur {
+  align-self: flex-start;
+  transform: translateY(-10%);
+}
+
+.relais-transmission__pass {
+  flex: 0 0 22%;
+  max-width: 22%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  padding-bottom: 14%;
+  position: relative;
+  z-index: 2;
+}
+
+.relais-transmission__pass::before {
+  content: "";
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, rgba(253, 224, 71, 0.2) 55%, transparent 75%);
+  z-index: -1;
+}
+
+.relais-transmission__pass img {
+  display: block;
+  width: 100%;
+  max-width: 1.85rem;
+  height: auto;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 2px 5px rgba(15, 23, 42, 0.45));
+  animation: relais-pass-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes relais-transmission-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.94) translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes relais-pass-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
 }
 
 /* Coureur 1 — zone 1 uniquement */
 .relais-runner--donneur[data-pos="depart"] {
-  left: 1%;
-  top: 30%;
+  left: 0;
+  top: 18%;
 }
 
 .relais-runner--donneur[data-pos="z1"] {
-  left: 14%;
-  top: 26%;
-}
-
-/* Passage du témoin — 2 coureurs */
-.relais-runner--donneur[data-pos="zt-pass"] {
-  left: 34%;
-  top: 42%;
-  transform: scale(0.94);
-  opacity: 0.96;
-}
-
-.relais-runner--receveur[data-pos="zt-recv"] {
-  left: 44%;
+  left: 11%;
   top: 14%;
 }
 
 /* Coureur 2 seul — zone 2 et arrivée */
 .relais-runner--receveur[data-pos="z2"] {
-  left: 68%;
-  top: 22%;
+  left: 66%;
+  top: 10%;
 }
 
 .relais-runner--receveur[data-pos="arrivee"] {
-  left: 82%;
-  top: 20%;
+  left: 90%;
+  top: 6%;
 }
 
-.relais-live-card.is-racing .relais-runner:not([hidden]) .relais-runner__pose:not([hidden]) {
+.relais-live-card.is-racing .relais-runner:not([hidden]) .relais-runner__img {
   animation: relais-run-bob 0.38s ease-in-out infinite;
+}
+
+.relais-live-card.is-racing .relais-transmission:not([hidden]) .relais-transmission__athlete--donneur img {
+  animation: relais-run-bob 0.42s ease-in-out infinite;
+}
+
+.relais-live-card.is-racing .relais-transmission:not([hidden]) .relais-transmission__athlete--receveur img {
+  animation: relais-run-bob 0.34s ease-in-out infinite;
+  animation-delay: -0.12s;
 }
 
 @keyframes relais-run-bob {
@@ -3259,6 +3356,11 @@ main.container {
 .relais-eff-zt--bilan {
   margin-top: 0.85rem;
   margin-bottom: 0;
+}
+
+.relais-eff-zt--live {
+  margin-top: 1rem;
+  margin-bottom: 0.35rem;
 }
 
 .relais-eff-zt__head {
@@ -9764,6 +9866,10 @@ body.video-retard-body-fs {
 .page-outil--photo-finish #pf-panel-capture .photo-finish-live-stats {
   margin: 0;
   font-size: 0.78rem;
+}
+
+.pf-pwa-standalone #pf-panel-capture > .photo-finish-capture-card {
+  display: block;
 }
 
 @media (orientation: landscape) and (max-height: 520px) {

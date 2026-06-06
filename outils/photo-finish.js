@@ -592,7 +592,7 @@
   function showCameraActivationOverlay() {
     if (!els.previewTap) return;
     els.previewTap.hidden = false;
-    setStatus("Touchez pour activer la camera.");
+    setStatus("Touchez le cadre noir pour activer la camera.");
   }
 
   function wakeVideoPreview() {
@@ -691,6 +691,24 @@
       void els.video.offsetHeight;
       schedulePhotoFinishLayout();
     }
+  }
+
+  function attachCameraStreamSimple(stream) {
+    if (state.stream && state.stream !== stream) {
+      state.stream.getTracks().forEach(function (track) {
+        track.stop();
+      });
+    }
+    state.stream = stream;
+    bindStreamLifecycle(stream);
+    ensureVideoElementReady();
+    if (isPwaStandalone()) {
+      els.video.classList.add("photo-finish-video--pwa");
+    }
+    els.video.srcObject = stream;
+    noteCameraDebug("srcObject attached simple");
+    var playAttempt = els.video.play();
+    return playAttempt && typeof playAttempt.then === "function" ? playAttempt : Promise.resolve();
   }
 
   function playVideoPreview() {
@@ -849,19 +867,11 @@
       resetCaptureUi();
       if (needsCameraUserGesture()) {
         if (!state.stream && !state.cameraStarting) {
-          if (navOpts.userGesture) {
-            startCamera({ skipGo: true, userGesture: true });
-          } else {
-            showCameraActivationOverlay();
-          }
+          showCameraActivationOverlay();
         } else if (state.stream) {
           if (!isStreamLive(state.stream)) {
             stopCamera();
-            if (navOpts.userGesture) {
-              startCamera({ skipGo: true, userGesture: true });
-            } else {
-              showCameraActivationOverlay();
-            }
+            showCameraActivationOverlay();
           } else {
             wakeVideoPreview().then(function () {
               updateFinishGuide();
@@ -1461,7 +1471,11 @@
       return Promise.resolve(false);
     }
     readSettingsFromUi();
-    revealCapturePanelForCamera();
+    if (state.screen !== "capture") {
+      revealCapturePanelForCamera();
+    } else {
+      renderCameraDebug();
+    }
     state.cameraStarting = true;
     setStatus("Demande d'acces a la camera...");
     showMsg("");
@@ -1469,11 +1483,13 @@
     return requestCameraStream()
       .then(function (stream) {
         noteCameraDebug("getUserMedia ok");
-        attachCameraStream(stream);
-        setStatus("Demarrage de l'apercu...");
-        return playVideoPreview();
+        return attachCameraStreamSimple(stream).then(function () {
+          noteCameraDebug("video play ok simple");
+          return stream;
+        });
       })
       .then(function () {
+        setStatus("Demarrage de l'apercu...");
         return waitForVideoMetadata();
       })
       .then(function () {
@@ -2909,7 +2925,8 @@
       });
     });
     if (els.previewTap) {
-      els.previewTap.addEventListener("click", function () {
+      function activatePreviewFromGesture(event) {
+        if (event && event.cancelable) event.preventDefault();
         if (!state.stream && !state.cameraStarting) {
           startCamera({ skipGo: true, userGesture: true });
           return;
@@ -2920,7 +2937,10 @@
             updateFinishGuide();
           });
         }
-      });
+      }
+      els.previewTap.addEventListener("pointerdown", activatePreviewFromGesture);
+      els.previewTap.addEventListener("touchstart", activatePreviewFromGesture);
+      els.previewTap.addEventListener("click", activatePreviewFromGesture);
     }
     if (els.video) {
       ["loadedmetadata", "loadeddata", "canplay", "playing", "pause", "error"].forEach(function (eventName) {

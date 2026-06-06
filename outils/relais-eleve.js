@@ -21,6 +21,7 @@
   var trackZ2El = document.getElementById("relais-track-z2");
   var donneurEl = document.getElementById("relais-donneur");
   var receveurEl = document.getElementById("relais-receveur");
+  var transmissionEl = document.getElementById("relais-transmission");
   var cameraWrapEl = document.getElementById("relais-camera-wrap");
   var cameraPreviewEl = document.getElementById("relais-camera-preview");
   var cameraBadgeEl = document.getElementById("relais-camera-badge");
@@ -40,27 +41,16 @@
   var btnSortie = document.getElementById("relais-btn-sortie");
   var btnArrivee = document.getElementById("relais-btn-arrivee");
   var btnReset = document.getElementById("relais-btn-reset");
-  var bilanCardEl = document.getElementById("relais-bilan");
-  var bilanTotalEl = document.getElementById("relais-bilan-total");
-  var bilanZ1El = document.getElementById("relais-bilan-z1");
-  var bilanZTEl = document.getElementById("relais-bilan-zt");
-  var bilanZ2El = document.getElementById("relais-bilan-z2");
-  var bilanV1El = document.getElementById("relais-bilan-v1");
-  var bilanVZTEl = document.getElementById("relais-bilan-vzt");
-  var bilanV2El = document.getElementById("relais-bilan-v2");
-  var bilanPctZ1El = document.getElementById("relais-bilan-pct-z1");
-  var bilanPctZTEl = document.getElementById("relais-bilan-pct-zt");
-  var bilanPctZ2El = document.getElementById("relais-bilan-pct-z2");
   var replayWrapEl = document.getElementById("relais-replay");
   var replayVideoEl = document.getElementById("relais-replay-video");
-  var bilanEffEl = document.getElementById("relais-bilan-eff");
-  var bilanEffNote10El = document.getElementById("relais-bilan-eff-note10");
-  var bilanEffRefEl = document.getElementById("relais-bilan-eff-ref");
-  var bilanEffDetailEl = document.getElementById("relais-bilan-eff-detail");
-  var bilanEffNoteEl = document.getElementById("relais-bilan-eff-note");
-  var bilanEffVerdictEl = document.getElementById("relais-bilan-eff-verdict");
-  var bilanEffToggleEl = document.getElementById("relais-bilan-eff-toggle");
-  var bilanEffExplainEl = document.getElementById("relais-bilan-eff-explain");
+  var effEl = document.getElementById("relais-eff");
+  var effNote10El = document.getElementById("relais-eff-note10");
+  var effRefEl = document.getElementById("relais-eff-ref");
+  var effDetailEl = document.getElementById("relais-eff-detail");
+  var effNoteEl = document.getElementById("relais-eff-note");
+  var effVerdictEl = document.getElementById("relais-eff-verdict");
+  var effToggleEl = document.getElementById("relais-eff-toggle");
+  var effExplainEl = document.getElementById("relais-eff-explain");
 
   var historiqueSauvePourCourse = false;
   var resultsHistory = null;
@@ -180,6 +170,8 @@
 
     if (!donneurEl || !receveurEl) return;
 
+    if (transmissionEl) transmissionEl.hidden = pos !== "zt";
+
     donneurEl.hidden = false;
     receveurEl.hidden = false;
 
@@ -194,14 +186,10 @@
       return;
     }
     if (pos === "zt") {
-      donneurEl.setAttribute("data-pos", "zt-pass");
-      donneurEl.setAttribute("data-pose", "pass");
-      receveurEl.setAttribute("data-pos", "zt-recv");
-      receveurEl.setAttribute("data-pose", "recv");
+      donneurEl.hidden = true;
+      receveurEl.hidden = true;
       return;
     }
-    donneurEl.setAttribute("data-pose", "sprint");
-    receveurEl.setAttribute("data-pose", "sprint");
     if (pos === "z2") {
       donneurEl.hidden = true;
       receveurEl.setAttribute("data-pos", "z2");
@@ -213,24 +201,48 @@
     }
   }
 
+  var PCT_ZT_MAX_POUR_10 = 33;
+  var PCT_ZT_POUR_2 = 45;
+  var NOTE_ZT_MIN = 2;
+
+  function noteDepuisPctZT(pctZT) {
+    if (pctZT <= PCT_ZT_MAX_POUR_10) return 10;
+    var plage = PCT_ZT_POUR_2 - PCT_ZT_MAX_POUR_10;
+    var note = 10 - ((pctZT - PCT_ZT_MAX_POUR_10) * (10 - NOTE_ZT_MIN)) / plage;
+    return Math.max(0, Math.min(10, Math.round(note * 10) / 10));
+  }
+
   function calculerEfficaciteZT() {
     var reg = lireReglages();
     var v2 = resultat.v2;
     var vzt = resultat.vzt;
     var v1 = resultat.v1;
-    if (!isFinite(v2) || v2 <= 0 || !isFinite(vzt) || vzt <= 0 || !resultat.ztCs || !reg.zt) {
+    var totalCs = resultat.totalCs;
+    if (
+      !isFinite(v2) ||
+      v2 <= 0 ||
+      !isFinite(vzt) ||
+      vzt <= 0 ||
+      !resultat.ztCs ||
+      !reg.zt ||
+      !totalCs ||
+      totalCs <= 0
+    ) {
       return null;
     }
+    var pctZT = pctTempsZone(resultat.ztCs, totalCs);
+    var note10 = noteDepuisPctZT(pctZT);
     var ratio = vzt / v2;
-    var note10 = Math.round(ratio * 100) / 10;
     var tZtReel = resultat.ztCs / 100;
     var tZtRef = (reg.zt * 3.6) / v2;
     var tempsPerdu = Math.round((tZtReel - tZtRef) * 100) / 100;
     var ratioZ1Z2 = isFinite(v1) && v1 > 0 ? Math.round((v1 / v2) * 100) : null;
     return {
       note10: note10,
-      coefficient: Math.round(ratio * 100),
-      coef: Math.round(ratio * 100),
+      pctZT: pctZT,
+      coefficient: Math.round(note10 * 10),
+      coef: Math.round(note10 * 10),
+      vitesseRatioPct: Math.round(ratio * 100),
       v1: isFinite(v1) ? Math.round(v1 * 10) / 10 : null,
       v2: Math.round(v2 * 10) / 10,
       vzt: Math.round(vzt * 10) / 10,
@@ -270,12 +282,36 @@
   function texteEfficacite(eff) {
     if (!eff) return { ref: "", detail: "", note: "" };
     var detail;
-    if (Math.abs(eff.tempsPerdu) < 0.05) {
-      detail = "Temps ZT au même rythme qu’en Z2";
-    } else if (eff.tempsPerdu > 0) {
-      detail = "Temps perdu en ZT vs rythme Z2 : " + eff.tempsPerduLabel;
+    if (eff.pctZT <= PCT_ZT_MAX_POUR_10) {
+      detail =
+        eff.pctZT +
+        " % du temps en transmission (≤ " +
+        PCT_ZT_MAX_POUR_10 +
+        " %) : note maximale.";
+    } else if (eff.pctZT >= PCT_ZT_POUR_2) {
+      detail =
+        eff.pctZT +
+        " % du temps en transmission (≥ " +
+        PCT_ZT_POUR_2 +
+        " %) : note minimale de " +
+        NOTE_ZT_MIN +
+        "/10.";
     } else {
-      detail = "Gain en ZT vs rythme Z2 : " + Math.abs(eff.tempsPerdu).toFixed(2) + " s";
+      detail =
+        eff.pctZT +
+        " % du temps en transmission — entre " +
+        PCT_ZT_MAX_POUR_10 +
+        " % (10/10) et " +
+        PCT_ZT_POUR_2 +
+        " % (2/10).";
+    }
+    var rythme = "";
+    if (Math.abs(eff.tempsPerdu) < 0.05) {
+      rythme = "Vitesse ZT au même rythme qu’en Z2.";
+    } else if (eff.tempsPerdu > 0) {
+      rythme = "Temps perdu en ZT vs rythme Z2 : " + eff.tempsPerduLabel + ".";
+    } else {
+      rythme = "Gain en ZT vs rythme Z2 : " + Math.abs(eff.tempsPerdu).toFixed(2) + " s.";
     }
     var note = "";
     if (eff.ratioZ1Z2 != null && eff.v1 != null) {
@@ -287,37 +323,46 @@
         " % de la Z2) : plus lent au départ arrêté, c’est normal.";
     }
     return {
-      ref: "Référence Z2 : " + eff.v2 + " km/h · ZT mesurée : " + eff.vzt + " km/h",
-      detail: detail,
+      ref:
+        "ZT : " +
+        eff.pctZT +
+        " % du temps · Z2 : " +
+        eff.v2 +
+        " km/h · vitesse ZT : " +
+        eff.vzt +
+        " km/h (" +
+        (eff.vitesseRatioPct != null ? eff.vitesseRatioPct : "—") +
+        " % de la Z2)",
+      detail: detail + " " + rythme,
       note: note,
     };
   }
 
   function fermerExplicationsEfficacite() {
-    if (bilanEffExplainEl) bilanEffExplainEl.hidden = true;
-    if (bilanEffToggleEl) {
-      bilanEffToggleEl.setAttribute("aria-expanded", "false");
-      bilanEffToggleEl.textContent = "Comprendre la note";
+    if (effExplainEl) effExplainEl.hidden = true;
+    if (effToggleEl) {
+      effToggleEl.setAttribute("aria-expanded", "false");
+      effToggleEl.textContent = "Comprendre la note";
     }
   }
 
   function majEfficaciteZT() {
     var eff = calculerEfficaciteZT();
-    if (!bilanEffEl) return;
-    if (!eff) {
-      bilanEffEl.hidden = true;
+    if (!effEl) return;
+    if (!eff || phase !== "fini") {
+      effEl.hidden = true;
       fermerExplicationsEfficacite();
       return;
     }
     var texte = texteEfficacite(eff);
     var niv = niveauEfficacite(eff.note10);
-    bilanEffEl.hidden = false;
-    bilanEffEl.className = "relais-eff-zt relais-eff-zt--bilan " + niv.cls;
-    if (bilanEffNote10El) bilanEffNote10El.textContent = formaterNote10(eff.note10);
-    if (bilanEffRefEl) bilanEffRefEl.textContent = texte.ref;
-    if (bilanEffDetailEl) bilanEffDetailEl.textContent = texte.detail;
-    if (bilanEffNoteEl) bilanEffNoteEl.textContent = texte.note;
-    if (bilanEffVerdictEl) bilanEffVerdictEl.textContent = niv.label;
+    effEl.hidden = false;
+    effEl.className = "relais-eff-zt relais-eff-zt--live " + niv.cls;
+    if (effNote10El) effNote10El.textContent = formaterNote10(eff.note10);
+    if (effRefEl) effRefEl.textContent = texte.ref;
+    if (effDetailEl) effDetailEl.textContent = texte.detail;
+    if (effNoteEl) effNoteEl.textContent = texte.note;
+    if (effVerdictEl) effVerdictEl.textContent = niv.label;
   }
 
   function buildHistorySnapshot() {
@@ -411,7 +456,7 @@
   }
 
   function masquerEfficaciteZT() {
-    if (bilanEffEl) bilanEffEl.hidden = true;
+    if (effEl) effEl.hidden = true;
     fermerExplicationsEfficacite();
   }
 
@@ -592,24 +637,9 @@
     };
   }
 
-  function afficherBilan() {
+  function finaliserCourse() {
     calculerResultat();
-    var total = resultat.totalCs;
-    if (bilanTotalEl) bilanTotalEl.textContent = formaterTemps(total);
-    if (bilanZ1El) bilanZ1El.textContent = formaterTemps(resultat.z1Cs);
-    if (bilanZTEl) bilanZTEl.textContent = formaterTemps(resultat.ztCs);
-    if (bilanZ2El) bilanZ2El.textContent = formaterTemps(resultat.z2Cs);
-    if (bilanV1El) bilanV1El.textContent = formaterVitesse(resultat.v1, true);
-    if (bilanVZTEl) bilanVZTEl.textContent = formaterVitesse(resultat.vzt, true);
-    if (bilanV2El) bilanV2El.textContent = formaterVitesse(resultat.v2, true);
-    if (bilanPctZ1El) bilanPctZ1El.textContent = formaterPctTemps(resultat.z1Cs, total);
-    if (bilanPctZTEl) bilanPctZTEl.textContent = formaterPctTemps(resultat.ztCs, total);
-    if (bilanPctZ2El) bilanPctZ2El.textContent = formaterPctTemps(resultat.z2Cs, total);
     majEfficaciteZT();
-    if (bilanCardEl) {
-      bilanCardEl.hidden = false;
-      bilanCardEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
   }
 
   function onDepart() {
@@ -635,7 +665,6 @@
     }
     if (replayVideoEl) replayVideoEl.removeAttribute("src");
     if (replayWrapEl) replayWrapEl.hidden = true;
-    if (bilanCardEl) bilanCardEl.hidden = true;
     masquerEfficaciteZT();
     historiqueSauvePourCourse = false;
     sireneDepart();
@@ -697,7 +726,7 @@
     }, 500);
     arreterCamera();
     calculerResultat();
-    afficherBilan();
+    finaliserCourse();
     archiverCourseHistorique();
     majBoutons();
   }
@@ -714,7 +743,6 @@
     majRunner("depart");
     majChrono();
     majLiveZone(0, 0, 0);
-    if (bilanCardEl) bilanCardEl.hidden = true;
     masquerEfficaciteZT();
     historiqueSauvePourCourse = false;
     montrerMsg("");
@@ -818,12 +846,12 @@
   if (btnArrivee) btnArrivee.addEventListener("click", onArrivee);
   if (btnReset) btnReset.addEventListener("click", resetCourse);
 
-  if (bilanEffToggleEl && bilanEffExplainEl) {
-    bilanEffToggleEl.addEventListener("click", function () {
-      var open = bilanEffExplainEl.hidden;
-      bilanEffExplainEl.hidden = !open;
-      bilanEffToggleEl.setAttribute("aria-expanded", open ? "true" : "false");
-      bilanEffToggleEl.textContent = open ? "Masquer les explications" : "Comprendre la note";
+  if (effToggleEl && effExplainEl) {
+    effToggleEl.addEventListener("click", function () {
+      var open = effExplainEl.hidden;
+      effExplainEl.hidden = !open;
+      effToggleEl.setAttribute("aria-expanded", open ? "true" : "false");
+      effToggleEl.textContent = open ? "Masquer les explications" : "Comprendre la note";
     });
   }
 
@@ -893,7 +921,7 @@
       },
       getPayload: buildExportPayload,
       validateBeforeShare: function () {
-        if (phase !== "fini") return "Terminez la course et ouvrez le bilan avant de partager.";
+        if (phase !== "fini") return "Terminez la course avant de partager.";
         return null;
       },
     });

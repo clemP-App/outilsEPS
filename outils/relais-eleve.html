@@ -158,58 +158,62 @@
             </div>
 
             <div class="relais-scene__actors">
-              <figure class="relais-runner relais-runner--donneur" id="relais-donneur" data-pos="depart" data-pose="sprint">
-                <svg class="relais-runner__svg relais-runner__pose relais-runner__pose--sprint" viewBox="0 0 96 56" aria-hidden="true">
-                  <ellipse cx="42" cy="53" rx="22" ry="2.5" fill="#000" opacity="0.12" />
-                  <path d="M34 31c-7 5-12 14-17 24" stroke="#1e3a8a" stroke-width="5.5" stroke-linecap="round" />
-                  <path d="M50 29c9 3 16 12 22 24" stroke="#1e3a8a" stroke-width="5.5" stroke-linecap="round" />
-                  <path d="M33 29c3-1 8-1 12 1l-3 11c-3 2-8 1-11-2z" fill="#172554" />
-                  <path d="M36 27c5-9 17-11 27-3l-7 15c-5 3-12 1-16-4z" fill="#2563eb" />
-                  <path d="M34 25c-9-1-16-6-21-13" stroke="#fcd34d" stroke-width="4" stroke-linecap="round" />
-                  <path d="M52 23c11-1 18-7 25-14" stroke="#fcd34d" stroke-width="4" stroke-linecap="round" />
-                  <circle cx="61" cy="11" r="7.5" fill="#fcd34d" />
-                  <circle cx="63" cy="10" r="7.5" fill="#fbbf24" />
-                </svg>
-                <svg class="relais-runner__svg relais-runner__pose relais-runner__pose--pass" viewBox="0 0 96 56" aria-hidden="true">
-                  <ellipse cx="40" cy="53" rx="20" ry="2.5" fill="#000" opacity="0.12" />
-                  <path d="M30 32c-6 6-10 15-14 24" stroke="#1e3a8a" stroke-width="5.5" stroke-linecap="round" />
-                  <path d="M46 30c8 4 14 13 19 24" stroke="#1e3a8a" stroke-width="5.5" stroke-linecap="round" />
-                  <path d="M29 30c3-1 8 0 11 2l-3 10c-3 2-7 1-10-1z" fill="#172554" />
-                  <path d="M32 28c4-8 15-10 24-4l-6 14c-4 3-10 1-14-3z" fill="#2563eb" />
-                  <path d="M30 26c-8 0-14-4-18-10" stroke="#fcd34d" stroke-width="4" stroke-linecap="round" />
-                  <path d="M48 24c14 2 22 0 30-6" stroke="#fcd34d" stroke-width="4" stroke-linecap="round" />
-                  <rect x="72" y="20" width="14" height="3.5" rx="1.5" fill="#f59e0b" transform="rotate(-8 79 21)" />
-                  <circle cx="55" cy="12" r="7.5" fill="#fcd34d" />
-                  <circle cx="57" cy="11" r="7.5" fill="#fbbf24" />
-                </svg>
+              <figure class="relais-runner relais-runner--donneur" id="relais-donneur" data-pos="depart">
+                <img
+                  class="relais-runner__img"
+                  src="../assets/relais/coureur-1.png"
+                  width="160"
+                  height="160"
+                  alt=""
+                  decoding="async"
+                />
                 <span class="sr-only">Coureur 1</span>
               </figure>
-              <figure class="relais-runner relais-runner--receveur" id="relais-receveur" data-pos="zt-wait" data-pose="sprint" hidden>
-                <svg class="relais-runner__svg relais-runner__pose relais-runner__pose--sprint" viewBox="0 0 96 56" aria-hidden="true">
-                  <ellipse cx="42" cy="53" rx="22" ry="2.5" fill="#000" opacity="0.12" />
-                  <path d="M34 31c-7 5-12 14-17 24" stroke="#9a3412" stroke-width="5.5" stroke-linecap="round" />
-                  <path d="M50 29c9 3 16 12 22 24" stroke="#9a3412" stroke-width="5.5" stroke-linecap="round" />
-                  <path d="M33 29c3-1 8-1 12 1l-3 11c-3 2-8 1-11-2z" fill="#7c2d12" />
-                  <path d="M36 27c5-9 17-11 27-3l-7 15c-5 3-12 1-16-4z" fill="#ea580c" />
-                  <path d="M34 25c-9-1-16-6-21-13" stroke="#fcd34d" stroke-width="4" stroke-linecap="round" />
-                  <path d="M52 23c11-1 18-7 25-14" stroke="#fcd34d" stroke-width="4" stroke-linecap="round" />
-                  <circle cx="61" cy="11" r="7.5" fill="#fcd34d" />
-                  <circle cx="63" cy="10" r="7.5" fill="#fbbf24" />
-                </svg>
-                <svg class="relais-runner__svg relais-runner__pose relais-runner__pose--recv" viewBox="0 0 96 56" aria-hidden="true">
-                  <ellipse cx="44" cy="53" rx="22" ry="2.5" fill="#000" opacity="0.12" />
-                  <path d="M36 31c-6 5-11 14-16 24" stroke="#9a3412" stroke-width="5.5" stroke-linecap="round" />
-                  <path d="M52 29c10 2 17 11 23 24" stroke="#9a3412" stroke-width="5.5" stroke-linecap="round" />
-                  <path d="M35 29c3-1 8-1 12 1l-3 11c-3 2-8 1-11-2z" fill="#7c2d12" />
-                  <path d="M38 27c6-9 18-11 28-3l-7 15c-5 3-12 1-16-4z" fill="#ea580c" />
-                  <path d="M36 25c-12 2-20 8-28 14" stroke="#fcd34d" stroke-width="4" stroke-linecap="round" />
-                  <rect x="8" y="22" width="14" height="3.5" rx="1.5" fill="#f59e0b" transform="rotate(8 15 23)" />
-                  <path d="M54 23c10-2 17-8 24-15" stroke="#fcd34d" stroke-width="4" stroke-linecap="round" />
-                  <circle cx="63" cy="11" r="7.5" fill="#fcd34d" />
-                  <circle cx="65" cy="10" r="7.5" fill="#fbbf24" />
-                </svg>
+              <figure class="relais-runner relais-runner--receveur" id="relais-receveur" data-pos="zt-wait" hidden>
+                <img
+                  class="relais-runner__img"
+                  src="../assets/relais/coureur-2.png"
+                  width="160"
+                  height="160"
+                  alt=""
+                  decoding="async"
+                />
                 <span class="sr-only">Coureur 2</span>
               </figure>
+            </div>
+
+            <div class="relais-transmission" id="relais-transmission" hidden>
+              <div class="relais-transmission__stage">
+                <figure class="relais-transmission__athlete relais-transmission__athlete--donneur">
+                  <img
+                    src="../assets/relais/coureur-1.png"
+                    width="160"
+                    height="160"
+                    alt=""
+                    decoding="async"
+                  />
+                  <span class="sr-only">Coureur 1</span>
+                </figure>
+                <div class="relais-transmission__pass" aria-hidden="true">
+                  <img
+                    src="../assets/relais/transmission.png"
+                    width="120"
+                    height="120"
+                    alt=""
+                    decoding="async"
+                  />
+                </div>
+                <figure class="relais-transmission__athlete relais-transmission__athlete--receveur">
+                  <img
+                    src="../assets/relais/coureur-2.png"
+                    width="160"
+                    height="160"
+                    alt=""
+                    decoding="async"
+                  />
+                  <span class="sr-only">Coureur 2</span>
+                </figure>
+              </div>
             </div>
           </div>
 
@@ -271,6 +275,38 @@
           </tbody>
         </table>
 
+        <div class="relais-eff-zt relais-eff-zt--live" id="relais-eff" hidden aria-live="polite">
+          <div class="relais-eff-zt__head">
+            <span class="relais-eff-zt__title">Note transmission</span>
+            <strong class="relais-eff-zt__note10" id="relais-eff-note10">— / 10</strong>
+          </div>
+          <p class="relais-eff-zt__verdict" id="relais-eff-verdict"></p>
+          <button
+            type="button"
+            class="btn btn--ghost btn--small relais-eff-zt__toggle"
+            id="relais-eff-toggle"
+            aria-expanded="false"
+            aria-controls="relais-eff-explain"
+          >
+            Comprendre la note
+          </button>
+          <div class="relais-eff-zt__explain" id="relais-eff-explain" hidden>
+            <p id="relais-eff-ref"></p>
+            <p id="relais-eff-detail"></p>
+            <p id="relais-eff-note"></p>
+          </div>
+        </div>
+
+        <div class="relais-replay" id="relais-replay" hidden>
+          <h3>Revoir la transmission</h3>
+          <video id="relais-replay-video" playsinline controls></video>
+        </div>
+
+        <button class="btn btn--ghost btn--labeled relais-reset" type="button" id="relais-btn-reset" hidden>
+          <span class="btn__icon" aria-hidden="true">↺</span>
+          <span class="btn__text">Nouvelle course</span>
+        </button>
+
         <p id="relais-msg" class="msg-error" role="alert" hidden></p>
 
         <div class="relais-actions">
@@ -286,84 +322,6 @@
           <button class="relais-action-btn relais-action-btn--arrivee" type="button" id="relais-btn-arrivee" hidden>
             Arrivée
           </button>
-        </div>
-
-        <button class="btn btn--ghost btn--labeled relais-reset" type="button" id="relais-btn-reset" hidden>
-          <span class="btn__icon" aria-hidden="true">↺</span>
-          <span class="btn__text">Nouvelle course</span>
-        </button>
-      </section>
-
-      <section class="card relais-bilan-card" id="relais-bilan" hidden aria-labelledby="lbl-relais-bilan">
-        <header class="relais-bilan-hero">
-          <p class="relais-bilan-hero__eyebrow" id="lbl-relais-bilan">Bilan</p>
-          <div class="relais-bilan-hero__total">
-            <span class="relais-bilan-hero__label">Temps total</span>
-            <strong class="relais-bilan-hero__value" id="relais-bilan-total">—</strong>
-          </div>
-        </header>
-
-        <div class="relais-bilan-strip">
-          <article class="relais-bilan-zone relais-bilan-zone--z1">
-            <div class="relais-bilan-zone__head">
-              <span class="relais-bilan-zone__badge">Z1</span>
-              <span class="relais-bilan-zone__hint">Départ arrêté</span>
-            </div>
-            <strong class="relais-bilan-zone__time" id="relais-bilan-z1">—</strong>
-            <div class="relais-bilan-zone__meta">
-              <span class="relais-bilan-zone__speed" id="relais-bilan-v1">— km/h</span>
-              <span class="relais-bilan-zone__pct" id="relais-bilan-pct-z1">— % du temps</span>
-            </div>
-          </article>
-          <article class="relais-bilan-zone relais-bilan-zone--zt">
-            <div class="relais-bilan-zone__head">
-              <span class="relais-bilan-zone__badge">ZT</span>
-              <span class="relais-bilan-zone__hint">Transmission</span>
-            </div>
-            <strong class="relais-bilan-zone__time" id="relais-bilan-zt">—</strong>
-            <div class="relais-bilan-zone__meta">
-              <span class="relais-bilan-zone__speed" id="relais-bilan-vzt">— km/h</span>
-              <span class="relais-bilan-zone__pct" id="relais-bilan-pct-zt">— % du temps</span>
-            </div>
-          </article>
-          <article class="relais-bilan-zone relais-bilan-zone--z2">
-            <div class="relais-bilan-zone__head">
-              <span class="relais-bilan-zone__badge">Z2</span>
-              <span class="relais-bilan-zone__hint">Coureur lancé</span>
-            </div>
-            <strong class="relais-bilan-zone__time" id="relais-bilan-z2">—</strong>
-            <div class="relais-bilan-zone__meta">
-              <span class="relais-bilan-zone__speed" id="relais-bilan-v2">— km/h</span>
-              <span class="relais-bilan-zone__pct" id="relais-bilan-pct-z2">— % du temps</span>
-            </div>
-          </article>
-        </div>
-
-        <div class="relais-eff-zt relais-eff-zt--bilan" id="relais-bilan-eff" hidden aria-live="polite">
-          <div class="relais-eff-zt__head">
-            <span class="relais-eff-zt__title">Note transmission</span>
-            <strong class="relais-eff-zt__note10" id="relais-bilan-eff-note10">— / 10</strong>
-          </div>
-          <p class="relais-eff-zt__verdict" id="relais-bilan-eff-verdict"></p>
-          <button
-            type="button"
-            class="btn btn--ghost btn--small relais-eff-zt__toggle"
-            id="relais-bilan-eff-toggle"
-            aria-expanded="false"
-            aria-controls="relais-bilan-eff-explain"
-          >
-            Comprendre la note
-          </button>
-          <div class="relais-eff-zt__explain" id="relais-bilan-eff-explain" hidden>
-            <p id="relais-bilan-eff-ref"></p>
-            <p id="relais-bilan-eff-detail"></p>
-            <p id="relais-bilan-eff-note"></p>
-          </div>
-        </div>
-
-        <div class="relais-replay" id="relais-replay" hidden>
-          <h3>Revoir la transmission</h3>
-          <video id="relais-replay-video" playsinline controls></video>
         </div>
       </section>
 
@@ -390,18 +348,18 @@
               "Au départ du coureur, appuyez sur Départ.",
               "À l’entrée en zone de transmission : Entrée ZT.",
               "À la sortie de la zone de transmission : Sortie ZT.",
-              "À l’arrivée : Arrivée — le bilan s’affiche et la course est enregistrée dans l’historique.",
+              "À l’arrivée : Arrivée — la note transmission s’affiche et la course est enregistrée dans l’historique.",
             ],
           },
           {
             title: "Filmer la transmission",
             text:
-              "Cochez « Filmer la zone de transmission » pour enregistrer automatiquement entre Entrée ZT et Sortie ZT. La vidéo est rejouable dans le bilan (stockée localement sur l’appareil, non envoyée au professeur).",
+              "Cochez « Filmer la zone de transmission » pour enregistrer automatiquement entre Entrée ZT et Sortie ZT. La vidéo est rejouable après l’arrivée (stockée localement sur l’appareil, non envoyée au professeur).",
           },
           {
             title: "Note transmission",
             text:
-              "Notée sur 10 par rapport à la vitesse en Z2 (coureur lancé). Appuyez sur « Comprendre la note » pour le détail. La Z1 plus lente au départ arrêté est normale.",
+              "Notée sur 10 selon le % du temps en transmission : ≤ 33 % = 10/10, ≥ 45 % = 2/10, interpolation linéaire entre les deux. Appuyez sur « Comprendre la note » pour le détail.",
           },
           {
             title: "Historique",

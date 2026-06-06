@@ -32,7 +32,14 @@ var SKIP_DIRS = new Set([
 
 var SKIP_FILES = new Set(["precache-manifest.js", "sw.js"]);
 
-var ROOT_ASSETS = ["assets/icon-192.png", "assets/icon-512.png", "assets/apple-touch-icon.png"];
+var ROOT_ASSETS = [
+  "assets/icon-192.png",
+  "assets/icon-512.png",
+  "assets/apple-touch-icon.png",
+  "assets/relais/coureur-1.png",
+  "assets/relais/coureur-2.png",
+  "assets/relais/transmission.png",
+];
 
 function readAppVersion() {
   var src = fs.readFileSync(VERSION_FILE, "utf8");
