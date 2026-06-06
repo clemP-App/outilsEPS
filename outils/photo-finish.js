@@ -45,10 +45,9 @@
     cursorTimeFloating: $("pf-cursor-time-floating"),
     scrollSlider: $("pf-scroll-slider"),
     btnAddResult: $("pf-btn-add-result"),
-    btnUndoResult: $("pf-btn-undo-result"),
     btnInvert: $("pf-btn-invert"),
-    btnSaveSession: $("pf-btn-save-session"),
     btnExportImage: $("pf-btn-export-image"),
+    btnSaveGallery: $("pf-btn-save-gallery"),
     debugPanel: $("pf-debug-panel"),
     debugList: $("pf-debug-list"),
     diagnosticPanel: $("pf-diagnostic-panel"),
@@ -95,6 +94,7 @@
     direction: $("pf-direction"),
     highContrast: $("pf-high-contrast"),
     debugEnabled: $("pf-debug-enabled"),
+    autoOptimize: $("pf-auto-optimize"),
     filterClass: $("pf-filter-class"),
     filterRunner: $("pf-filter-runner"),
     filterAssigned: $("pf-filter-assigned"),
@@ -132,11 +132,12 @@
     displayScaleX: 1,
     effectiveStripWidth: 4,
     activeImageDataUrl: "",
+    probedCameraFps: 0,
+    autoOptimizeSummary: "",
     currentSessionId: "",
     currentSeriesNumber: 0,
     seriesCounter: 0,
     currentResultDraft: null,
-    lastAddedResultId: "",
     settings: defaultSettings(),
     sessionInfo: defaultSessionInfo(),
     runners: [],
@@ -164,7 +165,8 @@
       highContrast: false,
       captureHeight: "full",
       renderHeight: "sprint",
-      qualityPatchVersion: 4,
+      autoOptimize: true,
+      qualityPatchVersion: 5,
     };
   }
 
@@ -255,8 +257,142 @@
 
   function normalizeQuality(value) {
     if (value === "balanced") return "balancedEPS";
-    if (value === "max" || value === "highFps" || value === "performance") return value;
+    if (value === "auto" || value === "max" || value === "highFps" || value === "performance") return value;
     return "balancedEPS";
+  }
+
+  var AUTO_TARGET_PPS = 240;
+  var suppressAutoDisable = false;
+
+  function isAutoOptimizeEnabled() {
+    return state.settings.autoOptimize !== false;
+  }
+
+  function disableAutoOptimize() {
+    if (!state.settings.autoOptimize) return;
+    state.settings.autoOptimize = false;
+    if (state.settings.qualityMode === "auto") state.settings.qualityMode = "balancedEPS";
+    if (inputs.autoOptimize) inputs.autoOptimize.checked = false;
+    if (inputs.quality) inputs.quality.value = state.settings.qualityMode;
+    saveLocalShell();
+  }
+
+  function formatAutoOptimizeSummary(optimal, fps) {
+    optimal = optimal || {};
+    fps = fps || optimal.fps || 0;
+    return (
+      "Auto : " +
+      Math.round(fps) +
+      " fps, bandeau " +
+      (optimal.stripWidth || state.settings.stripWidth) +
+      " px, " +
+      (optimal.captureHeight || state.settings.captureHeight) +
+      ", rendu " +
+      (optimal.renderHeight || state.settings.renderHeight) +
+      "."
+    );
+  }
+
+  function computeOptimalSettings(stats, measuredFps) {
+    stats = stats || {};
+    var fps = Math.max(1, measuredFps || stats.cameraFrameRate || stats.averageFps || 30);
+    var w = stats.cameraWidth || 0;
+    var h = stats.cameraHeight || 0;
+    var longEdge = Math.max(w, h);
+    var stripWidth = Math.round(AUTO_TARGET_PPS / fps);
+    stripWidth = Math.max(2, Math.min(6, stripWidth));
+    if (fps >= 110) stripWidth = Math.min(6, Math.max(4, stripWidth));
+    else if (fps >= 55) stripWidth = Math.min(5, Math.max(3, stripWidth));
+    else if (fps >= 40) stripWidth = Math.min(4, Math.max(2, stripWidth));
+    else stripWidth = 2;
+
+    var captureHeight = "full";
+    if (fps < 28 || longEdge < 900) captureHeight = "480";
+    else if (fps < 48 || longEdge >= 1600) captureHeight = "720";
+    if (fps >= 58 && longEdge >= 1080) captureHeight = "full";
+
+    var renderHeight = "sprint";
+    if (fps < 28) renderHeight = "320";
+    else if (fps >= 90 && longEdge >= 1080) renderHeight = "480";
+
+    var qualityMode = "balancedEPS";
+    if (fps >= 110) qualityMode = "highFps";
+    else if (fps >= 50) qualityMode = "balancedEPS";
+    else if (fps >= 34) qualityMode = "max";
+    else qualityMode = "performance";
+
+    return {
+      stripWidth: stripWidth,
+      captureHeight: captureHeight,
+      renderHeight: renderHeight,
+      qualityMode: qualityMode,
+      fps: fps,
+    };
+  }
+
+  function applyAutoOptimization(stats, measuredFps) {
+    if (!isAutoOptimizeEnabled()) return "";
+    var optimal = computeOptimalSettings(stats, measuredFps);
+    state.settings.stripWidth = optimal.stripWidth;
+    state.settings.captureHeight = optimal.captureHeight;
+    state.settings.renderHeight = optimal.renderHeight;
+    state.settings.qualityMode = "auto";
+    state.probedCameraFps = optimal.fps;
+    state.autoOptimizeSummary = formatAutoOptimizeSummary(optimal, optimal.fps);
+    writeSettingsToUi();
+    saveLocalShell();
+    return state.autoOptimizeSummary;
+  }
+
+  function refineAutoOptimizationFromCapture() {
+    if (!isAutoOptimizeEnabled()) return;
+    var stats = state.debugStats;
+    var measured = stats.averageFps;
+    if (!measured || measured < 8) return;
+    var optimal = computeOptimalSettings(stats, measured);
+    if (state.probedCameraFps && measured < state.probedCameraFps * 0.72) {
+      optimal.stripWidth = Math.max(2, optimal.stripWidth - 1);
+      if (measured < 26) optimal.captureHeight = "480";
+      if (measured < 22) optimal.renderHeight = "320";
+    }
+    if (stats.pixelsPerSecond && stats.pixelsPerSecond < 150) {
+      optimal.stripWidth = Math.max(2, optimal.stripWidth - 1);
+    }
+    if (stats.pixelsPerSecond && stats.pixelsPerSecond > 340) {
+      optimal.stripWidth = Math.max(2, optimal.stripWidth - 1);
+    }
+    state.settings.stripWidth = optimal.stripWidth;
+    state.settings.captureHeight = optimal.captureHeight;
+    state.settings.renderHeight = optimal.renderHeight;
+    state.autoOptimizeSummary = formatAutoOptimizeSummary(optimal, measured);
+    writeSettingsToUi();
+    saveLocalShell();
+  }
+
+  function probeCameraFps(maxFrames, maxMs) {
+    maxFrames = maxFrames || 24;
+    maxMs = maxMs || 450;
+    return new Promise(function (resolve) {
+      var fallback = currentCameraDebugStats().cameraFrameRate || 30;
+      if (!state.stream || !els.video || !("requestVideoFrameCallback" in HTMLVideoElement.prototype)) {
+        resolve(fallback);
+        return;
+      }
+      var times = [];
+      var start = 0;
+      function onFrame(now) {
+        if (!start) start = now;
+        times.push(now);
+        if (times.length >= maxFrames || now - start > maxMs) {
+          var elapsed = times.length > 1 ? times[times.length - 1] - times[0] : 0;
+          var fps = elapsed > 0 ? ((times.length - 1) / elapsed) * 1000 : fallback;
+          resolve(fps > 0 ? fps : fallback);
+          return;
+        }
+        els.video.requestVideoFrameCallback(onFrame);
+      }
+      els.video.requestVideoFrameCallback(onFrame);
+    });
   }
 
   function go(screen) {
@@ -293,15 +429,18 @@
   }
 
   function applyQualityPatchIfNeeded() {
-    if (state.settings.qualityPatchVersion === 4) return;
-    state.settings.stripWidth = 4;
-    state.settings.qualityMode = "balancedEPS";
-    state.settings.startTriggerMode = "release";
-    state.settings.captureHeight = "full";
-    state.settings.renderHeight = "sprint";
-    state.settings.debugEnabled = false;
-    state.settings.direction = normalizeDirection(state.settings.direction);
-    state.settings.qualityPatchVersion = 4;
+    if (state.settings.qualityPatchVersion >= 5) return;
+    if (state.settings.qualityPatchVersion !== 4) {
+      state.settings.stripWidth = 4;
+      state.settings.qualityMode = "balancedEPS";
+      state.settings.startTriggerMode = "release";
+      state.settings.captureHeight = "full";
+      state.settings.renderHeight = "sprint";
+      state.settings.debugEnabled = false;
+      state.settings.direction = normalizeDirection(state.settings.direction);
+    }
+    if (state.settings.autoOptimize === undefined) state.settings.autoOptimize = true;
+    state.settings.qualityPatchVersion = 5;
   }
 
   function serializeShell() {
@@ -442,6 +581,7 @@
       delayValue === "custom"
         ? Math.max(0, Number(inputs.delayCustom.value || 0) * 1000)
         : Number(delayValue || 0);
+    var autoOptimize = inputs.autoOptimize ? inputs.autoOptimize.checked : state.settings.autoOptimize !== false;
     state.settings = {
       captureDelayMs: delayMs,
       autoStopEnabled: inputs.autoStopEnabled.checked,
@@ -450,14 +590,15 @@
       stripWidth: Math.max(1, Math.min(8, Number(inputs.stripWidth.value || 4))),
       finishLineXRatio: Number(inputs.finishRatio.value || 50) / 100,
       preferredCamera: inputs.cameraFacing.value,
-      qualityMode: normalizeQuality(inputs.quality.value),
+      qualityMode: autoOptimize ? "auto" : normalizeQuality(inputs.quality.value),
       startTriggerMode: inputs.startMode.value,
       className: (inputs.homeClassSelect && inputs.homeClassSelect.value) || inputs.sessionClass.value.trim(),
       debugEnabled: inputs.debugEnabled.checked,
       highContrast: inputs.highContrast.checked,
       captureHeight: inputs.captureHeight.value,
       renderHeight: inputs.renderHeight.value,
-      qualityPatchVersion: 4,
+      autoOptimize: autoOptimize,
+      qualityPatchVersion: 5,
     };
     state.sessionInfo = {
       name: activeManagerSessionName(),
@@ -474,6 +615,7 @@
   }
 
   function writeSettingsToUi() {
+    suppressAutoDisable = true;
     inputs.sessionName.value = state.sessionInfo.name || "";
     inputs.sessionClass.value = state.sessionInfo.className || "";
     inputs.eventType.value = state.sessionInfo.eventType || "";
@@ -485,7 +627,8 @@
     inputs.cameraFacing.value = state.settings.preferredCamera;
     state.settings.direction = normalizeDirection(state.settings.direction);
     state.settings.qualityMode = normalizeQuality(state.settings.qualityMode);
-    inputs.quality.value = state.settings.qualityMode;
+    if (inputs.autoOptimize) inputs.autoOptimize.checked = isAutoOptimizeEnabled();
+    inputs.quality.value = isAutoOptimizeEnabled() ? "auto" : state.settings.qualityMode;
     inputs.stripWidth.value = state.settings.stripWidth;
     inputs.finishRatio.value = Math.round(state.settings.finishLineXRatio * 100);
     inputs.captureHeight.value = state.settings.captureHeight;
@@ -500,6 +643,7 @@
     inputs.delayCustomWrap.hidden = inputs.delay.value !== "custom";
     document.body.classList.toggle("photo-finish-contrast", state.settings.highContrast);
     updateFinishGuide();
+    suppressAutoDisable = false;
   }
 
   function saveLocalShell() {
@@ -676,7 +820,6 @@
       els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
     }
     updateCaptureButton();
-    updateUndoButton();
   }
 
   function resultDialogRunners() {
@@ -692,6 +835,7 @@
   }
 
   function cameraProfiles() {
+    if (isAutoOptimizeEnabled()) return autoCameraProfiles();
     var facing = { ideal: state.settings.preferredCamera };
     var profiles = [];
     if (state.settings.qualityMode === "highFps") {
@@ -717,6 +861,31 @@
       if (profile.height) video.height = { ideal: profile.height };
       if (profile.frameRate) video.frameRate = { ideal: profile.frameRate };
       return { label: profile.label, requestedFrameRate: profile.frameRate || 0, constraints: { audio: false, video: video } };
+    });
+  }
+
+  function autoCameraProfiles() {
+    var facing = { ideal: state.settings.preferredCamera };
+    var profiles = [
+      { width: 1920, height: 1080, frameRate: 60, label: "1080p 60 fps" },
+      { width: 1280, height: 720, frameRate: 60, label: "720p 60 fps" },
+      { width: 1920, height: 1080, frameRate: 120, label: "1080p 120 fps" },
+      { width: 1280, height: 720, frameRate: 120, label: "720p 120 fps" },
+      { width: 1920, height: 1080, frameRate: 30, label: "1080p 30 fps" },
+      { width: 1280, height: 720, frameRate: 30, label: "720p 30 fps" },
+      { width: 960, height: 540, frameRate: 30, label: "540p 30 fps" },
+      { label: "defaut" },
+    ];
+    return profiles.map(function (profile) {
+      var video = { facingMode: facing };
+      if (profile.width) video.width = { ideal: profile.width };
+      if (profile.height) video.height = { ideal: profile.height };
+      if (profile.frameRate) video.frameRate = { ideal: profile.frameRate };
+      return {
+        label: profile.label,
+        requestedFrameRate: profile.frameRate || 0,
+        constraints: { audio: false, video: video },
+      };
     });
   }
 
@@ -774,9 +943,13 @@
         els.video.srcObject = stream;
         return waitForVideoMetadata().then(function () {
           return els.video.play();
+        }).then(function () {
+          return probeCameraFps();
         });
       })
-      .then(function () {
+      .then(function (probedFps) {
+        state.probedCameraFps = probedFps;
+        if (isAutoOptimizeEnabled()) applyAutoOptimization(currentCameraDebugStats(), probedFps);
         state.cameraStarting = false;
         showMsg("");
         updateCameraMeta();
@@ -818,9 +991,11 @@
     state.debugStats.cameraDeviceId = settings.deviceId || "";
     state.debugStats.cameraLabel = track && track.label ? track.label : profile && profile.label ? profile.label : "";
     if (els.cameraMeta) {
-      els.cameraMeta.textContent = w && h
+      var text = w && h
         ? "Camera : " + w + " x " + h + ", " + (settings.frameRate || "?") + " fps obtenus."
         : "Camera active, attente des metadonnees video.";
+      if (isAutoOptimizeEnabled() && state.autoOptimizeSummary) text += " " + state.autoOptimizeSummary;
+      els.cameraMeta.textContent = text;
     }
   }
 
@@ -975,6 +1150,10 @@
   }
 
   function chooseEffectiveStripWidth(cameraFrameRate) {
+    var fps = state.probedCameraFps || cameraFrameRate || 30;
+    if (isAutoOptimizeEnabled()) {
+      return computeOptimalSettings(currentCameraDebugStats(), fps).stripWidth;
+    }
     var configured = Math.max(1, Math.min(8, state.settings.stripWidth || 4));
     if (cameraFrameRate && cameraFrameRate < 45 && configured > 2) return 2;
     return configured;
@@ -1147,6 +1326,9 @@
     if (stats.cameraFrameRate && stats.cameraFrameRate < 45 && stats.stripWidth !== stats.effectiveStripWidth) {
       warnings.push("Mode 30 fps : bandeaux automatiquement affines pour reduire l'effet mosaique.");
     }
+    if (isAutoOptimizeEnabled()) {
+      warnings.unshift("Optimisation automatique active : reglages ajustes pour ~" + AUTO_TARGET_PPS + " px/s.");
+    }
     if (stats.renderHeight > 480) warnings.push("Image trop haute : utilisez Bande SprintTimer pour un rendu plus lisible.");
     if (stats.imageWidth > 12000) warnings.push("Image tres large : risque de ralentissement sur mobile.");
     if (stats.cameraWidth && stats.cameraHeight && Math.max(stats.cameraWidth, stats.cameraHeight) < 1280) {
@@ -1182,7 +1364,7 @@
       "Hauteur rendu": stats.renderHeight + " px",
       "Image finale": stats.imageWidth + " x " + stats.imageHeight,
       "Image affichee": Math.round(stats.imageWidth * stats.displayScaleX) + " x " + stats.imageHeight,
-      "Mode qualite": stats.qualityMode,
+      "Mode qualite": isAutoOptimizeEnabled() ? "auto" : stats.qualityMode,
     };
     els.diagnosticList.innerHTML = Object.keys(rows).map(function (key) {
       return "<dt>" + escapeHtml(key) + "</dt><dd>" + escapeHtml(rows[key]) + "</dd>";
@@ -1269,6 +1451,8 @@
     updateCursorReadout();
     renderMarkers();
     renderDiagnostic();
+    refineAutoOptimizationFromCapture();
+    if (isAutoOptimizeEnabled()) updateCameraMeta();
   }
 
   function imageXToTime(imageX) {
@@ -1323,7 +1507,14 @@
     if (!els.viewer || !els.imageWrap) return;
     var half = Math.max(0, Math.round(els.viewer.clientWidth / 2));
     els.imageWrap.style.setProperty("--pf-viewer-pad", half + "px");
+    syncViewerHeight();
     updateSliderFromScroll();
+  }
+
+  function syncViewerHeight() {
+    if (!els.imageWrap || !els.resultCanvas) return;
+    var h = els.resultCanvas.offsetHeight;
+    if (h > 0) els.imageWrap.style.minHeight = h + "px";
   }
 
   function applyZoom() {
@@ -1331,6 +1522,7 @@
     var width = els.resultCanvas.width * state.zoom;
     els.resultCanvas.style.width = width + "px";
     els.resultCanvas.style.height = "auto";
+    syncViewerHeight();
     renderMarkers();
     updateSliderFromScroll();
     updateCursorReadout();
@@ -1437,50 +1629,22 @@
       isUnassigned: isUnassigned,
     };
     state.results.push(result);
-    state.lastAddedResultId = result.id;
     rankResults();
     saveLocalShell();
     renderMarkers();
     renderResults();
-    updateUndoButton();
     closeResultDialog();
     showMsg("");
-  }
-
-  function updateUndoButton() {
-    if (!els.btnUndoResult) return;
-    els.btnUndoResult.disabled = !state.lastAddedResultId;
-  }
-
-  function undoLastResult() {
-    if (!state.lastAddedResultId) return;
-    var removed = state.results.some(function (result) {
-      return result.id === state.lastAddedResultId;
-    });
-    state.results = state.results.filter(function (result) {
-      return result.id !== state.lastAddedResultId;
-    });
-    state.lastAddedResultId = "";
-    if (removed) {
-      rankResults();
-      saveLocalShell();
-      renderMarkers();
-      renderResults();
-      updateUndoButton();
-      showMsg("Dernier ajout annule.");
-    }
   }
 
   function deleteResult(resultId) {
     state.results = state.results.filter(function (result) {
       return result.id !== resultId;
     });
-    if (state.lastAddedResultId === resultId) state.lastAddedResultId = "";
     rankResults();
     saveLocalShell();
     renderMarkers();
     renderResults();
-    updateUndoButton();
   }
 
   function rankResults() {
@@ -1747,15 +1911,61 @@
     }
   }
 
-  function exportImage() {
+  function exportImage(silent) {
     if (!els.resultCanvas.width) {
       showMsg("Aucune image a exporter.");
       return;
     }
+    var fname = "photo-finish-" + new Date().toISOString().slice(0, 10) + ".png";
     var a = document.createElement("a");
     a.href = els.resultCanvas.toDataURL("image/png");
-    a.download = "photo-finish-" + new Date().toISOString().slice(0, 10) + ".png";
+    a.download = fname;
     a.click();
+    if (!silent) showMsg("Image exportee.");
+  }
+
+  function saveImageToGallery() {
+    if (!els.resultCanvas.width) {
+      showMsg("Aucune image a enregistrer.");
+      return;
+    }
+    var fname = "photo-finish-" + new Date().toISOString().slice(0, 10) + ".png";
+    function downloadFallback(message) {
+      exportImage(true);
+      showMsg(message || "Partage indisponible : image telechargee.");
+    }
+    if (!els.resultCanvas.toBlob) {
+      downloadFallback();
+      return;
+    }
+    els.resultCanvas.toBlob(function (blob) {
+      if (!blob) {
+        showMsg("Impossible de preparer l'image.");
+        return;
+      }
+      try {
+        var file = new File([blob], fname, { type: "image/png" });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator
+            .share({
+              files: [file],
+              title: "Photo Finish V1",
+              text: fname,
+            })
+            .then(function () {
+              showMsg("Choisissez « Enregistrer l'image » ou « Photos » dans le menu.");
+            })
+            .catch(function (err) {
+              if (err && err.name === "AbortError") return;
+              downloadFallback();
+            });
+          return;
+        }
+      } catch (err) {
+        /* navigateurs sans File / canShare */
+      }
+      downloadFallback();
+    }, "image/png");
   }
 
   function renderDebug() {
@@ -1840,12 +2050,45 @@
         go(btn.dataset.go);
       });
     });
+    var manualCaptureKeys = {
+      quality: true,
+      stripWidth: true,
+      captureHeight: true,
+      renderHeight: true,
+    };
+    function onManualCaptureSettingChange() {
+      if (suppressAutoDisable) return;
+      disableAutoOptimize();
+      readSettingsFromUi();
+    }
     Object.keys(inputs).forEach(function (key) {
       var input = inputs[key];
-      if (!input) return;
+      if (!input || key === "autoOptimize") return;
+      if (manualCaptureKeys[key]) {
+        input.addEventListener("input", onManualCaptureSettingChange);
+        input.addEventListener("change", onManualCaptureSettingChange);
+        return;
+      }
       input.addEventListener("input", readSettingsFromUi);
       input.addEventListener("change", readSettingsFromUi);
     });
+    if (inputs.autoOptimize) {
+      inputs.autoOptimize.addEventListener("change", function () {
+        state.settings.autoOptimize = inputs.autoOptimize.checked;
+        if (isAutoOptimizeEnabled()) {
+          inputs.quality.value = "auto";
+          state.settings.qualityMode = "auto";
+        }
+        readSettingsFromUi();
+        if (!isAutoOptimizeEnabled()) return;
+        if (state.stream) {
+          probeCameraFps().then(function (fps) {
+            applyAutoOptimization(currentCameraDebugStats(), fps);
+            updateCameraMeta();
+          });
+        }
+      });
+    }
     if (inputs.homeClassSelect) {
       inputs.homeClassSelect.addEventListener("change", function () {
         state.sessionInfo.className = inputs.homeClassSelect.value;
@@ -1876,6 +2119,7 @@
     if (els.btnRunQualityTest) els.btnRunQualityTest.addEventListener("click", startQualityTest);
     document.querySelectorAll("[data-strip-preset]").forEach(function (btn) {
       btn.addEventListener("click", function () {
+        disableAutoOptimize();
         inputs.stripWidth.value = btn.dataset.stripPreset;
         readSettingsFromUi();
         showMsg("Largeur de bandeau reglee a " + btn.dataset.stripPreset + " px natifs.");
@@ -1952,15 +2196,11 @@
       updateCursorReadout();
     });
     els.btnAddResult.addEventListener("click", openResultDialog);
-    if (els.btnUndoResult) els.btnUndoResult.addEventListener("click", undoLastResult);
     els.dialogCancel.addEventListener("click", closeResultDialog);
     els.dialogSave.addEventListener("click", saveResultFromDialog);
     els.runnerSearch.addEventListener("input", fillRunnerSelect);
-    els.btnSaveSession.addEventListener("click", function () {
-      saveSession();
-      showMsg("Session sauvegardee.");
-    });
     els.btnExportImage.addEventListener("click", exportImage);
+    if (els.btnSaveGallery) els.btnSaveGallery.addEventListener("click", saveImageToGallery);
     $("pf-btn-export-csv").addEventListener("click", exportCsv);
     $("pf-btn-copy-results").addEventListener("click", copyResults);
     [inputs.filterClass, inputs.filterRunner, inputs.filterAssigned, inputs.filterSeries, inputs.sortResults].forEach(function (input) {
@@ -1990,11 +2230,16 @@
     });
     var importBtn = $("btn-import-classe-pf");
     if (importBtn) importBtn.addEventListener("click", importClassFromTool);
-    window.addEventListener("resize", function () {
+    window.addEventListener("resize", onViewerLayoutChange);
+    window.addEventListener("orientationchange", onViewerLayoutChange);
+  }
+
+  function onViewerLayoutChange() {
+    window.setTimeout(function () {
       updateViewerPadding();
       applyZoom();
       updateFinishGuide();
-    });
+    }, 120);
   }
 
   wireEvents();

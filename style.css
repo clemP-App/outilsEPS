@@ -8853,7 +8853,7 @@ body.video-retard-body-fs {
   line-height: 0;
   padding-left: var(--pf-viewer-pad, 50vw);
   padding-right: var(--pf-viewer-pad, 50vw);
-  min-height: min(55vh, 25rem);
+  min-height: 0;
 }
 
 .photo-finish-image-wrap.is-reversed {
@@ -8866,7 +8866,7 @@ body.video-retard-body-fs {
 
 .photo-finish-result {
   display: block;
-  max-height: min(55vh, 25rem);
+  max-width: 100%;
   width: auto;
   height: auto;
   image-rendering: auto;

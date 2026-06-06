@@ -231,9 +231,14 @@
                       <option value="user">Avant</option>
                     </select>
                   </div>
+                  <label class="dispense-hide-done-label">
+                    <input type="checkbox" id="pf-auto-optimize" checked />
+                    <span>Optimisation automatique (recommandé)</span>
+                  </label>
                   <div class="field-group">
                     <label class="field-label" for="pf-quality">Qualité</label>
                     <select id="pf-quality">
+                      <option value="auto">Auto — optimisé pour cet appareil</option>
                       <option value="balancedEPS">Équilibré EPS — 1080p 60 fps</option>
                       <option value="max">Qualité maximale</option>
                       <option value="highFps">FPS maximal</option>
@@ -429,21 +434,17 @@
           </div>
           <input type="range" id="pf-scroll-slider" class="photo-finish-slider" min="0" max="1000" value="0" />
           <div class="field-row champ-gestion-actions">
-            <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-undo-result" disabled>
-              <span class="btn__icon" aria-hidden="true">↩</span>
-              <span class="btn__text">Annuler le dernier ajout</span>
-            </button>
             <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-invert">
               <span class="btn__icon" aria-hidden="true">⇄</span>
               <span class="btn__text">Inverser le sens</span>
             </button>
-            <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-save-session">
-              <span class="btn__icon" aria-hidden="true">💾</span>
-              <span class="btn__text">Sauvegarder</span>
-            </button>
             <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-export-image">
               <span class="btn__icon" aria-hidden="true">⬇</span>
-              <span class="btn__text">Image PNG</span>
+              <span class="btn__text">Exporter</span>
+            </button>
+            <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-save-gallery">
+              <span class="btn__icon" aria-hidden="true">🖼</span>
+              <span class="btn__text">Enregistrer dans la galerie</span>
             </button>
           </div>
         </section>
