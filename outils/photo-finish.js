@@ -1518,8 +1518,8 @@
     }
     if (landscape) {
       return {
-        maxH: Math.min(Math.round(vh * 0.82), Math.max(160, vh - 88)),
-        minH: Math.min(Math.round(vh * 0.82), Math.max(160, vh - 88)),
+        maxH: Math.round(vh * 0.66),
+        minH: Math.round(vh * 0.66),
       };
     }
     return {
@@ -1561,14 +1561,19 @@
         if (statsCard) reserved += statsCard.getBoundingClientRect().height + 6;
       }
     } else if (state.screen === "analysis") {
-      reserved += analysisPanelChromeHeight();
+      if (!landscape) reserved += analysisPanelChromeHeight();
     }
-    var available = Math.round(vh - chromeTop - reserved);
-    if (state.screen === "capture" && landscape) {
-      available = Math.max(200, available);
-      available = Math.min(Math.round(vh - 32), Math.round(available * 1.34));
+    var available;
+    if (state.screen === "analysis" && landscape) {
+      available = Math.round(vh * 0.66);
     } else {
-      available = Math.max(landscape ? 140 : 168, available);
+      available = Math.round(vh - chromeTop - reserved);
+      if (state.screen === "capture" && landscape) {
+        available = Math.max(200, available);
+        available = Math.min(Math.round(vh - 32), Math.round(available * 1.34));
+      } else {
+        available = Math.max(landscape ? 140 : 168, available);
+      }
     }
     root.style.setProperty("--pf-image-area-h", available + "px");
   }
@@ -1585,15 +1590,35 @@
     return { width: displayW, height: displayH, scale: scale };
   }
 
-  function schedulePhotoFinishLayout() {
+  function restoreCursorAtTime(timeMs, retry) {
+    if (timeMs == null || !state.strips.length) return;
+    if (!els.scroll || !els.viewer || els.viewer.clientWidth <= 0) {
+      if ((retry || 0) < 12) {
+        requestAnimationFrame(function () {
+          restoreCursorAtTime(timeMs, (retry || 0) + 1);
+        });
+      }
+      return;
+    }
+    scrollToImageX(timeToImageX(timeMs));
+    updateSliderFromScroll();
+    updateCursorReadout();
+  }
+
+  function schedulePhotoFinishLayout(savedTime) {
+    var keepTime =
+      savedTime != null
+        ? savedTime
+        : state.screen === "analysis" && state.strips.length
+          ? getTimeAtViewportCursor()
+          : null;
     requestAnimationFrame(function () {
       updatePhotoFinishImageArea();
       if (state.screen !== "analysis") return;
       requestAnimationFrame(function () {
-        updateViewerPadding(0);
         applyZoom();
         updateViewerPadding(0);
-        updateCursorReadout();
+        restoreCursorAtTime(keepTime);
       });
     });
   }
@@ -2384,7 +2409,11 @@
   }
 
   function onViewerLayoutChange() {
-    window.setTimeout(schedulePhotoFinishLayout, 120);
+    var keepTime =
+      state.screen === "analysis" && state.strips.length ? getTimeAtViewportCursor() : null;
+    window.setTimeout(function () {
+      schedulePhotoFinishLayout(keepTime);
+    }, 120);
   }
 
   wireEvents();

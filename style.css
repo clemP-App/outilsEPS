@@ -8540,7 +8540,7 @@ body.video-retard-body-fs {
   .page-outil--photo-finish {
     --pf-image-area-h: clamp(12rem, calc(100dvh - 5.5rem), 100%);
     --pf-analysis-min-h: clamp(10rem, calc(100dvh - 9rem), 100%);
-    --pf-analysis-max-h: clamp(12rem, calc(100dvh - 5.5rem), 100%);
+    --pf-analysis-max-h: 66vh;
     --pf-chrono-size: clamp(1rem, 3.8vh, 1.55rem);
     --pf-capture-btn-h: 2.65rem;
   }
