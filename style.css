@@ -8520,6 +8520,8 @@ body.video-retard-body-fs {
 /* --- Photo finish --- */
 .page-outil--photo-finish {
   max-width: min(52rem, 100%);
+  --pf-analysis-max-h: min(72vh, 36rem);
+  --pf-analysis-min-h: min(44vh, 22rem);
 }
 
 .photo-finish-msg {
@@ -8860,7 +8862,7 @@ body.video-retard-body-fs {
 
 .photo-finish-bar-time {
   margin: 0 0 0.65rem;
-  font-size: 1rem;
+  font-size: clamp(1.05rem, 3.4vw, 1.25rem);
 }
 
 .photo-finish-bar-time strong {
@@ -8890,6 +8892,7 @@ body.video-retard-body-fs {
   overflow: hidden;
   border-radius: 0.5rem;
   background: #111;
+  min-height: var(--pf-analysis-min-h, min(44vh, 22rem));
 }
 
 .photo-finish-scroll {
@@ -8901,7 +8904,7 @@ body.video-retard-body-fs {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #111;
   touch-action: pan-x pinch-zoom;
-  min-height: 8rem;
+  min-height: var(--pf-analysis-min-h, min(44vh, 22rem));
 }
 
 .photo-finish-image-wrap {
@@ -8910,7 +8913,7 @@ body.video-retard-body-fs {
   line-height: 0;
   padding-left: var(--pf-viewer-pad, 50vw);
   padding-right: var(--pf-viewer-pad, 50vw);
-  min-height: 8rem;
+  min-height: var(--pf-analysis-min-h, min(44vh, 22rem));
   vertical-align: top;
 }
 
@@ -8926,7 +8929,7 @@ body.video-retard-body-fs {
   display: block;
   width: auto;
   height: auto;
-  max-height: min(55vh, 25rem);
+  max-height: var(--pf-analysis-max-h, min(72vh, 36rem));
   image-rendering: auto;
   vertical-align: top;
 }
@@ -8946,24 +8949,26 @@ body.video-retard-body-fs {
 
 .photo-finish-fixed-time {
   position: absolute;
-  top: 0.45rem;
+  top: 0.55rem;
   left: 50%;
   transform: translateX(-50%);
-  padding: 0.25rem 0.45rem;
-  border-radius: 0.35rem;
-  background: rgba(0, 0, 0, 0.72);
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.4rem;
+  background: rgba(0, 0, 0, 0.78);
   color: #fff;
+  font-size: clamp(1rem, 3.8vw, 1.35rem);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
 }
 
 .photo-finish-add {
   position: absolute;
   left: 50%;
-  bottom: 0.75rem;
-  width: 3.3rem;
-  height: 3.3rem;
+  bottom: 0.85rem;
+  width: clamp(3.4rem, 12vw, 4rem);
+  height: clamp(3.4rem, 12vw, 4rem);
   transform: translateX(-50%);
   border: none;
   border-radius: 50%;

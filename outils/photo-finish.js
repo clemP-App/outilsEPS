@@ -1170,7 +1170,7 @@
     var mode = state.settings.renderHeight || "sprint";
     if (mode === "native") return sourceHeight;
     if (mode === "sprint") {
-      return Math.max(160, Math.min(260, Math.round(sourceHeight * 0.28)));
+      return Math.max(180, Math.min(320, Math.round(sourceHeight * 0.36)));
     }
     return Math.min(sourceHeight, Math.max(120, Number(mode || 240)));
   }
@@ -1508,18 +1508,35 @@
     return imageXToTime(viewportCursorToImageX());
   }
 
+  function analysisHeightLimits() {
+    return {
+      maxH: Math.min(Math.round(window.innerHeight * 0.72), 576),
+      minH: Math.min(Math.round(window.innerHeight * 0.44), 352),
+    };
+  }
+
   function viewerDisplayMetrics() {
     var cw = els.resultCanvas ? els.resultCanvas.width : 0;
     var ch = els.resultCanvas ? els.resultCanvas.height : 0;
     if (!cw || !ch) return { width: 0, height: 0 };
+    var limits = analysisHeightLimits();
+    var maxH = limits.maxH;
+    var minH = limits.minH;
     var zoomedW = cw * state.zoom;
     var viewerW = els.viewer && els.viewer.clientWidth > 0 ? els.viewer.clientWidth : zoomedW;
-    var maxH = Math.min(Math.round(window.innerHeight * 0.55), 400);
     var displayW = zoomedW;
     var displayH = Math.max(1, Math.round(ch * (displayW / cw)));
     if (displayW > viewerW) {
       displayW = viewerW;
       displayH = Math.max(1, Math.round(ch * (displayW / cw)));
+    }
+    if (displayH < minH) {
+      displayH = minH;
+      displayW = Math.max(1, Math.round(cw * (displayH / ch) * state.zoom));
+      if (displayW > viewerW) {
+        displayW = viewerW;
+        displayH = Math.max(1, Math.round(ch * (displayW / cw)));
+      }
     }
     if (displayH > maxH) {
       displayH = maxH;
