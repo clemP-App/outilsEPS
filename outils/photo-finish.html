@@ -123,32 +123,22 @@
             </div>
             <div id="liste-manuelle-panel-pf" class="liste-manuelle-panel" hidden>
               <p class="hint liste-manuelle-ligne-hint" hidden>
-                1 coureur par ligne, ou utilisez les champs ci-dessous.
+                1 coureur par ligne · <strong>nom prénom</strong>, <strong>nom;prénom</strong> ou
+                <strong>nom;prénom;classe</strong>
               </p>
-              <div class="photo-finish-grid">
-                <div class="field-group">
-                  <label class="field-label" for="pf-runner-name">Nom du coureur</label>
-                  <input type="text" id="pf-runner-name" autocomplete="off" />
-                </div>
-                <div class="field-group">
-                  <label class="field-label" for="pf-runner-class">Classe</label>
-                  <input type="text" id="pf-runner-class" autocomplete="off" />
-                </div>
-              </div>
-              <div class="field-row">
-                <button type="button" class="btn btn--primary btn--labeled" id="pf-btn-add-runner">
-                  <span class="btn__icon" aria-hidden="true">✓</span>
-                  <span class="btn__text">Ajouter</span>
-                </button>
-              </div>
               <div class="field-group">
-                <label class="field-label" for="pf-import-text">Importer depuis du texte collé</label>
-                <textarea id="pf-import-text" rows="4" placeholder="Un nom par ligne"></textarea>
+                <label class="field-label" for="pf-import-text">Liste des coureurs</label>
+                <textarea
+                  id="pf-import-text"
+                  rows="8"
+                  spellcheck="false"
+                  placeholder="Dupont;Léa;6e1&#10;Martin;Paul&#10;Bernard;Sophie&#10;Durand Jean"
+                ></textarea>
               </div>
               <div class="field-row">
-                <button type="button" class="btn btn--ghost btn--labeled" id="pf-btn-import-text">
-                  <span class="btn__icon" aria-hidden="true">↵</span>
-                  <span class="btn__text">Importer la liste</span>
+                <button type="button" class="btn btn--primary btn--labeled" id="pf-btn-valider-liste">
+                  <span class="btn__icon" aria-hidden="true">✓</span>
+                  <span class="btn__text">Valider la liste</span>
                 </button>
               </div>
             </div>
@@ -271,7 +261,7 @@
                   <div class="field-group">
                     <label class="field-label" for="pf-render-height">Rendu vertical</label>
                     <select id="pf-render-height">
-                      <option value="sprint">Bande SprintTimer</option>
+                      <option value="sprint">Bande compacte</option>
                       <option value="320">Lisible 320 px</option>
                       <option value="480">Détail 480 px</option>
                       <option value="native">Hauteur native</option>

@@ -100,8 +100,6 @@
     filterAssigned: $("pf-filter-assigned"),
     filterSeries: $("pf-filter-series"),
     sortResults: $("pf-sort-results"),
-    runnerName: $("pf-runner-name"),
-    runnerClass: $("pf-runner-class"),
     importText: $("pf-import-text"),
   };
 
@@ -1752,6 +1750,50 @@
       });
   }
 
+  function parseRunnerLine(line, defaultClassName) {
+    line = String(line || "").trim();
+    if (!line) return null;
+    defaultClassName = defaultClassName || state.sessionInfo.className || "";
+    if (line.indexOf(";") >= 0) {
+      var parts = line
+        .split(";")
+        .map(function (p) {
+          return p.trim();
+        })
+        .filter(Boolean);
+      if (parts.length >= 3) {
+        return { name: parts[0] + " " + parts[1], className: parts[2] };
+      }
+      if (parts.length === 2) {
+        return { name: parts[0] + " " + parts[1], className: defaultClassName };
+      }
+      return { name: parts[0], className: defaultClassName };
+    }
+    return { name: line.replace(/\s+/g, " "), className: defaultClassName };
+  }
+
+  function importRunnersFromText() {
+    if (!inputs.importText) return;
+    var defaultClass =
+      (inputs.homeClassSelect && inputs.homeClassSelect.value) || state.sessionInfo.className || "";
+    var lines = inputs.importText.value.split(/\r?\n/);
+    var added = 0;
+    lines.forEach(function (line) {
+      var parsed = parseRunnerLine(line, defaultClass);
+      if (!parsed || !parsed.name) return;
+      if (addRunner(parsed.name, parsed.className, false)) added += 1;
+    });
+    if (!added) {
+      showMsg("Saisissez au moins un coureur (un par ligne).");
+      return;
+    }
+    inputs.importText.value = "";
+    saveLocalShell();
+    renderRunners();
+    renderHomeSetup();
+    showMsg(added + " coureur" + (added > 1 ? "s" : "") + " ajoute" + (added > 1 ? "s" : "") + ".");
+  }
+
   function addRunner(name, className, persist) {
     var clean = String(name || "").trim().replace(/\s+/g, " ");
     if (!clean) return null;
@@ -1761,7 +1803,7 @@
       firstName: parts.length > 1 ? parts[0] : "",
       lastName: parts.length > 1 ? parts.slice(1).join(" ") : clean,
       displayName: clean,
-      className: className || inputs.runnerClass.value.trim() || state.sessionInfo.className || "",
+      className: className || state.sessionInfo.className || "",
       active: true,
     };
     state.runners.push(runner);
@@ -2280,26 +2322,8 @@
       input.addEventListener("input", renderResults);
       input.addEventListener("change", renderResults);
     });
-    $("pf-btn-add-runner").addEventListener("click", function () {
-      addRunner(inputs.runnerName.value, inputs.runnerClass.value);
-      inputs.runnerName.value = "";
-    });
-    $("pf-btn-import-text").addEventListener("click", function () {
-      var className = inputs.runnerClass.value.trim() || state.sessionInfo.className;
-      inputs.importText.value
-        .split(/\r?\n/)
-        .map(function (line) {
-          return line.trim();
-        })
-        .filter(Boolean)
-        .forEach(function (line) {
-          addRunner(line, className, false);
-        });
-      inputs.importText.value = "";
-      saveLocalShell();
-      renderRunners();
-      renderHomeSetup();
-    });
+    var btnValiderListe = $("pf-btn-valider-liste");
+    if (btnValiderListe) btnValiderListe.addEventListener("click", importRunnersFromText);
     var importBtn = $("btn-import-classe-pf");
     if (importBtn) importBtn.addEventListener("click", importClassFromTool);
     window.addEventListener("resize", onViewerLayoutChange);
