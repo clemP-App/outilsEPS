@@ -170,7 +170,7 @@
 
   function defaultSessionInfo() {
     return {
-      name: "Photo Finish V1 " + new Date().toLocaleDateString("fr-FR"),
+      name: "Photo Finish " + new Date().toLocaleDateString("fr-FR"),
       date: new Date().toISOString(),
       className: "",
       eventType: "Sprint",
@@ -2247,7 +2247,7 @@
           navigator
             .share({
               files: [file],
-              title: "Photo Finish V1",
+              title: "Photo Finish",
               text: fname,
             })
             .then(function () {
@@ -2536,7 +2536,7 @@
   if (typeof SessionManager !== "undefined" && typeof DataManager !== "undefined") {
     SessionManager.init({
       toolId: DataManager.SESSION_TOOLS.PHOTO_FINISH,
-      toolLabel: "Photo Finish V1",
+      toolLabel: "Photo Finish",
       onSessionReady: loadManagerSession,
       onSessionCleared: clearManagerSession,
     });

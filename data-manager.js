@@ -1801,7 +1801,7 @@ var DataManager = (function () {
         id: existing ? existing.id : genererId("photo-finish"),
         sessionId: sessionId,
         kind: "photo-finish",
-        nom: "Photo Finish V1",
+        nom: "Photo Finish",
         settings: payload.settings || {},
         sessionInfo: payload.sessionInfo || {},
         runners: payload.runners || [],

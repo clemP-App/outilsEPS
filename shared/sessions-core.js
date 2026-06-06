@@ -28,7 +28,7 @@
     "championnat-poule": "Championnat",
     "course-orientation": "Course d’orientation",
     "defi-atp": "Défi ATP",
-    "photo-finish": "Photo Finish V1",
+    "photo-finish": "Photo Finish",
   };
 
   var SESSION_TOOL_IDS = Object.keys(TOOL_LABELS);
