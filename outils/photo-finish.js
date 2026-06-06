@@ -253,11 +253,9 @@
     return value === "rightToLeft" ? "rightToLeft" : "leftToRight";
   }
 
-  // L'axe temps de la photo finish va de gauche a droite dans l'image brute ;
-  // on miroir l'affichage quand le coureur arrive de la gauche pour que le defilement
-  // suive le meme sens que la course.
+  // Miroir uniquement si le coureur arrive de la droite (affichage cohérent avec la capture).
   function isAnalysisDisplayReversed() {
-    return state.settings.direction === "leftToRight";
+    return state.settings.direction === "rightToLeft";
   }
 
   function applyAnalysisDisplayDirection(keepTime) {
@@ -266,9 +264,25 @@
     }
     if (keepTime != null && state.strips.length) {
       scrollToImageX(timeToImageX(keepTime));
+    } else {
       updateSliderFromScroll();
     }
     updateCursorReadout();
+  }
+
+  function scrollMaxLeft() {
+    if (!els.scroll) return 0;
+    return Math.max(0, els.scroll.scrollWidth - els.scroll.clientWidth);
+  }
+
+  function scrollLeftToSliderValue(scrollLeft) {
+    var max = scrollMaxLeft();
+    if (max <= 0) return 1000;
+    return Math.round((1 - scrollLeft / max) * 1000);
+  }
+
+  function sliderValueToScrollLeft(value) {
+    return Math.round((1 - Number(value) / 1000) * scrollMaxLeft());
   }
 
   function normalizeQuality(value) {
@@ -1522,7 +1536,7 @@
     resultCtx.drawImage(compositeCanvas, 0, 0, width, height, 0, 0, visualWidth, height);
     state.activeImageDataUrl = els.resultCanvas.toDataURL("image/png");
     schedulePhotoFinishLayout();
-    els.scroll.scrollLeft = 0;
+    resetAnalysisScrollToStart();
     renderMarkers();
     renderDiagnostic();
     refineAutoOptimizationFromCapture();
@@ -1750,13 +1764,20 @@
 
   function updateSliderFromScroll() {
     if (!els.scroll || !els.scrollSlider) return;
-    var max = Math.max(1, els.scroll.scrollWidth - els.scroll.clientWidth);
-    els.scrollSlider.value = Math.round((els.scroll.scrollLeft / max) * 1000);
+    els.scrollSlider.value = scrollLeftToSliderValue(els.scroll.scrollLeft);
   }
 
   function scrollToImageX(imageX) {
     if (!els.scroll) return;
     els.scroll.scrollLeft = Math.max(0, imageX * (state.viewerPixelScale || state.zoom * state.displayScaleX));
+    updateSliderFromScroll();
+    updateCursorReadout();
+  }
+
+  function resetAnalysisScrollToStart() {
+    if (!els.scroll) return;
+    els.scroll.scrollLeft = 0;
+    updateSliderFromScroll();
     updateCursorReadout();
   }
 
@@ -2428,8 +2449,8 @@
       updateCursorReadout();
     });
     els.scrollSlider.addEventListener("input", function () {
-      var max = Math.max(0, els.scroll.scrollWidth - els.scroll.clientWidth);
-      els.scroll.scrollLeft = (Number(els.scrollSlider.value) / 1000) * max;
+      els.scroll.scrollLeft = sliderValueToScrollLeft(els.scrollSlider.value);
+      updateCursorReadout();
     });
     $("pf-zoom-out").addEventListener("click", function () {
       setZoomKeepingCursor(Math.max(0.5, state.zoom / 1.25));
