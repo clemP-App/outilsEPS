@@ -883,10 +883,10 @@ main.container {
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #fff;
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, var(--accent-deep) 0%, var(--accent) 55%, var(--accent-2) 130%);
   border-radius: 999px;
   border: 1.5px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+  box-shadow: 0 1px 4px rgba(13, 148, 136, 0.28);
   line-height: 1.15;
   vertical-align: middle;
 }
@@ -4208,8 +4208,22 @@ textarea {
   transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
 }
 
-.dispense-nav__btn:hover {
+@media (hover: hover) {
+  .dispense-nav__btn:hover {
+    background: var(--accent-soft);
+  }
+
+  .dispense-nav__btn--active:hover {
+    background: linear-gradient(135deg, var(--accent-deep) 0%, var(--accent) 50%, var(--accent-2) 100%);
+    color: #fff;
+    border-color: transparent;
+  }
+}
+
+.dispense-nav__btn:not(.dispense-nav__btn--active):active {
   background: var(--accent-soft);
+  color: var(--accent-deep);
+  border-color: rgba(13, 148, 136, 0.35);
 }
 
 .dispense-nav__btn--active {
@@ -4217,6 +4231,12 @@ textarea {
   border-color: transparent;
   color: #fff;
   box-shadow: 0 4px 18px rgba(13, 148, 136, 0.35);
+}
+
+.dispense-nav__btn--active:active {
+  background: linear-gradient(135deg, #115e59 0%, var(--accent-deep) 100%);
+  color: #fff;
+  border-color: transparent;
 }
 
 .dispense-nav__btn:focus-visible {
@@ -8521,6 +8541,42 @@ body.video-retard-body-fs {
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: #fff;
+  border: 1.5px solid rgba(13, 148, 136, 0.32);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.07);
+}
+
+.page-outil--photo-finish .dispense-nav__btn .btn-icon-emoji {
+  opacity: 0.92;
+}
+
+.page-outil--photo-finish .dispense-nav__btn--active {
+  background: linear-gradient(135deg, var(--accent-deep) 0%, var(--accent) 55%, var(--accent-2) 130%);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.38);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.15);
+}
+
+@media (hover: hover) {
+  .page-outil--photo-finish .dispense-nav__btn:not(.dispense-nav__btn--active):hover {
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    border-color: rgba(13, 148, 136, 0.45);
+  }
+}
+
+.page-outil--photo-finish .dispense-nav__btn:not(.dispense-nav__btn--active):active {
+  background: #ecfdf5;
+  color: #0f7668;
+  border-color: rgba(13, 148, 136, 0.5);
+}
+
+.page-outil--photo-finish .dispense-nav__btn--active:active {
+  background: linear-gradient(135deg, #115e59 0%, var(--accent-deep) 100%);
+  color: #fff;
 }
 
 .page-outil--photo-finish .card--accordion__badge {
