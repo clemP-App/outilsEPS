@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "95";
+var APP_CACHE_VERSION = "96";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -111,6 +111,7 @@ var PRECACHE = [
   "./pwa-install-banner.js",
   "./pwa-register.js",
   "./pwa-splash.js",
+  "./pwa-version-check.js",
   "./script.js",
   "./session-manager.js",
   "./shared/catalog-grid-validation.js",
