@@ -848,6 +848,11 @@
       profiles.push({ width: 1280, height: 720, frameRate: 240, label: "720p 240 fps" });
       profiles.push({ width: 1280, height: 720, frameRate: 120, label: "720p 120 fps" });
     }
+    if (state.settings.qualityMode === "max") {
+      profiles.push({ width: 1920, height: 1080, frameRate: 120, label: "1080p 120 fps" });
+      profiles.push({ width: 1920, height: 1080, frameRate: 60, label: "1080p 60 fps" });
+      profiles.push({ width: 1280, height: 720, frameRate: 120, label: "720p 120 fps" });
+    }
     profiles = profiles.concat([
       { width: 1920, height: 1080, frameRate: 60, label: "1080p 60 fps" },
       { width: 1280, height: 720, frameRate: 60, label: "720p 60 fps" },
@@ -950,6 +955,7 @@
         return waitForVideoMetadata().then(function () {
           return els.video.play();
         }).then(function () {
+          updateFinishGuide();
           return probeCameraFps();
         });
       })
@@ -1020,10 +1026,44 @@
     };
   }
 
+  function videoDisplayRect() {
+    if (!els.video || !els.stage) return null;
+    var vw = els.video.videoWidth;
+    var vh = els.video.videoHeight;
+    var cw = els.stage.clientWidth;
+    var ch = els.stage.clientHeight;
+    if (!vw || !vh || !cw || !ch) return null;
+    var videoAspect = vw / vh;
+    var containerAspect = cw / ch;
+    var displayW;
+    var displayH;
+    var offsetX;
+    var offsetY;
+    if (videoAspect > containerAspect) {
+      displayW = cw;
+      displayH = cw / videoAspect;
+      offsetX = 0;
+      offsetY = (ch - displayH) / 2;
+    } else {
+      displayH = ch;
+      displayW = ch * videoAspect;
+      offsetX = (cw - displayW) / 2;
+      offsetY = 0;
+    }
+    return { offsetX: offsetX, offsetY: offsetY, displayW: displayW, displayH: displayH };
+  }
+
   function updateFinishGuide() {
-    var pct = Number(inputs.finishRatio.value || 50);
-    if (inputs.finishRatioVal) inputs.finishRatioVal.textContent = String(Math.round(pct));
-    if (els.slitGuide) els.slitGuide.style.left = pct + "%";
+    var pct = Number(inputs.finishRatio.value || 50) / 100;
+    if (inputs.finishRatioVal) inputs.finishRatioVal.textContent = String(Math.round(pct * 100));
+    if (!els.slitGuide || !els.stage) return;
+    var rect = videoDisplayRect();
+    if (!rect || !els.stage.clientWidth) {
+      els.slitGuide.style.left = pct * 100 + "%";
+      return;
+    }
+    var lineX = rect.offsetX + rect.displayW * pct;
+    els.slitGuide.style.left = (lineX / els.stage.clientWidth) * 100 + "%";
   }
 
   function startTimer(eventNow) {
@@ -1461,7 +1501,8 @@
   }
 
   function imageXToTime(imageX) {
-    // Mapping source of truth: image x -> neighboring strip timestamps -> interpolated real time.
+    // Chaque bandeau = une image video a un instant unique ; la largeur du bandeau
+    // ajoute des colonnes spatiales, pas des intervalles de temps supplementaires.
     if (!state.strips.length) return 0;
     var x = Math.max(0, Math.min(imageX, state.strips[state.strips.length - 1].imageXEnd));
     var low = 0;
@@ -1470,29 +1511,24 @@
       var mid = Math.floor((low + high) / 2);
       var strip = state.strips[mid];
       if (x < strip.imageXStart) high = mid - 1;
-      else if (x > strip.imageXEnd) low = mid + 1;
-      else {
-        var next = state.strips[Math.min(mid + 1, state.strips.length - 1)];
-        var local = (x - strip.imageXStart) / Math.max(1, strip.width);
-        return strip.elapsedTimeMs + (next.elapsedTimeMs - strip.elapsedTimeMs) * local;
-      }
+      else if (x >= strip.imageXEnd) low = mid + 1;
+      else return strip.elapsedTimeMs;
     }
     return state.strips[state.strips.length - 1].elapsedTimeMs;
   }
 
   function timeToImageX(timeMs) {
-    // Reverse mapping keeps markers stable after zoom, scroll or direction changes.
     if (!state.strips.length) return 0;
     var t = Math.max(0, timeMs);
-    for (var i = 0; i < state.strips.length - 1; i++) {
-      var a = state.strips[i];
-      var b = state.strips[i + 1];
-      if (t >= a.elapsedTimeMs && t <= b.elapsedTimeMs) {
-        var ratio = (t - a.elapsedTimeMs) / Math.max(1, b.elapsedTimeMs - a.elapsedTimeMs);
-        return a.imageXStart + ratio * a.width;
+    for (var i = 0; i < state.strips.length; i++) {
+      var strip = state.strips[i];
+      var next = state.strips[i + 1];
+      if (!next || t < next.elapsedTimeMs) {
+        return strip.imageXStart + strip.width * 0.5;
       }
     }
-    return state.strips[state.strips.length - 1].imageXEnd;
+    var last = state.strips[state.strips.length - 1];
+    return last.imageXStart + last.width * 0.5;
   }
 
   function viewportCursorToImageX() {
@@ -2409,6 +2445,7 @@
   }
 
   function onViewerLayoutChange() {
+    updateFinishGuide();
     var keepTime =
       state.screen === "analysis" && state.strips.length ? getTimeAtViewportCursor() : null;
     window.setTimeout(function () {
