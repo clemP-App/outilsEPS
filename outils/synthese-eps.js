@@ -140,6 +140,22 @@
     );
   }
 
+  function hasResumeContent(resume) {
+    if (!resume) return false;
+    var hasForts = (resume.pointsForts || []).some(function (p) {
+      return p && !isResumePlaceholder(p);
+    });
+    var hasVigilance = (resume.pointsVigilance || []).some(function (p) {
+      return p && !isResumePlaceholder(p);
+    });
+    return !!(hasForts || hasVigilance || resume.progressionRadar || resume.progressionPhotoFinish || resume.derniereDonnee);
+  }
+
+  function photoFinishLineLabel(r) {
+    if (Core && Core.photoFinishResultLabel) return Core.photoFinishResultLabel(r);
+    return r.formattedTime || String(r.timeMs || "—");
+  }
+
   function factListHtml(items, emptyText) {
     var filtered = (items || []).filter(function (item) {
       return item && !isResumePlaceholder(item);
@@ -622,6 +638,7 @@
   function timelineTypeLabel(type) {
     if (type === "oubli") return "Oubli";
     if (type === "radar") return "Radar";
+    if (type === "photo-finish") return "Photo Finish";
     if (type === "dispense") return "Dispense";
     if (type === "import") return "Import QR";
     if (type === "activite") return "Activité";
@@ -753,6 +770,16 @@
         " → " +
         resume.progressionRadar.dernier.kmh.toFixed(1) +
         " km/h)</strong></p>";
+    }
+    if (resume.progressionPhotoFinish) {
+      html +=
+        '<p class="synthese-resume-meta__row"><span>Photo Finish</span><strong>' +
+        esc(resume.progressionPhotoFinish.tendance) +
+        " (" +
+        esc(photoFinishLineLabel(resume.progressionPhotoFinish.premier)) +
+        " → " +
+        esc(photoFinishLineLabel(resume.progressionPhotoFinish.dernier)) +
+        ")</strong></p>";
     }
     html += "</div></div>";
     return html;
@@ -910,12 +937,6 @@
         appelClasseIntroHtml(ac) + resumeAppelClasseHtml(resumes),
         { icon: "📝", open: true }
       );
-    } else {
-      html += sectionHtml(
-        "Appel et notes",
-        '<p class="synthese-empty">Aucune feuille liée. Créez une feuille dans « Appel et notes » et importez cette classe.</p>',
-        { icon: "📝", open: true }
-      );
     }
 
     if (synClasse.topOublis.length) {
@@ -930,12 +951,15 @@
       );
     }
 
-    html += sectionHtml(
-      "Activités et compétitions",
-      '<p class="hint">Championnat, tournoi, pyramide, défi ATP, composition, course d’orientation — synthèse par séance.</p>' +
-        activitesClasseHtml(synClasse.activitesClasse),
-      { icon: "🏆" }
-    );
+    var activitesGroups = (synClasse.activitesClasse && synClasse.activitesClasse.parOutil) || [];
+    if (activitesGroups.length) {
+      html += sectionHtml(
+        "Activités et compétitions",
+        '<p class="hint">Championnat, tournoi, pyramide, défi ATP, composition, course d’orientation — synthèse par séance.</p>' +
+          activitesClasseHtml(synClasse.activitesClasse),
+        { icon: "🏆" }
+      );
+    }
 
     if (synClasse.importFactsEquipe && synClasse.importFactsEquipe.length) {
       html += sectionHtml(
@@ -989,7 +1013,8 @@
       s.nbFeuillesAppel ||
       s.nbColonnesNotes ||
       s.nbImports ||
-      s.nbSessions;
+      s.nbSessions ||
+      s.nbPhotoFinish;
     if (!hasData && !s.nbEleves) {
       html = '<p class="synthese-empty-state">Aucune donnée enregistrée pour cette classe. Utilisez les autres outils ou importez depuis une classe.</p>';
     } else if (!hasData) {
@@ -1024,19 +1049,21 @@
     var rec = synEleve.records;
     var html = sectionHtml("Identité", identiteHtml(id), { icon: "👤", open: true });
 
-    html += sectionHtml(
-      "Appel et notes",
-      appelNotesHtml(
-        synEleve.appelNotes || synEleve.resume.appel,
-        synEleve.feuillesAppel
-      ),
-      { icon: "📝", open: true }
-    );
+    var appel = synEleve.appelNotes || synEleve.resume.appel;
+    if (appel && appel.nbTableaux) {
+      html += sectionHtml(
+        "Appel et notes",
+        appelNotesHtml(appel, synEleve.feuillesAppel),
+        { icon: "📝", open: true }
+      );
+    }
 
-    html += sectionHtml("Résumé automatique", resumeEleveHtml(synEleve.resume, synEleve.asns), {
-      icon: "✨",
-      open: true,
-    });
+    if (hasResumeContent(synEleve.resume)) {
+      html += sectionHtml("Résumé automatique", resumeEleveHtml(synEleve.resume, synEleve.asns), {
+        icon: "✨",
+        open: true,
+      });
+    }
 
     if (synEleve.asns) {
       var asnsBody = "<p><strong>" + esc(synEleve.asns.headline) + "</strong></p>";
@@ -1064,34 +1091,34 @@
       );
     }
 
-    html += sectionHtml(
-      "Dispenses / inaptitudes",
-      rec.dispenses.length
-        ? listeHtml(
-            rec.dispenses.map(function (d) {
-              return (
-                esc(formatDateFr(d.dateDebut)) +
-                " → " +
-                esc(formatDateFr(d.dateFin)) +
-                (d.motif ? " — " + esc(d.motif) : "")
-              );
-            })
-          )
-        : '<p class="synthese-empty">Aucune donnée</p>',
-      { icon: "🏥" }
-    );
+    if (rec.dispenses.length) {
+      html += sectionHtml(
+        "Dispenses / inaptitudes",
+        listeHtml(
+          rec.dispenses.map(function (d) {
+            return (
+              esc(formatDateFr(d.dateDebut)) +
+              " → " +
+              esc(formatDateFr(d.dateFin)) +
+              (d.motif ? " — " + esc(d.motif) : "")
+            );
+          })
+        ),
+        { icon: "🏥" }
+      );
+    }
 
-    html += sectionHtml(
-      "Oublis de matériel",
-      rec.oublis.length
-        ? listeHtml(
-            rec.oublis.map(function (o) {
-              return esc(formatDateFr(o.dateOubli)) + (o.commentaire ? " — " + esc(o.commentaire) : "");
-            })
-          )
-        : '<p class="synthese-empty">Aucune donnée</p>',
-      { icon: "🎒" }
-    );
+    if (rec.oublis.length) {
+      html += sectionHtml(
+        "Oublis de matériel",
+        listeHtml(
+          rec.oublis.map(function (o) {
+            return esc(formatDateFr(o.dateOubli)) + (o.commentaire ? " — " + esc(o.commentaire) : "");
+          })
+        ),
+        { icon: "🎒" }
+      );
+    }
 
     if (rec.radar.length) {
       html += sectionHtml(
@@ -1106,6 +1133,24 @@
           })
         ),
         { icon: "📡" }
+      );
+    }
+
+    if (rec.photoFinish && rec.photoFinish.length) {
+      html += sectionHtml(
+        "Photo Finish (complément)",
+        listeHtml(
+          rec.photoFinish.map(function (r) {
+            var line =
+              esc(formatDateFr(r.date)) +
+              " — " +
+              esc(photoFinishLineLabel(r)) +
+              (r.sessionName ? " · " + esc(r.sessionName) : "");
+            if (r.comment) line += " — " + esc(r.comment);
+            return line;
+          })
+        ),
+        { icon: "🏁" }
       );
     }
 
@@ -1148,12 +1193,14 @@
       );
     }
 
-    html += sectionHtml(
-      "Activités et compétitions",
-      '<p class="hint">Résultats issus des séances liées à la classe (nom identique à « Classes »).</p>' +
-        activitesEleveHtml(synEleve.activites),
-      { icon: "🏆" }
-    );
+    if (synEleve.activites && synEleve.activites.length) {
+      html += sectionHtml(
+        "Activités et compétitions",
+        '<p class="hint">Résultats issus des séances liées à la classe (nom identique à « Classes »).</p>' +
+          activitesEleveHtml(synEleve.activites),
+        { icon: "🏆" }
+      );
+    }
 
     if (synEleve.timeline.length) {
       html += sectionHtml("Historique récent", timelineHtml(synEleve.timeline), { icon: "🕐" });
@@ -1509,25 +1556,25 @@
               : "—",
           ],
         ]);
-      } else {
-        drawParagraph("Aucune feuille d’appel liée à cet élève.", { size: 9 });
       }
 
-      drawSection("Résumé");
-      drawParagraph("Points forts", { bold: true, size: 9, gap: 1 });
-      drawBullets(
-        synEleve.resume.pointsForts.filter(function (p) {
-          return p !== "Aucun indicateur fort particulier.";
-        }),
-        "Aucun indicateur fort pour l’instant."
-      );
-      drawParagraph("Points de vigilance", { bold: true, size: 9, gap: 1 });
-      drawBullets(
-        synEleve.resume.pointsVigilance.filter(function (p) {
-          return p !== "Rien de notable dans les alertes automatiques.";
-        }),
-        "Rien de notable dans les alertes automatiques."
-      );
+      if (hasResumeContent(synEleve.resume)) {
+        drawSection("Résumé");
+        drawParagraph("Points forts", { bold: true, size: 9, gap: 1 });
+        drawBullets(
+          synEleve.resume.pointsForts.filter(function (p) {
+            return p !== "Aucun indicateur fort particulier.";
+          }),
+          "Aucun indicateur fort pour l’instant."
+        );
+        drawParagraph("Points de vigilance", { bold: true, size: 9, gap: 1 });
+        drawBullets(
+          synEleve.resume.pointsVigilance.filter(function (p) {
+            return p !== "Rien de notable dans les alertes automatiques.";
+          }),
+          "Rien de notable dans les alertes automatiques."
+        );
+      }
 
       if (synEleve.asns) {
         drawSection("ASNS");
@@ -1543,7 +1590,17 @@
         ["Oublis matériel", String(synEleve.stats.nbOublis || 0)],
         ["Imports QR", String(synEleve.stats.nbImports || 0)],
         ["Passages radar", String(synEleve.stats.nbRadar || 0)],
+        ["Chronométrages Photo Finish", String(synEleve.stats.nbPhotoFinish || 0)],
       ]);
+
+      if (synEleve.records && synEleve.records.photoFinish && synEleve.records.photoFinish.length) {
+        drawSection("Photo Finish");
+        drawBullets(
+          synEleve.records.photoFinish.slice(0, 12).map(function (r) {
+            return formatDateFr(r.date) + " — " + photoFinishLineLabel(r);
+          })
+        );
+      }
 
       if (synEleve.alertes && synEleve.alertes.length) {
         drawSection("Alertes");

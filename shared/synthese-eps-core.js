@@ -240,6 +240,140 @@
     return false;
   }
 
+  function photoFinishBlocks(data) {
+    return (data.tournoisElimination || []).filter(function (b) {
+      return b && b.kind === "photo-finish";
+    });
+  }
+
+  function sessionForPhotoFinishBlock(data, block) {
+    if (!block || !block.sessionId || !Array.isArray(data.sessions)) return null;
+    for (var i = 0; i < data.sessions.length; i++) {
+      if (data.sessions[i] && data.sessions[i].id === block.sessionId) return data.sessions[i];
+    }
+    return null;
+  }
+
+  function photoFinishBlockLinkedToClasse(block, session, classeId, classeNom) {
+    if (session) {
+      if (classeId && session.classeId && session.classeId === classeId) return true;
+      if (classeNom && session.classeNomSnapshot && sameClasseLabel(classeNom, session.classeNomSnapshot)) {
+        return true;
+      }
+    }
+    var info = block.sessionInfo || {};
+    if (classeNom && info.className && sameClasseLabel(classeNom, info.className)) return true;
+    if (
+      classeNom &&
+      (block.runners || []).some(function (r) {
+        return r && r.className && sameClasseLabel(classeNom, r.className);
+      })
+    ) {
+      return true;
+    }
+    if (
+      classeNom &&
+      (block.results || []).some(function (r) {
+        return r && r.className && sameClasseLabel(classeNom, r.className);
+      })
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  function photoFinishResultMatchesEleve(result, block, eleve, classeNom, data, period) {
+    if (!result || result.isUnassigned) return false;
+    var date = result.date || (block && block.updatedAt);
+    if (!inPeriod(date, period)) return false;
+    var ctx = identityCtxForEleve(data, eleve);
+    if (result.runnerId && Array.isArray(block.runners)) {
+      for (var i = 0; i < block.runners.length; i++) {
+        var runner = block.runners[i];
+        if (!runner || runner.id !== result.runnerId) continue;
+        if (matchAuteurToEleve(runner.displayName || labelEleve(runner), eleve, ctx)) return true;
+        if (sameEleve(runner, eleve)) return true;
+      }
+    }
+    var name = result.runnerName || "";
+    if (!name || normalizeName(name) === normalizeName("Non attribue")) return false;
+    return matchAuteurToEleve(name, eleve, ctx);
+  }
+
+  function formatChronoMs(ms) {
+    if (ms == null || isNaN(ms)) return "—";
+    var total = Math.max(0, Math.round(Number(ms)));
+    var min = Math.floor(total / 60000);
+    var sec = (total % 60000) / 1000;
+    if (min > 0) {
+      return min + ":" + (sec < 10 ? "0" : "") + sec.toFixed(2);
+    }
+    return sec.toFixed(2) + " s";
+  }
+
+  function photoFinishResultLabel(result) {
+    if (!result) return "";
+    var time = result.formattedTime || formatChronoMs(result.timeMs);
+    var extra = [];
+    if (result.rank) extra.push(result.rank + "e");
+    if (Number(result.seriesNumber || 0) > 1) extra.push("série " + result.seriesNumber);
+    if (result.distance) extra.push(result.distance);
+    if (result.eventType) extra.push(result.eventType);
+    return time + (extra.length ? " (" + extra.join(", ") + ")" : "");
+  }
+
+  function collectPhotoFinishForEleve(eleve, data, options) {
+    options = options || {};
+    if (!eleve) return [];
+    var classe = eleve.classeId ? getClasseById(data, eleve.classeId) : null;
+    var classeNom = (classe && classe.nom) || eleve.classeNom || "";
+    var period = options.period || null;
+    var out = [];
+    photoFinishBlocks(data).forEach(function (block) {
+      var session = sessionForPhotoFinishBlock(data, block);
+      if (!photoFinishBlockLinkedToClasse(block, session, eleve.classeId, classeNom)) return;
+      (block.results || []).forEach(function (result) {
+        if (!photoFinishResultMatchesEleve(result, block, eleve, classeNom, data, period)) return;
+        var info = block.sessionInfo || {};
+        out.push({
+          id: result.id,
+          date: result.date || block.updatedAt,
+          timeMs: result.timeMs,
+          formattedTime: result.formattedTime || formatChronoMs(result.timeMs),
+          rank: result.rank,
+          seriesNumber: result.seriesNumber,
+          sessionName: result.sessionName || (session && session.nomSession) || info.name || "Photo Finish",
+          eventType: info.eventType || "",
+          distance: info.distance || "",
+          comment: result.comment || "",
+          runnerName: result.runnerName || "",
+          sessionId: block.sessionId,
+        });
+      });
+    });
+    out.sort(function (a, b) {
+      return String(b.date || "").localeCompare(String(a.date || ""));
+    });
+    return out;
+  }
+
+  function photoFinishProgression(list) {
+    if (!Array.isArray(list) || list.length < 2) return null;
+    var sorted = list.slice().sort(function (a, b) {
+      return String(a.date || "").localeCompare(String(b.date || ""));
+    });
+    var first = sorted[0];
+    var last = sorted[sorted.length - 1];
+    if (first.timeMs == null || last.timeMs == null) return null;
+    var delta = last.timeMs - first.timeMs;
+    return {
+      premier: first,
+      dernier: last,
+      deltaMs: delta,
+      tendance: delta < -10 ? "progression" : delta > 10 ? "regression" : "stable",
+    };
+  }
+
   function findEleveRecords(eleve, data, options) {
     options = options || {};
     if (!eleve) {
@@ -247,6 +381,7 @@
         dispenses: [],
         oublis: [],
         radar: [],
+        photoFinish: [],
         imports: [],
         tableauxLignes: [],
         observations: [],
@@ -268,6 +403,8 @@
     var radar = (data.radarPerfs || []).filter(function (r) {
       return matchRecordToEleve(r, eleve, classeNom) && inPeriod(r.createdAt, period);
     });
+
+    var photoFinish = collectPhotoFinishForEleve(eleve, data, { period: period });
 
     var idCtx = identityCtxForEleve(data, eleve);
     var imports = (data.importsEleves || []).filter(function (imp) {
@@ -342,6 +479,7 @@
       dispenses: dispenses,
       oublis: oublis,
       radar: radar,
+      photoFinish: photoFinish,
       imports: imports,
       tableauxLignes: tableauxLignes,
       observations: observations.filter(Boolean),
@@ -1036,6 +1174,7 @@
     n += records.dispenses.length;
     n += records.oublis.length;
     n += records.radar.length;
+    n += records.photoFinish.length;
     n += records.imports.length;
     n += records.tableauxLignes.length;
     n += records.observations.length;
@@ -1075,6 +1214,14 @@
         date: r.createdAt,
         label: "Passage au radar vitesse",
         detail: r.kmh != null ? r.kmh.toFixed(1).replace(".", ",") + " km/h" : "",
+      });
+    });
+    records.photoFinish.forEach(function (r) {
+      events.push({
+        type: "photo-finish",
+        date: r.date,
+        label: "Photo Finish — chronométrage",
+        detail: photoFinishResultLabel(r),
       });
     });
     records.imports.forEach(function (imp) {
@@ -1270,6 +1417,19 @@
       lines.vigilance.push("Baisse des vitesses radar entre les passages enregistrés.");
     }
 
+    var pfProg = photoFinishProgression(records.photoFinish);
+    if (pfProg && pfProg.tendance === "progression") {
+      lines.progres.push(
+        "Photo Finish : " +
+          photoFinishResultLabel(pfProg.premier) +
+          " → " +
+          photoFinishResultLabel(pfProg.dernier) +
+          "."
+      );
+    } else if (pfProg && pfProg.tendance === "regression") {
+      lines.vigilance.push("Temps Photo Finish en hausse entre les passages enregistrés.");
+    }
+
     appel.icones.forEach(function (ic) {
       if (ic.label === "PAI" || ic.label === "PAP" || ic.label === "Alerte") {
         lines.vigilance.push("Repère sur feuille d’appel : " + ic.label + ".");
@@ -1328,6 +1488,9 @@
     records.radar.forEach(function (r) {
       if (!derniere || String(r.createdAt) > String(derniere)) derniere = r.createdAt;
     });
+    records.photoFinish.forEach(function (r) {
+      if (!derniere || String(r.date) > String(derniere)) derniere = r.date;
+    });
 
     if (appel.nbTableaux > 0 && appel.pctPresent != null && appel.pctPresent >= 85) {
       pointsForts.push("Bonne assiduité sur l’appel (" + appel.pctPresent + " % de ✓).");
@@ -1358,6 +1521,13 @@
     var prog = radarProgression(records.radar);
     if (prog && prog.tendance === "hausse") {
       pointsForts.push("Progression vitesse (radar, secondaire).");
+    }
+
+    var pfProg = photoFinishProgression(records.photoFinish);
+    if (pfProg && pfProg.tendance === "progression") {
+      pointsForts.push("Progression chronométrage (Photo Finish).");
+    } else if (pfProg && pfProg.tendance === "regression") {
+      vigilance.push("Temps Photo Finish en hausse entre les passages enregistrés.");
     }
 
     var asns = meta.asns;
@@ -1394,6 +1564,7 @@
       pointsVigilance: vigilance.length ? vigilance : ["Rien de notable dans les alertes automatiques."],
       derniereDonnee: derniere,
       progressionRadar: prog,
+      progressionPhotoFinish: pfProg,
       appel: appel,
     };
   }
@@ -1484,6 +1655,7 @@
         nbColonnesNotes: appel.nbColonnesNotes,
         nbNotesAppel: appel.nbColonnesNotes,
         nbRadar: records.radar.length,
+        nbPhotoFinish: records.photoFinish.length,
         nbImports: records.imports.length,
         nbObservations: records.observations.length,
         nbSessions: records.sessions.length,
@@ -1654,6 +1826,13 @@
       });
     });
 
+    var photoFinishClasse = [];
+    eleves.forEach(function (e) {
+      collectPhotoFinishForEleve(e, data, { period: period }).forEach(function (r) {
+        photoFinishClasse.push(Object.assign({ eleveId: e.id, eleveLabel: labelEleve(e) }, r));
+      });
+    });
+
     var importsClasseAll = (data.importsEleves || []).filter(function (imp) {
       if (!imp) return false;
       return inPeriod(imp.importedAt || imp.createdAt, period);
@@ -1788,6 +1967,7 @@
       importsEquipe: importsEquipe,
       importFactsEquipe: importFactsEquipe,
       radar: radarClasse,
+      photoFinish: photoFinishClasse,
       sessions: sessionsClasse,
       synthesesEleves: synthesesEleves,
       appel: appelClasse,
@@ -1811,6 +1991,7 @@
         nbNotesAppel: appelClasse.nbColonnesNotes,
         nbElevesSurAppel: appelClasse.nbElevesSurFeuilles,
         nbRadar: radarClasse.length,
+        nbPhotoFinish: photoFinishClasse.length,
         nbImports: importsClasse.length + importsEquipe.length,
         nbImportsEquipe: importsEquipe.length,
         nbImportsNonRattaches: importsNonRattaches.length,
@@ -1822,6 +2003,7 @@
       topOublis: topOublis,
       tableauxSuivi: tableauxClasse,
       radarPerfs: radarClasse,
+      photoFinish: photoFinishClasse,
       importsEleves: importsClasse,
       importsEquipe: importsEquipe,
       importFactsEquipe: importFactsEquipe,
@@ -1905,6 +2087,9 @@
     }
     if (ctx.radar.length) {
       lines.progres.push(ctx.radar.length + " passage(s) radar (outil vitesse, si utilisé).");
+    }
+    if (ctx.photoFinish && ctx.photoFinish.length) {
+      lines.progres.push(ctx.photoFinish.length + " chronométrage(s) Photo Finish enregistré(s).");
     }
     var sansAppel = (ctx.synthesesEleves || []).filter(function (s) {
       return s.stats && !s.stats.nbFeuillesAppel;
@@ -2008,6 +2193,8 @@
     normalizeName: normalizeName,
     sameEleve: sameEleve,
     normalizeLoadedData: normalizeLoadedData,
+    collectPhotoFinishForEleve: collectPhotoFinishForEleve,
+    photoFinishResultLabel: photoFinishResultLabel,
     findEleveRecords: findEleveRecords,
     buildEleveSynthese: buildEleveSynthese,
     buildClasseSynthese: buildClasseSynthese,
