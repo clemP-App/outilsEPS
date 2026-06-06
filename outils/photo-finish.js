@@ -253,6 +253,24 @@
     return value === "rightToLeft" ? "rightToLeft" : "leftToRight";
   }
 
+  // L'axe temps de la photo finish va de gauche a droite dans l'image brute ;
+  // on miroir l'affichage quand le coureur arrive de la gauche pour que le defilement
+  // suive le meme sens que la course.
+  function isAnalysisDisplayReversed() {
+    return state.settings.direction === "leftToRight";
+  }
+
+  function applyAnalysisDisplayDirection(keepTime) {
+    if (els.imageWrap) {
+      els.imageWrap.classList.toggle("is-reversed", isAnalysisDisplayReversed());
+    }
+    if (keepTime != null && state.strips.length) {
+      scrollToImageX(timeToImageX(keepTime));
+      updateSliderFromScroll();
+    }
+    updateCursorReadout();
+  }
+
   function normalizeQuality(value) {
     if (value === "balanced") return "balancedEPS";
     if (value === "auto" || value === "max" || value === "highFps" || value === "performance") return value;
@@ -835,9 +853,7 @@
   }
 
   function refreshPhotoFinishUiAfterLoad() {
-    if (els.imageWrap) {
-      els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
-    }
+    applyAnalysisDisplayDirection();
     updateCaptureButton();
   }
 
@@ -2425,12 +2441,12 @@
       setZoomKeepingCursor(1);
     });
     els.btnInvert.addEventListener("click", function () {
+      var keepTime = state.strips.length ? getTimeAtViewportCursor() : null;
       state.settings.direction =
         state.settings.direction === "leftToRight" ? "rightToLeft" : "leftToRight";
       inputs.direction.value = state.settings.direction;
-      els.imageWrap.classList.toggle("is-reversed", state.settings.direction === "rightToLeft");
       saveLocalShell();
-      updateCursorReadout();
+      applyAnalysisDisplayDirection(keepTime);
     });
     els.btnAddResult.addEventListener("click", openResultDialog);
     els.dialogCancel.addEventListener("click", closeResultDialog);
