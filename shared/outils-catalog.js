@@ -322,6 +322,16 @@
       publicCible: "eleve",
     },
     {
+      id: "relais-eleve",
+      titre: "Relais",
+      description:
+        "Chronométrez un relais en 3 zones (course, transmission, reprise) avec vitesses et relecture vidéo optionnelle de la ZT.",
+      icone: "🔄",
+      href: "outils/relais-eleve.html",
+      categorie: "Course à pied",
+      publicCible: "eleve",
+    },
+    {
       id: "compteur-ratio",
       titre: "Compteur ratio",
       description:

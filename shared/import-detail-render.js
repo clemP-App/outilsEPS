@@ -376,6 +376,63 @@ var ImportDetailRender = (function () {
     parent.appendChild(wrap);
   }
 
+  function renderRelais(payload, parent) {
+    var wrap = el("div", "import-preview import-preview--relais page-outil--relais-eleve");
+    if (payload.label) wrap.appendChild(el("p", "import-preview__title", payload.label));
+    var grid = el("div", "relais-bilan-grid");
+    var temps = payload.temps || {};
+    var vitesses = payload.vitesses || {};
+    function block(label, time, speed) {
+      var b = el("div", "result-box relais-result-box");
+      b.appendChild(el("span", "relais-result-label", label));
+      b.appendChild(el("strong", null, time || "—"));
+      if (speed != null) {
+        b.appendChild(el("span", "relais-result-sub", speed + " km/h"));
+      }
+      grid.appendChild(b);
+    }
+    block("Temps total", temps.total, null);
+    block("Zone 1", temps.z1, vitesses.z1);
+    block("Zone transmission", temps.zt, vitesses.zt);
+    block("Zone 2", temps.z2, vitesses.z2);
+    wrap.appendChild(grid);
+    if (payload.distances && payload.distances.total) {
+      wrap.appendChild(
+        el(
+          "p",
+          "hint",
+          "Distances : " +
+            payload.distances.z1 +
+            " + " +
+            payload.distances.zt +
+            " + " +
+            payload.distances.z2 +
+            " = " +
+            payload.distances.total +
+            " m"
+        )
+      );
+    }
+    if (payload.efficaciteZT && (payload.efficaciteZT.note10 != null || payload.efficaciteZT.coefficient != null)) {
+      var eff = payload.efficaciteZT;
+      var note10 = eff.note10 != null ? eff.note10 : (eff.coefficient || 0) / 10;
+      var effBox = el("div", "relais-eff-zt relais-eff-zt--bilan");
+      if (note10 >= 9) effBox.classList.add("is-excellent");
+      else if (note10 >= 8) effBox.classList.add("is-good");
+      else if (note10 >= 7) effBox.classList.add("is-medium");
+      else effBox.classList.add("is-low");
+      var effHead = el("div", "relais-eff-zt__head");
+      effHead.appendChild(el("span", "relais-eff-zt__title", "Note transmission"));
+      effHead.appendChild(
+        el("strong", "relais-eff-zt__note10", note10.toFixed(1).replace(".", ",") + " / 10")
+      );
+      effBox.appendChild(effHead);
+      if (eff.verdict) effBox.appendChild(el("p", "relais-eff-zt__verdict", eff.verdict));
+      wrap.appendChild(effBox);
+    }
+    parent.appendChild(wrap);
+  }
+
   function renderImpact(payload, parent) {
     var wrap = el("div", "import-preview import-preview--bad-impact page-outil--bad-impact");
     if (payload.label) wrap.appendChild(el("p", "import-preview__title", payload.label));
@@ -659,6 +716,7 @@ var ImportDetailRender = (function () {
     else if (record.toolId === "compteur-bonus") renderBonus(payload, parent);
     else if (record.toolId === "compteur-ratio") renderRatio(payload, parent);
     else if (record.toolId === "vitesse-plots") renderVitesse(payload, parent);
+    else if (record.toolId === "relais-eleve") renderRelais(payload, parent);
     else if (record.toolId === "zone-impact") renderImpact(payload, parent);
     else if (record.toolId === "journal-musculation") renderJournalMusculation(record, parent);
     else if (record.toolId === "questions-debrief") renderQuestionsDebrief(payload, parent);

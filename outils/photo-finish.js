@@ -52,6 +52,8 @@
     btnSaveGallery: $("pf-btn-save-gallery"),
     debugPanel: $("pf-debug-panel"),
     debugList: $("pf-debug-list"),
+    cameraDebugPanel: $("pf-camera-debug-panel"),
+    cameraDebugList: $("pf-camera-debug-list"),
     diagnosticPanel: $("pf-diagnostic-panel"),
     diagnosticList: $("pf-diagnostic-list"),
     diagnosticWarnings: $("pf-diagnostic-warnings"),
@@ -116,6 +118,8 @@
     screen: "home",
     stream: null,
     cameraStarting: false,
+    cameraDebugLastEvent: "",
+    cameraDebugLastError: "",
     timerState: "idle",
     startTime: 0,
     stopTime: 0,
@@ -229,6 +233,85 @@
 
   function setStatus(text) {
     if (els.status) els.status.textContent = text || "";
+  }
+
+  function cameraDebugVisible() {
+    return isAppleTouchDevice() && isPwaStandalone();
+  }
+
+  function mediaDisplayMode() {
+    try {
+      if (window.matchMedia("(display-mode: standalone)").matches) return "standalone";
+      if (window.matchMedia("(display-mode: fullscreen)").matches) return "fullscreen";
+      if (window.matchMedia("(display-mode: browser)").matches) return "browser";
+    } catch (e) {}
+    return "unknown";
+  }
+
+  function hiddenCameraAncestors() {
+    if (!els.video) return "video absent";
+    var found = [];
+    var node = els.video;
+    while (node && node.nodeType === 1) {
+      var id = node.id ? "#" + node.id : node.tagName.toLowerCase();
+      if (node.hidden) found.push(id + "[hidden]");
+      var style = window.getComputedStyle ? window.getComputedStyle(node) : null;
+      if (style) {
+        if (style.display === "none") found.push(id + " display:none");
+        if (style.visibility === "hidden") found.push(id + " visibility:hidden");
+      }
+      node = node.parentElement;
+    }
+    return found.length ? found.join(", ") : "aucun";
+  }
+
+  function cameraTrackSummary() {
+    var stream = state.stream || (els.video && els.video.srcObject);
+    var track = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
+    if (!track) return "aucune piste";
+    return [
+      "readyState=" + track.readyState,
+      "enabled=" + track.enabled,
+      "muted=" + !!track.muted,
+      "label=" + (track.label || "-"),
+    ].join(" | ");
+  }
+
+  function renderCameraDebug() {
+    if (!els.cameraDebugPanel || !els.cameraDebugList) return;
+    if (!cameraDebugVisible()) {
+      els.cameraDebugPanel.hidden = true;
+      return;
+    }
+    els.cameraDebugPanel.hidden = false;
+    var track = state.stream && state.stream.getVideoTracks ? state.stream.getVideoTracks()[0] : null;
+    var settings = track && track.getSettings ? track.getSettings() : {};
+    var stageRect = els.stage ? els.stage.getBoundingClientRect() : { width: 0, height: 0, top: 0 };
+    var rows = {
+      "Dernier evenement": state.cameraDebugLastEvent || "-",
+      "Derniere erreur": state.cameraDebugLastError || "-",
+      "Display mode": mediaDisplayMode() + " / navigator.standalone=" + (window.navigator.standalone === true),
+      "Document": "hidden=" + document.hidden + " / screen=" + state.screen + " / starting=" + state.cameraStarting,
+      "Ancetres caches": hiddenCameraAncestors(),
+      "Stage": Math.round(stageRect.width) + "x" + Math.round(stageRect.height) + " top=" + Math.round(stageRect.top),
+      "Video": "readyState=" + (els.video ? els.video.readyState : "-") + " paused=" + (els.video ? els.video.paused : "-") + " size=" + (els.video ? els.video.videoWidth : 0) + "x" + (els.video ? els.video.videoHeight : 0),
+      "Stream": state.stream ? "present" : "absent",
+      "Track": cameraTrackSummary(),
+      "Settings": (settings.width || 0) + "x" + (settings.height || 0) + " @" + (settings.frameRate || "?") + "fps",
+    };
+    els.cameraDebugList.innerHTML = Object.keys(rows).map(function (key) {
+      return "<dt>" + escapeHtml(key) + "</dt><dd>" + escapeHtml(rows[key]) + "</dd>";
+    }).join("");
+  }
+
+  function noteCameraDebug(eventName, detail) {
+    state.cameraDebugLastEvent = eventName + (detail ? " : " + detail : "");
+    renderCameraDebug();
+  }
+
+  function noteCameraError(eventName, err) {
+    state.cameraDebugLastError = eventName + (err && (err.name || err.message) ? " : " + (err.name || err.message) : "");
+    renderCameraDebug();
   }
 
   function formatTime(ms) {
@@ -441,6 +524,7 @@
     if (document.body && isPwaStandalone()) {
       document.body.classList.add("pf-pwa-standalone");
     }
+    renderCameraDebug();
     if (needsCameraUserGesture() && els.status && state.screen === "capture" && !state.stream) {
       setStatus(captureStatusWhenIdle());
     }
@@ -474,19 +558,33 @@
     if (!stream || !stream.getVideoTracks) return;
     stream.getVideoTracks().forEach(function (track) {
       track.onended = function () {
+        noteCameraDebug("track ended");
         if (state.stream !== stream) return;
         state.stream = null;
         if (els.video) els.video.srcObject = null;
-        if (state.screen !== "capture" || state.timerState === "running" || state.cameraStarting) return;
+        if (state.screen !== "capture" || state.timerState === "running") return;
         if (needsCameraUserGesture()) {
+          state.cameraStarting = false;
+          notifyCameraWaiters(false);
           showCameraActivationOverlay();
           setStatus("Camera interrompue. Touchez pour reactiver.");
+          renderCameraDebug();
           return;
+        }
+        if (state.cameraStarting) {
+          state.cameraStarting = false;
+          notifyCameraWaiters(false);
         }
         setStatus("Camera interrompue. Nouvel essai...");
         window.setTimeout(function () {
           startCamera({ skipGo: true, userGesture: true });
         }, 400);
+      };
+      track.onmute = function () {
+        noteCameraDebug("track muted");
+      };
+      track.onunmute = function () {
+        noteCameraDebug("track unmuted");
       };
     });
   }
@@ -581,9 +679,12 @@
       els.video.classList.add("photo-finish-video--pwa");
     }
     els.video.srcObject = stream;
+    noteCameraDebug("srcObject attached");
     var playAttempt = els.video.play();
     if (playAttempt && typeof playAttempt.catch === "function") {
-      playAttempt.catch(function () {});
+      playAttempt.catch(function (err) {
+        noteCameraError("attach play", err);
+      });
     }
     if (isPwaStandalone() && els.stage) {
       void els.stage.offsetHeight;
@@ -599,9 +700,11 @@
     return chain
       .then(function () {
         hidePreviewTapOverlay();
+        noteCameraDebug("video play ok");
         return true;
       })
-      .catch(function () {
+      .catch(function (err) {
+        noteCameraError("video play", err);
         if (isAppleTouchDevice()) return requestPreviewTap();
         return els.video.play().then(function () {
           hidePreviewTapOverlay();
@@ -698,6 +801,24 @@
     }
   }
 
+  function revealCapturePanelForCamera() {
+    state.screen = "capture";
+    els.tabs.forEach(function (tab) {
+      var active = tab.dataset.screen === "capture";
+      tab.classList.toggle("dispense-nav__btn--active", active);
+      tab.setAttribute("aria-selected", active ? "true" : "false");
+      tab.tabIndex = active ? 0 : -1;
+    });
+    els.screens.forEach(function (panel) {
+      var active = panel.dataset.screen === "capture";
+      panel.hidden = !active;
+      panel.setAttribute("aria-hidden", active ? "false" : "true");
+      if ("inert" in panel) panel.inert = !active;
+    });
+    resetCaptureUi();
+    renderCameraDebug();
+  }
+
   function go(screen, navOpts) {
     navOpts = navOpts || {};
     state.screen = screen;
@@ -713,9 +834,14 @@
       panel.setAttribute("aria-hidden", active ? "false" : "true");
       if ("inert" in panel) panel.inert = !active;
     });
-    if (document.activeElement && document.activeElement !== document.body) {
+    if (
+      !(screen === "capture" && needsCameraUserGesture() && navOpts.userGesture) &&
+      document.activeElement &&
+      document.activeElement !== document.body
+    ) {
       document.activeElement.blur();
     }
+    renderCameraDebug();
     if (els.resultDialog && !els.resultDialog.open) {
       els.resultDialog.inert = true;
     }
@@ -1307,10 +1433,88 @@
     }
     els.video.srcObject = null;
     state.cameraStarting = false;
+    noteCameraDebug("stopCamera");
+  }
+
+  function startCameraForStandaloneIos(opts) {
+    opts = opts || {};
+    if (state.stream) {
+      if (!isStreamLive(state.stream)) {
+        stopCamera();
+      } else {
+        return wakeVideoPreview().then(function () {
+          updateFinishGuide();
+          updateCaptureButton();
+          renderCameraDebug();
+          return true;
+        });
+      }
+    }
+    if (state.cameraStarting) return waitForCameraStarting();
+    if (!opts.userGesture) {
+      showCameraActivationOverlay();
+      renderCameraDebug();
+      return Promise.resolve(false);
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showMsg("Ce navigateur ne permet pas d'acceder a la camera.");
+      return Promise.resolve(false);
+    }
+    readSettingsFromUi();
+    revealCapturePanelForCamera();
+    state.cameraStarting = true;
+    setStatus("Demande d'acces a la camera...");
+    showMsg("");
+    noteCameraDebug("getUserMedia start");
+    return requestCameraStream()
+      .then(function (stream) {
+        noteCameraDebug("getUserMedia ok");
+        attachCameraStream(stream);
+        setStatus("Demarrage de l'apercu...");
+        return playVideoPreview();
+      })
+      .then(function () {
+        return waitForVideoMetadata();
+      })
+      .then(function () {
+        state.cameraStarting = false;
+        state.probedCameraFps = currentCameraDebugStats().cameraFrameRate || 30;
+        updateFinishGuide();
+        updateCameraMeta();
+        updateCaptureButton();
+        renderCameraDebug();
+        if (els.video.videoWidth && els.video.videoHeight && isStreamLive(state.stream)) {
+          setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
+          hidePreviewTapOverlay();
+        } else if (!isStreamLive(state.stream)) {
+          setStatus("Camera interrompue apres autorisation.");
+          showCameraActivationOverlay();
+        } else {
+          setStatus("Camera active. Touchez l'ecran si l'apercu reste noir.");
+          showCameraActivationOverlay();
+        }
+        notifyCameraWaiters(isStreamLive(state.stream));
+        return isStreamLive(state.stream);
+      })
+      .catch(function (err) {
+        state.cameraStarting = false;
+        noteCameraError("start iOS PWA", err);
+        var msg = "Impossible d'acceder a la camera.";
+        if (err && err.name === "NotAllowedError") msg = "Autorisez la camera, puis reessayez.";
+        if (err && err.name === "NotFoundError") msg = "Aucune camera detectee.";
+        showMsg(msg);
+        setStatus("Camera inactive.");
+        notifyCameraWaiters(false);
+        renderCameraDebug();
+        return false;
+      });
   }
 
   function startCamera(opts) {
     opts = opts || {};
+    if (needsCameraUserGesture()) {
+      return startCameraForStandaloneIos(opts);
+    }
     readSettingsFromUi();
     if (state.stream) {
       if (!isStreamLive(state.stream)) {
@@ -2716,6 +2920,14 @@
             updateFinishGuide();
           });
         }
+      });
+    }
+    if (els.video) {
+      ["loadedmetadata", "loadeddata", "canplay", "playing", "pause", "error"].forEach(function (eventName) {
+        els.video.addEventListener(eventName, function () {
+          if (eventName === "error") noteCameraError("video error", els.video.error || {});
+          else noteCameraDebug("video " + eventName);
+        });
       });
     }
     var manualCaptureKeys = {

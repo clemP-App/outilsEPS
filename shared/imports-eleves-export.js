@@ -172,6 +172,18 @@
         if ((p.passages || []).length) parts.push((p.passages || []).length + " passage(s)");
         return parts.length ? parts.join(" · ") : "—";
       }
+      case "relais-eleve": {
+        var rp = [];
+        if (p.label) rp.push(p.label);
+        if (p.temps && p.temps.total) rp.push(p.temps.total);
+        if (p.vitesses && p.vitesses.zt != null) rp.push("ZT " + p.vitesses.zt + " km/h");
+        if (p.efficaciteZT && p.efficaciteZT.note10 != null) {
+          rp.push("trans. " + String(p.efficaciteZT.note10).replace(".", ",") + "/10");
+        } else if (p.efficaciteZT && p.efficaciteZT.coefficient != null) {
+          rp.push("trans. " + (p.efficaciteZT.coefficient / 10).toFixed(1).replace(".", ",") + "/10");
+        }
+        return rp.length ? rp.join(" · ") : "—";
+      }
       case "zone-impact": {
         var z = [];
         if (p.activityLabel || p.activity) z.push(p.activityLabel || p.activity);
@@ -297,6 +309,17 @@
         });
         if ((p.passages || []).length > 12) {
           lines.push("… et " + ((p.passages || []).length - 12) + " autre(s) passage(s)");
+        }
+        break;
+      case "relais-eleve":
+        if (p.temps) {
+          lines.push("Total : " + (p.temps.total || "—"));
+          lines.push("Z1 : " + (p.temps.z1 || "—") + (p.vitesses && p.vitesses.z1 != null ? " (" + p.vitesses.z1 + " km/h)" : ""));
+          lines.push("ZT : " + (p.temps.zt || "—") + (p.vitesses && p.vitesses.zt != null ? " (" + p.vitesses.zt + " km/h)" : ""));
+          lines.push("Z2 : " + (p.temps.z2 || "—") + (p.vitesses && p.vitesses.z2 != null ? " (" + p.vitesses.z2 + " km/h)" : ""));
+        }
+        if (p.distances && p.distances.total) {
+          lines.push("Distances : " + p.distances.z1 + " + " + p.distances.zt + " + " + p.distances.z2 + " = " + p.distances.total + " m");
         }
         break;
       case "zone-impact":
@@ -487,6 +510,20 @@
           "Nb passages",
           "Dernier plot (km/h)",
         ];
+      case "relais-eleve":
+        return [
+          "Date import",
+          "Classe",
+          "Joueur / Équipe",
+          "Libellé",
+          "Temps total",
+          "Z1 (temps)",
+          "ZT (temps)",
+          "Z2 (temps)",
+          "Vitesse Z1 (km/h)",
+          "Vitesse ZT (km/h)",
+          "Vitesse Z2 (km/h)",
+        ];
       case "zone-impact":
         return [
           "Date import",
@@ -609,6 +646,17 @@
           cell(p.vitesseMoyenne != null ? p.vitesseMoyenne : null),
           cell((p.passages || []).length),
           cell(last && last.vitesseDernier != null ? last.vitesseDernier : null),
+        ]);
+      case "relais-eleve":
+        return baseMeta(rec).concat([
+          cell(p.label),
+          cell(p.temps && p.temps.total),
+          cell(p.temps && p.temps.z1),
+          cell(p.temps && p.temps.zt),
+          cell(p.temps && p.temps.z2),
+          cell(p.vitesses && p.vitesses.z1 != null ? p.vitesses.z1 : null),
+          cell(p.vitesses && p.vitesses.zt != null ? p.vitesses.zt : null),
+          cell(p.vitesses && p.vitesses.z2 != null ? p.vitesses.z2 : null),
         ]);
       case "zone-impact":
         return baseMeta(rec).concat([
