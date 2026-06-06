@@ -15,6 +15,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="../assets/icon-192.png" />
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
     <link rel="stylesheet" href="../style.css" />
+    <script src="../pwa-version-check.js"></script>
   </head>
   <body class="app app--tool">
     <div class="page-outil page-outil--photo-finish">
@@ -365,7 +366,10 @@
         hidden
       >
         <section class="photo-finish-stage" id="pf-stage" aria-label="Aperçu caméra">
-          <video id="pf-video" class="photo-finish-video" playsinline muted autoplay></video>
+          <video id="pf-video" class="photo-finish-video" playsinline webkit-playsinline muted autoplay></video>
+          <button type="button" id="pf-preview-tap" class="photo-finish-preview-tap" hidden>
+            Toucher pour afficher l’aperçu caméra
+          </button>
           <div id="pf-slit-guide" class="photo-finish-slit-guide" aria-hidden="true">
             <span></span>
           </div>
@@ -576,7 +580,7 @@
             title: "Comment s’en servir",
             list: [
               "Préparez la séance et, si besoin, sélectionnez une classe.",
-              "La caméra s’active automatiquement en allant sur Capture.",
+              "Sur iPad en PWA : touchez « Activer la caméra » puis démarrez le chrono.",
               "Démarrez, puis appuyez sur le même bouton pour stopper.",
               "Appuyez sur + pour associer le temps à un coureur.",
             ],

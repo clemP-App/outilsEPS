@@ -10,6 +10,7 @@
   var DB_VERSION = 1;
   var MAX_IMAGE_WIDTH = 18000;
   var managerSessionId = null;
+  var cameraStartWaiters = [];
 
   var $ = function (id) {
     return document.getElementById(id);
@@ -21,6 +22,7 @@
     screens: Array.prototype.slice.call(document.querySelectorAll(".dispense-view[data-screen]")),
     video: $("pf-video"),
     stage: $("pf-stage"),
+    previewTap: $("pf-preview-tap"),
     slitGuide: $("pf-slit-guide"),
     chronoLive: $("pf-chrono-live"),
     status: $("pf-status"),
@@ -407,24 +409,170 @@
     saveLocalShell();
   }
 
+  function isAppleTouchDevice() {
+    var ua = navigator.userAgent || "";
+    return (
+      /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    );
+  }
+
+  function isPwaStandalone() {
+    if (window.navigator.standalone === true) return true;
+    try {
+      return (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.matchMedia("(display-mode: fullscreen)").matches
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function deferCameraAutostart() {
+    return isAppleTouchDevice() && isPwaStandalone();
+  }
+
+  function captureStatusWhenIdle() {
+    if (deferCameraAutostart() && !state.stream) {
+      return "Touchez « Demarrer le chrono » pour activer la camera.";
+    }
+    return "La camera va s'activer automatiquement.";
+  }
+
+  function notifyCameraWaiters(ok) {
+    var list = cameraStartWaiters.slice();
+    cameraStartWaiters = [];
+    list.forEach(function (resolve) {
+      resolve(!!ok);
+    });
+  }
+
+  function waitForCameraStarting() {
+    return new Promise(function (resolve) {
+      cameraStartWaiters.push(resolve);
+    });
+  }
+
+  function hidePreviewTapOverlay() {
+    if (els.previewTap) els.previewTap.hidden = true;
+  }
+
+  function requestPreviewTap() {
+    if (!els.previewTap) return playVideoPreview();
+    return new Promise(function (resolve) {
+      setStatus("Touchez l'ecran pour afficher l'apercu camera.");
+      els.previewTap.hidden = false;
+      function finish() {
+        hidePreviewTapOverlay();
+        els.previewTap.removeEventListener("click", finish);
+        if (els.stage) els.stage.removeEventListener("click", finish);
+        playVideoPreview().then(resolve).catch(function () {
+          resolve(false);
+        });
+      }
+      els.previewTap.addEventListener("click", finish, { once: true });
+      if (els.stage) els.stage.addEventListener("click", finish, { once: true });
+    });
+  }
+
+  function ensureVideoElementReady() {
+    if (!els.video) return;
+    els.video.setAttribute("playsinline", "");
+    els.video.setAttribute("webkit-playsinline", "true");
+    els.video.playsInline = true;
+    els.video.muted = true;
+    els.video.autoplay = true;
+  }
+
+  function attachCameraStream(stream) {
+    if (state.stream && state.stream !== stream) {
+      state.stream.getTracks().forEach(function (track) {
+        track.stop();
+      });
+    }
+    state.stream = stream;
+    ensureVideoElementReady();
+    els.video.srcObject = stream;
+  }
+
+  function playVideoPreview() {
+    if (!els.video) return Promise.resolve(false);
+    var attempt = els.video.play();
+    var chain = attempt && typeof attempt.then === "function" ? attempt : Promise.resolve();
+    return chain
+      .then(function () {
+        hidePreviewTapOverlay();
+        return true;
+      })
+      .catch(function () {
+        if (isAppleTouchDevice()) return requestPreviewTap();
+        return els.video.play().then(function () {
+          hidePreviewTapOverlay();
+          return true;
+        }).catch(function () {
+          return false;
+        });
+      });
+  }
+
+  function waitForVideoMetadata() {
+    if (!els.video) return Promise.resolve();
+    if (els.video.videoWidth > 0 && els.video.videoHeight > 0) return Promise.resolve();
+    return new Promise(function (resolve) {
+      var settled = false;
+      function finish() {
+        if (settled) return;
+        settled = true;
+        els.video.removeEventListener("loadedmetadata", finish);
+        els.video.removeEventListener("loadeddata", finish);
+        els.video.removeEventListener("canplay", finish);
+        resolve();
+      }
+      els.video.addEventListener("loadedmetadata", finish);
+      els.video.addEventListener("loadeddata", finish);
+      els.video.addEventListener("canplay", finish);
+      setTimeout(finish, isAppleTouchDevice() ? 12000 : 8000);
+      var tries = 0;
+      function poll() {
+        if (settled) return;
+        if (els.video.videoWidth > 0 && els.video.videoHeight > 0) {
+          finish();
+          return;
+        }
+        tries += 1;
+        if (tries < 180) requestAnimationFrame(poll);
+      }
+      requestAnimationFrame(poll);
+    });
+  }
+
   function probeCameraFps(maxFrames, maxMs) {
     maxFrames = maxFrames || 24;
     maxMs = maxMs || 450;
     return new Promise(function (resolve) {
       var fallback = currentCameraDebugStats().cameraFrameRate || 30;
-      if (!state.stream || !els.video || !("requestVideoFrameCallback" in HTMLVideoElement.prototype)) {
-        resolve(fallback);
-        return;
+      var settled = false;
+      function done(fps) {
+        if (settled) return;
+        settled = true;
+        resolve(fps > 0 ? fps : fallback);
       }
+      setTimeout(function () {
+        done(fallback);
+      }, maxMs + 300);
+      if (isAppleTouchDevice() || !state.stream || !els.video) return;
+      if (!("requestVideoFrameCallback" in HTMLVideoElement.prototype)) return;
       var times = [];
       var start = 0;
       function onFrame(now) {
+        if (settled) return;
         if (!start) start = now;
         times.push(now);
         if (times.length >= maxFrames || now - start > maxMs) {
           var elapsed = times.length > 1 ? times[times.length - 1] - times[0] : 0;
           var fps = elapsed > 0 ? ((times.length - 1) / elapsed) * 1000 : fallback;
-          resolve(fps > 0 ? fps : fallback);
+          done(fps);
           return;
         }
         els.video.requestVideoFrameCallback(onFrame);
@@ -450,7 +598,7 @@
     if (state.stream) {
       setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
     } else if (!state.cameraStarting) {
-      setStatus("La camera va s'activer automatiquement.");
+      setStatus(captureStatusWhenIdle());
     }
   }
 
@@ -476,8 +624,11 @@
     }
     if (screen === "capture") {
       resetCaptureUi();
-      if (!state.stream && !state.cameraStarting) {
+      if (!state.stream && !state.cameraStarting && !deferCameraAutostart()) {
         startCamera();
+      } else if (deferCameraAutostart() && !state.stream && !state.cameraStarting) {
+        setStatus(captureStatusWhenIdle());
+        updateCaptureButton();
       }
     }
     if (screen === "capture" || screen === "analysis") {
@@ -944,16 +1095,22 @@
 
   function autoCameraProfiles() {
     var facing = { ideal: state.settings.preferredCamera };
-    var profiles = [
-      { width: 1920, height: 1080, frameRate: 60, label: "1080p 60 fps" },
-      { width: 1280, height: 720, frameRate: 60, label: "720p 60 fps" },
-      { width: 1920, height: 1080, frameRate: 120, label: "1080p 120 fps" },
-      { width: 1280, height: 720, frameRate: 120, label: "720p 120 fps" },
-      { width: 1920, height: 1080, frameRate: 30, label: "1080p 30 fps" },
-      { width: 1280, height: 720, frameRate: 30, label: "720p 30 fps" },
-      { width: 960, height: 540, frameRate: 30, label: "540p 30 fps" },
-      { label: "defaut" },
-    ];
+    var profiles = isAppleTouchDevice()
+      ? [
+          { width: 1280, height: 720, frameRate: 30, label: "720p 30 fps" },
+          { width: 960, height: 540, frameRate: 30, label: "540p 30 fps" },
+          { label: "defaut" },
+        ]
+      : [
+          { width: 1920, height: 1080, frameRate: 60, label: "1080p 60 fps" },
+          { width: 1280, height: 720, frameRate: 60, label: "720p 60 fps" },
+          { width: 1920, height: 1080, frameRate: 120, label: "1080p 120 fps" },
+          { width: 1280, height: 720, frameRate: 120, label: "720p 120 fps" },
+          { width: 1920, height: 1080, frameRate: 30, label: "1080p 30 fps" },
+          { width: 1280, height: 720, frameRate: 30, label: "720p 30 fps" },
+          { width: 960, height: 540, frameRate: 30, label: "540p 30 fps" },
+          { label: "defaut" },
+        ];
     return profiles.map(function (profile) {
       var video = { facingMode: facing };
       if (profile.width) video.width = { ideal: profile.width };
@@ -974,6 +1131,7 @@
       var track = stream.getVideoTracks && stream.getVideoTracks()[0];
       var settings = track && track.getSettings ? track.getSettings() : {};
       if (
+        !isAppleTouchDevice() &&
         profiles[index].requestedFrameRate >= 60 &&
         settings.frameRate &&
         settings.frameRate < 50 &&
@@ -1002,29 +1160,37 @@
     state.cameraStarting = false;
   }
 
-  function startCamera() {
+  function startCamera(opts) {
+    opts = opts || {};
     readSettingsFromUi();
-    if (state.stream || state.cameraStarting) {
-      go("capture");
-      return;
+    if (state.stream) {
+      return playVideoPreview().then(function () {
+        updateFinishGuide();
+        updateCaptureButton();
+        return true;
+      });
+    }
+    if (state.cameraStarting) {
+      return waitForCameraStarting();
     }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showMsg("Ce navigateur ne permet pas d'acceder a la camera.");
-      return;
+      return Promise.resolve(false);
     }
     state.cameraStarting = true;
     setStatus("Demande d'acces a la camera...");
-    requestCameraWithProfiles(cameraProfiles(), 0)
+    return requestCameraWithProfiles(cameraProfiles(), 0)
       .then(function (stream) {
-        stopCamera();
-        state.stream = stream;
-        els.video.srcObject = stream;
-        return waitForVideoMetadata().then(function () {
-          return els.video.play();
-        }).then(function () {
-          updateFinishGuide();
-          return probeCameraFps();
-        });
+        attachCameraStream(stream);
+        setStatus("Demarrage de l'apercu...");
+        return playVideoPreview()
+          .then(function () {
+            return waitForVideoMetadata();
+          })
+          .then(function () {
+            updateFinishGuide();
+            return probeCameraFps();
+          });
       })
       .then(function (probedFps) {
         state.probedCameraFps = probedFps;
@@ -1032,8 +1198,16 @@
         state.cameraStarting = false;
         showMsg("");
         updateCameraMeta();
-        setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
-        go("capture");
+        updateCaptureButton();
+        if (els.video.videoWidth && els.video.videoHeight) {
+          setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
+        } else {
+          setStatus("Camera active. Touchez l'ecran ou « Demarrer le chrono » si l'apercu reste noir.");
+          showMsg("Apercu video indisponible : touchez l'ecran ou relancez la capture.");
+        }
+        notifyCameraWaiters(true);
+        if (state.screen !== "capture" && !opts.skipGo) go("capture");
+        return true;
       })
       .catch(function (err) {
         state.cameraStarting = false;
@@ -1042,17 +1216,23 @@
         if (err && err.name === "NotFoundError") msg = "Aucune camera detectee.";
         showMsg(msg);
         setStatus("Camera inactive.");
+        notifyCameraWaiters(false);
+        return false;
       });
   }
 
-  function waitForVideoMetadata() {
-    if (els.video.videoWidth && els.video.videoHeight) return Promise.resolve();
-    return new Promise(function (resolve) {
-      var done = function () {
-        els.video.removeEventListener("loadedmetadata", done);
-        resolve();
-      };
-      els.video.addEventListener("loadedmetadata", done);
+  function ensureCameraThenRun(fn, eventNow) {
+    if (state.stream && els.video.videoWidth && els.video.videoHeight) {
+      fn(eventNow);
+      return;
+    }
+    startCamera({ skipGo: true }).then(function (ok) {
+      if (!ok || !state.stream) return;
+      if (!els.video.videoWidth || !els.video.videoHeight) {
+        setStatus("Camera active. Relancez le chrono si l'apercu reste noir.");
+        return;
+      }
+      fn(eventNow);
     });
   }
 
@@ -1174,8 +1354,15 @@
     var text = els.btnStart.querySelector(".btn__text");
     var icon = els.btnStart.querySelector(".btn__icon");
     var running = state.timerState === "running";
-    els.btnStart.disabled = false;
+    els.btnStart.disabled = state.cameraStarting;
     els.btnStart.classList.toggle("is-stop", running);
+    if (!running && deferCameraAutostart() && !state.stream) {
+      if (text) {
+        text.textContent = state.cameraStarting ? "Activation camera..." : "Activer la camera";
+      }
+      if (icon) icon.textContent = state.cameraStarting ? "…" : "\u25b6";
+      return;
+    }
     if (text) text.textContent = running ? "Stop" : "Demarrer le chrono";
     if (icon) icon.textContent = running ? "\u25a0" : "\u25b6";
   }
@@ -2440,6 +2627,10 @@
         stopTimer();
         return;
       }
+      if (!state.stream || !els.video.videoWidth) {
+        ensureCameraThenRun(function () {}, performance.now());
+        return;
+      }
       if (state.settings.startTriggerMode === "press" && state.timerState !== "running") {
         startTimer(performance.now());
       } else if (state.settings.startTriggerMode === "release") {
@@ -2449,14 +2640,17 @@
     });
     els.btnStart.addEventListener("pointerup", function () {
       if (state.timerState === "running" || performance.now() - state.lastStopTap < 600) return;
+      if (!state.stream || !els.video.videoWidth) return;
       if (state.settings.startTriggerMode === "release" && state.timerState !== "running") {
         els.btnStart.classList.remove("is-armed");
-        els.btnStart.querySelector(".btn__text").textContent = "Demarrer le chrono";
+        updateCaptureButton();
         startTimer(performance.now());
       }
     });
     els.btnStart.addEventListener("click", function () {
-      if (!window.PointerEvent && state.timerState !== "running") startTimer(performance.now());
+      if (!window.PointerEvent && state.timerState !== "running") {
+        ensureCameraThenRun(startTimer, performance.now());
+      }
     });
     els.btnStop.addEventListener("click", function () {
       var now = performance.now();
