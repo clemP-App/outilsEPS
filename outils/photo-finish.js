@@ -277,6 +277,14 @@
     saveLocalShell();
   }
 
+  function renderHeightLabel(value) {
+    if (value === "sprint") return "bande compacte";
+    if (value === "320") return "320 px";
+    if (value === "480") return "480 px";
+    if (value === "native") return "native";
+    return value || "bande compacte";
+  }
+
   function formatAutoOptimizeSummary(optimal, fps) {
     optimal = optimal || {};
     fps = fps || optimal.fps || 0;
@@ -288,7 +296,7 @@
       " px, " +
       (optimal.captureHeight || state.settings.captureHeight) +
       ", rendu " +
-      (optimal.renderHeight || state.settings.renderHeight) +
+      renderHeightLabel(optimal.renderHeight || state.settings.renderHeight) +
       "."
     );
   }
@@ -409,8 +417,7 @@
       panel.setAttribute("aria-hidden", active ? "false" : "true");
     });
     if (screen === "analysis") {
-      updateViewerPadding();
-      updateCursorReadout();
+      scheduleAnalysisLayout();
     }
     if (screen === "capture" && !state.stream && !state.cameraStarting) {
       startCamera();
@@ -1329,7 +1336,7 @@
     if (isAutoOptimizeEnabled()) {
       warnings.unshift("Optimisation automatique active : reglages ajustes pour ~" + AUTO_TARGET_PPS + " px/s.");
     }
-    if (stats.renderHeight > 480) warnings.push("Image trop haute : utilisez Bande SprintTimer pour un rendu plus lisible.");
+    if (stats.renderHeight > 480) warnings.push("Image trop haute : utilisez le rendu Bande compacte pour plus de lisibilite.");
     if (stats.imageWidth > 12000) warnings.push("Image tres large : risque de ralentissement sur mobile.");
     if (stats.cameraWidth && stats.cameraHeight && Math.max(stats.cameraWidth, stats.cameraHeight) < 1280) {
       warnings.push("Resolution faible : rapprochez moins la camera ou augmentez la qualite.");
@@ -1445,10 +1452,8 @@
     resultCtx.imageSmoothingQuality = "high";
     resultCtx.drawImage(compositeCanvas, 0, 0, width, height, 0, 0, visualWidth, height);
     state.activeImageDataUrl = els.resultCanvas.toDataURL("image/png");
-    applyZoom();
-    updateViewerPadding();
+    scheduleAnalysisLayout();
     els.scroll.scrollLeft = 0;
-    updateCursorReadout();
     renderMarkers();
     renderDiagnostic();
     refineAutoOptimizationFromCapture();
@@ -1503,26 +1508,76 @@
     return imageXToTime(viewportCursorToImageX());
   }
 
-  function updateViewerPadding() {
+  function viewerDisplayMetrics() {
+    var cw = els.resultCanvas ? els.resultCanvas.width : 0;
+    var ch = els.resultCanvas ? els.resultCanvas.height : 0;
+    if (!cw || !ch) return { width: 0, height: 0 };
+    var zoomedW = cw * state.zoom;
+    var viewerW = els.viewer && els.viewer.clientWidth > 0 ? els.viewer.clientWidth : zoomedW;
+    var maxH = Math.min(Math.round(window.innerHeight * 0.55), 400);
+    var displayW = zoomedW;
+    var displayH = Math.max(1, Math.round(ch * (displayW / cw)));
+    if (displayW > viewerW) {
+      displayW = viewerW;
+      displayH = Math.max(1, Math.round(ch * (displayW / cw)));
+    }
+    if (displayH > maxH) {
+      displayH = maxH;
+      displayW = Math.max(1, Math.round(cw * (displayH / ch) * state.zoom));
+      if (displayW > viewerW) {
+        displayW = viewerW;
+        displayH = Math.max(1, Math.round(ch * (displayW / cw)));
+      }
+    }
+    return { width: displayW, height: displayH };
+  }
+
+  function scheduleAnalysisLayout() {
+    requestAnimationFrame(function () {
+      updateViewerPadding(0);
+      applyZoom();
+      updateViewerPadding(0);
+      updateCursorReadout();
+    });
+  }
+
+  function updateViewerPadding(retry) {
     if (!els.viewer || !els.imageWrap) return;
-    var half = Math.max(0, Math.round(els.viewer.clientWidth / 2));
+    var viewerW = els.viewer.clientWidth;
+    if (viewerW <= 0 && state.screen === "analysis" && (retry || 0) < 8) {
+      requestAnimationFrame(function () {
+        updateViewerPadding((retry || 0) + 1);
+      });
+      return;
+    }
+    if (viewerW <= 0) return;
+    var half = Math.max(0, Math.round(viewerW / 2));
     els.imageWrap.style.setProperty("--pf-viewer-pad", half + "px");
     syncViewerHeight();
     updateSliderFromScroll();
   }
 
-  function syncViewerHeight() {
+  function syncViewerHeight(displayHeight) {
     if (!els.imageWrap || !els.resultCanvas) return;
-    var h = els.resultCanvas.offsetHeight;
-    if (h > 0) els.imageWrap.style.minHeight = h + "px";
+    var h =
+      displayHeight ||
+      parseFloat(els.resultCanvas.style.height) ||
+      els.resultCanvas.offsetHeight ||
+      0;
+    if (h > 0) {
+      els.imageWrap.style.minHeight = h + "px";
+      if (els.scroll) els.scroll.style.minHeight = h + "px";
+    }
   }
 
   function applyZoom() {
-    if (!els.resultCanvas) return;
-    var width = els.resultCanvas.width * state.zoom;
-    els.resultCanvas.style.width = width + "px";
-    els.resultCanvas.style.height = "auto";
-    syncViewerHeight();
+    if (!els.resultCanvas || !els.resultCanvas.width) return;
+    var metrics = viewerDisplayMetrics();
+    if (metrics.width > 0 && metrics.height > 0) {
+      els.resultCanvas.style.width = metrics.width + "px";
+      els.resultCanvas.style.height = metrics.height + "px";
+      syncViewerHeight(metrics.height);
+    }
     renderMarkers();
     updateSliderFromScroll();
     updateCursorReadout();
@@ -2235,11 +2290,7 @@
   }
 
   function onViewerLayoutChange() {
-    window.setTimeout(function () {
-      updateViewerPadding();
-      applyZoom();
-      updateFinishGuide();
-    }, 120);
+    window.setTimeout(scheduleAnalysisLayout, 120);
   }
 
   wireEvents();

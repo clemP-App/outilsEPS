@@ -8901,6 +8901,7 @@ body.video-retard-body-fs {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #111;
   touch-action: pan-x pinch-zoom;
+  min-height: 8rem;
 }
 
 .photo-finish-image-wrap {
@@ -8909,7 +8910,8 @@ body.video-retard-body-fs {
   line-height: 0;
   padding-left: var(--pf-viewer-pad, 50vw);
   padding-right: var(--pf-viewer-pad, 50vw);
-  min-height: 0;
+  min-height: 8rem;
+  vertical-align: top;
 }
 
 .photo-finish-image-wrap.is-reversed {
@@ -8922,10 +8924,11 @@ body.video-retard-body-fs {
 
 .photo-finish-result {
   display: block;
-  max-width: 100%;
   width: auto;
   height: auto;
+  max-height: min(55vh, 25rem);
   image-rendering: auto;
+  vertical-align: top;
 }
 
 .photo-finish-fixed-cursor {
