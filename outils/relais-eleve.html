@@ -22,7 +22,7 @@
         <a class="tool-back" href="../index.html"
           ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
         >
-        <h1>Relais</h1>
+        <h1>Relais <span class="tool-beta-badge">Beta</span></h1>
       </header>
 
       <details class="card card--accordion relais-reglages" id="relais-reglages" open>
@@ -65,7 +65,7 @@
             <span>Filmer la zone de transmission (optionnel)</span>
           </label>
           <p class="hint relais-film-hint" id="relais-film-hint" hidden>
-            La caméra enregistre uniquement entre « Entrée ZT » et « Sortie ZT ». Vous pourrez revoir la transmission à la fin.
+            L’aperçu caméra s’affiche dès que vous cochez la case (autorisation demandée tout de suite). L’enregistrement se fait entre « Entrée ZT » et « Sortie ZT » ; la relecture apparaît à l’arrivée (non conservée dans l’historique).
           </p>
         </div>
       </details>
@@ -297,10 +297,13 @@
           </div>
         </div>
 
-        <div class="relais-replay" id="relais-replay" hidden>
-          <h3>Revoir la transmission</h3>
-          <video id="relais-replay-video" playsinline controls></video>
-        </div>
+        <section class="relais-replay" id="relais-replay" hidden aria-labelledby="lbl-relais-replay">
+          <header class="relais-replay__head">
+            <h3 class="relais-replay__title" id="lbl-relais-replay">Revoir la transmission</h3>
+            <p class="relais-replay__hint">Vidéo locale — non envoyée au professeur ni enregistrée dans l’historique.</p>
+          </header>
+          <video class="relais-replay__video" id="relais-replay-video" playsinline controls></video>
+        </section>
 
         <button class="btn btn--ghost btn--labeled relais-reset" type="button" id="relais-btn-reset" hidden>
           <span class="btn__icon" aria-hidden="true">↺</span>
@@ -354,7 +357,7 @@
           {
             title: "Filmer la transmission",
             text:
-              "Cochez « Filmer la zone de transmission » pour enregistrer automatiquement entre Entrée ZT et Sortie ZT. La vidéo est rejouable après l’arrivée (stockée localement sur l’appareil, non envoyée au professeur).",
+              "Cochez « Filmer la zone de transmission » : l’aperçu caméra s’affiche tout de suite (autorisation demandée immédiatement). L’enregistrement court entre Entrée ZT et Sortie ZT ; la relecture apparaît à l’arrivée. La vidéo reste sur l’appareil et n’est pas conservée dans l’historique ni le QR.",
           },
           {
             title: "Note transmission",

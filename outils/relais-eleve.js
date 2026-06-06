@@ -601,6 +601,34 @@
     if (cameraBadgeEl) cameraBadgeEl.hidden = false;
   }
 
+  function reinitialiserRelecture() {
+    if (replayUrl) {
+      URL.revokeObjectURL(replayUrl);
+      replayUrl = null;
+    }
+    if (replayVideoEl) replayVideoEl.removeAttribute("src");
+    if (replayWrapEl) replayWrapEl.hidden = true;
+  }
+
+  function afficherRelectureSiDisponible() {
+    if (!replayWrapEl || !replayUrl) return;
+    if (replayVideoEl && !replayVideoEl.src) replayVideoEl.src = replayUrl;
+    replayWrapEl.hidden = false;
+  }
+
+  function majFilmCamera() {
+    if (!filmZTEl) return;
+    var courseEnCours = phase !== "pret" && phase !== "fini";
+    if (filmZTEl.checked) {
+      if (!cameraStream && !courseEnCours) demarrerCamera();
+      return;
+    }
+    if (phase === "pret" || phase === "fini") {
+      arreterCamera();
+      reinitialiserRelecture();
+    }
+  }
+
   function arreterEnregistrement() {
     if (!mediaRecorder || mediaRecorder.state === "inactive") return Promise.resolve();
     return new Promise(function (resolve) {
@@ -610,7 +638,6 @@
           var blob = new Blob(recordedChunks, { type: recordedChunks[0].type || "video/webm" });
           replayUrl = URL.createObjectURL(blob);
           if (replayVideoEl) replayVideoEl.src = replayUrl;
-          if (replayWrapEl) replayWrapEl.hidden = false;
         }
         recordedChunks = [];
         resolve();
@@ -659,19 +686,14 @@
     majRunner("z1");
     majChrono();
     majLiveZone(0, 0, 0);
-    if (replayUrl) {
-      URL.revokeObjectURL(replayUrl);
-      replayUrl = null;
-    }
-    if (replayVideoEl) replayVideoEl.removeAttribute("src");
-    if (replayWrapEl) replayWrapEl.hidden = true;
+    reinitialiserRelecture();
     masquerEfficaciteZT();
     historiqueSauvePourCourse = false;
     sireneDepart();
     startTick();
     majBoutons();
 
-    if (reg.filmZT) {
+    if (reg.filmZT && !cameraStream) {
       demarrerCamera();
     }
   }
@@ -727,6 +749,7 @@
     arreterCamera();
     calculerResultat();
     finaliserCourse();
+    afficherRelectureSiDisponible();
     archiverCourseHistorique();
     majBoutons();
   }
@@ -743,10 +766,12 @@
     majRunner("depart");
     majChrono();
     majLiveZone(0, 0, 0);
+    reinitialiserRelecture();
     masquerEfficaciteZT();
     historiqueSauvePourCourse = false;
     montrerMsg("");
     majBoutons();
+    if (filmZTEl && filmZTEl.checked) demarrerCamera();
   }
 
   function persisterReglages() {
@@ -813,7 +838,6 @@
         z2: pctTempsZone(resultat.z2Cs, resultat.totalCs),
       },
       filmZT: reg.filmZT,
-      videoEnregistree: !!(replayUrl || (replayVideoEl && replayVideoEl.src)),
       efficaciteZT: (function () {
         var eff = calculerEfficaciteZT();
         if (!eff) return null;
@@ -868,6 +892,7 @@
     filmZTEl.addEventListener("change", function () {
       majFilmHint();
       persisterReglages();
+      majFilmCamera();
     });
   }
 
@@ -880,6 +905,7 @@
   chargerLabel();
   majDistancesAffichees();
   majFilmHint();
+  majFilmCamera();
   majRunner("depart");
   majBoutons();
   majChrono();

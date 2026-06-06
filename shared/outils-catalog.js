@@ -330,6 +330,7 @@
       href: "outils/relais-eleve.html",
       categorie: "Course à pied",
       publicCible: "eleve",
+      badge: "Beta",
     },
     {
       id: "compteur-ratio",
