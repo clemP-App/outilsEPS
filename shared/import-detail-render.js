@@ -379,23 +379,34 @@ var ImportDetailRender = (function () {
   function renderRelais(payload, parent) {
     var wrap = el("div", "import-preview import-preview--relais page-outil--relais-eleve");
     if (payload.label) wrap.appendChild(el("p", "import-preview__title", payload.label));
-    var grid = el("div", "relais-bilan-grid");
     var temps = payload.temps || {};
     var vitesses = payload.vitesses || {};
-    function block(label, time, speed) {
-      var b = el("div", "result-box relais-result-box");
-      b.appendChild(el("span", "relais-result-label", label));
-      b.appendChild(el("strong", null, time || "—"));
-      if (speed != null) {
-        b.appendChild(el("span", "relais-result-sub", speed + " km/h"));
-      }
-      grid.appendChild(b);
+    var pcts = payload.tempsPct || {};
+    if (temps.total) {
+      var hero = el("div", "relais-bilan-hero relais-bilan-hero--compact");
+      hero.appendChild(el("span", "relais-bilan-hero__label", "Temps total"));
+      hero.appendChild(el("strong", "relais-bilan-hero__value", temps.total));
+      wrap.appendChild(hero);
     }
-    block("Temps total", temps.total, null);
-    block("Zone 1", temps.z1, vitesses.z1);
-    block("Zone transmission", temps.zt, vitesses.zt);
-    block("Zone 2", temps.z2, vitesses.z2);
-    wrap.appendChild(grid);
+    var strip = el("div", "relais-bilan-strip");
+    function zoneBlock(cls, badge, time, speed, pct) {
+      var art = el("article", "relais-bilan-zone " + cls);
+      var head = el("div", "relais-bilan-zone__head");
+      head.appendChild(el("span", "relais-bilan-zone__badge", badge));
+      art.appendChild(head);
+      art.appendChild(el("strong", "relais-bilan-zone__time", time || "—"));
+      var meta = el("div", "relais-bilan-zone__meta");
+      meta.appendChild(el("span", "relais-bilan-zone__speed", speed != null ? speed + " km/h" : "—"));
+      meta.appendChild(
+        el("span", "relais-bilan-zone__pct", pct != null ? pct + " % du temps" : "—")
+      );
+      art.appendChild(meta);
+      strip.appendChild(art);
+    }
+    zoneBlock("relais-bilan-zone--z1", "Z1", temps.z1, vitesses.z1, pcts.z1);
+    zoneBlock("relais-bilan-zone--zt", "ZT", temps.zt, vitesses.zt, pcts.zt);
+    zoneBlock("relais-bilan-zone--z2", "Z2", temps.z2, vitesses.z2, pcts.z2);
+    wrap.appendChild(strip);
     if (payload.distances && payload.distances.total) {
       wrap.appendChild(
         el(
