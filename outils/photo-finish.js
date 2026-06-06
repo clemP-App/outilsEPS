@@ -1140,7 +1140,7 @@
       if (state.timerState === "running") {
         var remainingDelay = Math.max(0, state.settings.captureDelayMs - elapsed);
         els.delayState.textContent = state.captureStarted
-          ? "Capture : en cours"
+          ? "Capture en cours"
           : "Capture dans " + formatTime(remainingDelay);
         if (state.settings.autoStopEnabled && elapsed >= state.settings.autoStopMs) {
           stopTimer();
@@ -1173,7 +1173,7 @@
 
   function startCapture() {
     state.captureStarted = true;
-    setStatus("Capture en cours : les bandeaux sont assembles en photo finish.");
+    setStatus("Capture en cours.");
   }
 
   function stopCapture() {
