@@ -1188,7 +1188,7 @@ main.container {
 }
 
 @media (max-width: 559px) {
-  .field-row:not(.field-row--actions):not(.hiit-actions):not(.compo-export-row):not(.compo-actions-row) {
+  .field-row:not(.field-row--actions):not(.hiit-actions):not(.compo-export-row):not(.compo-actions-row):not(.field-row--photo-finish-zoom) {
     flex-direction: column;
     align-items: stretch;
   }
@@ -8538,11 +8538,19 @@ body.video-retard-body-fs {
 
 @media (orientation: landscape) {
   .page-outil--photo-finish {
-    --pf-image-area-h: clamp(12rem, calc(100dvh - 7rem), 100%);
+    --pf-image-area-h: clamp(12rem, calc(100dvh - 5.5rem), 100%);
     --pf-analysis-min-h: clamp(10rem, calc(100dvh - 9rem), 100%);
-    --pf-analysis-max-h: clamp(12rem, calc(100dvh - 7rem), 100%);
+    --pf-analysis-max-h: clamp(12rem, calc(100dvh - 5.5rem), 100%);
     --pf-chrono-size: clamp(1rem, 3.8vh, 1.55rem);
     --pf-capture-btn-h: 2.65rem;
+  }
+
+  .page-outil--photo-finish:has(#pf-panel-capture:not([hidden])) #session-manager-mount {
+    display: none;
+  }
+
+  .page-outil--photo-finish:has(#pf-panel-capture:not([hidden])) .page-outil__header {
+    padding-block: 0.25rem;
   }
 
   .page-outil--photo-finish #pf-panel-capture > .card {
@@ -8551,6 +8559,11 @@ body.video-retard-body-fs {
 
   .page-outil--photo-finish .photo-finish-stage {
     margin-bottom: 0;
+    min-height: calc(100dvh - 3.5rem);
+  }
+
+  .page-outil--photo-finish:has(#pf-panel-capture:not([hidden])) .photo-finish-stage {
+    height: max(var(--pf-image-area-h), calc(100dvh - 3.5rem));
   }
 
   .page-outil--photo-finish .dispense-nav__btn {
@@ -8977,12 +8990,16 @@ body.video-retard-body-fs {
 .photo-finish-zoom-actions {
   flex: 0 0 auto;
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 0.3rem;
   margin: 0;
 }
 
 .photo-finish-zoom-actions .btn {
   flex: 0 0 auto;
+  width: auto;
   min-width: 2.5rem;
   min-height: 2.35rem;
   padding: 0.3rem 0.45rem;

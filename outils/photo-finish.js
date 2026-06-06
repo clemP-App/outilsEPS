@@ -128,6 +128,7 @@
     lastStopTap: 0,
     zoom: 1,
     displayScaleX: 1,
+    viewerPixelScale: 1,
     effectiveStripWidth: 4,
     activeImageDataUrl: "",
     probedCameraFps: 0,
@@ -1141,6 +1142,7 @@
     state.activeImageDataUrl = "";
     state.zoom = 1;
     state.displayScaleX = 1;
+    state.viewerPixelScale = 1;
     state.effectiveStripWidth = chooseEffectiveStripWidth(cameraStats.cameraFrameRate);
     compositeCanvas.width = 1;
     compositeCanvas.height = 1;
@@ -1497,7 +1499,7 @@
     // The scroll area has half-viewport padding before and after the image.
     // Therefore scrollLeft 0 puts imageX 0 exactly below the fixed central cursor.
     if (!els.scroll || !state.strips.length) return 0;
-    var raw = els.scroll.scrollLeft / Math.max(0.1, state.zoom * state.displayScaleX);
+    var raw = els.scroll.scrollLeft / Math.max(0.1, state.viewerPixelScale || state.zoom * state.displayScaleX);
     var max = state.strips[state.strips.length - 1].imageXEnd;
     return Math.max(0, Math.min(max, raw));
   }
@@ -1563,7 +1565,8 @@
     }
     var available = Math.round(vh - chromeTop - reserved);
     if (state.screen === "capture" && landscape) {
-      available = Math.max(180, available);
+      available = Math.max(200, available);
+      available = Math.min(Math.round(vh - 32), Math.round(available * 1.34));
     } else {
       available = Math.max(landscape ? 140 : 168, available);
     }
@@ -1573,11 +1576,13 @@
   function viewerDisplayMetrics() {
     var cw = els.resultCanvas ? els.resultCanvas.width : 0;
     var ch = els.resultCanvas ? els.resultCanvas.height : 0;
-    if (!cw || !ch) return { width: 0, height: 0 };
+    if (!cw || !ch) return { width: 0, height: 0, scale: 1 };
     var targetH = analysisHeightLimits().maxH;
-    var displayH = Math.max(1, Math.round(targetH * state.zoom));
-    var displayW = Math.max(1, Math.round(cw * (displayH / ch)));
-    return { width: displayW, height: displayH };
+    var displayH = Math.max(1, Math.round(targetH));
+    var baseW = cw * (targetH / ch);
+    var displayW = Math.max(1, Math.round(baseW * state.zoom));
+    var scale = state.displayScaleX * (displayW / cw);
+    return { width: displayW, height: displayH, scale: scale };
   }
 
   function schedulePhotoFinishLayout() {
@@ -1613,6 +1618,7 @@
     if (!els.imageWrap || !els.resultCanvas) return;
     var h =
       displayHeight ||
+      (state.screen === "analysis" ? analysisHeightLimits().maxH : 0) ||
       parseFloat(els.resultCanvas.style.height) ||
       els.resultCanvas.offsetHeight ||
       0;
@@ -1625,6 +1631,7 @@
       if (els.viewer) {
         els.viewer.style.height = h + "px";
         els.viewer.style.minHeight = h + "px";
+        els.viewer.style.maxHeight = h + "px";
       }
     }
   }
@@ -1635,6 +1642,7 @@
     if (metrics.width > 0 && metrics.height > 0) {
       els.resultCanvas.style.width = metrics.width + "px";
       els.resultCanvas.style.height = metrics.height + "px";
+      state.viewerPixelScale = metrics.scale;
       syncViewerHeight(metrics.height);
     }
     renderMarkers();
@@ -1658,7 +1666,7 @@
 
   function scrollToImageX(imageX) {
     if (!els.scroll) return;
-    els.scroll.scrollLeft = Math.max(0, imageX * state.zoom * state.displayScaleX);
+    els.scroll.scrollLeft = Math.max(0, imageX * (state.viewerPixelScale || state.zoom * state.displayScaleX));
     updateCursorReadout();
   }
 
@@ -1680,7 +1688,8 @@
         var marker = document.createElement("button");
         marker.type = "button";
         marker.className = "photo-finish-marker";
-        marker.style.left = timeToImageX(r.timeMs) * state.zoom * state.displayScaleX + "px";
+        marker.style.left =
+          timeToImageX(r.timeMs) * (state.viewerPixelScale || state.zoom * state.displayScaleX) + "px";
         marker.innerHTML =
           "<span>" +
           escapeHtml(r.runnerName || "Non attribue") +
