@@ -8522,6 +8522,47 @@ body.video-retard-body-fs {
   max-width: min(52rem, 100%);
   --pf-analysis-max-h: min(72vh, 36rem);
   --pf-analysis-min-h: min(44vh, 22rem);
+  --pf-image-area-h: clamp(18rem, 52vh, 30rem);
+  --pf-chrono-size: clamp(1.25rem, 5vw, 2rem);
+  --pf-capture-btn-h: 3.1rem;
+}
+
+@media (orientation: portrait) {
+  .page-outil--photo-finish {
+    --pf-image-area-h: clamp(22rem, 58vh, 34rem);
+    --pf-analysis-min-h: clamp(18rem, 46vh, 30rem);
+    --pf-analysis-max-h: clamp(22rem, 64vh, 40rem);
+    --pf-chrono-size: clamp(1.35rem, 5.5vw, 2.1rem);
+  }
+}
+
+@media (orientation: landscape) {
+  .page-outil--photo-finish {
+    --pf-image-area-h: clamp(10rem, calc(100dvh - 9.5rem), 100%);
+    --pf-analysis-min-h: clamp(9rem, calc(100dvh - 11rem), 100%);
+    --pf-analysis-max-h: clamp(10rem, calc(100dvh - 9rem), 100%);
+    --pf-chrono-size: clamp(1rem, 3.8vh, 1.55rem);
+    --pf-capture-btn-h: 2.65rem;
+  }
+}
+
+.page-outil--photo-finish .tool-session-gated:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.page-outil--photo-finish .tool-session-gated:not([hidden]) > .dispense-view:not([hidden])#pf-panel-capture,
+.page-outil--photo-finish .tool-session-gated:not([hidden]) > .dispense-view:not([hidden])#pf-panel-analysis {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.page-outil--photo-finish #pf-panel-capture:not([hidden]),
+.page-outil--photo-finish #pf-panel-analysis:not([hidden]) {
+  min-height: 0;
 }
 
 .photo-finish-msg {
@@ -8682,9 +8723,10 @@ body.video-retard-body-fs {
 .photo-finish-stage {
   position: relative;
   width: 100%;
-  height: clamp(18rem, 48vh, 26rem);
-  min-height: 18rem;
-  margin-bottom: 0.75rem;
+  height: var(--pf-image-area-h, clamp(18rem, 52vh, 30rem));
+  min-height: 12rem;
+  flex: 1 1 auto;
+  margin-bottom: 0.45rem;
   border-radius: var(--radius-md, 0.5rem);
   overflow: hidden;
   background: #0a0a0a;
@@ -8731,45 +8773,48 @@ body.video-retard-body-fs {
 
 .photo-finish-capture-actions--overlay {
   position: absolute;
-  left: 1rem;
-  right: 1rem;
-  bottom: 1rem;
+  left: 0.65rem;
+  right: 0.65rem;
+  bottom: 0.55rem;
   z-index: 5;
 }
 
 .photo-finish-main-capture {
   width: 100%;
-  min-height: 4.4rem;
+  min-height: var(--pf-capture-btn-h, 3.1rem);
   justify-content: center;
-  font-size: 1.12rem;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  font-size: clamp(0.92rem, 2.4vw, 1.05rem);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
 }
 
 .photo-finish-chrono-live {
   position: absolute;
-  top: 0.5rem;
+  top: 0.45rem;
   left: 50%;
   transform: translateX(-50%);
   margin: 0;
-  padding: 0.35rem 0.75rem;
-  font-size: clamp(1.65rem, 8vw, 3.8rem);
+  padding: 0.18rem 0.55rem;
+  font-size: var(--pf-chrono-size, clamp(1.25rem, 5vw, 2rem));
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  line-height: 1.15;
   color: #fff;
   background: rgba(0, 0, 0, 0.55);
   border-radius: 0.35rem;
   z-index: 3;
   pointer-events: none;
+  max-width: calc(100% - 1.5rem);
+  white-space: nowrap;
 }
 
 .photo-finish-status {
   position: absolute;
-  left: 1rem;
-  right: 1rem;
-  bottom: 5.6rem;
+  left: 0.65rem;
+  right: 0.65rem;
+  bottom: calc(var(--pf-capture-btn-h, 3.1rem) + 0.7rem);
   margin: 0;
-  padding: 0.45rem 0.65rem;
-  font-size: 0.82rem;
+  padding: 0.22rem 0.45rem;
+  font-size: clamp(0.68rem, 2vw, 0.8rem);
   text-align: center;
   color: #fff;
   background: rgba(0, 0, 0, 0.62);
@@ -8860,31 +8905,77 @@ body.video-retard-body-fs {
   color: var(--text, #111827);
 }
 
-.photo-finish-bar-time {
-  margin: 0 0 0.65rem;
-  font-size: clamp(1.05rem, 3.4vw, 1.25rem);
+.page-outil--photo-finish #pf-panel-capture > .card {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 0.5rem 0.7rem;
 }
 
-.photo-finish-bar-time strong {
-  font-variant-numeric: tabular-nums;
-  color: var(--accent, #2563eb);
+.page-outil--photo-finish #pf-panel-capture > .card h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+}
+
+.page-outil--photo-finish #pf-panel-capture .photo-finish-live-stats {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .page-outil--photo-finish #pf-panel-capture > .card {
+    display: none;
+  }
+
+  .page-outil--photo-finish .photo-finish-stage {
+    margin-bottom: 0;
+  }
+}
+
+.photo-finish-analysis-card {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0.55rem 0.65rem 0.45rem;
+}
+
+.photo-finish-bar-time {
+  margin: 0;
+  font-size: clamp(0.88rem, 2.6vw, 1rem);
 }
 
 .photo-finish-analysis-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.6rem;
+  gap: 0.45rem 0.65rem;
+  margin-bottom: 0.45rem;
+  flex: 0 0 auto;
 }
 
 .photo-finish-analysis-head h2 {
-  margin-bottom: 0.15rem;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.photo-finish-analysis-head > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.photo-finish-zoom-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.3rem;
+  margin: 0;
 }
 
 .photo-finish-zoom-actions .btn {
-  flex: 1 1 auto;
-  min-width: 4.4rem;
+  flex: 0 0 auto;
+  min-width: 2.5rem;
+  min-height: 2.35rem;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.82rem;
 }
 
 .photo-finish-viewer {
@@ -8892,7 +8983,8 @@ body.video-retard-body-fs {
   overflow: hidden;
   border-radius: 0.5rem;
   background: #111;
-  min-height: var(--pf-analysis-min-h, min(44vh, 22rem));
+  flex: 1 1 auto;
+  min-height: var(--pf-image-area-h, var(--pf-analysis-min-h, min(44vh, 22rem)));
 }
 
 .photo-finish-scroll {
@@ -8904,7 +8996,8 @@ body.video-retard-body-fs {
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: #111;
   touch-action: pan-x pinch-zoom;
-  min-height: var(--pf-analysis-min-h, min(44vh, 22rem));
+  height: 100%;
+  min-height: var(--pf-image-area-h, var(--pf-analysis-min-h, min(44vh, 22rem)));
 }
 
 .photo-finish-image-wrap {
@@ -8913,7 +9006,7 @@ body.video-retard-body-fs {
   line-height: 0;
   padding-left: var(--pf-viewer-pad, 50vw);
   padding-right: var(--pf-viewer-pad, 50vw);
-  min-height: var(--pf-analysis-min-h, min(44vh, 22rem));
+  min-height: var(--pf-image-area-h, var(--pf-analysis-min-h, min(44vh, 22rem)));
   vertical-align: top;
 }
 
@@ -8929,7 +9022,7 @@ body.video-retard-body-fs {
   display: block;
   width: auto;
   height: auto;
-  max-height: var(--pf-analysis-max-h, min(72vh, 36rem));
+  max-height: var(--pf-image-area-h, var(--pf-analysis-max-h, min(72vh, 36rem)));
   image-rendering: auto;
   vertical-align: top;
 }
@@ -8987,7 +9080,33 @@ body.video-retard-body-fs {
 
 .photo-finish-slider {
   width: 100%;
-  margin: 0.75rem 0;
+  margin: 0.35rem 0 0.25rem;
+  flex: 0 0 auto;
+}
+
+.page-outil--photo-finish .photo-finish-analysis-card .champ-gestion-actions {
+  margin-top: 0.35rem;
+  padding-top: 0.45rem;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
+.page-outil--photo-finish .photo-finish-analysis-card .champ-gestion-actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 2.45rem;
+  padding-inline: 0.35rem;
+  font-size: 0.74rem;
+}
+
+.page-outil--photo-finish .photo-finish-analysis-card .champ-gestion-actions .btn__text {
+  font-size: 0.74rem;
+  line-height: 1.15;
+}
+
+.photo-finish-bar-time strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent, #2563eb);
 }
 
 .photo-finish-markers {
@@ -9248,19 +9367,11 @@ body.video-retard-body-fs {
 }
 
 @media (max-width: 38rem) {
-  .photo-finish-stage {
-    height: min(44vh, 22rem);
-    min-height: 16rem;
+  .page-outil--photo-finish .dispense-nav__btn {
+    min-height: 2.65rem;
+    padding: 0.45rem 0.35rem;
+    font-size: 0.82rem;
   }
-
-  .photo-finish-analysis-head {
-    display: block;
-  }
-
-  .photo-finish-zoom-actions {
-    margin-top: 0.5rem;
-  }
-
 }
 
 /* --- Inducteur danse --- */

@@ -414,11 +414,11 @@
       panel.hidden = !active;
       panel.setAttribute("aria-hidden", active ? "false" : "true");
     });
-    if (screen === "analysis") {
-      scheduleAnalysisLayout();
-    }
     if (screen === "capture" && !state.stream && !state.cameraStarting) {
       startCamera();
+    }
+    if (screen === "capture" || screen === "analysis") {
+      schedulePhotoFinishLayout();
     }
     if (screen === "results") renderResults();
     if (screen === "runners") renderRunners();
@@ -1450,7 +1450,7 @@
     resultCtx.imageSmoothingQuality = "high";
     resultCtx.drawImage(compositeCanvas, 0, 0, width, height, 0, 0, visualWidth, height);
     state.activeImageDataUrl = els.resultCanvas.toDataURL("image/png");
-    scheduleAnalysisLayout();
+    schedulePhotoFinishLayout();
     els.scroll.scrollLeft = 0;
     renderMarkers();
     renderDiagnostic();
@@ -1507,10 +1507,55 @@
   }
 
   function analysisHeightLimits() {
+    var vh = window.innerHeight;
+    var landscape = window.innerWidth > vh;
+    var root = document.querySelector(".page-outil--photo-finish");
+    var custom = root ? parseFloat(getComputedStyle(root).getPropertyValue("--pf-image-area-h")) : 0;
+    if (custom > 0) {
+      return { maxH: Math.round(custom), minH: Math.round(custom * 0.92) };
+    }
+    if (landscape) {
+      return {
+        maxH: Math.min(Math.round(vh * 0.78), Math.max(160, vh - 100)),
+        minH: Math.min(Math.round(vh * 0.68), Math.max(140, vh - 120)),
+      };
+    }
     return {
-      maxH: Math.min(Math.round(window.innerHeight * 0.72), 576),
-      minH: Math.min(Math.round(window.innerHeight * 0.44), 352),
+      maxH: Math.min(Math.round(vh * 0.62), 520),
+      minH: Math.min(Math.round(vh * 0.46), 400),
     };
+  }
+
+  function updatePhotoFinishImageArea() {
+    var root = document.querySelector(".page-outil--photo-finish");
+    var gated = document.querySelector(".tool-session-gated");
+    if (!root || !gated || gated.hidden) return;
+    if (state.screen !== "capture" && state.screen !== "analysis") return;
+    var vh = window.innerHeight;
+    var chromeTop = 0;
+    var header = root.querySelector(".page-outil__header");
+    var session = document.getElementById("session-manager-mount");
+    var nav = root.querySelector(".photo-finish-nav");
+    if (header) chromeTop += header.getBoundingClientRect().height;
+    if (session) chromeTop += session.getBoundingClientRect().height;
+    if (nav) chromeTop += nav.getBoundingClientRect().height;
+    var landscape = window.innerWidth > vh;
+    var reserved = 16;
+    if (state.screen === "capture") {
+      var statsCard = document.querySelector("#pf-panel-capture > .card");
+      if (statsCard && !(landscape && vh <= 520)) {
+        reserved += statsCard.getBoundingClientRect().height + 6;
+      }
+    } else if (state.screen === "analysis") {
+      var card = document.querySelector(".photo-finish-analysis-card");
+      if (card && els.viewer) {
+        reserved += Math.max(0, card.getBoundingClientRect().height - els.viewer.getBoundingClientRect().height) + 8;
+      } else {
+        reserved += landscape ? 96 : 120;
+      }
+    }
+    var available = Math.max(landscape ? 132 : 168, Math.round(vh - chromeTop - reserved));
+    root.style.setProperty("--pf-image-area-h", available + "px");
   }
 
   function viewerDisplayMetrics() {
@@ -1547,12 +1592,15 @@
     return { width: displayW, height: displayH };
   }
 
-  function scheduleAnalysisLayout() {
+  function schedulePhotoFinishLayout() {
     requestAnimationFrame(function () {
-      updateViewerPadding(0);
-      applyZoom();
-      updateViewerPadding(0);
-      updateCursorReadout();
+      updatePhotoFinishImageArea();
+      if (state.screen === "analysis") {
+        updateViewerPadding(0);
+        applyZoom();
+        updateViewerPadding(0);
+        updateCursorReadout();
+      }
     });
   }
 
@@ -2331,7 +2379,7 @@
   }
 
   function onViewerLayoutChange() {
-    window.setTimeout(scheduleAnalysisLayout, 120);
+    window.setTimeout(schedulePhotoFinishLayout, 120);
   }
 
   wireEvents();
