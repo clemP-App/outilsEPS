@@ -1527,6 +1527,11 @@
     return Math.min(videoHeight, Number(state.settings.captureHeight || 720));
   }
 
+  /** Bandeau vertical = toute la hauteur native (comme l'aperçu live), sans rognage centré. */
+  function stripCaptureVerticalRange(videoHeight) {
+    return { y: 0, height: videoHeight };
+  }
+
   function chooseEffectiveStripWidth(cameraFrameRate) {
     var fps = state.probedCameraFps || cameraFrameRate || 30;
     if (isAutoOptimizeEnabled()) {
@@ -1588,9 +1593,10 @@
     var vw = sourceWidth;
     var vh = sourceHeight;
     var stripWidth = state.effectiveStripWidth || state.settings.stripWidth;
-    var sourceStripHeight = captureHeight(vh);
-    var renderHeight = outputRenderHeight(sourceStripHeight);
-    var y = Math.max(0, Math.round((vh - sourceStripHeight) / 2));
+    var vertical = stripCaptureVerticalRange(vh);
+    var sourceStripHeight = vertical.height;
+    var y = vertical.y;
+    var renderHeight = outputRenderHeight(captureHeight(vh));
     var centerX = Math.round(vw * state.settings.finishLineXRatio);
     var sx = Math.max(0, Math.min(vw - stripWidth, centerX - Math.floor(stripWidth / 2)));
     var imageXStart = state.strips.length ? state.strips[state.strips.length - 1].imageXEnd : 0;

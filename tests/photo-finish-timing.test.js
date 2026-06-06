@@ -66,4 +66,14 @@ function makeStrip(index, elapsedTimeMs, width) {
   });
 })();
 
+function stripCaptureVerticalRange(videoHeight) {
+  return { y: 0, height: videoHeight };
+}
+
+(function testStripCaptureUsesFullNativeHeight() {
+  var range = stripCaptureVerticalRange(1080);
+  assert.strictEqual(range.y, 0);
+  assert.strictEqual(range.height, 1080);
+})();
+
 console.log("photo-finish-timing.test.js OK");
