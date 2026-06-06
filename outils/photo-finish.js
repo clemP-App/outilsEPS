@@ -429,13 +429,20 @@
     }
   }
 
+  function needsCameraUserGesture() {
+    return isAppleTouchDevice() && isPwaStandalone();
+  }
+
   function deferCameraAutostart() {
-    return false;
+    return needsCameraUserGesture();
   }
 
   function markPwaStandaloneUi() {
     if (document.body && isPwaStandalone()) {
       document.body.classList.add("pf-pwa-standalone");
+    }
+    if (needsCameraUserGesture() && els.status && state.screen === "capture" && !state.stream) {
+      setStatus(captureStatusWhenIdle());
     }
   }
 
@@ -457,48 +464,61 @@
     });
   }
 
-  function reattachCameraStreamForPwa() {
-    if (!state.stream || !els.video) return Promise.resolve(false);
-    var stream = state.stream;
-    ensureVideoElementReady();
-    els.video.srcObject = null;
-    return new Promise(function (resolve) {
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          els.video.srcObject = stream;
-          if (els.stage) void els.stage.offsetHeight;
-          void els.video.offsetHeight;
-          schedulePhotoFinishLayout();
-          playVideoPreview()
-            .then(function () {
-              return waitForVideoMetadata();
-            })
-            .then(function () {
-              resolve(true);
-            })
-            .catch(function () {
-              resolve(false);
-            });
-        });
-      });
+  function isStreamLive(stream) {
+    if (!stream || !stream.getVideoTracks) return false;
+    var tracks = stream.getVideoTracks();
+    return tracks.length > 0 && tracks[0].readyState === "live";
+  }
+
+  function bindStreamLifecycle(stream) {
+    if (!stream || !stream.getVideoTracks) return;
+    stream.getVideoTracks().forEach(function (track) {
+      track.onended = function () {
+        if (state.stream !== stream) return;
+        state.stream = null;
+        if (els.video) els.video.srcObject = null;
+        if (state.screen !== "capture" || state.timerState === "running" || state.cameraStarting) return;
+        if (needsCameraUserGesture()) {
+          showCameraActivationOverlay();
+          setStatus("Camera interrompue. Touchez pour reactiver.");
+          return;
+        }
+        setStatus("Camera interrompue. Nouvel essai...");
+        window.setTimeout(function () {
+          startCamera({ skipGo: true, userGesture: true });
+        }, 400);
+      };
     });
   }
 
+  function showCameraActivationOverlay() {
+    if (!els.previewTap) return;
+    els.previewTap.hidden = false;
+    setStatus("Touchez pour activer la camera.");
+  }
+
   function wakeVideoPreview() {
-    if (!els.video || !state.stream) return Promise.resolve(false);
-    if (isPwaStandalone()) {
-      return waitForStageLayout().then(function () {
-        return reattachCameraStreamForPwa();
-      });
+    if (!els.video || !state.stream || !isStreamLive(state.stream)) {
+      return Promise.resolve(false);
     }
-    return playVideoPreview().then(function () {
+    ensureVideoElementReady();
+    var playChain = playVideoPreview();
+    var chain = isPwaStandalone()
+      ? playChain.then(function () {
+          return waitForStageLayout().then(function () {
+            schedulePhotoFinishLayout();
+            return true;
+          });
+        })
+      : playChain;
+    return chain.then(function () {
       return waitForVideoMetadata();
     });
   }
 
   function captureStatusWhenIdle() {
     if (deferCameraAutostart() && !state.stream) {
-      return "Touchez « Demarrer le chrono » pour activer la camera.";
+      return "Touchez l'ecran pour activer la camera.";
     }
     return "La camera va s'activer automatiquement.";
   }
@@ -555,15 +575,20 @@
       });
     }
     state.stream = stream;
+    bindStreamLifecycle(stream);
     ensureVideoElementReady();
     if (isPwaStandalone()) {
       els.video.classList.add("photo-finish-video--pwa");
-      els.video.srcObject = null;
     }
     els.video.srcObject = stream;
+    var playAttempt = els.video.play();
+    if (playAttempt && typeof playAttempt.catch === "function") {
+      playAttempt.catch(function () {});
+    }
     if (isPwaStandalone() && els.stage) {
       void els.stage.offsetHeight;
       void els.video.offsetHeight;
+      schedulePhotoFinishLayout();
     }
   }
 
@@ -673,7 +698,8 @@
     }
   }
 
-  function go(screen) {
+  function go(screen, navOpts) {
+    navOpts = navOpts || {};
     state.screen = screen;
     els.tabs.forEach(function (tab) {
       var active = tab.dataset.screen === screen;
@@ -695,16 +721,46 @@
     }
     if (screen === "capture") {
       resetCaptureUi();
-      if (!state.stream && !state.cameraStarting) {
-        startCamera();
-      } else if (state.stream && isPwaStandalone()) {
-        wakeVideoPreview().then(function () {
-          updateFinishGuide();
-          if (els.video.videoWidth && els.video.videoHeight) {
-            setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
-            hidePreviewTapOverlay();
+      if (needsCameraUserGesture()) {
+        if (!state.stream && !state.cameraStarting) {
+          if (navOpts.userGesture) {
+            startCamera({ skipGo: true, userGesture: true });
+          } else {
+            showCameraActivationOverlay();
           }
-        });
+        } else if (state.stream) {
+          if (!isStreamLive(state.stream)) {
+            stopCamera();
+            if (navOpts.userGesture) {
+              startCamera({ skipGo: true, userGesture: true });
+            } else {
+              showCameraActivationOverlay();
+            }
+          } else {
+            wakeVideoPreview().then(function () {
+              updateFinishGuide();
+              if (els.video.videoWidth && els.video.videoHeight) {
+                setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
+                hidePreviewTapOverlay();
+              }
+            });
+          }
+        }
+      } else if (!state.stream && !state.cameraStarting) {
+        startCamera({ userGesture: !!navOpts.userGesture });
+      } else if (state.stream) {
+        if (!isStreamLive(state.stream)) {
+          stopCamera();
+          startCamera({ userGesture: !!navOpts.userGesture });
+        } else {
+          wakeVideoPreview().then(function () {
+            updateFinishGuide();
+            if (els.video.videoWidth && els.video.videoHeight) {
+              setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
+              hidePreviewTapOverlay();
+            }
+          });
+        }
       }
     }
     if (screen === "capture" || screen === "analysis") {
@@ -1200,6 +1256,23 @@
     });
   }
 
+  function requestCameraStream() {
+    if (isAppleTouchDevice() && isPwaStandalone()) {
+      return navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: state.settings.preferredCamera || "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      }).then(function (stream) {
+        stream._photoFinishProfile = { label: "pwa-simple", requestedFrameRate: 30 };
+        return stream;
+      });
+    }
+    return requestCameraWithProfiles(cameraProfiles(), 0);
+  }
+
   function requestCameraWithProfiles(profiles, index) {
     if (index >= profiles.length) return Promise.reject(new Error("Aucun profil camera accepte."));
     return navigator.mediaDevices.getUserMedia(profiles[index].constraints).then(function (stream) {
@@ -1240,6 +1313,10 @@
     opts = opts || {};
     readSettingsFromUi();
     if (state.stream) {
+      if (!isStreamLive(state.stream)) {
+        stopCamera();
+        return startCamera(opts);
+      }
       return wakeVideoPreview().then(function () {
         updateFinishGuide();
         updateCaptureButton();
@@ -1249,14 +1326,23 @@
     if (state.cameraStarting) {
       return waitForCameraStarting();
     }
+    if (needsCameraUserGesture() && !opts.userGesture) {
+      showCameraActivationOverlay();
+      return Promise.resolve(false);
+    }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showMsg("Ce navigateur ne permet pas d'acceder a la camera.");
       return Promise.resolve(false);
     }
     state.cameraStarting = true;
     setStatus("Demande d'acces a la camera...");
-    return requestCameraWithProfiles(cameraProfiles(), 0)
+    // getUserMedia doit etre appele dans la pile synchrone du geste utilisateur (iOS PWA).
+    var streamPromise = requestCameraStream();
+    return streamPromise
       .then(function (stream) {
+        if (!isStreamLive(stream)) {
+          throw new Error("Camera interrompue apres autorisation.");
+        }
         attachCameraStream(stream);
         setStatus("Demarrage de l'apercu...");
         return wakeVideoPreview();
@@ -1310,7 +1396,7 @@
       });
       return;
     }
-    startCamera({ skipGo: true }).then(function (ok) {
+    startCamera({ skipGo: true, userGesture: true }).then(function (ok) {
       if (!ok || !state.stream) return;
       if (!els.video.videoWidth || !els.video.videoHeight) {
         setStatus("Camera active. Relancez le chrono si l'apercu reste noir.");
@@ -1792,7 +1878,7 @@
 
   function startQualityTest() {
     if (!state.stream) {
-      startCamera();
+      startCamera({ userGesture: true });
       go("quality");
       showMsg("Camera activee : relancez le test quand l'image apparait.");
       return;
@@ -2610,14 +2696,28 @@
   function wireEvents() {
     els.tabs.forEach(function (tab) {
       tab.addEventListener("click", function () {
-        go(tab.dataset.screen);
+        go(tab.dataset.screen, { userGesture: true });
       });
     });
     document.querySelectorAll("[data-go]").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        go(btn.dataset.go);
+        go(btn.dataset.go, { userGesture: true });
       });
     });
+    if (els.previewTap) {
+      els.previewTap.addEventListener("click", function () {
+        if (!state.stream && !state.cameraStarting) {
+          startCamera({ skipGo: true, userGesture: true });
+          return;
+        }
+        if (state.stream && isStreamLive(state.stream)) {
+          playVideoPreview().then(function () {
+            hidePreviewTapOverlay();
+            updateFinishGuide();
+          });
+        }
+      });
+    }
     var manualCaptureKeys = {
       quality: true,
       stripWidth: true,
@@ -2668,7 +2768,9 @@
     inputs.delay.addEventListener("change", function () {
       inputs.delayCustomWrap.hidden = inputs.delay.value !== "custom";
     });
-    els.btnCamera.addEventListener("click", startCamera);
+    els.btnCamera.addEventListener("click", function () {
+      startCamera({ userGesture: true });
+    });
     if (els.btnResetAdvanced) {
       els.btnResetAdvanced.addEventListener("click", function () {
         var keepName = state.sessionInfo.name;
@@ -2696,7 +2798,8 @@
     els.btnFlip.addEventListener("click", function () {
       inputs.cameraFacing.value = inputs.cameraFacing.value === "environment" ? "user" : "environment";
       readSettingsFromUi();
-      startCamera();
+      stopCamera();
+      startCamera({ skipGo: true, userGesture: true });
     });
     els.btnFullscreen.addEventListener("click", function () {
       var target = document.documentElement;
@@ -2788,6 +2891,19 @@
     if (importBtn) importBtn.addEventListener("click", importClassFromTool);
     window.addEventListener("resize", onViewerLayoutChange);
     window.addEventListener("orientationchange", onViewerLayoutChange);
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden || state.screen !== "capture" || state.timerState === "running") return;
+      if (state.stream && isStreamLive(state.stream)) {
+        wakeVideoPreview().then(updateFinishGuide);
+        return;
+      }
+      if (state.cameraStarting) return;
+      if (needsCameraUserGesture()) {
+        showCameraActivationOverlay();
+        return;
+      }
+      startCamera({ skipGo: true, userGesture: true });
+    });
   }
 
   function onViewerLayoutChange() {
