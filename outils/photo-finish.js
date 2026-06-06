@@ -433,6 +433,27 @@
     });
   }
 
+  function resetCaptureUi() {
+    if (state.timerState === "running") return;
+    cancelAnimationFrame(state.rafId);
+    state.rafId = 0;
+    stopCapture();
+    state.timerState = "idle";
+    state.startTime = 0;
+    state.stopTime = 0;
+    state.captureStarted = false;
+    state.lastFrameNow = 0;
+    if (els.chronoLive) els.chronoLive.textContent = formatTime(0);
+    if (els.delayState) els.delayState.textContent = "Capture : en attente";
+    if (els.btnStart) els.btnStart.classList.remove("is-armed");
+    updateCaptureButton();
+    if (state.stream) {
+      setStatus("Pret. Placez la ligne rouge sur l'arrivee.");
+    } else if (!state.cameraStarting) {
+      setStatus("La camera va s'activer automatiquement.");
+    }
+  }
+
   function go(screen) {
     state.screen = screen;
     els.tabs.forEach(function (tab) {
@@ -453,8 +474,11 @@
     if (els.resultDialog && !els.resultDialog.open) {
       els.resultDialog.inert = true;
     }
-    if (screen === "capture" && !state.stream && !state.cameraStarting) {
-      startCamera();
+    if (screen === "capture") {
+      resetCaptureUi();
+      if (!state.stream && !state.cameraStarting) {
+        startCamera();
+      }
     }
     if (screen === "capture" || screen === "analysis") {
       schedulePhotoFinishLayout();
