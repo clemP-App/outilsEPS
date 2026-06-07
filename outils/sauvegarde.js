@@ -63,6 +63,34 @@
     return "appareil";
   }
 
+  function setSauvegardeQuickActive(action) {
+    var cards = document.querySelectorAll(".sauvegarde-quick-card[data-sauvegarde-action]");
+    cards.forEach(function (card) {
+      var key = card.getAttribute("data-sauvegarde-action");
+      var btn = card.querySelector(".btn");
+      var isActive = key === action;
+      card.classList.toggle("sauvegarde-quick-card--active", isActive);
+      if (!btn) return;
+      if (key === "export") {
+        btn.classList.toggle("btn--primary", isActive || !action);
+        btn.classList.toggle("btn--ghost", !isActive && !!action);
+      } else {
+        btn.classList.toggle("btn--primary", isActive);
+        btn.classList.toggle("btn--ghost", !isActive);
+      }
+    });
+  }
+
+  function refreshSauvegardeQuickActive() {
+    if (syncPanelEl && !syncPanelEl.hidden) {
+      setSauvegardeQuickActive("sync");
+    } else if (importPanelEl && !importPanelEl.hidden) {
+      setSauvegardeQuickActive("import");
+    } else {
+      setSauvegardeQuickActive("export");
+    }
+  }
+
   function syncDeviceNameFromPayload(payload) {
     return (
       payload &&
@@ -411,6 +439,7 @@
     pendingImportPreview = null;
     if (importPanelEl) importPanelEl.hidden = true;
     if (importDetailsEl) importDetailsEl.innerHTML = "";
+    refreshSauvegardeQuickActive();
   }
 
   function renderImportPreview(data, preview) {
@@ -481,6 +510,7 @@
     if (importPanelEl && importPanelEl.scrollIntoView) {
       importPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+    setSauvegardeQuickActive("import");
   }
 
   function readBackupFile(file) {
@@ -527,7 +557,9 @@
   function ouvrirImportSauvegarde() {
     montrerErreur("");
     montrerOk("");
+    if (syncPanelEl && !syncPanelEl.hidden) syncClose();
     hideImportPanel();
+    setSauvegardeQuickActive("import");
     pickBackupFile()
       .then(function (data) {
         if (data && data.cancelled) return;
@@ -819,6 +851,14 @@
     return data;
   }
 
+  function syncSetBulkChoiceActive(activeBtn, bulkEl) {
+    if (!bulkEl) return;
+    bulkEl.querySelectorAll(".btn").forEach(function (btn) {
+      btn.classList.toggle("btn--primary", btn === activeBtn);
+      btn.classList.toggle("btn--ghost", btn !== activeBtn);
+    });
+  }
+
   function syncRenderAnalysis(row) {
     var a = syncPayloadFromRow(row, "a_payload");
     var b = syncPayloadFromRow(row, "b_payload");
@@ -874,6 +914,7 @@
         ].forEach(function (entry) {
           entry[0].addEventListener("click", function () {
             syncSetAllConflictChoices(entry[1]);
+            syncSetBulkChoiceActive(entry[0], bulk);
           });
         });
         bulk.appendChild(bulkTitle);
@@ -881,32 +922,43 @@
         bulk.appendChild(localAll);
         bulk.appendChild(remoteAll);
         syncConflictsEl.appendChild(bulk);
-      }
-      compare.conflicts.forEach(function (conflict) {
-        var wrap = document.createElement("div");
-        var title = document.createElement("strong");
-        var idText = document.createElement("span");
-        var select = document.createElement("select");
-        var options = [
-          ["both", "Fusionner : conserver les deux versions"],
-          ["a", "Remplacer par la version de " + labels.a],
-          ["b", "Remplacer par la version de " + labels.b],
-        ];
-        wrap.className = "backup-sync-conflict";
-        title.textContent = conflict.label;
-        idText.textContent = conflict.id;
-        select.setAttribute("data-conflict-key", conflict.key);
-        options.forEach(function (opt) {
-          var option = document.createElement("option");
-          option.value = opt[0];
-          option.textContent = opt[1];
-          select.appendChild(option);
+
+        var advanced = document.createElement("details");
+        var advancedSummary = document.createElement("summary");
+        var advancedBody = document.createElement("div");
+        advanced.className = "sauvegarde-import-details backup-sync-advanced";
+        advancedSummary.textContent = "Options avancées";
+        advancedBody.className = "backup-sync-conflicts-list";
+        advanced.appendChild(advancedSummary);
+        advanced.appendChild(advancedBody);
+        syncConflictsEl.appendChild(advanced);
+
+        compare.conflicts.forEach(function (conflict) {
+          var wrap = document.createElement("div");
+          var title = document.createElement("strong");
+          var idText = document.createElement("span");
+          var select = document.createElement("select");
+          var options = [
+            ["both", "Fusionner : conserver les deux versions"],
+            ["a", "Remplacer par la version de " + labels.a],
+            ["b", "Remplacer par la version de " + labels.b],
+          ];
+          wrap.className = "backup-sync-conflict";
+          title.textContent = conflict.label;
+          idText.textContent = conflict.id;
+          select.setAttribute("data-conflict-key", conflict.key);
+          options.forEach(function (opt) {
+            var option = document.createElement("option");
+            option.value = opt[0];
+            option.textContent = opt[1];
+            select.appendChild(option);
+          });
+          wrap.appendChild(title);
+          wrap.appendChild(idText);
+          wrap.appendChild(select);
+          advancedBody.appendChild(wrap);
         });
-        wrap.appendChild(title);
-        wrap.appendChild(idText);
-        wrap.appendChild(select);
-        syncConflictsEl.appendChild(wrap);
-      });
+      }
     }
 
     if (btnSyncApply) btnSyncApply.disabled = false;
@@ -1037,8 +1089,10 @@
       syncReaderEl.hidden = true;
       syncReaderEl.innerHTML = "";
     }
+    if (importPanelEl && !importPanelEl.hidden) hideImportPanel();
     syncPanelEl.hidden = false;
     syncPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    setSauvegardeQuickActive("sync");
     syncSetProgress(0);
     syncStartCreatedSession(runId).catch(function (e) {
       if (runId !== syncRunId) return;
@@ -1073,6 +1127,7 @@
     if (session && window.OutilsEPS && OutilsEPS.BackupSync) {
       OutilsEPS.BackupSync.cleanup(session);
     }
+    refreshSauvegardeQuickActive();
   }
 
   function syncScan() {
@@ -1158,6 +1213,7 @@
   if (btnExport) {
     btnExport.addEventListener("click", function () {
       montrerErreur("");
+      setSauvegardeQuickActive("export");
       DataManager.exportBackupFile()
         .then(function () {
           montrerOk("Sauvegarde exportée : " + DataManager.BACKUP_FILENAME);

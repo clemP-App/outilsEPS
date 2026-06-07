@@ -111,6 +111,130 @@
     return storeName + "|" + id;
   }
 
+  function parseTimestamp(value) {
+    if (!value) return 0;
+    var ms = Date.parse(value);
+    return isNaN(ms) ? 0 : ms;
+  }
+
+  function isEmptyCellValue(value) {
+    return value === null || value === undefined || value === "";
+  }
+
+  function mergeTableauSuiviMetaObjects(baseMeta, otherMeta) {
+    baseMeta = baseMeta && typeof baseMeta === "object" ? clone(baseMeta) : {};
+    otherMeta = otherMeta && typeof otherMeta === "object" ? otherMeta : {};
+    Object.keys(otherMeta).forEach(function (key) {
+      var val = otherMeta[key];
+      if (val !== null && val !== undefined && val !== "") {
+        baseMeta[key] = clone(val);
+      }
+    });
+    return baseMeta;
+  }
+
+  /**
+   * Fusionne deux feuilles Appel et notes partageant le meme identifiant :
+   * union des colonnes, des lignes et des cellules (valeur non vide prioritaire).
+   */
+  function mergeTableauSuivi(a, b) {
+    var left = clone(a);
+    var right = clone(b);
+    if (!left || !right) return clone(a || b);
+    var aTime = Math.max(parseTimestamp(left.updatedAt), parseTimestamp(left.createdAt));
+    var bTime = Math.max(parseTimestamp(right.updatedAt), parseTimestamp(right.createdAt));
+    var base = aTime >= bTime ? left : right;
+    var other = aTime >= bTime ? right : left;
+    var preferOther = bTime > aTime;
+    var merged = clone(base);
+
+    merged.rows = Array.isArray(merged.rows) ? merged.rows : [];
+    merged.cols = Array.isArray(merged.cols) ? merged.cols : [];
+    merged.cells = merged.cells && typeof merged.cells === "object" ? clone(merged.cells) : {};
+
+    var colIndex = indexById(merged.cols);
+    (other.cols || []).forEach(function (col) {
+      if (!col || !col.id) return;
+      if (!colIndex[col.id]) {
+        var addCol = clone(col);
+        merged.cols.push(addCol);
+        colIndex[col.id] = addCol;
+        return;
+      }
+      if (!sameStoredData(colIndex[col.id], col) && preferOther) {
+        for (var ci = 0; ci < merged.cols.length; ci++) {
+          if (merged.cols[ci] && merged.cols[ci].id === col.id) {
+            merged.cols[ci] = clone(col);
+            colIndex[col.id] = merged.cols[ci];
+            break;
+          }
+        }
+      }
+    });
+
+    var rowIndex = indexById(merged.rows);
+    (other.rows || []).forEach(function (row) {
+      if (!row || !row.id) return;
+      if (!rowIndex[row.id]) {
+        var addRow = clone(row);
+        merged.rows.push(addRow);
+        rowIndex[row.id] = addRow;
+        return;
+      }
+      if (sameStoredData(rowIndex[row.id], row)) return;
+      var mergedRow = clone(rowIndex[row.id]);
+      if (row.label && row.label !== "Sans nom") mergedRow.label = row.label;
+      mergedRow.meta = mergeTableauSuiviMetaObjects(mergedRow.meta, row.meta);
+      for (var ri = 0; ri < merged.rows.length; ri++) {
+        if (merged.rows[ri] && merged.rows[ri].id === row.id) {
+          merged.rows[ri] = mergedRow;
+          rowIndex[row.id] = mergedRow;
+          break;
+        }
+      }
+    });
+
+    var cellKeys = {};
+    Object.keys(left.cells || {}).forEach(function (key) {
+      cellKeys[key] = true;
+    });
+    Object.keys(right.cells || {}).forEach(function (key) {
+      cellKeys[key] = true;
+    });
+    Object.keys(cellKeys).forEach(function (key) {
+      var va = left.cells ? left.cells[key] : undefined;
+      var vb = right.cells ? right.cells[key] : undefined;
+      if (sameStoredData(va, vb)) {
+        if (!isEmptyCellValue(va)) merged.cells[key] = clone(va);
+        else delete merged.cells[key];
+        return;
+      }
+      if (isEmptyCellValue(va)) {
+        if (!isEmptyCellValue(vb)) merged.cells[key] = clone(vb);
+        else delete merged.cells[key];
+        return;
+      }
+      if (isEmptyCellValue(vb)) {
+        merged.cells[key] = clone(va);
+        return;
+      }
+      merged.cells[key] = preferOther ? clone(vb) : clone(va);
+    });
+
+    merged.id = left.id || right.id;
+    merged.titre = preferOther && right.titre ? right.titre : merged.titre || left.titre || right.titre;
+    merged.classeId = merged.classeId || left.classeId || right.classeId;
+    merged.updatedAt = new Date(Math.max(aTime, bTime, Date.now())).toISOString();
+    if (!merged.createdAt) {
+      merged.createdAt = left.createdAt || right.createdAt || merged.updatedAt;
+    }
+    return merged;
+  }
+
+  function canAutoMergeTableauSuivi(a, b) {
+    return !!(a && b && a.id && b.id && a.id === b.id);
+  }
+
   function uniqueCopyId(storeName, oldId, item, used) {
     var prefix = STORE_PREFIXES[storeName] || "sync";
     var base = prefix + "_sync_" + shortHash(storeName + "|" + oldId + "|" + stableStringify(item));
@@ -157,7 +281,9 @@
         var ai = aIndex[id];
         var bi = bIndex[id];
         if (ai && bi && sameStoredData(ai, bi)) stats.identical += 1;
-        else if (ai && bi) {
+        else if (ai && bi && storeName === "tableauxSuivi" && canAutoMergeTableauSuivi(ai, bi)) {
+          /* fusion automatique des colonnes a l'application */
+        } else if (ai && bi) {
           stats.conflicts += 1;
           conflicts.push({ key: conflictKey(storeName, id), storeName: storeName, label: stats.label, id: id, a: clone(ai), b: clone(bi) });
         } else if (ai) stats.onlyA += 1;
@@ -204,6 +330,18 @@
           return;
         }
         if (sameStoredData(existing, item)) return;
+
+        if (storeName === "tableauxSuivi" && canAutoMergeTableauSuivi(existing, item)) {
+          var mergedTableau = mergeTableauSuivi(existing, item);
+          for (var ti = 0; ti < merged[storeName].length; ti++) {
+            if (merged[storeName][ti] && merged[storeName][ti].id === item.id) {
+              merged[storeName][ti] = mergedTableau;
+              byId[item.id] = mergedTableau;
+              break;
+            }
+          }
+          return;
+        }
 
         var key = conflictKey(storeName, item.id);
         var choice = decisions[key];
@@ -252,6 +390,7 @@
     normalizeBackup: normalizeBackup,
     compareBackups: compareBackups,
     mergeBackups: mergeBackups,
+    mergeTableauSuivi: mergeTableauSuivi,
     countPayloadItems: countPayloadItems,
   };
 

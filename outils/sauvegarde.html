@@ -33,7 +33,7 @@
           <span class="sauvegarde-hero__badge" aria-hidden="true">💾</span>
           <span class="sauvegarde-hero__summary-text">
             <span class="sauvegarde-hero__summary-title">Où sont stockées vos données ?</span>
-            <span class="sauvegarde-hero__summary-hint">Comprendre la sauvegarde, l’import et la synchronisation</span>
+            <span class="sauvegarde-hero__summary-hint">Stockage local, risques et bonnes pratiques</span>
           </span>
         </summary>
 
@@ -54,34 +54,26 @@
           </div>
 
           <div class="sauvegarde-hero__panel sauvegarde-hero__panel--help">
-            <h3 class="sauvegarde-hero__panel-title">Comment ne rien perdre ?</h3>
-            <ol class="sauvegarde-hero__steps">
-              <li>
-                <strong>Exportez</strong> de temps en temps (bouton ci-dessous).
-                Un fichier <code>outilsEPS-backup.json</code> se télécharge&nbsp;: c’est une <strong>copie complète</strong>
-                de vos données Outils EPS.
-              </li>
-              <li>
-                <strong>Conservez ce fichier</strong> dans un endroit sûr&nbsp;: Google Drive, iCloud, clé USB,
-                mail à vous-même… Comme une photocopie de votre classe.
-              </li>
-              <li>
-                Pour <strong>retrouver vos données</strong> sur le même appareil ou un autre, utilisez
-                <strong>Importer</strong>. Vous choisirez ensuite de fusionner avec l’existant ou de tout remplacer.
-              </li>
-            </ol>
+            <h3 class="sauvegarde-hero__panel-title">Pourquoi exporter avant tout ?</h3>
+            <p class="sauvegarde-hero__sync-text">
+              L’<strong>export</strong> télécharge un fichier <code>outilsEPS-backup.json</code>&nbsp;: une
+              <strong>copie complète</strong> de vos données, à garder dans un endroit sûr (Drive, iCloud, mail…).
+              C’est votre filet de sécurité avant un import ou une synchronisation.
+            </p>
           </div>
 
           <div class="sauvegarde-hero__panel sauvegarde-hero__panel--sync">
-            <h3 class="sauvegarde-hero__panel-title">Avoir les mêmes données sur deux appareils</h3>
-            <p class="sauvegarde-hero__sync-text">
-              Vous pouvez aussi <strong>synchroniser</strong> Outils EPS entre deux appareils à vous,
-              par exemple votre <strong>téléphone</strong> et votre <strong>tablette</strong>.
-              Ouvrez cette page sur les deux appareils, puis lancez <strong>Synchroniser deux appareils</strong> (bouton ci-dessous)&nbsp;:
-              l’un affiche un QR code, l’autre le scanne. Les données des deux appareils sont comparées puis
-              fusionnées pour que vous retrouviez la même chose des deux côtés.
-              <strong>Une connexion internet est nécessaire</strong> le temps du transfert.
-            </p>
+            <h3 class="sauvegarde-hero__panel-title">Importer ou synchroniser ensuite</h3>
+            <ul class="sauvegarde-hero__list">
+              <li>
+                <strong>Importer</strong> — restaure un fichier exporté sur cet appareil ou un autre
+                (fusion avec l’existant ou remplacement complet).
+              </li>
+              <li>
+                <strong>Synchroniser</strong> — aligne deux appareils à vous (ex. téléphone et tablette) via QR code.
+                Ouvrez cette page sur les deux, lancez la sync&nbsp;; une connexion internet est nécessaire le temps du transfert.
+              </li>
+            </ul>
           </div>
 
           <p class="sauvegarde-hero__note hint">
@@ -92,34 +84,76 @@
         </div>
       </details>
 
-      <section class="sauvegarde-quick" aria-label="Actions de sauvegarde">
-        <article class="sauvegarde-quick-card">
-          <span class="sauvegarde-quick-card__icon" aria-hidden="true">📤</span>
-          <h3>Exporter</h3>
-          <p>Téléchargez une copie de toutes vos données pour les garder en sécurité (cloud, mail, clé USB…).</p>
-          <button type="button" class="btn btn--primary btn--labeled" id="btn-export-backup">
-            <span class="btn__icon" aria-hidden="true">💾</span>
-            <span class="btn__text">Exporter la sauvegarde</span>
-          </button>
-        </article>
-        <article class="sauvegarde-quick-card">
-          <span class="sauvegarde-quick-card__icon" aria-hidden="true">📥</span>
-          <h3>Importer</h3>
-          <p>Restaurez une sauvegarde : fusionnez avec l’existant ou remplacez tout le contenu de l’appareil.</p>
-          <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-backup">
-            <span class="btn__icon" aria-hidden="true">📂</span>
-            <span class="btn__text">Importer une sauvegarde</span>
-          </button>
-        </article>
-        <article class="sauvegarde-quick-card">
-          <span class="sauvegarde-quick-card__icon" aria-hidden="true">⇄</span>
-          <h3>Synchroniser</h3>
-          <p>Transférez vos données entre deux appareils (ex. téléphone et tablette) via QR code. Connexion internet requise.</p>
-          <button type="button" class="btn btn--ghost btn--labeled" id="btn-sync-backup">
-            <span class="btn__icon" aria-hidden="true">⇄</span>
-            <span class="btn__text">Synchroniser deux appareils</span>
-          </button>
-        </article>
+      <section class="card sauvegarde-parcours" aria-labelledby="lbl-parcours">
+        <h2 id="lbl-parcours" class="sauvegarde-parcours__title">Comment procéder</h2>
+        <ol class="sauvegarde-parcours__steps">
+          <li class="sauvegarde-parcours__step sauvegarde-parcours__step--first">
+            <span class="sauvegarde-parcours__num" aria-hidden="true">1</span>
+            <span class="sauvegarde-parcours__text">
+              <strong>Exportez d’abord</strong> une copie de vos données pour être sûr de ne rien perdre.
+            </span>
+          </li>
+          <li class="sauvegarde-parcours__step">
+            <span class="sauvegarde-parcours__num" aria-hidden="true">2</span>
+            <span class="sauvegarde-parcours__text">
+              <strong>Ensuite</strong>, selon votre besoin&nbsp;: <strong>importez</strong> une sauvegarde
+              <em>ou</em> <strong>synchronisez</strong> deux appareils.
+            </span>
+          </li>
+        </ol>
+      </section>
+
+      <section class="sauvegarde-flow" aria-label="Actions de sauvegarde">
+        <div class="sauvegarde-flow__step">
+          <p class="sauvegarde-flow__label">
+            <span class="sauvegarde-flow__badge">Étape 1</span>
+            D’abord — sécuriser vos données
+          </p>
+          <article
+            class="sauvegarde-quick-card sauvegarde-quick-card--export sauvegarde-quick-card--active"
+            data-sauvegarde-action="export"
+          >
+            <span class="sauvegarde-quick-card__icon" aria-hidden="true">📤</span>
+            <h3>Exporter</h3>
+            <p>
+              Téléchargez une copie complète (<code>outilsEPS-backup.json</code>) et conservez-la en lieu sûr
+              avant toute importation ou synchronisation.
+            </p>
+            <button type="button" class="btn btn--primary btn--labeled" id="btn-export-backup">
+              <span class="btn__icon" aria-hidden="true">💾</span>
+              <span class="btn__text">Exporter la sauvegarde</span>
+            </button>
+          </article>
+        </div>
+
+        <div class="sauvegarde-flow__step">
+          <p class="sauvegarde-flow__label">
+            <span class="sauvegarde-flow__badge">Étape 2</span>
+            Ensuite — au choix
+          </p>
+          <div class="sauvegarde-quick sauvegarde-quick--secondary">
+            <article class="sauvegarde-quick-card" data-sauvegarde-action="import">
+              <span class="sauvegarde-quick-card__icon" aria-hidden="true">📥</span>
+              <h3>Importer</h3>
+              <p>Restaurez un fichier exporté&nbsp;: fusionnez avec l’existant ou remplacez tout le contenu de l’appareil.</p>
+              <p class="sauvegarde-quick-card__tip hint">Conseillé&nbsp;: exportez d’abord si ce n’est pas déjà fait.</p>
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-backup">
+                <span class="btn__icon" aria-hidden="true">📂</span>
+                <span class="btn__text">Importer une sauvegarde</span>
+              </button>
+            </article>
+            <article class="sauvegarde-quick-card" data-sauvegarde-action="sync">
+              <span class="sauvegarde-quick-card__icon" aria-hidden="true">⇄</span>
+              <h3>Synchroniser</h3>
+              <p>Alignez deux appareils (ex. téléphone et tablette) via QR code. Connexion internet requise.</p>
+              <p class="sauvegarde-quick-card__tip hint">Conseillé&nbsp;: exportez d’abord sur chaque appareil.</p>
+              <button type="button" class="btn btn--ghost btn--labeled" id="btn-sync-backup">
+                <span class="btn__icon" aria-hidden="true">⇄</span>
+                <span class="btn__text">Synchroniser deux appareils</span>
+              </button>
+            </article>
+          </div>
+        </div>
       </section>
 
       <section
@@ -333,22 +367,20 @@
     <script>
       ToolInfo.init({
         intro:
-          "Vos données restent sur cet appareil. Exportez régulièrement une copie pour ne rien perdre en cas de changement de téléphone ou de suppression de l’app.",
+          "Exportez d’abord une copie de vos données, puis importez ou synchronisez selon votre besoin.",
         sections: [
           {
-            title: "L’essentiel à retenir",
-            text:
-              "Outils EPS ne stocke rien sur un compte en ligne. Tout est sur votre téléphone ou ordinateur. Sans fichier de sauvegarde exporté, un cache vidé ou un appareil perdu peut effacer vos classes et vos réglages.",
+            title: "L’ordre à suivre",
+            list: [
+              "1. Exporter → télécharge outilsEPS-backup.json (filet de sécurité).",
+              "2. Importer → restaure ou fusionne un fichier exporté.",
+              "2. Synchroniser → aligne deux appareils via QR code (internet requis).",
+            ],
           },
           {
-            title: "Les 3 gestes utiles",
-            list: [
-              "Exporter → télécharge outilsEPS-backup.json (copie de vos données).",
-              "Garder ce fichier en lieu sûr (cloud, USB, mail…).",
-              "Importer → restaure ou fusionne sur le même appareil ou un autre.",
-              "Synchroniser → ouvrez cette page sur les deux appareils (internet requis), même contenu via QR code.",
-              "Les données QR code élèves : outil Données élèves.",
-            ],
+            title: "À retenir",
+            text:
+              "Outils EPS ne stocke rien sur un compte en ligne. Sans export régulier, un cache vidé ou un appareil perdu peut effacer vos classes et réglages. Les données QR code élèves se gèrent dans l’outil Données élèves.",
           },
         ],
       });
