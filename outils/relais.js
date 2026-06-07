@@ -998,6 +998,9 @@
       var ta = a.bestGlobal ? a.bestGlobal.totalCs : Infinity;
       var tb = b.bestGlobal ? b.bestGlobal.totalCs : Infinity;
       if (ta !== tb) return ta - tb;
+      var ma = a.avgDonReceveur ? a.avgDonReceveur.totalCs : Infinity;
+      var mb = b.avgDonReceveur ? b.avgDonReceveur.totalCs : Infinity;
+      if (ma !== mb) return ma - mb;
       return String(a.nom).localeCompare(String(b.nom), "fr");
     });
     return rows;
