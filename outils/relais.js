@@ -923,16 +923,33 @@
     return { totalCs: avg, formattedTotal: formaterTemps(avg) };
   }
 
-  function compterInvalidesPourCoureur(runnerId) {
-    return getRunsForRunner(runnerId).filter(function (run) {
-      return !runIsValid(run);
-    }).length;
+  function runIncidentHorsZoneOuTemoin(run) {
+    if (!run) return false;
+    if (run.penaliteHorsZone || run.penaliteTemoinTombe) return true;
+    return run.valid === false;
   }
 
-  function libelleInvalidesPourCoureur(runnerId) {
-    var invalides = getRunsForRunner(runnerId).filter(function (run) {
-      return !runIsValid(run);
+  function invalidesResumePourCoureur(runnerId, row) {
+    var seen = {};
+    var list = [];
+    getRunsForRunner(runnerId).forEach(function (run) {
+      if (seen[run.id] || !runIncidentHorsZoneOuTemoin(run) || runIsValid(run)) return;
+      var keep = false;
+      if (!row.bestDonneur && run.donneurId === runnerId) keep = true;
+      if (!row.bestReceveur && run.receveurId === runnerId) keep = true;
+      if (!keep) return;
+      seen[run.id] = true;
+      list.push(run);
     });
+    return list;
+  }
+
+  function compterInvalidesResumePourCoureur(runnerId, row) {
+    return invalidesResumePourCoureur(runnerId, row).length;
+  }
+
+  function libelleInvalidesResumePourCoureur(runnerId, row) {
+    var invalides = invalidesResumePourCoureur(runnerId, row);
     if (!invalides.length) return "—";
     if (invalides.length === 1) return runInvalidLabel(invalides[0]);
     return invalides.length + " passages non valables";
@@ -956,10 +973,10 @@
         bestGlobal: meilleurePerfPourCoureur(runnerId, "all"),
         bestDonneur: meilleurePerfPourCoureur(runnerId, "donneur"),
         bestReceveur: meilleurePerfPourCoureur(runnerId, "receveur"),
-        invalidCount: compterInvalidesPourCoureur(runnerId),
-        invalidLabel: libelleInvalidesPourCoureur(runnerId),
         runs: getRunsForRunner(runnerId),
       };
+      row.invalidCount = compterInvalidesResumePourCoureur(runnerId, row);
+      row.invalidLabel = libelleInvalidesResumePourCoureur(runnerId, row);
       row.avgDonReceveur = moyenneDonneurReceveur(row);
       return row;
     });
