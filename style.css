@@ -571,6 +571,36 @@ main.container {
   margin-bottom: 0.15rem;
 }
 
+.site-footer__version {
+  flex-basis: 100%;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  opacity: 0.9;
+}
+
+.site-footer__link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--accent-deep);
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.site-footer__link-btn:hover {
+  text-decoration: underline;
+}
+
+.site-footer__link-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  text-decoration: none;
+}
+
 .page-outil--faq {
   max-width: min(56rem, 100%);
 }

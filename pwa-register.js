@@ -51,6 +51,10 @@
     loadScriptSibling("pwa-context-hint.js");
   }
 
+  function loadForceUpdate() {
+    loadScriptSibling("pwa-force-update.js");
+  }
+
   injectManifest();
 
   if (canUsePwa() && "serviceWorker" in navigator) {
@@ -65,10 +69,12 @@
   if (document.body) {
     loadInstallBanner();
     loadContextHint();
+    loadForceUpdate();
   } else {
     document.addEventListener("DOMContentLoaded", function () {
       loadInstallBanner();
       loadContextHint();
+      loadForceUpdate();
     });
   }
 })();
