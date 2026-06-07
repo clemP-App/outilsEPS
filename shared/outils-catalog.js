@@ -212,6 +212,17 @@
       badge: "Beta",
     },
     {
+      id: "relais",
+      titre: "Relais",
+      description:
+        "Chronométrez un relais en 3 zones, associez donneur et receveur, suivez les meilleures perfs par rôle et exportez.",
+      icone: "🔄",
+      href: "outils/relais.html",
+      categorie: "Activités",
+      publicCible: "prof",
+      badge: "Beta",
+    },
+    {
       id: "course-orientation",
       titre: "Course d’orientation",
       description:

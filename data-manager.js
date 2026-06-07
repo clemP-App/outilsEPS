@@ -23,6 +23,7 @@ var DataManager = (function () {
             ORIENTATION: "course-orientation",
             DEFI_ATP: "defi-atp",
             PHOTO_FINISH: "photo-finish",
+            RELAIS: "relais",
           },
           courseOrientationDataId: function (sid) {
             return "course-orientation__" + sid;
@@ -1861,6 +1862,45 @@ var DataManager = (function () {
     });
   }
 
+  function getRelaisForSession(sessionId) {
+    return getBySession("tournoisElimination", sessionId).then(function (list) {
+      var r = list.filter(function (x) {
+        return x && x.kind === "relais";
+      })[0];
+      if (!r) return null;
+      return {
+        dataId: r.id,
+        settings: r.settings || null,
+        runners: Array.isArray(r.runners) ? r.runners.slice() : [],
+        results: Array.isArray(r.results) ? r.results.slice() : [],
+      };
+    });
+  }
+
+  function saveRelaisForSession(sessionId, payload) {
+    if (!sessionId) return Promise.reject(new Error("Aucune séance active."));
+    payload = payload || {};
+    return getBySession("tournoisElimination", sessionId).then(function (list) {
+      var existing = list.filter(function (x) {
+        return x && x.kind === "relais";
+      })[0];
+      var bloc = {
+        id: existing ? existing.id : genererId("relais"),
+        sessionId: sessionId,
+        kind: "relais",
+        nom: "Relais",
+        settings: payload.settings || {},
+        runners: payload.runners || [],
+        results: payload.results || [],
+        updatedAt: new Date().toISOString(),
+      };
+      if (existing) return updateItem("tournoisElimination", bloc);
+      return addItem("tournoisElimination", bloc);
+    }).then(function () {
+      return touchSession(sessionId);
+    });
+  }
+
   function getPyramideVictoires() {
     return getActiveSessionId(SC.SESSION_TOOLS.PYRAMIDE).then(function (sid) {
       if (!sid) return { players: [], matches: [] };
@@ -2751,6 +2791,8 @@ var DataManager = (function () {
     savePyramideForSession: savePyramideForSession,
     getPhotoFinishForSession: getPhotoFinishForSession,
     savePhotoFinishForSession: savePhotoFinishForSession,
+    getRelaisForSession: getRelaisForSession,
+    saveRelaisForSession: saveRelaisForSession,
     getPyramideVictoires: getPyramideVictoires,
     savePyramideVictoires: savePyramideVictoires,
     getCourseOrientationForSession: getCourseOrientationForSession,

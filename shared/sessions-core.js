@@ -19,6 +19,7 @@
     ORIENTATION: "course-orientation",
     DEFI_ATP: "defi-atp",
     PHOTO_FINISH: "photo-finish",
+    RELAIS: "relais",
   };
 
   var TOOL_LABELS = {
@@ -29,6 +30,7 @@
     "course-orientation": "Course d’orientation",
     "defi-atp": "Défi ATP",
     "photo-finish": "Photo Finish",
+    relais: "Relais",
   };
 
   var SESSION_TOOL_IDS = Object.keys(TOOL_LABELS);

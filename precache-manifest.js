@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "126";
+var APP_CACHE_VERSION = "127";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -81,6 +81,8 @@ var PRECACHE = [
   "./outils/recuperation-donnees.html",
   "./outils/relais-eleve.html",
   "./outils/relais-eleve.js",
+  "./outils/relais.html",
+  "./outils/relais.js",
   "./outils/ressources-eps-data.js",
   "./outils/ressources-eps.html",
   "./outils/ressources-eps.js",

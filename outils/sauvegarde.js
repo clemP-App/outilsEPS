@@ -578,6 +578,35 @@
     if (syncReaderEl) syncReaderEl.hidden = true;
   }
 
+  function syncScanErrorMessage(err) {
+    var msg = err && err.message ? String(err.message) : String(err || "");
+    if (msg.indexOf("not allowed") >= 0 || msg.indexOf("denied") >= 0) {
+      return "Camera refusee ou indisponible. Autorisez la camera, puis reessayez.";
+    }
+    if (msg.indexOf("Permission") >= 0 || msg.indexOf("permission") >= 0) {
+      return "Autorisez la camera pour scanner le QR.";
+    }
+    if (msg.indexOf("Requested device not found") >= 0 || msg.indexOf("No camera") >= 0) {
+      return "Aucune camera disponible sur cet appareil.";
+    }
+    return msg || "Scan impossible.";
+  }
+
+  function syncStartScannerWithFallback(onDecoded) {
+    var config = { fps: 10, qrbox: { width: 220, height: 220 } };
+    return syncScanner
+      .start({ facingMode: "environment" }, config, onDecoded)
+      .catch(function () {
+        return Html5Qrcode.getCameras().then(function (cams) {
+          if (!cams || !cams.length) throw new Error("Aucune camera disponible.");
+          var rear = cams.find(function (cam) {
+            return /back|rear|environment|arriere|arrière|dos/i.test(cam.label || "");
+          });
+          return syncScanner.start((rear || cams[0]).id, config, onDecoded);
+        });
+      });
+  }
+
   function syncExpireSession() {
     if (syncTimerEl) syncTimerEl.textContent = "Connexion expiree. Relancez une synchronisation.";
     syncStopTimers();
@@ -851,6 +880,7 @@
     syncLocalPayload = null;
     syncApplying = false;
     if (btnSyncApply) btnSyncApply.disabled = true;
+    if (btnSyncScan) btnSyncScan.disabled = true;
     if (syncAnalysisEl) syncAnalysisEl.hidden = true;
     if (syncConflictsEl) syncConflictsEl.hidden = true;
     if (syncReaderEl) syncReaderEl.hidden = true;
@@ -878,25 +908,17 @@
     }
     syncReaderEl.hidden = false;
     if (!syncScanner) syncScanner = new Html5Qrcode("backup-sync-reader");
-    syncScanner
-      .start(
-        { facingMode: { ideal: "environment" } },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        function (decodedText) {
-          var pairing = OutilsEPS.BackupSync.parsePairingText(decodedText);
-          syncScanner.stop().catch(function () {}).then(function () {
-            syncReaderEl.hidden = true;
-            syncJoin(pairing);
-          });
-        }
-      )
+    syncSetStatus("Ouverture de la camera arriere.");
+    syncStartScannerWithFallback(function (decodedText) {
+      var pairing = OutilsEPS.BackupSync.parsePairingText(decodedText);
+      syncScanner.stop().catch(function () {}).then(function () {
+        syncReaderEl.hidden = true;
+        syncJoin(pairing);
+      });
+    })
       .catch(function (e) {
-        var msg = e && e.message ? e.message : "";
-        if (msg.indexOf("not allowed") >= 0 || msg.indexOf("denied") >= 0) {
-          syncSetStatus("Camera refusee ou indisponible. Autorisez la camera, puis reessayez.");
-        } else {
-          syncSetStatus(msg || "Scan impossible.");
-        }
+        syncReaderEl.hidden = true;
+        syncSetStatus(syncScanErrorMessage(e));
       });
   }
 
