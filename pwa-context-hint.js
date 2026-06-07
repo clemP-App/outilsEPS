@@ -6,6 +6,8 @@
   "use strict";
 
   var DISMISS_KEY = "outils_eps_context_hint_browser_v1";
+  var PWA_INSTALLED_MARK_KEY = "outils_eps_pwa_marked_installed_v1";
+  var PWA_NO_INSTALL_KEY = "outils_eps_pwa_no_install_v1";
   var DISMISS_DAYS = 7;
   var DATA_PATH_RE = /donnees-eleves|sauvegarde|classes|synthese-eps/i;
 
@@ -34,6 +36,58 @@
     var script = document.querySelector("script[data-sw]");
     var sw = script && script.getAttribute("data-sw");
     return sw && sw.indexOf("../") === 0 ? "../faq.html#pwa-safari-donnees" : "faq.html#pwa-safari-donnees";
+  }
+
+  function readInstalledMark() {
+    try {
+      return localStorage.getItem(PWA_INSTALLED_MARK_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function userDeclinedHavingApp() {
+    try {
+      return localStorage.getItem(PWA_NO_INSTALL_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markNoInstalledApp() {
+    try {
+      localStorage.setItem(PWA_NO_INSTALL_KEY, "1");
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function probeInstalledRelatedApps() {
+    if (!navigator.getInstalledRelatedApps) return Promise.resolve(false);
+    return navigator
+      .getInstalledRelatedApps()
+      .then(function (apps) {
+        return !!(apps && apps.length);
+      })
+      .catch(function () {
+        return false;
+      });
+  }
+
+  /** Détection heuristique : pas fiable à 100 % sur iOS Safari. */
+  function likelyHasInstalledApp() {
+    if (userDeclinedHavingApp()) return Promise.resolve(false);
+    if (readInstalledMark()) return Promise.resolve(true);
+    return probeInstalledRelatedApps().then(function (found) {
+      if (found) {
+        try {
+          localStorage.setItem(PWA_INSTALLED_MARK_KEY, "1");
+        } catch (e) {
+          /* ignore */
+        }
+      }
+      return found;
+    });
   }
 
   function getDismissState() {
@@ -66,6 +120,14 @@
     }
   }
 
+  function dismissInstallBanner() {
+    document.body.classList.remove("install-banner-open");
+    var installBanner = document.querySelector(".install-banner");
+    if (installBanner && installBanner.parentNode) {
+      installBanner.parentNode.removeChild(installBanner);
+    }
+  }
+
   function hideBanner() {
     var banner = document.getElementById("pwa-context-banner");
     if (!banner) return;
@@ -78,6 +140,7 @@
 
   function showBrowserBanner(dataPrefix) {
     if (isDismissed() || document.getElementById("pwa-context-banner")) return;
+    dismissInstallBanner();
 
     var banner = document.createElement("div");
     banner.id = "pwa-context-banner";
@@ -93,13 +156,13 @@
 
     var title = document.createElement("p");
     title.className = "pwa-context-banner__title";
-    title.textContent = isMobile() ? "Vous êtes dans le navigateur" : "Mode navigateur (pas l’app installée)";
+    title.textContent = isMobile() ? "Ouvrez l’app installée" : "L’application est installée";
 
     var text = document.createElement("p");
     text.className = "pwa-context-banner__text";
     var msg = isMobile()
-      ? "Si vous avez installé Outils EPS, ouvrez l’icône sur l’écran d’accueil (pas Safari) : classes, imports QR et sauvegardes y sont stockés séparément."
-      : "Si vous avez installé l’application, ouvrez-la depuis son icône : les données du navigateur et de l’app installée sont séparées.";
+      ? "Vous êtes dans le navigateur. Ouvrez l’icône Outils EPS sur l’écran d’accueil : vos classes, imports QR et sauvegardes y sont, pas ici."
+      : "Vous êtes dans le navigateur. Ouvrez Outils EPS depuis son icône installée pour retrouver vos données.";
     if (dataPrefix) {
       msg = dataPrefix + " " + msg;
     }
@@ -115,6 +178,15 @@
     linkFaq.className = "btn btn--ghost btn--small";
     linkFaq.href = faqHref();
     linkFaq.textContent = "En savoir plus";
+
+    var btnNoApp = document.createElement("button");
+    btnNoApp.type = "button";
+    btnNoApp.className = "btn btn--ghost btn--small";
+    btnNoApp.textContent = "Pas d’app installée";
+    btnNoApp.addEventListener("click", function () {
+      markNoInstalledApp();
+      hideBanner();
+    });
 
     var btnLater = document.createElement("button");
     btnLater.type = "button";
@@ -135,6 +207,7 @@
     });
 
     actions.appendChild(linkFaq);
+    actions.appendChild(btnNoApp);
     actions.appendChild(btnLater);
     actions.appendChild(btnOk);
 
@@ -187,7 +260,9 @@
 
   function init() {
     if (isInstalledPwa()) return;
-    dataPrefixLine().then(function (prefix) {
+    Promise.all([likelyHasInstalledApp(), dataPrefixLine()]).then(function (res) {
+      if (!res[0]) return;
+      var prefix = res[1];
       setTimeout(
         function () {
           showBrowserBanner(prefix);

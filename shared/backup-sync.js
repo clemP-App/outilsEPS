@@ -38,6 +38,24 @@
       .then(hex);
   }
 
+  function payloadHash(value) {
+    var text = String(value || "");
+    var h1 = 2166136261;
+    var h2 = 16777619;
+    var i;
+    for (i = 0; i < text.length; i++) {
+      h1 ^= text.charCodeAt(i);
+      h1 += (h1 << 1) + (h1 << 4) + (h1 << 7) + (h1 << 8) + (h1 << 24);
+      h2 = (h2 + text.charCodeAt(i) + (h2 << 6) + (h2 << 16) - h2) >>> 0;
+    }
+    return (
+      ("00000000" + (h1 >>> 0).toString(16)).slice(-8) +
+      ("00000000" + (h2 >>> 0).toString(16)).slice(-8) +
+      ("00000000" + text.length.toString(16)).slice(-8) +
+      ("00000000" + ((h1 ^ h2 ^ text.length) >>> 0).toString(16)).slice(-8)
+    );
+  }
+
   function requireSupabase() {
     if (!ns.supabaseRpc) {
       throw new Error("Module Supabase indisponible.");
@@ -60,6 +78,20 @@
     return row || {};
   }
 
+  function setupError(err) {
+    var msg = err && err.message ? String(err.message) : "";
+    if (
+      msg.indexOf("schema cache") >= 0 ||
+      msg.indexOf("create_backup_sync_session") >= 0 ||
+      msg.indexOf("Could not find the function") >= 0
+    ) {
+      return new Error(
+        "Synchronisation Supabase non installee : executez supabase/backup-sync-schema.sql dans l'editeur SQL Supabase, puis relancez la synchronisation."
+      );
+    }
+    return err;
+  }
+
   function createSession() {
     requireSupabase();
     var token = randomToken();
@@ -78,6 +110,9 @@
             role: "a",
             expiresAt: row.expires_at,
           };
+        })
+        .catch(function (err) {
+          throw setupError(err);
         });
     });
   }
@@ -106,14 +141,12 @@
   function uploadPayload(session, payload) {
     requireSupabase();
     var text = BackupSyncCore.stableStringify(payload);
-    return sha256(text).then(function (payloadHash) {
-      return ns.supabaseRpc("upload_backup_sync_payload", {
-        p_session_id: session.sessionId,
-        p_token_hash: session.tokenHash,
-        p_device: session.role,
-        p_payload: payload,
-        p_payload_hash: payloadHash,
-      });
+    return ns.supabaseRpc("upload_backup_sync_payload", {
+      p_session_id: session.sessionId,
+      p_token_hash: session.tokenHash,
+      p_device: session.role,
+      p_payload: payload,
+      p_payload_hash: payloadHash(text),
     });
   }
 

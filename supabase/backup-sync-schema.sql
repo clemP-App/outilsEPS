@@ -367,3 +367,6 @@ grant execute on function public.get_backup_sync_session(uuid, text) to anon, au
 grant execute on function public.set_backup_sync_decision(uuid, text, jsonb) to anon, authenticated;
 grant execute on function public.delete_backup_sync_session(uuid, text) to anon, authenticated;
 grant execute on function public.mark_backup_sync_applied(uuid, text, text) to anon, authenticated;
+
+-- Force PostgREST/Supabase API a recharger les nouvelles fonctions RPC.
+notify pgrst, 'reload schema';

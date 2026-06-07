@@ -1,9 +1,16 @@
 {
+  "id": "/",
   "name": "Outils EPS",
   "short_name": "Outils EPS",
   "description": "Petits outils pratiques pour les cours d'éducation physique et sportive.",
   "start_url": "./index.html",
   "scope": "./",
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "manifest.webmanifest"
+    }
+  ],
   "display": "standalone",
   "orientation": "any",
   "lang": "fr",

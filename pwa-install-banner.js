@@ -5,7 +5,44 @@
   "use strict";
 
   var DISMISS_KEY = "outils_eps_install_banner_v1";
+  var PWA_INSTALLED_MARK_KEY = "outils_eps_pwa_marked_installed_v1";
   var DISMISS_DAYS = 14;
+
+  function markPwaInstalled() {
+    try {
+      localStorage.setItem(PWA_INSTALLED_MARK_KEY, "1");
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function readInstalledMark() {
+    try {
+      return localStorage.getItem(PWA_INSTALLED_MARK_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function probeInstalledRelatedApps() {
+    if (!navigator.getInstalledRelatedApps) return Promise.resolve(false);
+    return navigator
+      .getInstalledRelatedApps()
+      .then(function (apps) {
+        return !!(apps && apps.length);
+      })
+      .catch(function () {
+        return false;
+      });
+  }
+
+  function likelyHasInstalledApp() {
+    if (readInstalledMark()) return Promise.resolve(true);
+    return probeInstalledRelatedApps().then(function (found) {
+      if (found) markPwaInstalled();
+      return found;
+    });
+  }
 
   var deferredPrompt = null;
   var bannerEl = null;
@@ -116,7 +153,7 @@
   };
 
   function showBanner(mode) {
-    if (shown || isInstalled() || isDismissed()) return;
+    if (shown || isInstalled() || isDismissed() || readInstalledMark()) return;
     var cfg = CONTENT[mode];
     if (!cfg) return;
 
@@ -161,13 +198,19 @@
     btnPrimary.addEventListener("click", function () {
       if (cfg.showInstall && deferredPrompt) {
         deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function () {
+        deferredPrompt.userChoice.then(function (choice) {
+          if (choice && choice.outcome === "accepted") {
+            markPwaInstalled();
+          }
           deferredPrompt = null;
           hideBanner();
         });
       } else {
         hideBanner();
         setDismissed(true);
+        if (mode === "ios-safari" || mode === "ios-other" || mode === "android-manual") {
+          markPwaInstalled();
+        }
       }
     });
 
@@ -212,46 +255,55 @@
   function tryShowForPlatform() {
     if (isInstalled() || isDismissed()) return;
 
-    var platform = getPlatform();
+    likelyHasInstalledApp().then(function (hasInstalled) {
+      if (hasInstalled) return;
 
-    if (platform === "ios") {
-      if (isIOSSafari()) {
-        setTimeout(function () {
-          if (!deferredPrompt) showBanner("ios-safari");
-        }, 1200);
-      } else {
-        setTimeout(function () {
-          showBanner("ios-other");
-        }, 1200);
-      }
-      return;
-    }
+      var platform = getPlatform();
 
-    if (platform === "android") {
-      setTimeout(function () {
-        if (!deferredPrompt && !isInstalled() && !isDismissed()) {
-          showBanner("android-manual");
+      if (platform === "ios") {
+        if (isIOSSafari()) {
+          setTimeout(function () {
+            if (!deferredPrompt) showBanner("ios-safari");
+          }, 1200);
+        } else {
+          setTimeout(function () {
+            showBanner("ios-other");
+          }, 1200);
         }
-      }, 3500);
-      return;
-    }
-
-    setTimeout(function () {
-      if (!deferredPrompt && !isInstalled() && !isDismissed()) {
-        showBanner("desktop");
+        return;
       }
-    }, 2500);
+
+      if (platform === "android") {
+        setTimeout(function () {
+          if (!deferredPrompt && !isInstalled() && !isDismissed() && !readInstalledMark()) {
+            showBanner("android-manual");
+          }
+        }, 3500);
+        return;
+      }
+
+      setTimeout(function () {
+        if (!deferredPrompt && !isInstalled() && !isDismissed() && !readInstalledMark()) {
+          showBanner("desktop");
+        }
+      }, 2500);
+    });
   }
 
   window.addEventListener("beforeinstallprompt", function (e) {
+    if (readInstalledMark()) return;
     e.preventDefault();
-    deferredPrompt = e;
-    showBanner("chromium");
+    likelyHasInstalledApp().then(function (hasInstalled) {
+      if (hasInstalled) return;
+      deferredPrompt = e;
+      showBanner("chromium");
+    });
   });
 
   window.addEventListener("appinstalled", function () {
     deferredPrompt = null;
     hideBanner();
+    markPwaInstalled();
     try {
       localStorage.setItem(DISMISS_KEY, JSON.stringify({ permanent: true }));
     } catch (err) {
