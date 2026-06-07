@@ -76,19 +76,6 @@
     }, 280);
   }
 
-  function showPwaBadge() {
-    if (document.getElementById("pwa-context-badge")) return;
-    var el = document.createElement("div");
-    el.id = "pwa-context-badge";
-    el.className = "pwa-context-badge";
-    el.setAttribute("role", "status");
-    el.setAttribute("aria-label", "Application installée — vos données sont dans cette app");
-    el.innerHTML =
-      '<span class="pwa-context-badge__dot" aria-hidden="true"></span><span class="pwa-context-badge__label">App installée</span>';
-    document.body.appendChild(el);
-    document.body.classList.add("pwa-context-installed");
-  }
-
   function showBrowserBanner(dataPrefix) {
     if (isDismissed() || document.getElementById("pwa-context-banner")) return;
 
@@ -111,8 +98,8 @@
     var text = document.createElement("p");
     text.className = "pwa-context-banner__text";
     var msg = isMobile()
-      ? "Les données ici (classes, imports QR, sauvegardes…) ne sont pas les mêmes que dans l’icône Outils EPS sur l’écran d’accueil. Choisissez toujours la même entrée."
-      : "Les données du navigateur et celles de l’application installée sont séparées. Ouvrez Outils EPS depuis son icône pour retrouver votre travail.";
+      ? "Si vous avez installé Outils EPS, ouvrez l’icône sur l’écran d’accueil (pas Safari) : classes, imports QR et sauvegardes y sont stockés séparément."
+      : "Si vous avez installé l’application, ouvrez-la depuis son icône : les données du navigateur et de l’app installée sont séparées.";
     if (dataPrefix) {
       msg = dataPrefix + " " + msg;
     }
@@ -199,10 +186,7 @@
   }
 
   function init() {
-    if (isInstalledPwa()) {
-      showPwaBadge();
-      return;
-    }
+    if (isInstalledPwa()) return;
     dataPrefixLine().then(function (prefix) {
       setTimeout(
         function () {

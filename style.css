@@ -11930,38 +11930,6 @@ body.pwa-context-hint-open.install-banner-open {
   padding-top: calc(5.75rem + env(safe-area-inset-top, 0px));
 }
 
-.pwa-context-badge {
-  position: fixed;
-  top: max(0.45rem, env(safe-area-inset-top, 0px));
-  right: max(0.55rem, env(safe-area-inset-right, 0px));
-  z-index: 8990;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.28rem 0.55rem;
-  border-radius: var(--radius-pill);
-  background: #ecfdf5;
-  border: 1px solid #6ee7b7;
-  color: #047857;
-  font-size: 0.72rem;
-  font-weight: 750;
-  box-shadow: 0 4px 14px rgba(4, 120, 87, 0.12);
-  pointer-events: none;
-}
-
-.pwa-context-badge__dot {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: #10b981;
-  flex-shrink: 0;
-}
-
-body.pwa-context-installed .site-header,
-body.pwa-context-installed .page-outil__header {
-  scroll-margin-top: 2rem;
-}
-
 @media (max-width: 520px) {
   body.pwa-context-hint-open {
     padding-top: calc(7.25rem + env(safe-area-inset-top, 0px));
