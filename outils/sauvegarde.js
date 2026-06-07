@@ -49,6 +49,7 @@
   var syncRemoteState = null;
   var syncLocalPayload = null;
   var syncApplying = false;
+  var syncCompleted = false;
   var syncRunId = 0;
 
   function syncDetectDeviceName() {
@@ -639,6 +640,9 @@
   }
 
   function syncShowSuccess() {
+    syncCompleted = true;
+    syncStopTimers();
+    syncStopScanner();
     if (syncSuccessEl) {
       syncSuccessEl.hidden = false;
       if (syncSuccessEl.scrollIntoView) {
@@ -649,6 +653,8 @@
     if (syncGridEl) syncGridEl.classList.add("backup-sync-grid--pairing-only");
     if (btnSyncApply) btnSyncApply.disabled = true;
     if (btnSyncScan) btnSyncScan.disabled = true;
+    syncRenderQr("");
+    if (syncTimerEl) syncTimerEl.textContent = "Synchronisation terminee.";
     montrerOk(
       "Synchronisation réussie : les deux appareils ont les mêmes données. Vous pouvez fermer le panneau de synchronisation."
     );
@@ -732,6 +738,7 @@
   }
 
   function syncExpireSession() {
+    if (syncCompleted || syncApplying) return;
     if (syncTimerEl) syncTimerEl.textContent = "Connexion expiree. Relancez une synchronisation.";
     syncStopTimers();
     syncStopScanner();
@@ -747,6 +754,7 @@
     if (!syncTimerEl) return;
     if (syncCountdownTimer) clearInterval(syncCountdownTimer);
     function tick() {
+      if (syncCompleted || syncApplying) return;
       var ms = new Date(expiresAt).getTime() - Date.now();
       if (ms <= 0) {
         syncExpireSession();
@@ -912,9 +920,11 @@
 
   function syncPoll() {
     if (!syncSession || !syncPanelEl || syncPanelEl.hidden) return;
+    if (syncCompleted || syncApplying) return;
     if (!window.OutilsEPS || !OutilsEPS.BackupSync) return;
     OutilsEPS.BackupSync.getSession(syncSession)
       .then(function (row) {
+        if (syncCompleted || syncApplying) return;
         syncRemoteState = row;
         if (row.expires_at) syncCountdown(row.expires_at);
         if (row.decision && row.decision.applied) {
@@ -934,6 +944,7 @@
         }
       })
       .catch(function (e) {
+        if (syncCompleted || syncApplying) return;
         var msg = e && e.message ? e.message : "";
         if (msg.indexOf("expire") >= 0 || msg.indexOf("introuvable") >= 0) {
           syncExpireSession();
@@ -1015,6 +1026,7 @@
     syncRemoteState = null;
     syncLocalPayload = null;
     syncApplying = false;
+    syncCompleted = false;
     if (btnSyncApply) btnSyncApply.disabled = true;
     if (btnSyncScan) btnSyncScan.disabled = true;
     syncSetPhase2Visible(false);
@@ -1057,6 +1069,7 @@
     syncRemoteState = null;
     syncLocalPayload = null;
     syncApplying = false;
+    syncCompleted = false;
     if (session && window.OutilsEPS && OutilsEPS.BackupSync) {
       OutilsEPS.BackupSync.cleanup(session);
     }
@@ -1109,7 +1122,6 @@
         return null;
       })
       .then(function () {
-        syncStopTimers();
         return renderStockage();
       })
       .catch(function (e) {
