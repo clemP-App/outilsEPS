@@ -446,6 +446,7 @@
     });
   }
 
+  var HOME_NEW_YEAR_POPUP_ENABLED = false; /* réactiver en septembre */
   var HOME_NEW_YEAR_HIDE_KEY = "outils_eps_home_new_year_hide_v1";
   var dialogNewYearHome = document.getElementById("dialog-nouvelle-annee-home");
   var hideNewYearHomeEl = document.getElementById("home-nouvelle-annee-never");
@@ -453,7 +454,7 @@
     typeof window !== "undefined" &&
     window.location &&
     /(^|\/)index\.html$/i.test(window.location.pathname);
-  if (isIndexPage && dialogNewYearHome && dialogNewYearHome.showModal) {
+  if (HOME_NEW_YEAR_POPUP_ENABLED && isIndexPage && dialogNewYearHome && dialogNewYearHome.showModal) {
     var hideNewYearHome = false;
     try {
       hideNewYearHome = localStorage.getItem(HOME_NEW_YEAR_HIDE_KEY) === "1";
