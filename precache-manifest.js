@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "116";
+var APP_CACHE_VERSION = "119";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -113,13 +113,15 @@ var PRECACHE = [
   "./outils/vitesse-course.js",
   "./outils/vitesse-plots.html",
   "./outils/vitesse-plots.js",
-  "./pwa-camera-browser.js",
+  "./pwa-context-hint.js",
   "./pwa-install-banner.js",
   "./pwa-register.js",
   "./pwa-splash.js",
   "./pwa-version-check.js",
   "./script.js",
   "./session-manager.js",
+  "./shared/backup-sync-core.js",
+  "./shared/backup-sync.js",
   "./shared/catalog-grid-validation.js",
   "./shared/catalog-grids.js",
   "./shared/championnat-standings.js",

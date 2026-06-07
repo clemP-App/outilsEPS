@@ -81,6 +81,7 @@ var DataManager = (function () {
   var LEGACY_HIIT_PRESETS = "outils_eps_hiit_presets_v1";
   var PARAM_HIIT_PRESETS_ID = "timer-hiit-tabata-presets";
   var DB_UNAVAILABLE_MSG = "IndexedDB n'est pas disponible sur cet appareil.";
+  var LOCAL_STORAGE_BACKUP_PREFIXES = ["outils_eps", "outilseps", "OutilsEPS"];
 
   var db = null;
   var initPromise = null;
@@ -224,6 +225,44 @@ var DataManager = (function () {
 
   function cloneData(value) {
     return JSON.parse(JSON.stringify(value));
+  }
+
+  function shouldBackupLocalStorageKey(key) {
+    key = String(key || "");
+    return LOCAL_STORAGE_BACKUP_PREFIXES.some(function (prefix) {
+      return key.indexOf(prefix) === 0;
+    });
+  }
+
+  function exportLocalStorageData() {
+    var out = [];
+    if (typeof localStorage === "undefined") return out;
+    try {
+      var i;
+      for (i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (!shouldBackupLocalStorageKey(key)) continue;
+        out.push({ id: key, value: localStorage.getItem(key) || "" });
+      }
+    } catch (e) {
+      return out;
+    }
+    out.sort(function (a, b) {
+      return String(a.id).localeCompare(String(b.id));
+    });
+    return out;
+  }
+
+  function restoreLocalStorageData(entries) {
+    if (typeof localStorage === "undefined" || !Array.isArray(entries)) return;
+    try {
+      entries.forEach(function (entry) {
+        if (!entry || !entry.id || !shouldBackupLocalStorageKey(entry.id)) return;
+        localStorage.setItem(String(entry.id), String(entry.value == null ? "" : entry.value));
+      });
+    } catch (e) {
+      /* IndexedDB reste la source principale si localStorage refuse l'ecriture. */
+    }
   }
 
   function getAll(storeName) {
@@ -575,7 +614,8 @@ var DataManager = (function () {
       payload.tournoisElimination.length +
       payload.parametres.length +
       (payload.importsEleves || []).length +
-      (payload.tableauxSuivi || []).length;
+      (payload.tableauxSuivi || []).length +
+      (payload.localStorageData || []).length;
     if (total === 0) {
       return "Aucune donnée à importer dans ce fichier.";
     }
@@ -631,6 +671,7 @@ var DataManager = (function () {
       parametres: Array.isArray(parametres) ? parametres : [],
       importsEleves: data.importsEleves || [],
       tableauxSuivi: data.tableauxSuivi || [],
+      localStorageData: Array.isArray(data.localStorageData) ? data.localStorageData : [],
     };
   }
 
@@ -967,6 +1008,7 @@ var DataManager = (function () {
         parametres: arrays[8],
         importsEleves: arrays[9],
         tableauxSuivi: arrays[10],
+        localStorageData: exportLocalStorageData(),
       };
     });
   }
@@ -1003,6 +1045,7 @@ var DataManager = (function () {
     }
     var payload = normalizeImportData(data);
     return importPayloadToStores(payload).then(function () {
+      restoreLocalStorageData(data.localStorageData);
       return { success: true, imported: payload };
     });
   }

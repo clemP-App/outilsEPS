@@ -45,4 +45,26 @@ describe("imports-eleves-export", function () {
     assert.equal(pdf.length, 1);
     assert.ok(pdf[0].summary);
   });
+
+  it("résume un import Relais avec note transmission", function () {
+    var relais = {
+      id: "imp-relais",
+      toolId: "relais-eleve",
+      classeLabel: "6e B",
+      auteurLabel: "Binôme GG",
+      createdAt: "2026-06-01T10:00:00.000Z",
+      importedAt: "2026-06-01T11:00:00.000Z",
+      payload: {
+        label: "Binôme GG",
+        temps: { total: "12.50 sec", z1: "4.00 sec", zt: "5.00 sec", z2: "3.50 sec" },
+        vitesses: { z1: 18, zt: 14.4, z2: 20.6 },
+        efficaciteZT: { note10: 6.7, itIdeal: 33.3, itReel: 40, verdict: "Transmission correcte" },
+      },
+    };
+    assert.match(Exp.humanSummary(relais), /12\.50 sec/);
+    assert.match(Exp.humanSummary(relais), /6,7\/10/);
+    var model = Exp.buildTableModel("relais-eleve", [relais]);
+    assert.ok(model.headers.indexOf("Note transmission (/10)") >= 0);
+    assert.equal(model.rows[0].cells[model.headers.length - 1], "6.7");
+  });
 });

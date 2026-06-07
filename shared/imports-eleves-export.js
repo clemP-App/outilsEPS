@@ -321,6 +321,17 @@
         if (p.distances && p.distances.total) {
           lines.push("Distances : " + p.distances.z1 + " + " + p.distances.zt + " + " + p.distances.z2 + " = " + p.distances.total + " m");
         }
+        if (p.efficaciteZT) {
+          var effR = p.efficaciteZT;
+          if (effR.note10 != null) {
+            lines.push("Note transmission : " + String(effR.note10).replace(".", ",") + "/10");
+          }
+          if (effR.itIdeal != null && effR.itReel != null) {
+            lines.push("IT idéal " + effR.itIdeal + " % · IT réel " + effR.itReel + " %");
+          }
+          if (effR.penaliteLabel) lines.push("Incident : " + effR.penaliteLabel);
+          else if (effR.verdict) lines.push(effR.verdict);
+        }
         break;
       case "zone-impact":
         (p.zones || []).forEach(function (z) {
@@ -523,6 +534,7 @@
           "Vitesse Z1 (km/h)",
           "Vitesse ZT (km/h)",
           "Vitesse Z2 (km/h)",
+          "Note transmission (/10)",
         ];
       case "zone-impact":
         return [
@@ -657,6 +669,13 @@
           cell(p.vitesses && p.vitesses.z1 != null ? p.vitesses.z1 : null),
           cell(p.vitesses && p.vitesses.zt != null ? p.vitesses.zt : null),
           cell(p.vitesses && p.vitesses.z2 != null ? p.vitesses.z2 : null),
+          cell(
+            p.efficaciteZT && p.efficaciteZT.note10 != null
+              ? p.efficaciteZT.note10
+              : p.efficaciteZT && p.efficaciteZT.coefficient != null
+                ? p.efficaciteZT.coefficient / 10
+                : null
+          ),
         ]);
       case "zone-impact":
         return baseMeta(rec).concat([

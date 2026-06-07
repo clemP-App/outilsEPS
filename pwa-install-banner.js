@@ -85,13 +85,13 @@
   var CONTENT = {
     chromium: {
       title: "Installer Outils EPS",
-      text: "Ajoutez l’application sur votre appareil pour y accéder en un clic, y compris hors ligne.",
+      text: "Ajoutez l’application sur votre appareil pour y accéder en un clic. Utilisez ensuite toujours l’icône installée : les données du navigateur et de l’app sont séparées.",
       primary: "Installer",
       showInstall: true,
     },
     "ios-safari": {
       title: "Ajouter à l’écran d’accueil",
-      text: "Sur iPhone : appuyez sur Partager (icône en bas de l’écran), puis choisissez « Sur l’écran d’accueil ».",
+      text: "Sur iPhone : Partager → « Sur l’écran d’accueil ». Ensuite ouvrez toujours l’icône Outils EPS (pas Safari) : classes et imports QR ne sont pas partagés entre les deux.",
       primary: "J’ai compris",
       showInstall: false,
     },
@@ -103,13 +103,13 @@
     },
     "android-manual": {
       title: "Installer Outils EPS",
-      text: "Ouvrez le menu du navigateur (⋮), puis « Installer l’application » ou « Ajouter à l’écran d’accueil ».",
+      text: "Menu (⋮) → « Installer l’application ». Puis utilisez toujours l’icône installée : les données ne sont pas les mêmes que dans Chrome.",
       primary: "J’ai compris",
       showInstall: false,
     },
     desktop: {
       title: "Installer Outils EPS",
-      text: "Utilisez le bouton Installer ci-dessous, ou l’icône d’installation dans la barre d’adresse du navigateur.",
+      text: "Installez l’app puis ouvrez-la depuis son icône. Navigateur et app installée stockent des données séparées.",
       primary: "Installer",
       showInstall: true,
     },

@@ -60,6 +60,15 @@
         if ((p.passages || []).length) parts.push(p.passages.length + " passage(s)");
         return parts.length ? parts.join(" · ") : "Vitesse aux plots";
       }
+      case "relais-eleve": {
+        var rp = [];
+        if (p.label) rp.push(p.label);
+        if (p.temps && p.temps.total) rp.push(p.temps.total);
+        if (p.efficaciteZT && p.efficaciteZT.note10 != null) {
+          rp.push("trans. " + String(p.efficaciteZT.note10).replace(".", ",") + "/10");
+        }
+        return rp.length ? rp.join(" · ") : "Relais";
+      }
       case "questions-debrief":
         return "Débrief QR";
       case "journal-musculation":

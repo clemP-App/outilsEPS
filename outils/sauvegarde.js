@@ -26,6 +26,26 @@
   var btnImportCancel = document.getElementById("btn-import-cancel");
   var pendingImportData = null;
   var pendingImportPreview = null;
+  var syncPanelEl = document.getElementById("backup-sync-panel");
+  var syncStatusEl = document.getElementById("backup-sync-status");
+  var syncTimerEl = document.getElementById("backup-sync-timer");
+  var syncProgressbarEl = document.getElementById("backup-sync-progressbar");
+  var syncProgressFillEl = document.getElementById("backup-sync-progress-fill");
+  var syncQrEl = document.getElementById("backup-sync-qr");
+  var syncReaderEl = document.getElementById("backup-sync-reader");
+  var syncAnalysisEl = document.getElementById("backup-sync-analysis");
+  var syncConflictsEl = document.getElementById("backup-sync-conflicts");
+  var btnSyncBackup = document.getElementById("btn-sync-backup");
+  var btnSyncCancel = document.getElementById("btn-sync-cancel");
+  var btnSyncScan = document.getElementById("btn-sync-scan");
+  var btnSyncApply = document.getElementById("btn-sync-apply");
+  var syncSession = null;
+  var syncPollTimer = null;
+  var syncCountdownTimer = null;
+  var syncScanner = null;
+  var syncRemoteState = null;
+  var syncLocalPayload = null;
+  var syncApplying = false;
 
   var DELETE_CONFIRM = {
     "imports-eleves":
@@ -477,6 +497,332 @@
     });
   }
 
+  function syncSetStatus(text) {
+    if (syncStatusEl) syncStatusEl.textContent = text || "";
+  }
+
+  function syncSetProgress(percent) {
+    var pct = Math.max(0, Math.min(100, percent || 0));
+    if (syncProgressFillEl) syncProgressFillEl.style.width = pct + "%";
+    if (syncProgressbarEl) syncProgressbarEl.setAttribute("aria-valuenow", String(Math.round(pct)));
+  }
+
+  function syncStopTimers() {
+    if (syncPollTimer) clearInterval(syncPollTimer);
+    if (syncCountdownTimer) clearInterval(syncCountdownTimer);
+    syncPollTimer = null;
+    syncCountdownTimer = null;
+  }
+
+  function syncCountdown(expiresAt) {
+    if (!syncTimerEl) return;
+    if (syncCountdownTimer) clearInterval(syncCountdownTimer);
+    function tick() {
+      var ms = new Date(expiresAt).getTime() - Date.now();
+      if (ms <= 0) {
+        syncTimerEl.textContent = "Connexion expiree.";
+        syncStopTimers();
+        return;
+      }
+      var min = Math.floor(ms / 60000);
+      var sec = Math.floor((ms % 60000) / 1000);
+      syncTimerEl.textContent =
+        "Connexion valable encore " + min + " min " + ("0" + sec).slice(-2) + " s.";
+    }
+    tick();
+    syncCountdownTimer = setInterval(tick, 1000);
+  }
+
+  function syncRenderQr(text) {
+    if (!syncQrEl) return;
+    syncQrEl.innerHTML = "";
+    if (!text || typeof QRCode === "undefined") return;
+    new QRCode(syncQrEl, {
+      text: text,
+      width: 220,
+      height: 220,
+      correctLevel: QRCode.CorrectLevel.M,
+      margin: 1,
+    });
+  }
+
+  function syncPayloadFromRow(row, key) {
+    var payload = row && row[key];
+    if (typeof payload === "string") {
+      try {
+        payload = JSON.parse(payload);
+      } catch (e) {
+        payload = null;
+      }
+    }
+    return payload || null;
+  }
+
+  function syncReadDecisions() {
+    var decisions = {};
+    if (!syncConflictsEl) return decisions;
+    syncConflictsEl.querySelectorAll("select[data-conflict-key]").forEach(function (sel) {
+      decisions[sel.getAttribute("data-conflict-key")] = sel.value || "both";
+    });
+    return decisions;
+  }
+
+  function syncBackupForImport(merged) {
+    var data = Object.assign({ metadata: merged.metadata }, merged.payload);
+    data.metadata.app = "OutilsEPS";
+    data.metadata.version = "1.0";
+    return data;
+  }
+
+  function syncRenderAnalysis(row) {
+    var a = syncPayloadFromRow(row, "a_payload");
+    var b = syncPayloadFromRow(row, "b_payload");
+    if (!a || !b || typeof BackupSyncCore === "undefined") return;
+    syncRemoteState = row;
+
+    var compare = BackupSyncCore.compareBackups(a, b);
+    if (syncAnalysisEl) {
+      syncAnalysisEl.hidden = false;
+      syncAnalysisEl.innerHTML =
+        '<div class="sauvegarde-import-summary">' +
+        '<div class="sauvegarde-import-stat"><span class="sauvegarde-import-stat__value">' +
+        compare.summary.onlyA +
+        '</span><span class="sauvegarde-import-stat__label">uniquement sur A</span></div>' +
+        '<div class="sauvegarde-import-stat"><span class="sauvegarde-import-stat__value">' +
+        compare.summary.onlyB +
+        '</span><span class="sauvegarde-import-stat__label">uniquement sur B</span></div>' +
+        '<div class="sauvegarde-import-stat sauvegarde-import-stat--warn"><span class="sauvegarde-import-stat__value">' +
+        compare.summary.conflicts +
+        '</span><span class="sauvegarde-import-stat__label">conflit(s) a choisir</span></div>' +
+        "</div>";
+    }
+
+    if (syncConflictsEl) {
+      syncConflictsEl.hidden = compare.conflicts.length === 0;
+      syncConflictsEl.innerHTML = "";
+      compare.conflicts.forEach(function (conflict) {
+        var wrap = document.createElement("div");
+        var title = document.createElement("strong");
+        var idText = document.createElement("span");
+        var select = document.createElement("select");
+        var options = [
+          ["both", "Garder les deux copies"],
+          ["a", "Garder A"],
+          ["b", "Garder B"],
+        ];
+        wrap.className = "backup-sync-conflict";
+        title.textContent = conflict.label;
+        idText.textContent = conflict.id;
+        select.setAttribute("data-conflict-key", conflict.key);
+        options.forEach(function (opt) {
+          var option = document.createElement("option");
+          option.value = opt[0];
+          option.textContent = opt[1];
+          select.appendChild(option);
+        });
+        wrap.appendChild(title);
+        wrap.appendChild(idText);
+        wrap.appendChild(select);
+        syncConflictsEl.appendChild(wrap);
+      });
+    }
+
+    if (btnSyncApply) btnSyncApply.disabled = false;
+    syncSetProgress(80);
+    syncSetStatus(
+      compare.summary.conflicts
+        ? "Analyse terminee. Choisissez quoi faire pour les donnees en conflit."
+        : "Analyse terminee. Les donnees peuvent etre fusionnees."
+    );
+  }
+
+  function syncPoll() {
+    if (!syncSession || !window.OutilsEPS || !OutilsEPS.BackupSync) return;
+    OutilsEPS.BackupSync.getSession(syncSession)
+      .then(function (row) {
+        syncRemoteState = row;
+        if (row.expires_at) syncCountdown(row.expires_at);
+        if (row.decision && row.decision.applied) {
+          return syncApplyDecision(row.decision, true);
+        }
+        if (row.a_uploaded && row.b_uploaded) {
+          syncRenderAnalysis(row);
+        } else if (row.b_joined) {
+          syncSetProgress(55);
+          syncSetStatus("Appareils associes. Envoi et attente des deux sauvegardes.");
+        } else {
+          syncSetProgress(35);
+          syncSetStatus("QR pret. Scannez-le avec l'autre appareil.");
+        }
+      })
+      .catch(function (e) {
+        syncSetStatus(e.message || "Synchronisation indisponible.");
+      });
+  }
+
+  function syncUploadLocal() {
+    if (!syncSession || !window.OutilsEPS || !OutilsEPS.BackupSync) return Promise.resolve();
+    return DataManager.exportAllData().then(function (payload) {
+      syncLocalPayload = payload;
+      syncSetProgress(syncSession.role === "a" ? 25 : 50);
+      syncSetStatus("Envoi temporaire de la sauvegarde de cet appareil.");
+      return OutilsEPS.BackupSync.uploadPayload(syncSession, payload);
+    });
+  }
+
+  function syncStartCreatedSession() {
+    syncSetProgress(10);
+    syncSetStatus("Creation de la session temporaire.");
+    return OutilsEPS.BackupSync.createSession()
+      .then(function (session) {
+        syncSession = session;
+        syncCountdown(session.expiresAt);
+        syncRenderQr(OutilsEPS.BackupSync.buildPairingText(session));
+        return syncUploadLocal();
+      })
+      .then(function () {
+        syncPoll();
+        syncPollTimer = setInterval(syncPoll, 2500);
+      });
+  }
+
+  function syncJoin(pairing) {
+    if (!pairing) {
+      syncSetStatus("QR de synchronisation invalide.");
+      return;
+    }
+    if (syncSession && syncSession.sessionId !== pairing.sessionId && window.OutilsEPS && OutilsEPS.BackupSync) {
+      OutilsEPS.BackupSync.cleanup(syncSession);
+    }
+    syncSetProgress(35);
+    syncSetStatus("Association avec l'autre appareil.");
+    OutilsEPS.BackupSync.joinSession(pairing.sessionId, pairing.token)
+      .then(function (session) {
+        syncSession = session;
+        syncCountdown(session.expiresAt);
+        syncRenderQr(OutilsEPS.BackupSync.buildPairingText(session));
+        return syncUploadLocal();
+      })
+      .then(function () {
+        syncPoll();
+        syncPollTimer = setInterval(syncPoll, 2500);
+      })
+      .catch(function (e) {
+        syncSetStatus(e.message || "Association impossible.");
+      });
+  }
+
+  function syncOpen() {
+    if (!syncPanelEl) return;
+    if (!window.OutilsEPS || !OutilsEPS.BackupSync) {
+      montrerErreur("Synchronisation indisponible : Supabase n'est pas charge.");
+      return;
+    }
+    montrerErreur("");
+    syncStopTimers();
+    syncSession = null;
+    syncRemoteState = null;
+    syncLocalPayload = null;
+    syncApplying = false;
+    if (btnSyncApply) btnSyncApply.disabled = true;
+    if (syncAnalysisEl) syncAnalysisEl.hidden = true;
+    if (syncConflictsEl) syncConflictsEl.hidden = true;
+    if (syncReaderEl) syncReaderEl.hidden = true;
+    syncPanelEl.hidden = false;
+    syncPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    syncSetProgress(0);
+    syncStartCreatedSession().catch(function (e) {
+      syncSetStatus(e.message || "Creation impossible.");
+    });
+  }
+
+  function syncClose() {
+    syncStopTimers();
+    if (syncScanner) {
+      syncScanner.stop().catch(function () {}).then(function () {
+        return syncScanner.clear();
+      }).catch(function () {});
+      syncScanner = null;
+    }
+    if (syncSession && window.OutilsEPS && OutilsEPS.BackupSync) {
+      OutilsEPS.BackupSync.cleanup(syncSession);
+    }
+    if (syncPanelEl) syncPanelEl.hidden = true;
+  }
+
+  function syncScan() {
+    if (!syncReaderEl || typeof Html5Qrcode === "undefined") {
+      syncSetStatus("Scanner QR indisponible.");
+      return;
+    }
+    syncReaderEl.hidden = false;
+    if (!syncScanner) syncScanner = new Html5Qrcode("backup-sync-reader");
+    Html5Qrcode.getCameras()
+      .then(function (cams) {
+        if (!cams || !cams.length) throw new Error("Aucune camera disponible.");
+        return syncScanner.start(
+          cams[0].id,
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          function (decodedText) {
+            var pairing = OutilsEPS.BackupSync.parsePairingText(decodedText);
+            syncScanner.stop().catch(function () {}).then(function () {
+              syncReaderEl.hidden = true;
+              syncJoin(pairing);
+            });
+          }
+        );
+      })
+      .catch(function (e) {
+        syncSetStatus(e.message || "Scan impossible.");
+      });
+  }
+
+  function syncApplyDecision(decision, fromRemote) {
+    if (syncApplying || !syncRemoteState) return Promise.resolve();
+    syncApplying = true;
+    syncSetProgress(90);
+    syncSetStatus("Application du fichier fusionne sur cet appareil.");
+    var a = syncPayloadFromRow(syncRemoteState, "a_payload");
+    var b = syncPayloadFromRow(syncRemoteState, "b_payload");
+    var merged = BackupSyncCore.mergeBackups(a, b, (decision && decision.choices) || {});
+    var backup = syncBackupForImport(merged);
+    var applyPromise = merged.total
+      ? DataManager.importAllData(backup, { skipConfirm: true })
+      : DataManager.clearAllData();
+    return applyPromise
+      .then(function () {
+        syncSetProgress(100);
+        syncSetStatus("Synchronisation terminee. Les deux appareils ont le meme fichier de donnees.");
+        montrerOk("Synchronisation terminee.");
+        if (window.OutilsEPS && OutilsEPS.BackupSync && OutilsEPS.BackupSync.markApplied) {
+          return OutilsEPS.BackupSync.markApplied(syncSession);
+        }
+        return null;
+      })
+      .then(function () {
+        syncStopTimers();
+        return renderStockage();
+      })
+      .catch(function (e) {
+        syncApplying = false;
+        syncSetStatus(e.message || "Application impossible.");
+      });
+  }
+
+  function syncApplyLocalChoice() {
+    if (!syncSession || !syncRemoteState || !window.OutilsEPS || !OutilsEPS.BackupSync) return;
+    var decision = { applied: true, choices: syncReadDecisions(), decidedAt: new Date().toISOString() };
+    if (btnSyncApply) btnSyncApply.disabled = true;
+    OutilsEPS.BackupSync.setDecision(syncSession, decision)
+      .then(function () {
+        return syncApplyDecision(decision, false);
+      })
+      .catch(function (e) {
+        syncSetStatus(e.message || "Fusion impossible.");
+        if (btnSyncApply) btnSyncApply.disabled = false;
+      });
+  }
+
   function init() {
     return DataManager.ready
       .then(function () {
@@ -509,6 +855,10 @@
   if (btnImportMerge) btnImportMerge.addEventListener("click", fusionnerSauvegarde);
   if (btnImportReplace) btnImportReplace.addEventListener("click", remplacerParSauvegarde);
   if (btnImportCancel) btnImportCancel.addEventListener("click", hideImportPanel);
+  if (btnSyncBackup) btnSyncBackup.addEventListener("click", syncOpen);
+  if (btnSyncCancel) btnSyncCancel.addEventListener("click", syncClose);
+  if (btnSyncScan) btnSyncScan.addEventListener("click", syncScan);
+  if (btnSyncApply) btnSyncApply.addEventListener("click", syncApplyLocalChoice);
 
   init();
 })();

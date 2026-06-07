@@ -26,7 +26,6 @@
 
   function injectManifest() {
     if (!canUsePwa()) return;
-    if (script && script.getAttribute("data-no-manifest") === "true") return;
     if (document.querySelector('link[rel="manifest"]')) return;
     var link = document.createElement("link");
     link.rel = "manifest";
@@ -34,16 +33,22 @@
     document.head.appendChild(link);
   }
 
-  function loadInstallBanner() {
-    if (!canUsePwa()) return;
-    if (script && script.getAttribute("data-no-manifest") === "true") return;
-    if (!script || !script.src) return;
-    var bannerSrc = script.src.replace(/pwa-register\.js(\?.*)?$/i, "pwa-install-banner.js$1");
-    if (bannerSrc === script.src) return;
+  function loadScriptSibling(filename) {
+    if (!canUsePwa() || !script || !script.src) return;
+    var src = script.src.replace(/pwa-register\.js(\?.*)?$/i, filename + "$1");
+    if (src === script.src) return;
     var el = document.createElement("script");
-    el.src = bannerSrc;
+    el.src = src;
     el.async = true;
     document.body.appendChild(el);
+  }
+
+  function loadInstallBanner() {
+    loadScriptSibling("pwa-install-banner.js");
+  }
+
+  function loadContextHint() {
+    loadScriptSibling("pwa-context-hint.js");
   }
 
   injectManifest();
@@ -59,7 +64,11 @@
 
   if (document.body) {
     loadInstallBanner();
+    loadContextHint();
   } else {
-    document.addEventListener("DOMContentLoaded", loadInstallBanner);
+    document.addEventListener("DOMContentLoaded", function () {
+      loadInstallBanner();
+      loadContextHint();
+    });
   }
 })();

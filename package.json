@@ -5,6 +5,6 @@
   "scripts": {
     "check:js": "node scripts/check-js.js",
     "precache": "node scripts/generate-precache.js",
-    "test": "node --test tests/championnat-standings.test.js tests/precache-manifest.test.js tests/pyramide-victoires.test.js tests/sessions.test.js tests/qr-exchange.test.js tests/imports-eleves.test.js tests/imports-eleves-export.test.js tests/compteur-ptb-qr.test.js tests/journal-musculation.test.js tests/classe-csv-import.test.js tests/tournoi-elimination-recompute.test.js"
+    "test": "node --test tests/backup-sync-core.test.js tests/championnat-standings.test.js tests/precache-manifest.test.js tests/pyramide-victoires.test.js tests/sessions.test.js tests/qr-exchange.test.js tests/imports-eleves.test.js tests/imports-eleves-export.test.js tests/compteur-ptb-qr.test.js tests/journal-musculation.test.js tests/classe-csv-import.test.js tests/tournoi-elimination-recompute.test.js"
   }
 }

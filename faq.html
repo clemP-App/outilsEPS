@@ -45,6 +45,12 @@
           { cat: "general", q: "Quels éléments sont collectés côté stats ?", a: "Des statistiques de fréquentation anonymes peuvent être utilisées pour améliorer l’application (ex: pages visitées, volume d’usage). Ce n’est pas un suivi individualisé d’élèves." },
           { cat: "general", q: "Qui a créé Outils EPS et pourquoi ?", a: "Outils EPS est créé et maintenu par ClemP, pour répondre à des besoins concrets de terrain: simplifier l’organisation de séance, fiabiliser les traces d’évaluation et rendre les retours aux élèves plus lisibles et motivants." },
           { cat: "general", q: "Puis-je installer Outils EPS comme une appli ?", a: "Oui, via la PWA.\n\nSur iPhone (Safari)\n1) Ouvrez Outils EPS dans Safari.\n2) Touchez Partager.\n3) Choisissez « Sur l’écran d’accueil ».\n\nSur Android (Chrome)\n1) Ouvrez Outils EPS dans Chrome.\n2) Ouvrez le menu (⋮).\n3) Choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».\n\nSur ordinateur (Chrome / Edge)\n1) Ouvrez Outils EPS.\n2) Cliquez l’icône d’installation dans la barre d’adresse (si proposée).\n\nRésultat\nUne fois installée, l’application se lance comme une app classique depuis l’écran d’accueil ou le menu des applications." },
+          {
+            cat: "general",
+            id: "pwa-safari-donnees",
+            q: "Safari ou app installée : pourquoi mes données ne sont pas les mêmes ?",
+            a: "Sur iPhone, iPad et souvent sur Android, le site ouvert dans le navigateur (Safari, Chrome…) et l’icône installée sur l’écran d’accueil sont deux applications distinctes.\n\nConséquence\nLes classes, imports QR, sauvegardes et réglages enregistrés dans Safari ne sont pas visibles dans l’app installée, et inversement.\n\nRecommandation\n1) Choisissez un mode principal (en général l’icône installée).\n2) Ouvrez toujours Outils EPS de la même façon.\n3) Exportez régulièrement une sauvegarde JSON (outil Sauvegarde).\n\nException caméra\nCertains outils vidéo (Photo Finish, Vidéo retard) peuvent demander Safari sur iPad pour la caméra : les résultats partagés au professeur passent alors par le QR, pas par le stockage local du navigateur.",
+          },
           { cat: "general", q: "Comment sauvegarder et restaurer mes données ?", a: "Ouvrez l’outil Sauvegarde: exportez un fichier JSON régulièrement (fin de journée / fin de cycle), stockez-le sur un espace sûr (cloud + clé USB conseillé), puis restaurez-le sur un autre appareil via import JSON." },
           { cat: "general", q: "Que se passe-t-il si je change d’appareil ou vide le cache ?", a: "Les données locales peuvent être perdues si vous effacez les données du navigateur, changez d’appareil sans export, ou désinstallez l’app. D’où l’importance de la sauvegarde JSON." },
           { cat: "general", q: "Comment partager aux élèves sans exposer les outils prof ?", a: "Utilisez le bouton Partager et diffusez le lien/QR de la page élèves. Les élèves arrivent sur une interface dédiée, sans les outils de pilotage enseignant." },
@@ -201,6 +207,7 @@
             rows.forEach(function (item) {
               var d = document.createElement("details");
               d.className = "faq-item";
+              if (item.id) d.id = item.id;
               var s = document.createElement("summary");
               s.innerHTML = '<span class="faq-item__cat">' + (LABELS[item.cat] || "FAQ") + "</span>" +
                             '<span class="faq-item__q">' + item.q + "</span>";
@@ -221,6 +228,15 @@
         });
 
         render();
+
+        var hashId = (location.hash || "").replace(/^#/, "");
+        if (hashId) {
+          var target = document.getElementById(hashId);
+          if (target && target.tagName === "DETAILS") {
+            target.open = true;
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
       })();
     </script>
   </body>

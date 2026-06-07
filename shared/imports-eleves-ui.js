@@ -44,6 +44,56 @@ var ImportsElevesUI = (function () {
     if (found) els.tool.value = toolId;
   }
 
+  function listImportTools() {
+    var ids =
+      typeof QrExchangeCore !== "undefined" && QrExchangeCore.SUPPORTED_TOOLS
+        ? QrExchangeCore.SUPPORTED_TOOLS.slice()
+        : [];
+    return ids
+      .map(function (id) {
+        return {
+          id: id,
+          label:
+            typeof QrExchangeCore !== "undefined" && QrExchangeCore.toolTitle
+              ? QrExchangeCore.toolTitle(id)
+              : id,
+        };
+      })
+      .sort(function (a, b) {
+        return a.label.localeCompare(b.label, "fr", { sensitivity: "base" });
+      });
+  }
+
+  function countImportsByTool(all) {
+    var counts = {};
+    (all || []).forEach(function (r) {
+      if (!r || !r.toolId) return;
+      counts[r.toolId] = (counts[r.toolId] || 0) + 1;
+    });
+    return counts;
+  }
+
+  function rebuildToolSelect(allImports) {
+    if (!els.tool) return;
+    var selected = getSelectedToolId();
+    var counts = countImportsByTool(allImports);
+    var tools = listImportTools();
+    els.tool.innerHTML = "";
+    var placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.disabled = true;
+    placeholder.selected = !selected;
+    placeholder.textContent = "Choisir un outil…";
+    els.tool.appendChild(placeholder);
+    tools.forEach(function (t) {
+      var opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = t.label + " (" + (counts[t.id] || 0) + ")";
+      els.tool.appendChild(opt);
+    });
+    if (selected) setToolFilter(selected);
+  }
+
   function importRecord(record) {
     return DataManager.ready
       .then(function () {
@@ -324,20 +374,23 @@ var ImportsElevesUI = (function () {
   }
 
   function refreshList(forceSelectId) {
-    var filters = readFilters();
-    if (!filters) {
-      records = [];
-      renderTable();
-      return Promise.resolve();
-    }
-    return DataManager.getImportedRecords(filters)
-      .then(function (list) {
-        records = list || [];
-        if (forceSelectId) selectedId = forceSelectId;
-        renderTable();
-        if (forceSelectId && els.detailCard) {
-          els.detailCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    return DataManager.getImportedRecords({})
+      .then(function (all) {
+        rebuildToolSelect(all || []);
+        var filters = readFilters();
+        if (!filters) {
+          records = [];
+          renderTable();
+          return;
         }
+        return DataManager.getImportedRecords(filters).then(function (list) {
+          records = list || [];
+          if (forceSelectId) selectedId = forceSelectId;
+          renderTable();
+          if (forceSelectId && els.detailCard) {
+            els.detailCard.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        });
       })
       .catch(function (e) {
         showMsg(e.message || "Erreur de chargement.", false);

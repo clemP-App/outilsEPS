@@ -36,6 +36,7 @@
     "compteur-bonus": "Compteur bonus",
     "compteur-ratio": "Compteur ratio",
     "vitesse-plots": "Vitesse aux plots",
+    "relais-eleve": "Relais",
     "zone-impact": "Zone d'impact",
     "journal-musculation": "Journal de musculation",
     "questions-debrief": "Questions débrief",

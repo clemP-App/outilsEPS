@@ -56,7 +56,83 @@
             <span class="btn__icon" aria-hidden="true">📂</span>
             <span class="btn__text">Importer une sauvegarde</span>
           </button>
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-sync-backup">
+            <span class="btn__icon" aria-hidden="true">⇄</span>
+            <span class="btn__text">Synchroniser deux appareils</span>
+          </button>
         </div>
+      </section>
+
+      <section
+        class="card sauvegarde-sync-panel"
+        id="backup-sync-panel"
+        aria-labelledby="lbl-backup-sync"
+        hidden
+      >
+        <div class="sauvegarde-import-panel__head">
+          <div>
+            <h2 id="lbl-backup-sync">Synchronisation A / B</h2>
+            <p class="hint" id="backup-sync-status">Preparation de la session temporaire.</p>
+          </div>
+          <button type="button" class="btn btn--ghost btn--small" id="btn-sync-cancel">
+            Fermer
+          </button>
+        </div>
+
+        <div class="backup-sync-progress" aria-live="polite">
+          <div
+            class="stockage-quota__bar"
+            role="progressbar"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            id="backup-sync-progressbar"
+          >
+            <div id="backup-sync-progress-fill" class="stockage-quota__fill"></div>
+          </div>
+          <p class="hint" id="backup-sync-timer">Connexion non ouverte.</p>
+        </div>
+
+        <div class="backup-sync-grid">
+          <div class="backup-sync-box">
+            <h3>1. Associer les appareils</h3>
+            <p class="hint">
+              Lancez cette page sur les deux appareils. Sur l'un, scannez le QR affiche par l'autre.
+            </p>
+            <div id="backup-sync-qr" class="backup-sync-qr" aria-live="polite"></div>
+            <div class="sauvegarde-actions">
+              <button type="button" class="btn btn--primary btn--small" id="btn-sync-scan">
+                Scanner un QR
+              </button>
+            </div>
+          </div>
+
+          <div class="backup-sync-box">
+            <h3>2. Analyse et fusion</h3>
+            <p class="hint">
+              Internet est indispensable pendant quelques minutes. Les sauvegardes sont supprimees de Supabase a la fin du transfert.
+            </p>
+            <div id="backup-sync-reader" class="backup-sync-reader" hidden></div>
+            <div id="backup-sync-analysis" class="backup-sync-analysis" hidden></div>
+            <div id="backup-sync-conflicts" class="backup-sync-conflicts" hidden></div>
+            <button type="button" class="btn btn--primary" id="btn-sync-apply" disabled>
+              Synchroniser maintenant
+            </button>
+          </div>
+        </div>
+
+        <details class="sauvegarde-import-details backup-sync-rgpd">
+          <summary>Confidentialite et RGPD</summary>
+          <p class="hint">
+            La synchronisation cree une session temporaire protegee par un jeton affiche uniquement dans le QR.
+            Supabase ne recoit les sauvegardes que le temps de comparer et fusionner les deux appareils.
+            Aucune conservation volontaire n'est faite apres validation ou fermeture de session.
+          </p>
+          <p class="hint">
+            Le QR impose une action physique entre les deux appareils. Sans ce jeton, une autre personne ne peut pas recuperer la sauvegarde.
+            Pour rester conforme, utilisez cette fonction seulement avec vos appareils et une connexion de confiance.
+          </p>
+        </details>
       </section>
 
       <section
@@ -170,6 +246,12 @@
     </div>
 
     <script src="../data-manager.js"></script>
+    <script src="../shared/supabase-config.js"></script>
+    <script src="../shared/supabaseClient.js"></script>
+    <script src="../shared/backup-sync-core.js"></script>
+    <script src="../shared/backup-sync.js"></script>
+    <script src="../vendor/qrcode.min.js"></script>
+    <script src="../vendor/html5-qrcode.min.js"></script>
     <script src="sauvegarde.js"></script>
     <script src="../tool-info.js"></script>
     <script>
