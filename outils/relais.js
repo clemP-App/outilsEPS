@@ -912,6 +912,17 @@
     return best;
   }
 
+  function moyenneDonneurReceveur(row) {
+    var parts = [];
+    if (row.bestDonneur) parts.push(row.bestDonneur.totalCs);
+    if (row.bestReceveur) parts.push(row.bestReceveur.totalCs);
+    if (!parts.length) return null;
+    var avg = parts.reduce(function (sum, cs) {
+      return sum + cs;
+    }, 0) / parts.length;
+    return { totalCs: avg, formattedTotal: formaterTemps(avg) };
+  }
+
   function compterInvalidesPourCoureur(runnerId) {
     return getRunsForRunner(runnerId).filter(function (run) {
       return !runIsValid(run);
@@ -938,7 +949,7 @@
     });
     return Object.keys(ids).map(function (runnerId) {
       var runner = getRunnerById(runnerId);
-      return {
+      var row = {
         runnerId: runnerId,
         nom: runner ? runnerDisplayName(runner) : "Coureur inconnu",
         classe: runner ? runner.className || "" : "",
@@ -949,6 +960,8 @@
         invalidLabel: libelleInvalidesPourCoureur(runnerId),
         runs: getRunsForRunner(runnerId),
       };
+      row.avgDonReceveur = moyenneDonneurReceveur(row);
+      return row;
     });
   }
 
@@ -1039,7 +1052,7 @@
           "<table class=\"relais-results-table\"><thead><tr>" +
           "<th scope=\"col\">Coureur</th><th scope=\"col\">Classe</th>" +
           "<th scope=\"col\">Meilleure perf.</th><th scope=\"col\">Meilleure donneur</th><th scope=\"col\">Meilleure receveur</th>" +
-          "<th scope=\"col\">Non valable</th>" +
+          "<th scope=\"col\">Moy. don./rec.</th><th scope=\"col\">Non valable</th>" +
           "</tr></thead><tbody>";
         rows.forEach(function (row) {
           var expanded = state.expandedRunnerId === row.runnerId;
@@ -1062,6 +1075,8 @@
             renderPerfCell(row.bestDonneur) +
             "</td><td>" +
             renderPerfCell(row.bestReceveur) +
+            "</td><td>" +
+            renderPerfCell(row.avgDonReceveur) +
             "</td><td><span class=\"relais-results-invalid" +
             (row.invalidCount ? "" : " is-none") +
             "\">" +
@@ -1069,7 +1084,7 @@
             "</span></td></tr>";
           if (expanded) {
             html +=
-              "<tr class=\"relais-results-detail-row\"><td colspan=\"6\">" +
+              "<tr class=\"relais-results-detail-row\"><td colspan=\"7\">" +
               htmlDetailCoureur(row) +
               "</td></tr>";
           }
@@ -1173,6 +1188,7 @@
         "meilleure_perf",
         "meilleure_donneur",
         "meilleure_receveur",
+        "moyenne_donneur_receveur",
         "non_valable",
       ],
       summaryRows: rows.map(function (row, index) {
@@ -1183,6 +1199,7 @@
           row.bestGlobal ? row.bestGlobal.formattedTotal : "",
           row.bestDonneur ? row.bestDonneur.formattedTotal : "",
           row.bestReceveur ? row.bestReceveur.formattedTotal : "",
+          row.avgDonReceveur ? row.avgDonReceveur.formattedTotal : "",
           row.invalidLabel === "—" ? "" : row.invalidLabel,
         ];
       }),
@@ -1437,13 +1454,14 @@
     drawSection("Classement par coureur");
     drawTable(
       [
-        { label: "Rang", w: 10, align: "center" },
-        { label: "Coureur", w: 42, align: "left" },
-        { label: "Classe", w: 16, align: "left" },
-        { label: "Meilleure", w: 22, align: "right" },
-        { label: "Donneur", w: 22, align: "right" },
-        { label: "Receveur", w: 22, align: "right" },
-        { label: "Non val.", w: 38, align: "left" },
+        { label: "Rang", w: 9, align: "center" },
+        { label: "Coureur", w: 34, align: "left" },
+        { label: "Cl.", w: 12, align: "left" },
+        { label: "Meill.", w: 17, align: "right" },
+        { label: "Don.", w: 17, align: "right" },
+        { label: "Rec.", w: 17, align: "right" },
+        { label: "Moy.", w: 17, align: "right" },
+        { label: "Non val.", w: 39, align: "left" },
       ],
       data.summaryRows
     );
