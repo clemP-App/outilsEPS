@@ -30,7 +30,7 @@
     "course-orientation": "Course d’orientation",
     "defi-atp": "Défi ATP",
     "photo-finish": "Photo Finish",
-    relais: "Relais",
+    relais: "Relais (prof)",
   };
 
   var SESSION_TOOL_IDS = Object.keys(TOOL_LABELS);

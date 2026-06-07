@@ -1888,7 +1888,7 @@ var DataManager = (function () {
         id: existing ? existing.id : genererId("relais"),
         sessionId: sessionId,
         kind: "relais",
-        nom: "Relais",
+        nom: "Relais (prof)",
         settings: payload.settings || {},
         runners: payload.runners || [],
         results: payload.results || [],

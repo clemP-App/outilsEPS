@@ -28,39 +28,47 @@
       <p id="sauvegarde-msg" class="msg-error sauvegarde-msg" role="alert" hidden></p>
       <p id="sauvegarde-ok" class="msg-ok sauvegarde-msg" role="status" hidden></p>
 
-      <section class="card" aria-labelledby="lbl-info">
-        <h2 id="lbl-info">Données locales</h2>
-        <p class="hint sauvegarde-hint">
-          Vos classes, cahier de texte, dispenses, oublis de matériel, championnats et réglages sont enregistrés <strong>sur cet appareil uniquement</strong>.
-          Ils ne partent pas sur internet et ne se retrouvent pas tout seuls sur un autre téléphone ou ordinateur.
+      <section class="card sauvegarde-hero" aria-labelledby="lbl-hero">
+        <div class="sauvegarde-hero__badge" aria-hidden="true">💾</div>
+        <h2 id="lbl-hero">Vos données restent sur cet appareil</h2>
+        <p class="sauvegarde-hero__lead">
+          Classes, cahier de texte, championnats, réglages… tout est enregistré <strong>localement</strong>, sans compte ni cloud obligatoire.
         </p>
-        <p class="hint">
-          Pour ne rien perdre, exportez de temps en temps un fichier de sauvegarde et gardez-le (cloud, mail, clé USB…).
-          Le fichier s’appelle <strong>outilsEPS-backup.json</strong>. Lors de l’import, vous choisissez ensuite entre
-          fusionner avec cet appareil ou remplacer toutes les données.
-        </p>
-        <p class="hint">
-          Les données remontées par QR depuis les outils élèves se gèrent dans l’outil
-          <a href="donnees-eleves.html">Données élèves</a>.
-        </p>
+        <ul class="sauvegarde-hero__tips">
+          <li><strong>Exporter</strong> régulièrement un fichier JSON (<code>outilsEPS-backup.json</code>)</li>
+          <li><strong>Importer</strong> pour restaurer ou fusionner sur un autre appareil</li>
+          <li>Les imports QR élèves se gèrent dans <a href="donnees-eleves.html">Données élèves</a></li>
+        </ul>
       </section>
 
-      <section class="card" aria-labelledby="lbl-actions">
-        <h2 id="lbl-actions">Actions</h2>
-        <div class="sauvegarde-actions">
+      <section class="sauvegarde-quick" aria-label="Actions de sauvegarde">
+        <article class="sauvegarde-quick-card">
+          <span class="sauvegarde-quick-card__icon" aria-hidden="true">📤</span>
+          <h3>Exporter</h3>
+          <p>Téléchargez une copie de toutes vos données pour les garder en sécurité (cloud, mail, clé USB…).</p>
           <button type="button" class="btn btn--primary btn--labeled" id="btn-export-backup">
             <span class="btn__icon" aria-hidden="true">💾</span>
             <span class="btn__text">Exporter la sauvegarde</span>
           </button>
+        </article>
+        <article class="sauvegarde-quick-card">
+          <span class="sauvegarde-quick-card__icon" aria-hidden="true">📥</span>
+          <h3>Importer</h3>
+          <p>Restaurez une sauvegarde : fusionnez avec l’existant ou remplacez tout le contenu de l’appareil.</p>
           <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-backup">
             <span class="btn__icon" aria-hidden="true">📂</span>
             <span class="btn__text">Importer une sauvegarde</span>
           </button>
+        </article>
+        <article class="sauvegarde-quick-card">
+          <span class="sauvegarde-quick-card__icon" aria-hidden="true">⇄</span>
+          <h3>Synchroniser</h3>
+          <p>Transférez vos données entre deux appareils via QR code (session temporaire sécurisée).</p>
           <button type="button" class="btn btn--ghost btn--labeled" id="btn-sync-backup">
             <span class="btn__icon" aria-hidden="true">⇄</span>
             <span class="btn__text">Synchroniser deux appareils</span>
           </button>
-        </div>
+        </article>
       </section>
 
       <section
@@ -206,13 +214,14 @@
         </details>
       </section>
 
-      <section class="card" aria-labelledby="lbl-stockage">
-        <h2 id="lbl-stockage">Espace utilisé</h2>
-        <p class="hint">
-          Seuls les outils qui ont déjà enregistré des données apparaissent ci-dessous, regroupés par catégorie (gestion de classe, séance, activités). Estimation du poids (IndexedDB)
-          et, si le navigateur le permet, du quota total alloué à ce site. Supprimez les données d’un outil pour libérer
-          de la place.
-        </p>
+      <section class="card sauvegarde-stockage" aria-labelledby="lbl-stockage">
+        <div class="sauvegarde-stockage__head">
+          <h2 id="lbl-stockage">Espace utilisé &amp; suppression</h2>
+          <p class="hint sauvegarde-stockage__intro">
+            Seuls les outils ayant déjà enregistré des données apparaissent ci-dessous.
+            Supprimez un type entier ou ouvrez un groupe pour cibler un outil précis.
+          </p>
+        </div>
         <div
           id="stockage-alert"
           class="stockage-alert"
@@ -220,27 +229,29 @@
           role="status"
           aria-live="polite"
         ></div>
-        <p class="stockage-total" aria-live="polite">
-          Données Outils EPS : <strong id="stockage-total">—</strong>
-        </p>
-        <div id="stockage-quota-wrap" class="stockage-quota-wrap" hidden>
-          <p class="stockage-quota__line">
-            Quota navigateur (estimation) :
-            <strong id="stockage-quota-text">—</strong>
+        <div class="sauvegarde-stockage__summary">
+          <p class="stockage-total" aria-live="polite">
+            Données Outils EPS : <strong id="stockage-total">—</strong>
           </p>
-          <div
-            class="stockage-quota__bar"
-            role="progressbar"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow="0"
-            id="stockage-quota-bar"
-          >
-            <div id="stockage-quota-fill" class="stockage-quota__fill"></div>
+          <div id="stockage-quota-wrap" class="stockage-quota-wrap" hidden>
+            <p class="stockage-quota__line">
+              Quota navigateur (estimation) :
+              <strong id="stockage-quota-text">—</strong>
+            </p>
+            <div
+              class="stockage-quota__bar"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+              id="stockage-quota-bar"
+            >
+              <div id="stockage-quota-fill" class="stockage-quota__fill"></div>
+            </div>
           </div>
         </div>
         <p id="stockage-quota-hint" class="hint stockage-quota-hint" hidden></p>
-        <ul id="stockage-outils" class="stockage-list" aria-live="polite"></ul>
+        <div id="stockage-outils" class="stockage-accordions" aria-live="polite"></div>
         <p id="stockage-vide" class="hint stockage-vide" hidden>Aucune donnée enregistrée pour le moment.</p>
       </section>
     </div>

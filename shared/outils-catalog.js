@@ -213,9 +213,9 @@
     },
     {
       id: "relais",
-      titre: "Relais",
+      titre: "Relais (prof)",
       description:
-        "Chronométrez un relais en 3 zones, associez donneur et receveur, suivez les meilleures perfs par rôle et exportez.",
+        "Même chronométrage 3 zones que l’outil élève, plus classe, associations donneur/receveur, meilleures perfs et export.",
       icone: "🔄",
       href: "outils/relais.html",
       categorie: "Activités",

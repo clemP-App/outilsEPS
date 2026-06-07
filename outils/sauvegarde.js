@@ -232,6 +232,104 @@
     return li;
   }
 
+  function creerAccordeonGroupe(groupLabel, items) {
+    var totalBytes = items.reduce(function (sum, cat) {
+      return sum + (cat.bytes || 0);
+    }, 0);
+    var details = document.createElement("details");
+    details.className = "stockage-accordion";
+    details.setAttribute("data-groupe", groupLabel);
+
+    var summary = document.createElement("summary");
+    summary.className = "stockage-accordion__summary";
+
+    var summaryMain = document.createElement("div");
+    summaryMain.className = "stockage-accordion__summary-main";
+
+    var title = document.createElement("span");
+    title.className = "stockage-accordion__title";
+    title.textContent = groupLabel;
+
+    var meta = document.createElement("span");
+    meta.className = "stockage-accordion__meta";
+    meta.textContent =
+      items.length +
+      " type" +
+      (items.length > 1 ? "s" : "") +
+      " · " +
+      DataManager.formatBytes(totalBytes);
+
+    summaryMain.appendChild(title);
+    summaryMain.appendChild(meta);
+    summary.appendChild(summaryMain);
+
+    var btnGroup = document.createElement("button");
+    btnGroup.type = "button";
+    btnGroup.className = "btn btn--ghost btn--small stockage-accordion__delete-all";
+    btnGroup.textContent = "Tout supprimer";
+    btnGroup.setAttribute("data-groupe", groupLabel);
+    btnGroup.setAttribute("aria-label", "Supprimer toutes les données du groupe " + groupLabel);
+    btnGroup.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      supprimerGroupe(groupLabel, items);
+    });
+    summary.appendChild(btnGroup);
+
+    details.appendChild(summary);
+
+    var body = document.createElement("div");
+    body.className = "stockage-accordion__body";
+
+    var hint = document.createElement("p");
+    hint.className = "hint stockage-accordion__hint";
+    hint.textContent = "Détail par outil — supprimez uniquement ce dont vous n’avez plus besoin.";
+    body.appendChild(hint);
+
+    var sublist = document.createElement("ul");
+    sublist.className = "stockage-groupe__list";
+    items.forEach(function (cat) {
+      sublist.appendChild(creerItemStockage(cat));
+    });
+    body.appendChild(sublist);
+    details.appendChild(body);
+
+    return details;
+  }
+
+  function supprimerGroupe(groupLabel, items) {
+    if (!items || !items.length) return;
+    var liste =
+      "• " +
+      items
+        .map(function (cat) {
+          return cat.label;
+        })
+        .join("\n• ");
+    var msg =
+      "Supprimer toutes les données du groupe « " +
+      groupLabel +
+      " » ?\n\n" +
+      liste +
+      "\n\nCette action est irréversible. Pensez à exporter une sauvegarde avant.";
+    if (!confirm(msg)) return;
+    montrerErreur("");
+    var chain = Promise.resolve();
+    items.forEach(function (cat) {
+      chain = chain.then(function () {
+        return DataManager.clearStorageCategory(cat.id);
+      });
+    });
+    chain
+      .then(function () {
+        montrerOk("Données supprimées : groupe « " + groupLabel + " ».");
+        return renderStockage();
+      })
+      .catch(function (e) {
+        montrerErreur(e.message || "Suppression impossible.");
+      });
+  }
+
   function renderStockage() {
     if (!stockageListEl) return Promise.resolve();
     var load =
@@ -269,23 +367,7 @@
         groupOrder.forEach(function (groupLabel) {
           var items = byGroup[groupLabel];
           if (!items || !items.length) return;
-
-          var section = document.createElement("li");
-          section.className = "stockage-groupe";
-
-          var heading = document.createElement("h3");
-          heading.className = "stockage-groupe__titre";
-          heading.textContent = groupLabel;
-          section.appendChild(heading);
-
-          var sublist = document.createElement("ul");
-          sublist.className = "stockage-groupe__list";
-          items.forEach(function (cat) {
-            sublist.appendChild(creerItemStockage(cat));
-          });
-          section.appendChild(sublist);
-
-          stockageListEl.appendChild(section);
+          stockageListEl.appendChild(creerAccordeonGroupe(groupLabel, items));
         });
       })
       .catch(function (e) {

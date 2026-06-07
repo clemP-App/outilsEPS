@@ -42,79 +42,220 @@
     <script src="pwa-splash.js" data-home></script>
   </head>
   <body class="app app--home">
-    <header class="site-header">
-      <nav class="site-header__toolbar" aria-label="Actions principales">
-        <a
-          href="https://fr.tipeee.com/clemp/"
-          class="site-header__toolbar-btn"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <span class="btn-icon-emoji" aria-hidden="true">☕</span>
-          <span>Soutenir</span>
-        </a>
-        <button
-          type="button"
-          class="site-header__toolbar-btn"
-          id="btn-info-app"
-        >
-          <svg class="info-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" />
-            <path d="M12 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            <circle cx="12" cy="7.5" r="1" fill="currentColor" stroke="none" />
-          </svg>
-          <span>Info</span>
-        </button>
-        <a
-          href="outils/sauvegarde.html"
-          class="site-header__toolbar-btn"
-        >
-          <span class="btn-icon-emoji" aria-hidden="true">💾</span>
-          <span>Sauvegarde</span>
-        </a>
-        <button type="button" class="site-header__toolbar-btn" id="btn-share-app">
-          <span class="btn-icon-emoji" aria-hidden="true">🔗</span>
-          <span>Partager</span>
-        </button>
-      </nav>
-      <div class="site-header__inner">
-        <h1>Outils EPS</h1>
-        <p>Petits outils pratiques pour les cours d’éducation physique et sportive</p>
-      </div>
-    </header>
+    <div class="home-shell">
+      <aside class="site-sidebar" id="site-sidebar" aria-labelledby="site-sidebar-title">
+        <div class="site-sidebar__inner">
+          <header class="site-sidebar__header">
+            <h2 id="site-sidebar-title" class="site-sidebar__title">Outils EPS</h2>
+            <button type="button" class="site-sidebar__close" id="btn-site-sidebar-close" aria-label="Fermer le menu">
+              ×
+            </button>
+          </header>
 
-    <div class="search-wrap">
-      <label for="search-outils">Rechercher un outil</label>
-      <input
-        type="search"
-        id="search-outils"
-        name="q"
-        placeholder="Rechercher par nom, catégorie…"
-        autocomplete="off"
-      />
+          <nav class="site-menu__nav" aria-label="Navigation principale">
+            <section class="site-menu__group">
+              <h3 class="site-menu__group-title">Données &amp; partage</h3>
+              <ul class="site-menu__list">
+                <li>
+                  <a class="site-menu__link" href="outils/sauvegarde.html">
+                    <span class="site-menu__link-icon" aria-hidden="true">💾</span>
+                    <span class="site-menu__link-text">
+                      <strong>Sauvegarde</strong>
+                      <small>Exporter, importer, synchroniser</small>
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <button type="button" class="site-menu__link site-menu__link--btn" data-menu-action="share">
+                    <span class="site-menu__link-icon" aria-hidden="true">🔗</span>
+                    <span class="site-menu__link-text">
+                      <strong>Partager l’app</strong>
+                      <small>Lien prof ou page élèves</small>
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </section>
+
+            <section class="site-menu__group">
+              <h3 class="site-menu__group-title">Aide &amp; tutoriels</h3>
+              <ul class="site-menu__list">
+                <li>
+                  <a
+                    class="site-menu__link"
+                    href="https://www.youtube.com/playlist?list=PLg4F6nnHXHWHtW6TmQJgGzhV3JFJw-Bow"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span class="site-menu__link-icon" aria-hidden="true">▶</span>
+                    <span class="site-menu__link-text">
+                      <strong>Tutoriels vidéo</strong>
+                      <small>Playlist YouTube explicative</small>
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a class="site-menu__link" href="faq.html">
+                    <span class="site-menu__link-icon" aria-hidden="true">❓</span>
+                    <span class="site-menu__link-text">
+                      <strong>FAQ</strong>
+                      <small>Questions fréquentes</small>
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <button type="button" class="site-menu__link site-menu__link--btn" data-menu-action="info">
+                    <span class="site-menu__link-icon" aria-hidden="true">ℹ</span>
+                    <span class="site-menu__link-text">
+                      <strong>À propos</strong>
+                      <small>RGPD, installation, aide</small>
+                    </span>
+                  </button>
+                </li>
+              </ul>
+            </section>
+
+            <section class="site-menu__group">
+              <h3 class="site-menu__group-title">Année scolaire</h3>
+              <ul class="site-menu__list">
+                <li>
+                  <a class="site-menu__link" href="outils/nouvelle-annee-scolaire.html">
+                    <span class="site-menu__link-icon" aria-hidden="true">🗓</span>
+                    <span class="site-menu__link-text">
+                      <strong>Nouvelle année scolaire</strong>
+                      <small>Archiver, conserver ou repartir à zéro</small>
+                    </span>
+                  </a>
+                </li>
+              </ul>
+            </section>
+
+            <section class="site-menu__group">
+              <h3 class="site-menu__group-title">Communauté</h3>
+              <ul class="site-menu__list">
+                <li>
+                  <a
+                    class="site-menu__link"
+                    href="https://fr.tipeee.com/clemp/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span class="site-menu__link-icon" aria-hidden="true">☕</span>
+                    <span class="site-menu__link-text">
+                      <strong>Soutenir le projet</strong>
+                      <small>Tipeee</small>
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="site-menu__link"
+                    href="https://www.instagram.com/clemp_eps2.0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span class="site-menu__link-icon" aria-hidden="true">📷</span>
+                    <span class="site-menu__link-text">
+                      <strong>@clemp_eps2.0</strong>
+                      <small>Instagram — nouveautés</small>
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="site-menu__link"
+                    href="mailto:clement.pignet@gmail.com?subject=Contact%20Outils%20EPS&body=Bonjour%20ClemP%2C%0A%0AJe%20vous%20contacte%20concernant%20Outils%20EPS%20%3A%0A"
+                  >
+                    <span class="site-menu__link-icon" aria-hidden="true">✉</span>
+                    <span class="site-menu__link-text">
+                      <strong>Contacter</strong>
+                      <small>Signaler un bug ou poser une question</small>
+                    </span>
+                  </a>
+                </li>
+              </ul>
+            </section>
+          </nav>
+        </div>
+      </aside>
+
+      <div class="site-sidebar-backdrop" id="site-sidebar-backdrop" hidden aria-hidden="true"></div>
+
+      <div class="home-shell__main">
+        <header class="site-header">
+          <div class="site-header__bar">
+            <button
+              type="button"
+              class="site-header__menu-btn"
+              id="btn-site-menu"
+              aria-controls="site-sidebar"
+              aria-expanded="false"
+            >
+              <svg class="site-header__menu-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              <span>Menu</span>
+            </button>
+          </div>
+          <div class="site-header__inner">
+            <h1>Outils EPS</h1>
+            <p>Petits outils pratiques pour les cours d’éducation physique et sportive</p>
+          </div>
+        </header>
+
+        <div class="search-wrap search-wrap--actions">
+          <label for="search-outils">Rechercher un outil</label>
+          <div class="search-wrap__row">
+            <input
+              type="search"
+              id="search-outils"
+              name="q"
+              placeholder="Rechercher par nom, catégorie…"
+              autocomplete="off"
+            />
+            <button
+              type="button"
+              class="search-wrap__fav-btn"
+              id="btn-favoris"
+              aria-haspopup="dialog"
+              aria-controls="dialog-favoris"
+              title="Gérer mes favoris"
+            >
+              <span class="search-wrap__fav-icon" aria-hidden="true">★</span>
+              <span class="search-wrap__fav-label">Favoris</span>
+            </button>
+          </div>
+        </div>
+
+        <main class="container">
+          <p id="outils-count" aria-live="polite"></p>
+          <p id="tools-empty" class="empty-state" hidden>
+            Aucun outil ne correspond à votre recherche. Essayez un autre mot-clé.
+          </p>
+          <ul id="tools-list" class="tools-list" role="list"></ul>
+        </main>
+
+        <footer class="site-footer site-footer--compact">
+          <p>
+            <span class="site-footer__text">Créé avec soin par <strong>ClemP</strong> pour les cours d’EPS.</span>
+          </p>
+        </footer>
+      </div>
     </div>
 
-    <main class="container">
-      <p id="outils-count" aria-live="polite"></p>
-      <p id="tools-empty" class="empty-state" hidden>
-        Aucun outil ne correspond à votre recherche. Essayez un autre mot-clé.
-      </p>
-      <ul id="tools-list" class="tools-list" role="list"></ul>
-    </main>
-
-    <footer class="site-footer">
-      <p>
-        <span class="site-footer__text">Créé avec soin par <strong>ClemP</strong> pour les cours d’EPS.</span>
-        <a href="outils/nouvelle-annee-scolaire.html">🗓️ Nouvelle année scolaire, cet outil permet de passer sur une nouvelle année.</a>
-        <a href="https://fr.tipeee.com/clemp/" target="_blank" rel="noopener noreferrer">☕ Soutenir le projet</a>
-        <a href="faq.html">❓ FAQ</a>
-        <a href="https://www.instagram.com/clemp_eps2.0/" target="_blank" rel="noopener noreferrer">📷 @clemp_eps2.0</a>
-        <a
-          href="mailto:clement.pignet@gmail.com?subject=Contact%20Outils%20EPS&body=Bonjour%20ClemP%2C%0A%0AJe%20vous%20contacte%20concernant%20Outils%20EPS%20%3A%0A"
-          >✉️ Contacter</a
-        >
-      </p>
-    </footer>
+    <dialog class="favoris-dialog card" id="dialog-favoris" aria-labelledby="favoris-dialog-title">
+      <form method="dialog" class="favoris-dialog__form">
+        <header class="favoris-dialog__header">
+          <h2 id="favoris-dialog-title" class="favoris-dialog__title">Mes favoris</h2>
+          <button type="submit" class="favoris-dialog__close" aria-label="Fermer">×</button>
+        </header>
+        <p class="favoris-dialog__intro hint">
+          Cochez les outils à garder sous la main. Ils apparaissent en premier avec une étoile jaune.
+        </p>
+        <div id="favoris-dialog-list" class="favoris-dialog__list" role="group" aria-label="Sélection des favoris"></div>
+        <button type="submit" class="btn btn--primary favoris-dialog__done">Terminé</button>
+      </form>
+    </dialog>
 
     <dialog class="info-dialog card" id="dialog-info-app" aria-labelledby="info-dialog-title">
       <form method="dialog" class="info-dialog__form">
@@ -161,7 +302,7 @@
         <section class="info-dialog__section">
           <h3>Récupérer / transférer les données élèves</h3>
           <p>
-            Utilisez la page <strong>💾 Sauvegarde</strong> pour exporter et restaurer vos données localement.
+            Utilisez le menu <strong>💾 Sauvegarde</strong> pour exporter et restaurer vos données localement.
             Certains outils permettent aussi des transferts ciblés via <strong>QR code</strong> (ex : débrief / journaux élèves).
           </p>
           <p>
@@ -209,7 +350,7 @@
         <section class="info-dialog__section">
           <h3>Pour basculer</h3>
           <ul class="info-dialog__list">
-            <li>Depuis le <strong>bas de page</strong>, ouvrez <strong>Nouvelle année scolaire</strong>.</li>
+            <li>Depuis le <strong>menu</strong> (colonne de gauche), ouvrez <strong>Nouvelle année scolaire</strong>.</li>
           </ul>
         </section>
         <label class="annee-help-hide">
@@ -310,6 +451,8 @@
         </div>
       </form>
     </dialog>
+
+    <button type="button" id="btn-share-app" hidden aria-hidden="true">Partager</button>
 
     <script src="goatcounter.js"></script>
     <script src="dom-utils.js"></script>

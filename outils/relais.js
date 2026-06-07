@@ -6,6 +6,7 @@
   "use strict";
 
   var TOOL_ID = "relais";
+  var TOOL_LABEL = "Relais (prof)";
   var managerSessionId = null;
 
   var $ = function (id) {
@@ -1153,7 +1154,7 @@
           row.invalidLabel === "—" ? "" : row.invalidLabel,
         ];
       }),
-      titre: "Relais — résultats par coureur (performances valides)",
+      titre: TOOL_LABEL + " — résultats par coureur (performances valides)",
       fileBase: "relais-resultats-" + new Date().toISOString().slice(0, 10),
     };
   }
@@ -1202,7 +1203,7 @@
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
     doc.setTextColor(26, 39, 68);
-    doc.text("Relais", margin, y);
+    doc.text(TOOL_LABEL, margin, y);
     y += 8;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
@@ -1308,7 +1309,7 @@
   if (typeof SessionManager !== "undefined" && typeof DataManager !== "undefined") {
     SessionManager.init({
       toolId: DataManager.SESSION_TOOLS.RELAIS,
-      toolLabel: "Relais",
+      toolLabel: TOOL_LABEL,
       onSessionReady: loadManagerSession,
       onSessionCleared: clearManagerSession,
     });
