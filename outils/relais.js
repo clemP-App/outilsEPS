@@ -1,6 +1,6 @@
 /**
  * Relais — chronométrage 3 zones côté professeur.
- * Séance, import classe, association donneur/receveur, résultats agrégés, export CSV/PDF.
+ * Séance, import classe, association donneur/receveur, résultats agrégés, export CSV/PDF (passages inclus).
  */
 (function () {
   "use strict";
@@ -1127,14 +1127,46 @@
     }
   }
 
+  function csvQuote(cell) {
+    return "\"" + String(cell == null ? "" : cell).replace(/"/g, "\"\"") + "\"";
+  }
+
+  function formatTransmissionExport(run) {
+    if (!run.efficaciteZT || run.efficaciteZT.note10 == null) return "";
+    var note = run.efficaciteZT.note10.toFixed(1).replace(".", ",");
+    var verdict = run.efficaciteZT.verdict || "";
+    return verdict ? note + "/10 — " + verdict : note + "/10";
+  }
+
+  function passageExportRow(run) {
+    return [
+      run.donneurNom,
+      run.receveurNom,
+      run.formattedTotal || formaterTemps(run.totalCs),
+      new Date(run.date).toLocaleString("fr-FR"),
+      formatTransmissionExport(run),
+      runIsValid(run) ? "Oui" : "Non",
+      runIsValid(run) ? "" : runInvalidLabel(run),
+      run.temps ? run.temps.z1 || "" : "",
+      run.temps ? run.temps.zt || "" : "",
+      run.temps ? run.temps.z2 || "" : "",
+    ];
+  }
+
   function getExportData() {
     var rows = trierLignesResultats(
       getClassementCoureurs().filter(function (row) {
         return row.runs.length;
       })
     );
+    var passages = state.results
+      .slice()
+      .sort(function (a, b) {
+        return String(b.date).localeCompare(String(a.date));
+      })
+      .map(passageExportRow);
     return {
-      headers: [
+      summaryHeaders: [
         "rang",
         "nom",
         "classe",
@@ -1143,7 +1175,7 @@
         "meilleure_receveur",
         "non_valable",
       ],
-      rows: rows.map(function (row, index) {
+      summaryRows: rows.map(function (row, index) {
         return [
           index + 1,
           row.nom,
@@ -1154,26 +1186,87 @@
           row.invalidLabel === "—" ? "" : row.invalidLabel,
         ];
       }),
-      titre: TOOL_LABEL + " — résultats par coureur (performances valides)",
+      passageHeaders: [
+        "donneur",
+        "receveur",
+        "temps",
+        "date",
+        "transmission",
+        "valide",
+        "penalite",
+        "z1",
+        "zt",
+        "z2",
+      ],
+      passageRows: passages,
+      runnerDetails: rows.map(function (row) {
+        return {
+          nom: row.nom,
+          classe: row.classe,
+          passages: row.runs.map(function (run) {
+            var role = roleDansRun(run, row.runnerId);
+            var partner = partenaireDansRun(run, row.runnerId);
+            return {
+              temps: run.formattedTotal || formaterTemps(run.totalCs),
+              role: role,
+              partenaire: partner,
+              date: new Date(run.date).toLocaleString("fr-FR"),
+              transmission: formatTransmissionExport(run),
+              valide: runIsValid(run),
+              penalite: runIsValid(run) ? "" : runInvalidLabel(run),
+            };
+          }),
+        };
+      }),
+      stats: {
+        coureurs: rows.length,
+        passages: passages.length,
+      },
+      titre: "Résultats par coureur et liste des passages",
       fileBase: "relais-resultats-" + new Date().toISOString().slice(0, 10),
     };
   }
 
   function exportCsv() {
     var data = getExportData();
-    if (!data.rows.length) {
+    if (!data.summaryRows.length) {
       montrerMsg("Aucun résultat à exporter.", true);
       return;
     }
-    var lignes = [data.headers.join(";")];
-    data.rows.forEach(function (row) {
-      lignes.push(
-        row
-          .map(function (cell) {
-            return "\"" + String(cell || "").replace(/"/g, "\"\"") + "\"";
-          })
-          .join(";")
-      );
+    var lignes = [
+      csvQuote(TOOL_LABEL + " — résultats par coureur"),
+      data.summaryHeaders.join(";"),
+    ];
+    data.summaryRows.forEach(function (row) {
+      lignes.push(row.map(csvQuote).join(";"));
+    });
+    lignes.push("");
+    lignes.push(csvQuote(TOOL_LABEL + " — tous les passages"));
+    lignes.push(data.passageHeaders.join(";"));
+    data.passageRows.forEach(function (row) {
+      lignes.push(row.map(csvQuote).join(";"));
+    });
+    lignes.push("");
+    lignes.push(csvQuote(TOOL_LABEL + " — passages par coureur"));
+    lignes.push(["coureur", "classe", "temps", "role", "partenaire", "date", "transmission", "valide", "penalite"].join(";"));
+    data.runnerDetails.forEach(function (runner) {
+      runner.passages.forEach(function (pass) {
+        lignes.push(
+          [
+            runner.nom,
+            runner.classe,
+            pass.temps,
+            pass.role,
+            pass.partenaire,
+            pass.date,
+            pass.transmission,
+            pass.valide ? "Oui" : "Non",
+            pass.penalite,
+          ]
+            .map(csvQuote)
+            .join(";")
+        );
+      });
     });
     var blob = new Blob(["\ufeff" + lignes.join("\r\n")], { type: "text/csv;charset=utf-8" });
     var a = document.createElement("a");
@@ -1191,49 +1284,208 @@
       montrerMsg("Export PDF indisponible (jsPDF non chargé).", true);
       return;
     }
-    if (!data.rows.length) {
+    if (!data.summaryRows.length) {
       montrerMsg("Aucun résultat à exporter.", true);
       return;
     }
-    var doc = new JSPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+
+    var doc = new JSPDF({ unit: "mm", format: "a4", orientation: "portrait" });
     var margin = 14;
     var pageW = doc.internal.pageSize.getWidth();
     var pageH = doc.internal.pageSize.getHeight();
-    var y = margin;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(26, 39, 68);
-    doc.text(TOOL_LABEL, margin, y);
-    y += 8;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(100, 116, 139);
-    doc.text(data.titre, margin, y);
-    y += 5;
-    doc.setFontSize(9);
-    doc.text(new Date().toLocaleString("fr-FR"), margin, y);
-    y += 10;
-    doc.setTextColor(15, 23, 42);
-    var colCount = data.headers.length;
-    var colW = (pageW - 2 * margin) / colCount;
-    var rowH = 7;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    data.headers.forEach(function (h, i) {
-      doc.text(h, margin + i * colW + 1, y, { maxWidth: colW - 2 });
-    });
-    y += rowH;
-    doc.setFont("helvetica", "normal");
-    data.rows.forEach(function (row) {
-      if (y > pageH - margin - rowH) {
+    var contentW = pageW - 2 * margin;
+    var headerH = 24;
+    var y = headerH + 8;
+
+    var C = {
+      primary: [15, 118, 110],
+      primaryDark: [17, 94, 89],
+      ink: [15, 23, 42],
+      slate: [100, 116, 139],
+      soft: [240, 253, 250],
+      rowAlt: [248, 250, 252],
+      border: [226, 232, 240],
+      invalid: [185, 28, 28],
+      white: [255, 255, 255],
+    };
+
+    function rgb(c) {
+      doc.setFillColor(c[0], c[1], c[2]);
+      doc.setDrawColor(c[0], c[1], c[2]);
+      doc.setTextColor(c[0], c[1], c[2]);
+    }
+
+    function ensureSpace(h) {
+      if (y + h > pageH - 16) {
         doc.addPage();
         y = margin;
       }
-      row.forEach(function (cell, i) {
-        doc.text(String(cell), margin + i * colW + 1, y, { maxWidth: colW - 2 });
+    }
+
+    function drawPageHeader() {
+      rgb(C.primary);
+      doc.rect(0, 0, pageW, headerH, "F");
+      rgb(C.primaryDark);
+      doc.rect(0, headerH - 2, pageW, 2, "F");
+      doc.setTextColor(C.white[0], C.white[1], C.white[2]);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.text(TOOL_LABEL, margin, 11);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      var meta =
+        data.stats.coureurs +
+        " coureur" +
+        (data.stats.coureurs > 1 ? "s" : "") +
+        " · " +
+        data.stats.passages +
+        " passage" +
+        (data.stats.passages > 1 ? "s" : "") +
+        " · " +
+        new Date().toLocaleString("fr-FR");
+      doc.text(doc.splitTextToSize(meta, contentW)[0], margin, 18);
+    }
+
+    function drawSection(title) {
+      ensureSpace(12);
+      rgb(C.soft);
+      doc.rect(margin, y - 3, contentW, 8, "F");
+      rgb(C.primary);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(String(title || "").toUpperCase(), margin + 2, y + 2);
+      y += 10;
+    }
+
+    function drawTable(columns, rows, getCell, getColor) {
+      var minRowH = 7;
+      var fontSize = 8.2;
+      var tableHeaderH = 8;
+
+      function colX(index) {
+        var x = margin;
+        var i;
+        for (i = 0; i < index; i++) x += columns[i].w;
+        return x;
+      }
+
+      function cellText(row, colIndex) {
+        if (getCell) return String(getCell(row, colIndex) == null ? "" : getCell(row, colIndex));
+        return String(row[colIndex] == null ? "" : row[colIndex]);
+      }
+
+      function drawHeader() {
+        ensureSpace(tableHeaderH + 4);
+        rgb(C.primary);
+        doc.rect(margin, y, contentW, tableHeaderH, "F");
+        doc.setTextColor(C.white[0], C.white[1], C.white[2]);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(fontSize);
+        columns.forEach(function (col, i) {
+          var tx =
+            colX(i) + (col.align === "right" ? col.w - 2 : col.align === "center" ? col.w / 2 : 2);
+          doc.text(col.label, tx, y + 5.5, { align: col.align || "left", maxWidth: col.w - 4 });
+        });
+        y += tableHeaderH;
+      }
+
+      drawHeader();
+      rows.forEach(function (row, rowIndex) {
+        var heights = columns.map(function (col, colIndex) {
+          var lines = doc.splitTextToSize(cellText(row, colIndex), col.w - 4);
+          return Math.max(minRowH, lines.length * 3.6 + 3);
+        });
+        var rowH = Math.max.apply(null, heights);
+        if (y + rowH > pageH - 16) {
+          doc.addPage();
+          y = margin;
+          drawHeader();
+        }
+        rgb(rowIndex % 2 === 0 ? C.white : C.rowAlt);
+        doc.rect(margin, y, contentW, rowH, "F");
+        rgb(C.border);
+        doc.setLineWidth(0.12);
+        doc.rect(margin, y, contentW, rowH, "S");
+        columns.forEach(function (col, colIndex) {
+          var tx = colX(colIndex);
+          rgb(C.border);
+          doc.line(tx, y, tx, y + rowH);
+          var lines = doc.splitTextToSize(cellText(row, colIndex), col.w - 4);
+          rgb(getColor ? getColor(row, colIndex) : C.ink);
+          doc.setFont(
+            "helvetica",
+            colIndex === 0 && columns[0].label === "Rang" ? "bold" : "normal"
+          );
+          doc.setFontSize(fontSize);
+          var textX =
+            col.align === "right"
+              ? tx + col.w - 2
+              : col.align === "center"
+                ? tx + col.w / 2
+                : tx + 2;
+          doc.text(lines, textX, y + 4.2, { align: col.align || "left", maxWidth: col.w - 4 });
+        });
+        rgb(C.border);
+        doc.line(margin + contentW, y, margin + contentW, y + rowH);
+        y += rowH;
       });
-      y += rowH;
+      y += 6;
+    }
+
+    drawPageHeader();
+
+    drawSection("Classement par coureur");
+    drawTable(
+      [
+        { label: "Rang", w: 10, align: "center" },
+        { label: "Coureur", w: 42, align: "left" },
+        { label: "Classe", w: 16, align: "left" },
+        { label: "Meilleure", w: 22, align: "right" },
+        { label: "Donneur", w: 22, align: "right" },
+        { label: "Receveur", w: 22, align: "right" },
+        { label: "Non val.", w: 38, align: "left" },
+      ],
+      data.summaryRows
+    );
+
+    drawSection("Tous les passages");
+    var passageTableRows = data.passageRows.map(function (row) {
+      var valid = row[5] === "Oui";
+      return {
+        cells: [row[0], row[1], row[2], row[3], row[4], valid ? "Valide" : row[6] || "Non valable"],
+        invalid: !valid,
+      };
     });
+    drawTable(
+      [
+        { label: "Donneur", w: 32, align: "left" },
+        { label: "Receveur", w: 32, align: "left" },
+        { label: "Temps", w: 20, align: "right" },
+        { label: "Date", w: 38, align: "left" },
+        { label: "Trans.", w: 28, align: "left" },
+        { label: "Statut", w: 32, align: "left" },
+      ],
+      passageTableRows,
+      function (row, colIndex) {
+        return row.cells[colIndex];
+      },
+      function (row, colIndex) {
+        return colIndex === 5 && row.invalid ? C.invalid : C.ink;
+      }
+    );
+
+    var total = doc.internal.getNumberOfPages();
+    var p;
+    for (p = 1; p <= total; p++) {
+      doc.setPage(p);
+      rgb(C.slate);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.text("Outils EPS — " + TOOL_LABEL + " · page " + p + " / " + total, pageW / 2, pageH - 8, {
+        align: "center",
+      });
+    }
+
     doc.save(data.fileBase + ".pdf");
     montrerMsg("Export PDF téléchargé.");
   }

@@ -35,6 +35,9 @@
   var syncReaderEl = document.getElementById("backup-sync-reader");
   var syncAnalysisEl = document.getElementById("backup-sync-analysis");
   var syncConflictsEl = document.getElementById("backup-sync-conflicts");
+  var syncPhase2El = document.getElementById("backup-sync-phase2");
+  var syncGridEl = document.getElementById("backup-sync-grid");
+  var syncSuccessEl = document.getElementById("backup-sync-success");
   var btnSyncBackup = document.getElementById("btn-sync-backup");
   var btnSyncCancel = document.getElementById("btn-sync-cancel");
   var btnSyncScan = document.getElementById("btn-sync-scan");
@@ -46,6 +49,7 @@
   var syncRemoteState = null;
   var syncLocalPayload = null;
   var syncApplying = false;
+  var syncRunId = 0;
 
   function syncDetectDeviceName() {
     var ua = navigator.userAgent || "";
@@ -625,6 +629,31 @@
     });
   }
 
+  function syncSetPhase2Visible(show) {
+    if (syncPhase2El) syncPhase2El.hidden = !show;
+    if (syncGridEl) syncGridEl.classList.toggle("backup-sync-grid--pairing-only", !show);
+  }
+
+  function syncHideSuccess() {
+    if (syncSuccessEl) syncSuccessEl.hidden = true;
+  }
+
+  function syncShowSuccess() {
+    if (syncSuccessEl) {
+      syncSuccessEl.hidden = false;
+      if (syncSuccessEl.scrollIntoView) {
+        syncSuccessEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+    if (syncPhase2El) syncPhase2El.hidden = true;
+    if (syncGridEl) syncGridEl.classList.add("backup-sync-grid--pairing-only");
+    if (btnSyncApply) btnSyncApply.disabled = true;
+    if (btnSyncScan) btnSyncScan.disabled = true;
+    montrerOk(
+      "Synchronisation réussie : les deux appareils ont les mêmes données. Vous pouvez fermer le panneau de synchronisation."
+    );
+  }
+
   function syncSetStatus(text) {
     if (syncStatusEl) syncStatusEl.textContent = text || "";
   }
@@ -652,12 +681,25 @@
   }
 
   function syncStopScanner() {
-    if (!syncScanner) return;
-    syncScanner.stop().catch(function () {}).then(function () {
-      return syncScanner.clear();
-    }).catch(function () {});
+    if (syncReaderEl) {
+      syncReaderEl.hidden = true;
+    }
+    if (!syncScanner) {
+      if (syncReaderEl) syncReaderEl.innerHTML = "";
+      return Promise.resolve();
+    }
+    var scanner = syncScanner;
     syncScanner = null;
-    if (syncReaderEl) syncReaderEl.hidden = true;
+    return scanner
+      .stop()
+      .catch(function () {})
+      .then(function () {
+        return scanner.clear();
+      })
+      .catch(function () {})
+      .then(function () {
+        if (syncReaderEl) syncReaderEl.innerHTML = "";
+      });
   }
 
   function syncScanErrorMessage(err) {
@@ -694,6 +736,8 @@
     syncStopTimers();
     syncStopScanner();
     syncRenderQr("");
+    syncSetPhase2Visible(false);
+    syncHideSuccess();
     if (btnSyncScan) btnSyncScan.disabled = true;
     if (btnSyncApply) btnSyncApply.disabled = true;
     syncSetStatus("La connexion a expire. Le QR a ete masque.");
@@ -867,7 +911,8 @@
   }
 
   function syncPoll() {
-    if (!syncSession || !window.OutilsEPS || !OutilsEPS.BackupSync) return;
+    if (!syncSession || !syncPanelEl || syncPanelEl.hidden) return;
+    if (!window.OutilsEPS || !OutilsEPS.BackupSync) return;
     OutilsEPS.BackupSync.getSession(syncSession)
       .then(function (row) {
         syncRemoteState = row;
@@ -876,11 +921,14 @@
           return syncApplyDecision(row.decision, true);
         }
         if (row.a_uploaded && row.b_uploaded) {
+          syncSetPhase2Visible(true);
           syncRenderAnalysis(row);
         } else if (row.b_joined) {
+          syncSetPhase2Visible(true);
           syncSetProgress(55);
           syncSetStatus("Appareils associes. Envoi et attente des deux sauvegardes.");
         } else {
+          syncSetPhase2Visible(false);
           syncSetProgress(35);
           syncSetStatus("QR pret. Scannez-le avec l'autre appareil.");
         }
@@ -907,17 +955,19 @@
     });
   }
 
-  function syncStartCreatedSession() {
+  function syncStartCreatedSession(runId) {
     syncSetProgress(10);
     syncSetStatus("Creation de la session temporaire.");
     return OutilsEPS.BackupSync.createSession()
       .then(function (session) {
+        if (runId !== syncRunId || !syncPanelEl || syncPanelEl.hidden) return null;
         syncSession = session;
         syncCountdown(session.expiresAt);
         syncRenderQr(OutilsEPS.BackupSync.buildPairingText(session));
         return syncUploadLocal();
       })
       .then(function () {
+        if (runId !== syncRunId || !syncPanelEl || syncPanelEl.hidden) return;
         syncPoll();
         syncPollTimer = setInterval(syncPoll, 2500);
       });
@@ -933,6 +983,7 @@
     }
     syncSetProgress(35);
     syncSetStatus("Association avec l'autre appareil.");
+    syncSetPhase2Visible(true);
     OutilsEPS.BackupSync.joinSession(pairing.sessionId, pairing.token)
       .then(function (session) {
         syncSession = session;
@@ -956,52 +1007,83 @@
       return;
     }
     montrerErreur("");
+    syncRunId += 1;
+    var runId = syncRunId;
     syncStopTimers();
+    syncStopScanner();
     syncSession = null;
     syncRemoteState = null;
     syncLocalPayload = null;
     syncApplying = false;
     if (btnSyncApply) btnSyncApply.disabled = true;
     if (btnSyncScan) btnSyncScan.disabled = true;
+    syncSetPhase2Visible(false);
+    syncHideSuccess();
     if (syncAnalysisEl) syncAnalysisEl.hidden = true;
     if (syncConflictsEl) syncConflictsEl.hidden = true;
-    if (syncReaderEl) syncReaderEl.hidden = true;
+    if (syncReaderEl) {
+      syncReaderEl.hidden = true;
+      syncReaderEl.innerHTML = "";
+    }
     syncPanelEl.hidden = false;
     syncPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
     syncSetProgress(0);
-    syncStartCreatedSession().catch(function (e) {
+    syncStartCreatedSession(runId).catch(function (e) {
+      if (runId !== syncRunId) return;
       syncSetStatus(e.message || "Creation impossible.");
     });
   }
 
   function syncClose() {
+    if (!syncPanelEl || syncPanelEl.hidden) return;
+    syncRunId += 1;
+    syncPanelEl.hidden = true;
     syncStopTimers();
     syncStopScanner();
-    if (syncSession && window.OutilsEPS && OutilsEPS.BackupSync) {
-      OutilsEPS.BackupSync.cleanup(syncSession);
+    syncSetPhase2Visible(false);
+    syncHideSuccess();
+    if (syncAnalysisEl) syncAnalysisEl.hidden = true;
+    if (syncConflictsEl) syncConflictsEl.hidden = true;
+    if (syncReaderEl) {
+      syncReaderEl.hidden = true;
+      syncReaderEl.innerHTML = "";
     }
-    if (syncPanelEl) syncPanelEl.hidden = true;
+    if (btnSyncApply) btnSyncApply.disabled = true;
+    if (btnSyncScan) btnSyncScan.disabled = true;
+    syncRenderQr("");
+    syncSetProgress(0);
+    var session = syncSession;
+    syncSession = null;
+    syncRemoteState = null;
+    syncLocalPayload = null;
+    syncApplying = false;
+    if (session && window.OutilsEPS && OutilsEPS.BackupSync) {
+      OutilsEPS.BackupSync.cleanup(session);
+    }
   }
 
   function syncScan() {
+    if (!syncPanelEl || syncPanelEl.hidden) return;
     if (!syncReaderEl || typeof Html5Qrcode === "undefined") {
       syncSetStatus("Scanner QR indisponible.");
       return;
     }
-    syncReaderEl.hidden = false;
-    if (!syncScanner) syncScanner = new Html5Qrcode("backup-sync-reader");
-    syncSetStatus("Ouverture de la camera arriere.");
-    syncStartScannerWithFallback(function (decodedText) {
-      var pairing = OutilsEPS.BackupSync.parsePairingText(decodedText);
-      syncScanner.stop().catch(function () {}).then(function () {
-        syncReaderEl.hidden = true;
-        syncJoin(pairing);
+    syncStopScanner().then(function () {
+      if (!syncPanelEl || syncPanelEl.hidden) return;
+      syncReaderEl.hidden = false;
+      syncScanner = new Html5Qrcode("backup-sync-reader");
+      syncSetStatus("Ouverture de la camera arriere.");
+      return syncStartScannerWithFallback(function (decodedText) {
+        var pairing = OutilsEPS.BackupSync.parsePairingText(decodedText);
+        return syncStopScanner().then(function () {
+          if (!syncPanelEl || syncPanelEl.hidden) return;
+          syncJoin(pairing);
+        });
       });
-    })
-      .catch(function (e) {
-        syncReaderEl.hidden = true;
-        syncSetStatus(syncScanErrorMessage(e));
-      });
+    }).catch(function (e) {
+      syncStopScanner();
+      syncSetStatus(syncScanErrorMessage(e));
+    });
   }
 
   function syncApplyDecision(decision, fromRemote) {
@@ -1020,7 +1102,7 @@
       .then(function () {
         syncSetProgress(100);
         syncSetStatus("Synchronisation terminee. Les deux appareils ont le meme fichier de donnees.");
-        montrerOk("Synchronisation terminee.");
+        syncShowSuccess();
         if (window.OutilsEPS && OutilsEPS.BackupSync && OutilsEPS.BackupSync.markApplied) {
           return OutilsEPS.BackupSync.markApplied(syncSession);
         }
@@ -1083,7 +1165,12 @@
   if (btnImportReplace) btnImportReplace.addEventListener("click", remplacerParSauvegarde);
   if (btnImportCancel) btnImportCancel.addEventListener("click", hideImportPanel);
   if (btnSyncBackup) btnSyncBackup.addEventListener("click", syncOpen);
-  if (btnSyncCancel) btnSyncCancel.addEventListener("click", syncClose);
+  if (btnSyncCancel) {
+    btnSyncCancel.addEventListener("click", function (e) {
+      e.preventDefault();
+      syncClose();
+    });
+  }
   if (btnSyncScan) btnSyncScan.addEventListener("click", syncScan);
   if (btnSyncApply) btnSyncApply.addEventListener("click", syncApplyLocalChoice);
 

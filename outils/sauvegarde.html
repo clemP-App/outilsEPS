@@ -28,18 +28,69 @@
       <p id="sauvegarde-msg" class="msg-error sauvegarde-msg" role="alert" hidden></p>
       <p id="sauvegarde-ok" class="msg-ok sauvegarde-msg" role="status" hidden></p>
 
-      <section class="card sauvegarde-hero" aria-labelledby="lbl-hero">
-        <div class="sauvegarde-hero__badge" aria-hidden="true">💾</div>
-        <h2 id="lbl-hero">Vos données restent sur cet appareil</h2>
-        <p class="sauvegarde-hero__lead">
-          Classes, cahier de texte, championnats, réglages… tout est enregistré <strong>localement</strong>, sans compte ni cloud obligatoire.
-        </p>
-        <ul class="sauvegarde-hero__tips">
-          <li><strong>Exporter</strong> régulièrement un fichier JSON (<code>outilsEPS-backup.json</code>)</li>
-          <li><strong>Importer</strong> pour restaurer ou fusionner sur un autre appareil</li>
-          <li>Les imports QR élèves se gèrent dans <a href="donnees-eleves.html">Données élèves</a></li>
-        </ul>
-      </section>
+      <details class="card sauvegarde-hero" aria-labelledby="lbl-hero">
+        <summary class="sauvegarde-hero__summary" id="lbl-hero">
+          <span class="sauvegarde-hero__badge" aria-hidden="true">💾</span>
+          <span class="sauvegarde-hero__summary-text">
+            <span class="sauvegarde-hero__summary-title">Où sont stockées vos données ?</span>
+            <span class="sauvegarde-hero__summary-hint">Comprendre la sauvegarde, l’import et la synchronisation</span>
+          </span>
+        </summary>
+
+        <div class="sauvegarde-hero__body">
+          <p class="sauvegarde-hero__lead">
+            Outils EPS enregistre vos <strong>classes, cahier de texte, championnats, réglages…</strong>
+            directement sur <strong>ce téléphone ou cet ordinateur</strong>.
+            Rien n’est envoyé automatiquement sur internet et vous n’avez <strong>pas besoin de créer un compte</strong>.
+          </p>
+
+          <div class="sauvegarde-hero__panel sauvegarde-hero__panel--warn">
+            <h3 class="sauvegarde-hero__panel-title">En pratique, cela veut dire que…</h3>
+            <ul class="sauvegarde-hero__list">
+              <li>Vos données <strong>ne suivent pas</strong> toutes seules si vous changez d’appareil.</li>
+              <li>Si vous <strong>videz le cache</strong> du navigateur ou supprimez l’icône de l’app, tout peut disparaître.</li>
+              <li>Si l’appareil est <strong>perdu ou cassé</strong> sans copie de sauvegarde, les données sont perdues.</li>
+            </ul>
+          </div>
+
+          <div class="sauvegarde-hero__panel sauvegarde-hero__panel--help">
+            <h3 class="sauvegarde-hero__panel-title">Comment ne rien perdre ?</h3>
+            <ol class="sauvegarde-hero__steps">
+              <li>
+                <strong>Exportez</strong> de temps en temps (bouton ci-dessous).
+                Un fichier <code>outilsEPS-backup.json</code> se télécharge&nbsp;: c’est une <strong>copie complète</strong>
+                de vos données Outils EPS.
+              </li>
+              <li>
+                <strong>Conservez ce fichier</strong> dans un endroit sûr&nbsp;: Google Drive, iCloud, clé USB,
+                mail à vous-même… Comme une photocopie de votre classe.
+              </li>
+              <li>
+                Pour <strong>retrouver vos données</strong> sur le même appareil ou un autre, utilisez
+                <strong>Importer</strong>. Vous choisirez ensuite de fusionner avec l’existant ou de tout remplacer.
+              </li>
+            </ol>
+          </div>
+
+          <div class="sauvegarde-hero__panel sauvegarde-hero__panel--sync">
+            <h3 class="sauvegarde-hero__panel-title">Avoir les mêmes données sur deux appareils</h3>
+            <p class="sauvegarde-hero__sync-text">
+              Vous pouvez aussi <strong>synchroniser</strong> Outils EPS entre deux appareils à vous,
+              par exemple votre <strong>téléphone</strong> et votre <strong>tablette</strong>.
+              Ouvrez cette page sur les deux appareils, puis lancez <strong>Synchroniser deux appareils</strong> (bouton ci-dessous)&nbsp;:
+              l’un affiche un QR code, l’autre le scanne. Les données des deux appareils sont comparées puis
+              fusionnées pour que vous retrouviez la même chose des deux côtés.
+              <strong>Une connexion internet est nécessaire</strong> le temps du transfert.
+            </p>
+          </div>
+
+          <p class="sauvegarde-hero__note hint">
+            <strong>À part :</strong> les réponses remontées par QR code depuis les outils élèves (débrief, musculation…)
+            se gèrent dans l’outil
+            <a href="donnees-eleves.html">Données élèves</a>, pas sur cette page.
+          </p>
+        </div>
+      </details>
 
       <section class="sauvegarde-quick" aria-label="Actions de sauvegarde">
         <article class="sauvegarde-quick-card">
@@ -63,7 +114,7 @@
         <article class="sauvegarde-quick-card">
           <span class="sauvegarde-quick-card__icon" aria-hidden="true">⇄</span>
           <h3>Synchroniser</h3>
-          <p>Transférez vos données entre deux appareils via QR code (session temporaire sécurisée).</p>
+          <p>Transférez vos données entre deux appareils (ex. téléphone et tablette) via QR code. Connexion internet requise.</p>
           <button type="button" class="btn btn--ghost btn--labeled" id="btn-sync-backup">
             <span class="btn__icon" aria-hidden="true">⇄</span>
             <span class="btn__text">Synchroniser deux appareils</span>
@@ -101,11 +152,25 @@
           <p class="hint" id="backup-sync-timer">Connexion non ouverte.</p>
         </div>
 
-        <div class="backup-sync-grid">
+        <div
+          id="backup-sync-success"
+          class="backup-sync-success"
+          hidden
+          role="status"
+          aria-live="polite"
+        >
+          <p class="backup-sync-success__title">Synchronisation réussie</p>
+          <p class="backup-sync-success__text">
+            Les deux appareils ont maintenant les mêmes données. Vous pouvez fermer cette fenêtre.
+          </p>
+        </div>
+
+        <div class="backup-sync-grid" id="backup-sync-grid">
           <div class="backup-sync-box">
             <h3>1. Associer les appareils</h3>
             <p class="hint">
-              Lancez cette page sur les deux appareils. Sur l'un, scannez le QR affiche par l'autre.
+              Ouvrez cette page sur les deux appareils. Une connexion internet est nécessaire.
+              Sur l'un, scannez le QR code affiché par l'autre.
             </p>
             <div id="backup-sync-qr" class="backup-sync-qr" aria-live="polite"></div>
             <div class="sauvegarde-actions">
@@ -113,14 +178,14 @@
                 Scanner avec la camera arriere
               </button>
             </div>
+            <div id="backup-sync-reader" class="backup-sync-reader" hidden></div>
           </div>
 
-          <div class="backup-sync-box">
+          <div class="backup-sync-box" id="backup-sync-phase2" hidden>
             <h3>2. Analyse et fusion</h3>
             <p class="hint">
               Internet est indispensable pendant quelques minutes. Les sauvegardes sont supprimees de Supabase a la fin du transfert.
             </p>
-            <div id="backup-sync-reader" class="backup-sync-reader" hidden></div>
             <div id="backup-sync-analysis" class="backup-sync-analysis" hidden></div>
             <div id="backup-sync-conflicts" class="backup-sync-conflicts" hidden></div>
             <button type="button" class="btn btn--primary" id="btn-sync-apply" disabled>
@@ -132,12 +197,12 @@
         <details class="sauvegarde-import-details backup-sync-rgpd">
           <summary>Confidentialite et RGPD</summary>
           <p class="hint">
-            La synchronisation cree une session temporaire protegee par un jeton affiche uniquement dans le QR.
+            La synchronisation cree une session temporaire protegee par un jeton affiche uniquement dans le QR code.
             Supabase ne recoit les sauvegardes que le temps de comparer et fusionner les deux appareils.
             Aucune conservation volontaire n'est faite apres validation ou fermeture de session.
           </p>
           <p class="hint">
-            Le QR impose une action physique entre les deux appareils. Sans ce jeton, une autre personne ne peut pas recuperer la sauvegarde.
+            Le QR code impose une action physique entre les deux appareils. Sans ce jeton, une autre personne ne peut pas recuperer la sauvegarde.
             Pour rester conforme, utilisez cette fonction seulement avec vos appareils et une connexion de confiance.
           </p>
         </details>
@@ -267,21 +332,22 @@
     <script src="../tool-info.js"></script>
     <script>
       ToolInfo.init({
-        intro: "Sauvegardez vos classes et vos données pour ne pas tout perdre.",
+        intro:
+          "Vos données restent sur cet appareil. Exportez régulièrement une copie pour ne rien perdre en cas de changement de téléphone ou de suppression de l’app.",
         sections: [
           {
-            title: "L’intérêt principal",
+            title: "L’essentiel à retenir",
             text:
-              "Toutes vos informations restent sur cet appareil. Un fichier de sauvegarde vous permet de les garder en sécurité ou de les remettre plus tard.",
+              "Outils EPS ne stocke rien sur un compte en ligne. Tout est sur votre téléphone ou ordinateur. Sans fichier de sauvegarde exporté, un cache vidé ou un appareil perdu peut effacer vos classes et vos réglages.",
           },
           {
-            title: "Comment s’en servir",
+            title: "Les 3 gestes utiles",
             list: [
-              "« Exporter » télécharge un fichier sur votre téléphone ou ordinateur.",
-              "Conservez ce fichier (cloud, clé USB, mail à vous-même…).",
-              "« Importer » remplace les données actuelles par celles du fichier : à utiliser avec prudence.",
-              "La section « Espace utilisé » indique le poids par outil, alerte si le quota navigateur se remplit, et permet de supprimer des données ciblées.",
-              "Pour les QR élèves : ouvrez l’outil Données élèves.",
+              "Exporter → télécharge outilsEPS-backup.json (copie de vos données).",
+              "Garder ce fichier en lieu sûr (cloud, USB, mail…).",
+              "Importer → restaure ou fusionne sur le même appareil ou un autre.",
+              "Synchroniser → ouvrez cette page sur les deux appareils (internet requis), même contenu via QR code.",
+              "Les données QR code élèves : outil Données élèves.",
             ],
           },
         ],
