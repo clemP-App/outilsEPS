@@ -739,6 +739,7 @@
       .then(function (s) {
         stopStream();
         stream = s;
+        videoEl.hidden = false;
         videoEl.srcObject = stream;
         return videoEl.play();
       })

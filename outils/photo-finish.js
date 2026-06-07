@@ -582,6 +582,22 @@
       };
       track.onmute = function () {
         noteCameraDebug("track muted");
+        if (needsCameraUserGesture()) {
+          window.setTimeout(function () {
+            if (state.stream !== stream || !track.muted || els.video.readyState >= 2) return;
+            noteCameraDebug("track muted stalled");
+            stream.getTracks().forEach(function (t) {
+              t.stop();
+            });
+            state.stream = null;
+            state.cameraStarting = false;
+            if (els.video) els.video.srcObject = null;
+            notifyCameraWaiters(false);
+            showCameraActivationOverlay();
+            setStatus("Camera iPad en sourdine. Retouchez le cadre noir.");
+            renderCameraDebug();
+          }, 1200);
+        }
       };
       track.onunmute = function () {
         noteCameraDebug("track unmuted");
@@ -1476,6 +1492,7 @@
     } else {
       renderCameraDebug();
     }
+    hidePreviewTapOverlay();
     state.cameraStarting = true;
     setStatus("Demande d'acces a la camera...");
     showMsg("");

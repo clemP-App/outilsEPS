@@ -36,7 +36,8 @@ function isStaticAsset(url) {
 }
 
 function isNetworkFirstToolScript(url) {
-  return /\/outils\/photo-finish\.js$/i.test(url.pathname);
+  return /\/outils\/(photo-finish|video-retard|relais-eleve|championnat-poule|championnat-poule-unique)\.js$/i.test(url.pathname) ||
+    /\/shared\/imports-eleves-ui\.js$/i.test(url.pathname);
 }
 
 function isOnlineOnlyEvalCatalog(url) {

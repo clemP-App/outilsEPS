@@ -121,11 +121,13 @@ var ImportsElevesUI = (function () {
         scanning = false;
         if (els.btnStart) els.btnStart.hidden = false;
         if (els.btnStop) els.btnStop.hidden = true;
+        if (els.reader) els.reader.hidden = true;
       })
       .catch(function () {
         scanning = false;
         if (els.btnStart) els.btnStart.hidden = false;
         if (els.btnStop) els.btnStop.hidden = true;
+        if (els.reader) els.reader.hidden = true;
       });
   }
 
@@ -137,6 +139,7 @@ var ImportsElevesUI = (function () {
     showMsg("", false);
     if (!scanner) scanner = new Html5Qrcode(els.readerId);
     if (scanning) return;
+    if (els.reader) els.reader.hidden = false;
     var config = { fps: 8, qrbox: { width: 260, height: 260 } };
     Html5Qrcode.getCameras()
       .then(function (cameras) {
@@ -153,6 +156,7 @@ var ImportsElevesUI = (function () {
         if (els.btnStop) els.btnStop.hidden = false;
       })
       .catch(function (e) {
+        if (els.reader) els.reader.hidden = true;
         showMsg(
           e.message || "Impossible d’accéder à la caméra. Utilisez le collage manuel.",
           false
@@ -481,6 +485,7 @@ var ImportsElevesUI = (function () {
   function init(options) {
     options = options || {};
     els.readerId = options.readerId || "imports-reader";
+    els.reader = $(els.readerId);
     els.msg = $(options.msgId || "imports-msg");
     els.ok = $(options.okId || "imports-ok");
     els.btnStart = $(options.startId || "imports-start");

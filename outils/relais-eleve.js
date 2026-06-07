@@ -562,6 +562,7 @@
       montrerMsg("Caméra non disponible sur cet appareil.");
       return Promise.resolve(false);
     }
+    if (cameraWrapEl) cameraWrapEl.hidden = false;
     return navigator.mediaDevices
       .getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -570,12 +571,20 @@
       .then(function (stream) {
         cameraStream = stream;
         if (cameraPreviewEl) {
+          cameraPreviewEl.setAttribute("playsinline", "");
+          cameraPreviewEl.setAttribute("webkit-playsinline", "true");
+          cameraPreviewEl.playsInline = true;
+          cameraPreviewEl.muted = true;
           cameraPreviewEl.srcObject = stream;
+          var playAttempt = cameraPreviewEl.play();
+          if (playAttempt && typeof playAttempt.catch === "function") {
+            playAttempt.catch(function () {});
+          }
         }
-        if (cameraWrapEl) cameraWrapEl.hidden = false;
         return true;
       })
       .catch(function () {
+        if (cameraWrapEl) cameraWrapEl.hidden = true;
         montrerMsg("Accès à la caméra refusé. Décochez l’option film ou autorisez la caméra.");
         if (filmZTEl) filmZTEl.checked = false;
         return false;
@@ -728,9 +737,7 @@
     beep(720, 0.1);
 
     if (reg.filmZT) {
-      arreterEnregistrement().then(function () {
-        arreterCamera();
-      });
+      arreterEnregistrement();
     }
     startTick();
     majBoutons();

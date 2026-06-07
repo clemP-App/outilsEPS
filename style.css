@@ -9353,9 +9353,11 @@ body.video-retard-body-fs {
 
 .video-retard-src {
   position: fixed;
+  left: 0;
+  top: 0;
   width: 1px;
   height: 1px;
-  opacity: 0;
+  opacity: 0.03;
   pointer-events: none;
 }
 
