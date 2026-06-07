@@ -26,6 +26,7 @@
 
   function injectManifest() {
     if (!canUsePwa()) return;
+    if (script && script.getAttribute("data-no-manifest") === "true") return;
     if (document.querySelector('link[rel="manifest"]')) return;
     var link = document.createElement("link");
     link.rel = "manifest";
@@ -35,6 +36,7 @@
 
   function loadInstallBanner() {
     if (!canUsePwa()) return;
+    if (script && script.getAttribute("data-no-manifest") === "true") return;
     if (!script || !script.src) return;
     var bannerSrc = script.src.replace(/pwa-register\.js(\?.*)?$/i, "pwa-install-banner.js$1");
     if (bannerSrc === script.src) return;
