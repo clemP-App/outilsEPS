@@ -11578,6 +11578,20 @@ body.video-retard-body-fs {
   margin-bottom: 0.75rem;
 }
 
+.backup-sync-conflict-actions {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem;
+  border: 1px solid rgba(13, 148, 136, 0.22);
+  border-radius: var(--radius-sm);
+  background: rgba(13, 148, 136, 0.07);
+}
+
+.backup-sync-conflict-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
 .backup-sync-conflict {
   display: grid;
   gap: 0.35rem;

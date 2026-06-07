@@ -47,6 +47,52 @@
   var syncLocalPayload = null;
   var syncApplying = false;
 
+  function syncDetectDeviceName() {
+    var ua = navigator.userAgent || "";
+    var platform = navigator.platform || "";
+    if (/iPhone/i.test(ua)) return "iPhone";
+    if (/iPad/i.test(ua) || (platform === "MacIntel" && navigator.maxTouchPoints > 1)) return "iPad";
+    if (/Android/i.test(ua)) return /Mobile/i.test(ua) ? "telephone Android" : "tablette Android";
+    if (/Windows/i.test(ua)) return "ordinateur Windows";
+    if (/Macintosh|Mac OS/i.test(ua)) return "Mac";
+    return "appareil";
+  }
+
+  function syncDeviceNameFromPayload(payload) {
+    return (
+      payload &&
+      payload.metadata &&
+      payload.metadata.syncDeviceLabel &&
+      String(payload.metadata.syncDeviceLabel).trim()
+    ) || "appareil";
+  }
+
+  function syncThisDeviceLabel(name) {
+    name = String(name || "appareil");
+    if (/^(iPhone|iPad|appareil)/i.test(name)) return "cet " + name;
+    return "ce " + name;
+  }
+
+  function syncOtherDeviceLabel(name) {
+    return "l'autre " + String(name || "appareil");
+  }
+
+  function syncDeviceLabels(row) {
+    var a = syncPayloadFromRow(row, "a_payload");
+    var b = syncPayloadFromRow(row, "b_payload");
+    var aName = syncDeviceNameFromPayload(a);
+    var bName = syncDeviceNameFromPayload(b);
+    var localIsA = syncSession && syncSession.role === "a";
+    return {
+      a: localIsA ? syncThisDeviceLabel(aName) : syncOtherDeviceLabel(aName),
+      b: localIsA ? syncOtherDeviceLabel(bName) : syncThisDeviceLabel(bName),
+      local: localIsA ? syncThisDeviceLabel(aName) : syncThisDeviceLabel(bName),
+      remote: localIsA ? syncOtherDeviceLabel(bName) : syncOtherDeviceLabel(aName),
+      localChoice: localIsA ? "a" : "b",
+      remoteChoice: localIsA ? "b" : "a",
+    };
+  }
+
   var DELETE_CONFIRM = {
     "imports-eleves":
       "Supprimer tous les imports QR élèves enregistrés ?\n\nLes données saisies par les élèves ne seront plus consultables ici.\n\nCette action est irréversible.",
@@ -501,6 +547,15 @@
     if (syncStatusEl) syncStatusEl.textContent = text || "";
   }
 
+  function syncEscapeHtml(text) {
+    return String(text == null ? "" : text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function syncSetProgress(percent) {
     var pct = Math.max(0, Math.min(100, percent || 0));
     if (syncProgressFillEl) syncProgressFillEl.style.width = pct + "%";
@@ -514,14 +569,32 @@
     syncCountdownTimer = null;
   }
 
+  function syncStopScanner() {
+    if (!syncScanner) return;
+    syncScanner.stop().catch(function () {}).then(function () {
+      return syncScanner.clear();
+    }).catch(function () {});
+    syncScanner = null;
+    if (syncReaderEl) syncReaderEl.hidden = true;
+  }
+
+  function syncExpireSession() {
+    if (syncTimerEl) syncTimerEl.textContent = "Connexion expiree. Relancez une synchronisation.";
+    syncStopTimers();
+    syncStopScanner();
+    syncRenderQr("");
+    if (btnSyncScan) btnSyncScan.disabled = true;
+    if (btnSyncApply) btnSyncApply.disabled = true;
+    syncSetStatus("La connexion a expire. Le QR a ete masque.");
+  }
+
   function syncCountdown(expiresAt) {
     if (!syncTimerEl) return;
     if (syncCountdownTimer) clearInterval(syncCountdownTimer);
     function tick() {
       var ms = new Date(expiresAt).getTime() - Date.now();
       if (ms <= 0) {
-        syncTimerEl.textContent = "Connexion expiree.";
-        syncStopTimers();
+        syncExpireSession();
         return;
       }
       var min = Math.floor(ms / 60000);
@@ -536,6 +609,8 @@
   function syncRenderQr(text) {
     if (!syncQrEl) return;
     syncQrEl.innerHTML = "";
+    syncQrEl.hidden = !text;
+    if (btnSyncScan) btnSyncScan.disabled = !text;
     if (!text || typeof QRCode === "undefined") return;
     new QRCode(syncQrEl, {
       text: text,
@@ -567,6 +642,13 @@
     return decisions;
   }
 
+  function syncSetAllConflictChoices(choice) {
+    if (!syncConflictsEl) return;
+    syncConflictsEl.querySelectorAll("select[data-conflict-key]").forEach(function (sel) {
+      sel.value = choice || "both";
+    });
+  }
+
   function syncBackupForImport(merged) {
     var data = Object.assign({ metadata: merged.metadata }, merged.payload);
     data.metadata.app = "OutilsEPS";
@@ -581,34 +663,71 @@
     syncRemoteState = row;
 
     var compare = BackupSyncCore.compareBackups(a, b);
+    var labels = syncDeviceLabels(row);
     if (syncAnalysisEl) {
       syncAnalysisEl.hidden = false;
       syncAnalysisEl.innerHTML =
         '<div class="sauvegarde-import-summary">' +
         '<div class="sauvegarde-import-stat"><span class="sauvegarde-import-stat__value">' +
         compare.summary.onlyA +
-        '</span><span class="sauvegarde-import-stat__label">uniquement sur A</span></div>' +
+        '</span><span class="sauvegarde-import-stat__label">uniquement sur ' +
+        syncEscapeHtml(labels.a) +
+        "</span></div>" +
         '<div class="sauvegarde-import-stat"><span class="sauvegarde-import-stat__value">' +
         compare.summary.onlyB +
-        '</span><span class="sauvegarde-import-stat__label">uniquement sur B</span></div>' +
+        '</span><span class="sauvegarde-import-stat__label">uniquement sur ' +
+        syncEscapeHtml(labels.b) +
+        "</span></div>" +
         '<div class="sauvegarde-import-stat sauvegarde-import-stat--warn"><span class="sauvegarde-import-stat__value">' +
         compare.summary.conflicts +
-        '</span><span class="sauvegarde-import-stat__label">conflit(s) a choisir</span></div>' +
+        '</span><span class="sauvegarde-import-stat__label">difference(s) a choisir</span></div>' +
         "</div>";
     }
 
     if (syncConflictsEl) {
       syncConflictsEl.hidden = compare.conflicts.length === 0;
       syncConflictsEl.innerHTML = "";
+      if (compare.conflicts.length) {
+        var bulk = document.createElement("div");
+        var bulkTitle = document.createElement("strong");
+        var mergeAll = document.createElement("button");
+        var localAll = document.createElement("button");
+        var remoteAll = document.createElement("button");
+        bulk.className = "backup-sync-conflict-actions";
+        bulkTitle.textContent = "Appliquer le meme choix a toutes les differences";
+        mergeAll.type = "button";
+        localAll.type = "button";
+        remoteAll.type = "button";
+        mergeAll.className = "btn btn--ghost btn--small";
+        localAll.className = "btn btn--ghost btn--small";
+        remoteAll.className = "btn btn--ghost btn--small";
+        mergeAll.textContent = "Tout fusionner";
+        localAll.textContent = "Tout prendre depuis " + labels.local;
+        remoteAll.textContent = "Tout prendre depuis " + labels.remote;
+        [
+          [mergeAll, "both"],
+          [localAll, labels.localChoice],
+          [remoteAll, labels.remoteChoice],
+        ].forEach(function (entry) {
+          entry[0].addEventListener("click", function () {
+            syncSetAllConflictChoices(entry[1]);
+          });
+        });
+        bulk.appendChild(bulkTitle);
+        bulk.appendChild(mergeAll);
+        bulk.appendChild(localAll);
+        bulk.appendChild(remoteAll);
+        syncConflictsEl.appendChild(bulk);
+      }
       compare.conflicts.forEach(function (conflict) {
         var wrap = document.createElement("div");
         var title = document.createElement("strong");
         var idText = document.createElement("span");
         var select = document.createElement("select");
         var options = [
-          ["both", "Garder les deux copies"],
-          ["a", "Garder A"],
-          ["b", "Garder B"],
+          ["both", "Fusionner : conserver les deux versions"],
+          ["a", "Remplacer par la version de " + labels.a],
+          ["b", "Remplacer par la version de " + labels.b],
         ];
         wrap.className = "backup-sync-conflict";
         title.textContent = conflict.label;
@@ -656,13 +775,20 @@
         }
       })
       .catch(function (e) {
-        syncSetStatus(e.message || "Synchronisation indisponible.");
+        var msg = e && e.message ? e.message : "";
+        if (msg.indexOf("expire") >= 0 || msg.indexOf("introuvable") >= 0) {
+          syncExpireSession();
+        } else {
+          syncSetStatus(msg || "Synchronisation indisponible.");
+        }
       });
   }
 
   function syncUploadLocal() {
     if (!syncSession || !window.OutilsEPS || !OutilsEPS.BackupSync) return Promise.resolve();
     return DataManager.exportAllData().then(function (payload) {
+      payload.metadata = payload.metadata || {};
+      payload.metadata.syncDeviceLabel = syncDetectDeviceName();
       syncLocalPayload = payload;
       syncSetProgress(syncSession.role === "a" ? 25 : 50);
       syncSetStatus("Envoi temporaire de la sauvegarde de cet appareil.");
@@ -738,12 +864,7 @@
 
   function syncClose() {
     syncStopTimers();
-    if (syncScanner) {
-      syncScanner.stop().catch(function () {}).then(function () {
-        return syncScanner.clear();
-      }).catch(function () {});
-      syncScanner = null;
-    }
+    syncStopScanner();
     if (syncSession && window.OutilsEPS && OutilsEPS.BackupSync) {
       OutilsEPS.BackupSync.cleanup(syncSession);
     }
@@ -757,23 +878,25 @@
     }
     syncReaderEl.hidden = false;
     if (!syncScanner) syncScanner = new Html5Qrcode("backup-sync-reader");
-    Html5Qrcode.getCameras()
-      .then(function (cams) {
-        if (!cams || !cams.length) throw new Error("Aucune camera disponible.");
-        return syncScanner.start(
-          cams[0].id,
-          { fps: 10, qrbox: { width: 220, height: 220 } },
-          function (decodedText) {
-            var pairing = OutilsEPS.BackupSync.parsePairingText(decodedText);
-            syncScanner.stop().catch(function () {}).then(function () {
-              syncReaderEl.hidden = true;
-              syncJoin(pairing);
-            });
-          }
-        );
-      })
+    syncScanner
+      .start(
+        { facingMode: { ideal: "environment" } },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
+        function (decodedText) {
+          var pairing = OutilsEPS.BackupSync.parsePairingText(decodedText);
+          syncScanner.stop().catch(function () {}).then(function () {
+            syncReaderEl.hidden = true;
+            syncJoin(pairing);
+          });
+        }
+      )
       .catch(function (e) {
-        syncSetStatus(e.message || "Scan impossible.");
+        var msg = e && e.message ? e.message : "";
+        if (msg.indexOf("not allowed") >= 0 || msg.indexOf("denied") >= 0) {
+          syncSetStatus("Camera refusee ou indisponible. Autorisez la camera, puis reessayez.");
+        } else {
+          syncSetStatus(msg || "Scan impossible.");
+        }
       });
   }
 
