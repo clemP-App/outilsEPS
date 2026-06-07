@@ -8,7 +8,7 @@
     />
     <meta name="theme-color" content="#1a2744" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="no" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Outils EPS" />
     <title>Relais — Outils EPS</title>
@@ -304,9 +304,10 @@
             Comprendre la note
           </button>
           <div class="relais-eff-zt__explain" id="relais-eff-explain" hidden>
-            <p id="relais-eff-ref"></p>
-            <p id="relais-eff-detail"></p>
-            <p id="relais-eff-note"></p>
+            <p class="relais-eff-zt__explain-intro">
+              On compare le temps passé en transmission à la part de distance de cette zone dans le parcours.
+            </p>
+            <div id="relais-eff-explain-body"></div>
           </div>
         </div>
 
@@ -350,6 +351,7 @@
     <script src="../vendor/qrcode.min.js"></script>
     <script src="../shared/qr-share-ui.js"></script>
     <script src="../shared/tool-results-history.js"></script>
+    <script src="../pwa-camera-browser.js"></script>
     <script src="relais-eleve.js"></script>
     <script src="../tool-info.js"></script>
     <script>
@@ -375,7 +377,7 @@
           {
             title: "Note transmission",
             text:
-              "IT idéal = (distance ZT ÷ distance totale) × 100. IT réel = (temps ZT ÷ temps total) × 100. Note = 10 − ((IT réel − IT idéal) ÷ 2), arrondie au dixième, entre 0 et 10. Transmission hors zone ou témoin tombé : note 0. Appuyez sur « Comprendre la note » pour le détail.",
+              "Un tableau pas à pas explique le calcul (distances, temps, parts idéale et réelle, écart, note). Transmission hors zone ou témoin tombé : note 0. Appuyez sur « Comprendre la note ».",
           },
           {
             title: "Historique",

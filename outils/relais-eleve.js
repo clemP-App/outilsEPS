@@ -45,9 +45,7 @@
   var replayVideoEl = document.getElementById("relais-replay-video");
   var effEl = document.getElementById("relais-eff");
   var effNote10El = document.getElementById("relais-eff-note10");
-  var effRefEl = document.getElementById("relais-eff-ref");
-  var effDetailEl = document.getElementById("relais-eff-detail");
-  var effNoteEl = document.getElementById("relais-eff-note");
+  var effExplainBodyEl = document.getElementById("relais-eff-explain-body");
   var effVerdictEl = document.getElementById("relais-eff-verdict");
   var effToggleEl = document.getElementById("relais-eff-toggle");
   var effExplainEl = document.getElementById("relais-eff-explain");
@@ -316,67 +314,126 @@
     return pctTempsZone(cs, totalCs) + " % du temps";
   }
 
-  function texteEfficacite(eff) {
-    if (!eff) return { ref: "", detail: "", note: "" };
-    var ecartLabel =
-      (eff.itEcart > 0 ? "+" : "") + formaterPct1(eff.itEcart) + " point" + (Math.abs(eff.itEcart) >= 2 ? "s" : "");
-    var detail;
+  function formaterEcartIT(ecart) {
+    var arrondi = Math.round(ecart * 10) / 10;
+    return (arrondi > 0 ? "+" : "") + formaterPct1(arrondi) + " %";
+  }
+
+  function ligneTableauExplication(num, question, calcul, resultat, cls) {
+    return (
+      "<tr" +
+      (cls ? ' class="' + cls + '"' : "") +
+      "><th scope=\"row\">" +
+      escapeHtml(num) +
+      "</th><td>" +
+      escapeHtml(question) +
+      "</td><td>" +
+      escapeHtml(calcul) +
+      '</td><td class="relais-eff-explain-table__result">' +
+      escapeHtml(resultat) +
+      "</td></tr>"
+    );
+  }
+
+  function htmlExplicationEfficacite(eff) {
+    if (!eff) return "";
+    var reg = lireReglages();
+    var distTotal = reg.total;
+    var distZt = reg.zt;
+    var tempsTotal = formaterTemps(resultat.totalCs);
+    var tempsZt = formaterTemps(resultat.ztCs);
+    var ecart = formaterEcartIT(eff.itEcart);
+    var ecartNote =
+      eff.itEcart < 0
+        ? "−" + formaterPct1(Math.abs(eff.itEcart))
+        : formaterPct1(eff.itEcart);
+    var noteCalc = "10 − (" + ecartNote + " ÷ 2)" + (eff.itEcart < 0 ? " → maximum 10" : "");
+    var noteTheorique = formaterNote10(eff.noteBrute).replace(" / 10", "");
+    var rows = [
+      ligneTableauExplication(
+        "1",
+        "Distance totale du parcours",
+        reg.z1 + " + " + reg.zt + " + " + reg.z2,
+        distTotal + " m"
+      ),
+      ligneTableauExplication("2", "Distance de la zone transmission", "mètres en ZT", distZt + " m"),
+      ligneTableauExplication(
+        "3",
+        "Part idéale du parcours en transmission",
+        distZt + " ÷ " + distTotal + " × 100",
+        formaterPct1(eff.itIdeal) + " %"
+      ),
+      ligneTableauExplication("4", "Temps total de la course", "du départ à l’arrivée", tempsTotal),
+      ligneTableauExplication("5", "Temps passé en transmission", "Entrée ZT → Sortie ZT", tempsZt),
+      ligneTableauExplication(
+        "6",
+        "Part réelle du temps en transmission",
+        tempsZt.replace(" sec", "") + " ÷ " + tempsTotal.replace(" sec", "") + " × 100",
+        formaterPct1(eff.itReel) + " %"
+      ),
+      ligneTableauExplication(
+        "7",
+        "Écart (part réelle − part idéale)",
+        formaterPct1(eff.itReel) + " % − " + formaterPct1(eff.itIdeal) + " %",
+        ecart
+      ),
+      ligneTableauExplication("8", "Calcul de la note", noteCalc, noteTheorique + " / 10"),
+    ];
     if (eff.penalite) {
-      detail =
-        "Incident signalé : " +
-        eff.penaliteLabel +
-        ". La note est fixée à 0/10 (calcul théorique : " +
-        formaterNote10(eff.noteBrute) +
-        " avec IT idéal " +
-        formaterPct1(eff.itIdeal) +
-        " % et IT réel " +
-        formaterPct1(eff.itReel) +
-        " %).";
-    } else {
-      detail =
-        "IT idéal : " +
-        formaterPct1(eff.itIdeal) +
-        " % (distance ZT ÷ distance totale). IT réel : " +
-        formaterPct1(eff.itReel) +
-        " % (temps ZT ÷ temps total). Écart : " +
-        ecartLabel +
-        ". Note = 10 − (écart ÷ 2), arrondie au dixième, entre 0 et 10 → " +
-        formaterNote10(eff.note10) +
-        ".";
+      rows.push(
+        ligneTableauExplication(
+          "⚠",
+          "Incident pendant la transmission",
+          eff.penaliteLabel,
+          "note = 0",
+          "relais-eff-explain-table__row--alert"
+        )
+      );
     }
-    var rythme = "";
-    if (eff.tempsPerdu != null) {
-      if (Math.abs(eff.tempsPerdu) < 0.05) {
-        rythme = "Vitesse ZT au même rythme qu’en Z2.";
-      } else if (eff.tempsPerdu > 0) {
-        rythme = "Temps perdu en ZT vs rythme Z2 : " + eff.tempsPerduLabel + ".";
-      } else {
-        rythme = "Gain en ZT vs rythme Z2 : " + Math.abs(eff.tempsPerdu).toFixed(2) + " s.";
-      }
-    }
-    var note = "";
-    if (eff.ratioZ1Z2 != null && eff.v1 != null) {
-      note =
-        "Z1 à " +
-        eff.v1 +
-        " km/h (" +
-        eff.ratioZ1Z2 +
-        " % de la Z2) : plus lent au départ arrêté, c’est normal.";
+    rows.push(
+      ligneTableauExplication(
+        "★",
+        "Ta note transmission",
+        eff.penalite ? "incident → note forcée à 0" : "arrondie au dixième",
+        formaterNote10(eff.note10).replace(" / 10", "") + " / 10",
+        "relais-eff-explain-table__row--final"
+      )
+    );
+    return (
+      '<table class="relais-eff-explain-table">' +
+      "<caption>Détail du calcul de la note</caption>" +
+      "<thead><tr><th scope=\"col\">Étape</th><th scope=\"col\">Question</th><th scope=\"col\">Calcul</th><th scope=\"col\">Résultat</th></tr></thead>" +
+      "<tbody>" +
+      rows.join("") +
+      "</tbody></table>"
+    );
+  }
+
+  function texteEfficacite(eff) {
+    if (!eff) return { detail: "" };
+    if (eff.penalite) {
+      return {
+        detail:
+          eff.penaliteLabel +
+          " — note 0/10 (sinon " +
+          formaterNote10(eff.noteBrute) +
+          " avec IT idéal " +
+          formaterPct1(eff.itIdeal) +
+          " % et IT réel " +
+          formaterPct1(eff.itReel) +
+          " %).",
+      };
     }
     return {
-      ref:
+      detail:
         "IT idéal " +
         formaterPct1(eff.itIdeal) +
-        " % · IT réel " +
+        " %, IT réel " +
         formaterPct1(eff.itReel) +
-        " % · Z2 : " +
-        (eff.v2 != null ? eff.v2 : "—") +
-        " km/h · vitesse ZT : " +
-        (eff.vzt != null ? eff.vzt : "—") +
-        " km/h" +
-        (eff.vitesseRatioPct != null ? " (" + eff.vitesseRatioPct + " % de la Z2)" : ""),
-      detail: rythme ? detail + " " + rythme : detail,
-      note: note,
+        " %, écart " +
+        formaterEcartIT(eff.itEcart) +
+        " → " +
+        formaterNote10(eff.note10),
     };
   }
 
@@ -396,14 +453,11 @@
       fermerExplicationsEfficacite();
       return;
     }
-    var texte = texteEfficacite(eff);
     var niv = niveauEfficacite(eff);
     effEl.hidden = false;
     effEl.className = "relais-eff-zt relais-eff-zt--live " + niv.cls;
     if (effNote10El) effNote10El.textContent = formaterNote10(eff.note10);
-    if (effRefEl) effRefEl.textContent = texte.ref;
-    if (effDetailEl) effDetailEl.textContent = texte.detail;
-    if (effNoteEl) effNoteEl.textContent = texte.note;
+    if (effExplainBodyEl) effExplainBodyEl.innerHTML = htmlExplicationEfficacite(eff);
     if (effVerdictEl) effVerdictEl.textContent = niv.label;
   }
 
@@ -934,7 +988,6 @@
           tempsPerduSec: eff.tempsPerdu,
           verdict: niv.label,
           detail: txt.detail,
-          noteZ1: txt.note,
         };
       })(),
     };
