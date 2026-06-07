@@ -3003,6 +3003,38 @@ main.container {
   margin-top: 0.35rem;
 }
 
+.relais-penalites {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid #fecaca;
+  background: #fff5f5;
+}
+
+.relais-penalites__title {
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.relais-penalite-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin-top: 0.45rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.relais-penalite-toggle input {
+  margin-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.relais-penalites__hint {
+  margin: 0.5rem 0 0;
+}
+
 .relais-live-card {
   text-align: center;
   border-top: 3px solid var(--accent);

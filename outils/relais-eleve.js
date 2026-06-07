@@ -51,8 +51,12 @@
   var effVerdictEl = document.getElementById("relais-eff-verdict");
   var effToggleEl = document.getElementById("relais-eff-toggle");
   var effExplainEl = document.getElementById("relais-eff-explain");
+  var penalitesEl = document.getElementById("relais-penalites");
+  var penalHorsZoneEl = document.getElementById("relais-penal-hors-zone");
+  var penalTemoinEl = document.getElementById("relais-penal-temoin");
 
   var historiqueSauvePourCourse = false;
+  var dernierHistoriqueEntryId = null;
   var resultsHistory = null;
 
   /** @type {'pret'|'z1'|'zt'|'z2'|'fini'} */
@@ -201,15 +205,37 @@
     }
   }
 
-  var PCT_ZT_MAX_POUR_10 = 33;
-  var PCT_ZT_POUR_2 = 45;
-  var NOTE_ZT_MIN = 2;
-
-  function noteDepuisPctZT(pctZT) {
-    if (pctZT <= PCT_ZT_MAX_POUR_10) return 10;
-    var plage = PCT_ZT_POUR_2 - PCT_ZT_MAX_POUR_10;
-    var note = 10 - ((pctZT - PCT_ZT_MAX_POUR_10) * (10 - NOTE_ZT_MIN)) / plage;
+  function noteDepuisIT(itReel, itIdeal) {
+    var note = 10 - (itReel - itIdeal) / 2;
     return Math.max(0, Math.min(10, Math.round(note * 10) / 10));
+  }
+
+  function formaterPct1(v) {
+    return (Math.round(v * 10) / 10).toFixed(1).replace(".", ",");
+  }
+
+  function lirePenalites() {
+    return {
+      horsZone: !!(penalHorsZoneEl && penalHorsZoneEl.checked),
+      temoinTombe: !!(penalTemoinEl && penalTemoinEl.checked),
+    };
+  }
+
+  function libellePenalite(penal) {
+    if (penal.horsZone && penal.temoinTombe) return "Transmission hors zone et témoin tombé";
+    if (penal.horsZone) return "Transmission hors zone";
+    if (penal.temoinTombe) return "Témoin tombé";
+    return "";
+  }
+
+  function reinitialiserPenalites() {
+    if (penalHorsZoneEl) penalHorsZoneEl.checked = false;
+    if (penalTemoinEl) penalTemoinEl.checked = false;
+  }
+
+  function majPenalites() {
+    if (!penalitesEl) return;
+    penalitesEl.hidden = phase !== "zt" && phase !== "z2" && phase !== "fini";
   }
 
   function calculerEfficaciteZT() {
@@ -218,41 +244,52 @@
     var vzt = resultat.vzt;
     var v1 = resultat.v1;
     var totalCs = resultat.totalCs;
-    if (
-      !isFinite(v2) ||
-      v2 <= 0 ||
-      !isFinite(vzt) ||
-      vzt <= 0 ||
-      !resultat.ztCs ||
-      !reg.zt ||
-      !totalCs ||
-      totalCs <= 0
-    ) {
+    if (!resultat.ztCs || !reg.zt || !reg.total || reg.total <= 0 || !totalCs || totalCs <= 0) {
       return null;
     }
-    var pctZT = pctTempsZone(resultat.ztCs, totalCs);
-    var note10 = noteDepuisPctZT(pctZT);
-    var ratio = vzt / v2;
+    var itIdeal = (reg.zt / reg.total) * 100;
+    var itReel = (resultat.ztCs / totalCs) * 100;
+    var itEcart = itReel - itIdeal;
+    var noteBrute = noteDepuisIT(itReel, itIdeal);
+    var penal = lirePenalites();
+    var penalite = penal.horsZone || penal.temoinTombe;
+    var note10 = penalite ? 0 : noteBrute;
+    var pctZT = Math.round(itReel);
+    var ratio = isFinite(vzt) && isFinite(v2) && v2 > 0 ? vzt / v2 : null;
     var tZtReel = resultat.ztCs / 100;
-    var tZtRef = (reg.zt * 3.6) / v2;
-    var tempsPerdu = Math.round((tZtReel - tZtRef) * 100) / 100;
-    var ratioZ1Z2 = isFinite(v1) && v1 > 0 ? Math.round((v1 / v2) * 100) : null;
+    var tZtRef = isFinite(v2) && v2 > 0 ? (reg.zt * 3.6) / v2 : null;
+    var tempsPerdu =
+      tZtRef != null ? Math.round((tZtReel - tZtRef) * 100) / 100 : null;
+    var ratioZ1Z2 = isFinite(v1) && isFinite(v2) && v2 > 0 ? Math.round((v1 / v2) * 100) : null;
     return {
       note10: note10,
+      noteBrute: noteBrute,
+      penalite: penalite,
+      penaliteLabel: libellePenalite(penal),
+      penaliteHorsZone: penal.horsZone,
+      penaliteTemoinTombe: penal.temoinTombe,
+      itIdeal: itIdeal,
+      itReel: itReel,
+      itEcart: itEcart,
       pctZT: pctZT,
       coefficient: Math.round(note10 * 10),
       coef: Math.round(note10 * 10),
-      vitesseRatioPct: Math.round(ratio * 100),
+      vitesseRatioPct: ratio != null ? Math.round(ratio * 100) : null,
       v1: isFinite(v1) ? Math.round(v1 * 10) / 10 : null,
-      v2: Math.round(v2 * 10) / 10,
-      vzt: Math.round(vzt * 10) / 10,
+      v2: isFinite(v2) ? Math.round(v2 * 10) / 10 : null,
+      vzt: isFinite(vzt) ? Math.round(vzt * 10) / 10 : null,
       tempsPerdu: tempsPerdu,
-      tempsPerduLabel: (tempsPerdu > 0 ? "+" : "") + tempsPerdu.toFixed(2) + " s",
+      tempsPerduLabel:
+        tempsPerdu != null ? (tempsPerdu > 0 ? "+" : "") + tempsPerdu.toFixed(2) + " s" : "",
       ratioZ1Z2: ratioZ1Z2,
     };
   }
 
-  function niveauEfficacite(note10) {
+  function niveauEfficacite(eff) {
+    if (eff && eff.penalite) {
+      return { cls: "is-low", label: eff.penaliteLabel || "Note nulle (incident)" };
+    }
+    var note10 = eff ? eff.note10 : NaN;
     if (note10 >= 9) {
       return { cls: "is-excellent", label: "Excellente transmission" };
     }
@@ -281,37 +318,41 @@
 
   function texteEfficacite(eff) {
     if (!eff) return { ref: "", detail: "", note: "" };
+    var ecartLabel =
+      (eff.itEcart > 0 ? "+" : "") + formaterPct1(eff.itEcart) + " point" + (Math.abs(eff.itEcart) >= 2 ? "s" : "");
     var detail;
-    if (eff.pctZT <= PCT_ZT_MAX_POUR_10) {
+    if (eff.penalite) {
       detail =
-        eff.pctZT +
-        " % du temps en transmission (≤ " +
-        PCT_ZT_MAX_POUR_10 +
-        " %) : note maximale.";
-    } else if (eff.pctZT >= PCT_ZT_POUR_2) {
-      detail =
-        eff.pctZT +
-        " % du temps en transmission (≥ " +
-        PCT_ZT_POUR_2 +
-        " %) : note minimale de " +
-        NOTE_ZT_MIN +
-        "/10.";
+        "Incident signalé : " +
+        eff.penaliteLabel +
+        ". La note est fixée à 0/10 (calcul théorique : " +
+        formaterNote10(eff.noteBrute) +
+        " avec IT idéal " +
+        formaterPct1(eff.itIdeal) +
+        " % et IT réel " +
+        formaterPct1(eff.itReel) +
+        " %).";
     } else {
       detail =
-        eff.pctZT +
-        " % du temps en transmission — entre " +
-        PCT_ZT_MAX_POUR_10 +
-        " % (10/10) et " +
-        PCT_ZT_POUR_2 +
-        " % (2/10).";
+        "IT idéal : " +
+        formaterPct1(eff.itIdeal) +
+        " % (distance ZT ÷ distance totale). IT réel : " +
+        formaterPct1(eff.itReel) +
+        " % (temps ZT ÷ temps total). Écart : " +
+        ecartLabel +
+        ". Note = 10 − (écart ÷ 2), arrondie au dixième, entre 0 et 10 → " +
+        formaterNote10(eff.note10) +
+        ".";
     }
     var rythme = "";
-    if (Math.abs(eff.tempsPerdu) < 0.05) {
-      rythme = "Vitesse ZT au même rythme qu’en Z2.";
-    } else if (eff.tempsPerdu > 0) {
-      rythme = "Temps perdu en ZT vs rythme Z2 : " + eff.tempsPerduLabel + ".";
-    } else {
-      rythme = "Gain en ZT vs rythme Z2 : " + Math.abs(eff.tempsPerdu).toFixed(2) + " s.";
+    if (eff.tempsPerdu != null) {
+      if (Math.abs(eff.tempsPerdu) < 0.05) {
+        rythme = "Vitesse ZT au même rythme qu’en Z2.";
+      } else if (eff.tempsPerdu > 0) {
+        rythme = "Temps perdu en ZT vs rythme Z2 : " + eff.tempsPerduLabel + ".";
+      } else {
+        rythme = "Gain en ZT vs rythme Z2 : " + Math.abs(eff.tempsPerdu).toFixed(2) + " s.";
+      }
     }
     var note = "";
     if (eff.ratioZ1Z2 != null && eff.v1 != null) {
@@ -324,16 +365,17 @@
     }
     return {
       ref:
-        "ZT : " +
-        eff.pctZT +
-        " % du temps · Z2 : " +
-        eff.v2 +
+        "IT idéal " +
+        formaterPct1(eff.itIdeal) +
+        " % · IT réel " +
+        formaterPct1(eff.itReel) +
+        " % · Z2 : " +
+        (eff.v2 != null ? eff.v2 : "—") +
         " km/h · vitesse ZT : " +
-        eff.vzt +
-        " km/h (" +
-        (eff.vitesseRatioPct != null ? eff.vitesseRatioPct : "—") +
-        " % de la Z2)",
-      detail: detail + " " + rythme,
+        (eff.vzt != null ? eff.vzt : "—") +
+        " km/h" +
+        (eff.vitesseRatioPct != null ? " (" + eff.vitesseRatioPct + " % de la Z2)" : ""),
+      detail: rythme ? detail + " " + rythme : detail,
       note: note,
     };
   }
@@ -355,7 +397,7 @@
       return;
     }
     var texte = texteEfficacite(eff);
-    var niv = niveauEfficacite(eff.note10);
+    var niv = niveauEfficacite(eff);
     effEl.hidden = false;
     effEl.className = "relais-eff-zt relais-eff-zt--live " + niv.cls;
     if (effNote10El) effNote10El.textContent = formaterNote10(eff.note10);
@@ -376,8 +418,27 @@
     if (historiqueSauvePourCourse || !resultsHistory || phase !== "fini") return;
     var snap = buildHistorySnapshot();
     if (!snap.temps || !snap.temps.total) return;
-    resultsHistory.addEntry(snap);
+    var saved = resultsHistory.addEntry(snap);
     historiqueSauvePourCourse = true;
+    dernierHistoriqueEntryId = saved ? saved.id : null;
+  }
+
+  function mettreAJourHistoriqueCourse() {
+    if (!historiqueSauvePourCourse || !resultsHistory || phase !== "fini") return;
+    var snap = buildHistorySnapshot();
+    if (!snap.temps || !snap.temps.total) return;
+    if (typeof ToolResultsHistory !== "undefined" && dernierHistoriqueEntryId) {
+      ToolResultsHistory.deleteEntry(TOOL_ID, dernierHistoriqueEntryId);
+    }
+    var saved = resultsHistory.addEntry(snap);
+    dernierHistoriqueEntryId = saved ? saved.id : null;
+  }
+
+  function onPenaliteChange() {
+    if (phase === "fini") {
+      majEfficaciteZT();
+      mettreAJourHistoriqueCourse();
+    }
   }
 
   function escapeHtml(s) {
@@ -508,6 +569,7 @@
       if (el) el.disabled = courseEnCours;
     });
     if (reglagesEl && courseEnCours) reglagesEl.open = false;
+    majPenalites();
   }
 
   function majLiveZone(z1Cs, ztCs, z2Cs) {
@@ -696,8 +758,10 @@
     majChrono();
     majLiveZone(0, 0, 0);
     reinitialiserRelecture();
+    reinitialiserPenalites();
     masquerEfficaciteZT();
     historiqueSauvePourCourse = false;
+    dernierHistoriqueEntryId = null;
     sireneDepart();
     startTick();
     majBoutons();
@@ -774,8 +838,10 @@
     majChrono();
     majLiveZone(0, 0, 0);
     reinitialiserRelecture();
+    reinitialiserPenalites();
     masquerEfficaciteZT();
     historiqueSauvePourCourse = false;
+    dernierHistoriqueEntryId = null;
     montrerMsg("");
     majBoutons();
     if (filmZTEl && filmZTEl.checked) demarrerCamera();
@@ -848,11 +914,19 @@
       efficaciteZT: (function () {
         var eff = calculerEfficaciteZT();
         if (!eff) return null;
-        var niv = niveauEfficacite(eff.note10);
+        var niv = niveauEfficacite(eff);
         var txt = texteEfficacite(eff);
         return {
           note10: eff.note10,
+          noteBrute: eff.noteBrute,
           coefficient: eff.coef,
+          penalite: eff.penalite,
+          penaliteLabel: eff.penaliteLabel,
+          penaliteHorsZone: eff.penaliteHorsZone,
+          penaliteTemoinTombe: eff.penaliteTemoinTombe,
+          itIdeal: Math.round(eff.itIdeal * 10) / 10,
+          itReel: Math.round(eff.itReel * 10) / 10,
+          itEcart: Math.round(eff.itEcart * 10) / 10,
           vitesseZ2: eff.v2,
           vitesseZT: eff.vzt,
           vitesseZ1: eff.v1,
@@ -902,6 +976,10 @@
       majFilmCamera();
     });
   }
+
+  [penalHorsZoneEl, penalTemoinEl].forEach(function (el) {
+    if (el) el.addEventListener("change", onPenaliteChange);
+  });
 
   if (labelEl) {
     labelEl.addEventListener("input", persisterLabel);

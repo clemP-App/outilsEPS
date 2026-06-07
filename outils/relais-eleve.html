@@ -275,6 +275,19 @@
           </tbody>
         </table>
 
+        <div class="relais-penalites" id="relais-penalites" hidden>
+          <p class="relais-penalites__title">Incidents transmission</p>
+          <label class="relais-penalite-toggle">
+            <input type="checkbox" id="relais-penal-hors-zone" />
+            <span>Transmission hors zone</span>
+          </label>
+          <label class="relais-penalite-toggle">
+            <input type="checkbox" id="relais-penal-temoin" />
+            <span>Témoin tombé</span>
+          </label>
+          <p class="hint relais-penalites__hint">Si coché : note transmission = 0/10.</p>
+        </div>
+
         <div class="relais-eff-zt relais-eff-zt--live" id="relais-eff" hidden aria-live="polite">
           <div class="relais-eff-zt__head">
             <span class="relais-eff-zt__title">Note transmission</span>
@@ -362,7 +375,7 @@
           {
             title: "Note transmission",
             text:
-              "Notée sur 10 selon le % du temps en transmission : ≤ 33 % = 10/10, ≥ 45 % = 2/10, interpolation linéaire entre les deux. Appuyez sur « Comprendre la note » pour le détail.",
+              "IT idéal = (distance ZT ÷ distance totale) × 100. IT réel = (temps ZT ÷ temps total) × 100. Note = 10 − ((IT réel − IT idéal) ÷ 2), arrondie au dixième, entre 0 et 10. Transmission hors zone ou témoin tombé : note 0. Appuyez sur « Comprendre la note » pour le détail.",
           },
           {
             title: "Historique",
