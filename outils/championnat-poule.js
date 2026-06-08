@@ -441,11 +441,13 @@
     if (!n) {
       n = nextDefaultPouleName();
     }
-    state.poules.push({ id: genererId(), name: n });
+    var newId = genererId();
+    state.poules.push({ id: newId, name: n });
+    selectedAddTeamPouleId = newId;
     if (standingsFilterEl && !standingsFilterEl.value) standingsFilterEl.value = "all";
     reconstruireMatchsDepuisEquipes();
     sauverImmediate();
-    if (standingsFilterEl && targetId) standingsFilterEl.value = targetId;
+    if (standingsFilterEl) standingsFilterEl.value = newId;
     render();
   }
 

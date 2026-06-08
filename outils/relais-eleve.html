@@ -275,6 +275,31 @@
           </tbody>
         </table>
 
+        <section class="relais-replay" id="relais-replay" hidden aria-labelledby="lbl-relais-replay">
+          <header class="relais-replay__head">
+            <h3 class="relais-replay__title" id="lbl-relais-replay">Revoir la transmission</h3>
+            <p class="relais-replay__hint">Vidéo locale — non envoyée au professeur ni enregistrée dans l’historique.</p>
+          </header>
+          <video class="relais-replay__video" id="relais-replay-video" playsinline controls></video>
+        </section>
+
+        <p id="relais-msg" class="msg-error" role="alert" hidden></p>
+
+        <div class="relais-actions">
+          <button class="relais-action-btn relais-action-btn--depart" type="button" id="relais-btn-depart">
+            <span aria-hidden="true">🚀</span> Départ <span aria-hidden="true">🚀</span>
+          </button>
+          <button class="relais-action-btn relais-action-btn--entree" type="button" id="relais-btn-entree" hidden>
+            Entrée ZT
+          </button>
+          <button class="relais-action-btn relais-action-btn--sortie" type="button" id="relais-btn-sortie" hidden>
+            Sortie ZT
+          </button>
+          <button class="relais-action-btn relais-action-btn--arrivee" type="button" id="relais-btn-arrivee" hidden>
+            Arrivée
+          </button>
+        </div>
+
         <div class="relais-penalites" id="relais-penalites" hidden>
           <p class="relais-penalites__title">Incidents transmission</p>
           <label class="relais-penalite-toggle">
@@ -311,35 +336,10 @@
           </div>
         </div>
 
-        <section class="relais-replay" id="relais-replay" hidden aria-labelledby="lbl-relais-replay">
-          <header class="relais-replay__head">
-            <h3 class="relais-replay__title" id="lbl-relais-replay">Revoir la transmission</h3>
-            <p class="relais-replay__hint">Vidéo locale — non envoyée au professeur ni enregistrée dans l’historique.</p>
-          </header>
-          <video class="relais-replay__video" id="relais-replay-video" playsinline controls></video>
-        </section>
-
         <button class="btn btn--ghost btn--labeled relais-reset" type="button" id="relais-btn-reset" hidden>
           <span class="btn__icon" aria-hidden="true">↺</span>
           <span class="btn__text">Nouvelle course</span>
         </button>
-
-        <p id="relais-msg" class="msg-error" role="alert" hidden></p>
-
-        <div class="relais-actions">
-          <button class="relais-action-btn relais-action-btn--depart" type="button" id="relais-btn-depart">
-            <span aria-hidden="true">🚀</span> Départ <span aria-hidden="true">🚀</span>
-          </button>
-          <button class="relais-action-btn relais-action-btn--entree" type="button" id="relais-btn-entree" hidden>
-            Entrée ZT
-          </button>
-          <button class="relais-action-btn relais-action-btn--sortie" type="button" id="relais-btn-sortie" hidden>
-            Sortie ZT
-          </button>
-          <button class="relais-action-btn relais-action-btn--arrivee" type="button" id="relais-btn-arrivee" hidden>
-            Arrivée
-          </button>
-        </div>
       </section>
 
       <div class="card eleve-share-bar" id="eleve-share-bar"></div>

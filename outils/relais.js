@@ -61,9 +61,6 @@
     effEl: $("relais-eff"),
     effNote10El: $("relais-eff-note10"),
     effVerdictEl: $("relais-eff-verdict"),
-    penalitesEl: $("relais-penalites"),
-    penalHorsZoneEl: $("relais-penal-hors-zone"),
-    penalTemoinEl: $("relais-penal-temoin"),
   };
 
   var state = {
@@ -451,31 +448,11 @@
     return Math.max(0, Math.min(10, Math.round(note * 10) / 10));
   }
 
-  function lirePenalites() {
-    return {
-      horsZone: !!(els.penalHorsZoneEl && els.penalHorsZoneEl.checked),
-      temoinTombe: !!(els.penalTemoinEl && els.penalTemoinEl.checked),
-    };
-  }
-
   function lirePenalitesDialog() {
     return {
       horsZone: !!(els.dialogPenalHorsZoneEl && els.dialogPenalHorsZoneEl.checked),
       temoinTombe: !!(els.dialogPenalTemoinEl && els.dialogPenalTemoinEl.checked),
     };
-  }
-
-  function syncPenalitesVersDialog() {
-    var penal = lirePenalites();
-    if (els.dialogPenalHorsZoneEl) els.dialogPenalHorsZoneEl.checked = penal.horsZone;
-    if (els.dialogPenalTemoinEl) els.dialogPenalTemoinEl.checked = penal.temoinTombe;
-  }
-
-  function syncPenalitesVersCourse() {
-    var penal = lirePenalitesDialog();
-    if (els.penalHorsZoneEl) els.penalHorsZoneEl.checked = penal.horsZone;
-    if (els.penalTemoinEl) els.penalTemoinEl.checked = penal.temoinTombe;
-    majEfficaciteZT();
   }
 
   function libellePenalite(penal) {
@@ -486,14 +463,8 @@
   }
 
   function reinitialiserPenalites() {
-    if (els.penalHorsZoneEl) els.penalHorsZoneEl.checked = false;
-    if (els.penalTemoinEl) els.penalTemoinEl.checked = false;
-  }
-
-  function majPenalites() {
-    if (!els.penalitesEl) return;
-    els.penalitesEl.hidden =
-      phase !== "zt" && phase !== "z2" && phase !== "fini" && phase !== "attente-save";
+    if (els.dialogPenalHorsZoneEl) els.dialogPenalHorsZoneEl.checked = false;
+    if (els.dialogPenalTemoinEl) els.dialogPenalTemoinEl.checked = false;
   }
 
   function calculerEfficaciteZT(penalOverride) {
@@ -505,7 +476,7 @@
     var itIdeal = (reg.zt / reg.total) * 100;
     var itReel = (resultat.ztCs / totalCs) * 100;
     var noteBrute = noteDepuisIT(itReel, itIdeal);
-    var penal = penalOverride || lirePenalites();
+    var penal = penalOverride || lirePenalitesDialog();
     var penalite = penal.horsZone || penal.temoinTombe;
     var note10 = penalite ? 0 : noteBrute;
     return {
@@ -612,7 +583,6 @@
       if (el) el.disabled = courseEnCours;
     });
     if (els.reglagesEl && courseEnCours) els.reglagesEl.open = false;
-    majPenalites();
   }
 
   function majLiveZone(z1Cs, ztCs, z2Cs) {
@@ -692,7 +662,7 @@
   }
 
   function ouvrirDialogEnregistrement() {
-    syncPenalitesVersDialog();
+    reinitialiserPenalites();
     pendingRun = buildRunPayload(lirePenalitesDialog());
     if (els.dialogTime) els.dialogTime.textContent = pendingRun.formattedTotal;
     remplirSelectCoureurs(els.donneurSelect, "");
@@ -727,7 +697,6 @@
       return;
     }
     var penal = lirePenalitesDialog();
-    syncPenalitesVersCourse();
     var payload = buildRunPayload(penal);
     var valid = !(penal.horsZone || penal.temoinTombe);
     state.results.push({
@@ -783,7 +752,6 @@
     majRunner("z1");
     majChrono();
     majLiveZone(0, 0, 0);
-    reinitialiserPenalites();
     if (els.effEl) els.effEl.hidden = true;
     sireneDepart();
     startTick();
@@ -847,7 +815,8 @@
     majBoutons();
   }
 
-  function onPenaliteChange() {
+  function onDialogPenaliteChange() {
+    if (pendingRun) pendingRun = buildRunPayload(lirePenalitesDialog());
     if (phase === "fini" || phase === "attente-save") majEfficaciteZT();
   }
 
@@ -1569,17 +1538,8 @@
     }
   });
 
-  [els.penalHorsZoneEl, els.penalTemoinEl].forEach(function (el) {
-    if (el) el.addEventListener("change", onPenaliteChange);
-  });
-
   [els.dialogPenalHorsZoneEl, els.dialogPenalTemoinEl].forEach(function (el) {
-    if (el) {
-      el.addEventListener("change", function () {
-        syncPenalitesVersCourse();
-        if (pendingRun) pendingRun = buildRunPayload(lirePenalitesDialog());
-      });
-    }
+    if (el) el.addEventListener("change", onDialogPenaliteChange);
   });
 
   if (typeof ListeManuellePanel !== "undefined" && els.importText) {

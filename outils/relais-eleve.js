@@ -233,7 +233,7 @@
 
   function majPenalites() {
     if (!penalitesEl) return;
-    penalitesEl.hidden = phase !== "zt" && phase !== "z2" && phase !== "fini";
+    penalitesEl.hidden = phase !== "fini";
   }
 
   function calculerEfficaciteZT() {
