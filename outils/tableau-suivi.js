@@ -1302,6 +1302,8 @@
         inp.type = "text";
         inp.inputMode = "decimal";
         inp.placeholder = "km/h";
+        cls += " tab-suivi-cell-info-input--vma";
+        inp.className = cls;
       } else if (champ === "equipe") {
         inp.type = "text";
         inp.maxLength = 80;
@@ -3171,7 +3173,12 @@
           "tab-suivi-th tab-suivi-th--col" +
           (col.type === "calc" ? " tab-suivi-th--calc" : "") +
           (col.type === "rubric" ? " tab-suivi-th--rubric" : "") +
-          (col.type === "eleveInfo" ? " tab-suivi-th--info-eleve" : "");
+          (col.type === "number" ? " tab-suivi-th--number" : "") +
+          (col.type === "eleveInfo" ? " tab-suivi-th--info-eleve" : "") +
+          (col.type === "eleveInfo" && normaliserChampInfoEleve(col.infoChamp) === "vma"
+            ? " tab-suivi-th--info-vma"
+            : "") +
+          (col.type === "eleveInfo" && col.infoEditable === true ? " tab-suivi-th--info-editable" : "");
         th.scope = "col";
         th.setAttribute("data-col-id", col.id);
 
@@ -3222,7 +3229,13 @@
 
       cols.forEach(function (col) {
         var thS = document.createElement("th");
-        thS.className = "tab-suivi-th tab-suivi-th--col tab-suivi-th--stats";
+        thS.className =
+          "tab-suivi-th tab-suivi-th--col tab-suivi-th--stats" +
+          (col.type === "number" ? " tab-suivi-th--number" : "") +
+          (col.type === "eleveInfo" && normaliserChampInfoEleve(col.infoChamp) === "vma"
+            ? " tab-suivi-th--info-vma"
+            : "") +
+          (col.type === "eleveInfo" && col.infoEditable === true ? " tab-suivi-th--info-editable" : "");
         thS.scope = "col";
         thS.setAttribute("data-col-id", col.id);
         thS.textContent =
@@ -3273,6 +3286,12 @@
       cols.forEach(function (col) {
         var td = document.createElement("td");
         td.className = "tab-suivi-td tab-suivi-td--cell";
+        if (col.type === "number") td.classList.add("tab-suivi-td--number");
+        if (col.type === "eleveInfo") {
+          td.classList.add("tab-suivi-td--info-eleve");
+          if (normaliserChampInfoEleve(col.infoChamp) === "vma") td.classList.add("tab-suivi-td--info-vma");
+          if (col.infoEditable === true) td.classList.add("tab-suivi-td--info-editable");
+        }
         td.setAttribute("data-col-id", col.id);
 
         if (col.type === "calc") {

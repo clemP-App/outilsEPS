@@ -199,41 +199,95 @@
           </div>
           <div class="site-header__inner">
             <h1>Outils EPS</h1>
-            <p>Petits outils pratiques pour les cours d’éducation physique et sportive</p>
+            <p>Le tableau de bord EPS pour préparer, animer, récupérer les données élèves et suivre les progrès.</p>
           </div>
         </header>
 
-        <div class="search-wrap search-wrap--actions">
-          <label for="search-outils">Rechercher un outil</label>
-          <div class="search-wrap__row">
-            <input
-              type="search"
-              id="search-outils"
-              name="q"
-              placeholder="Rechercher par nom, catégorie…"
-              autocomplete="off"
-            />
+        <div class="home-mode-bar">
+          <div
+            class="home-mode-toggle"
+            id="home-mode-toggle"
+            role="tablist"
+            aria-label="Mode d’accueil"
+          >
             <button
               type="button"
-              class="search-wrap__fav-btn"
-              id="btn-favoris"
-              aria-haspopup="dialog"
-              aria-controls="dialog-favoris"
-              title="Gérer mes favoris"
+              class="home-mode-toggle__btn is-active"
+              id="home-mode-guided"
+              role="tab"
+              data-home-mode="guided"
+              aria-selected="true"
+              aria-controls="home-guided"
             >
-              <span class="search-wrap__fav-icon" aria-hidden="true">★</span>
-              <span class="search-wrap__fav-label">Favoris</span>
+              Parcours
+            </button>
+            <button
+              type="button"
+              class="home-mode-toggle__btn"
+              id="home-mode-catalog"
+              role="tab"
+              data-home-mode="catalog"
+              aria-selected="false"
+              aria-controls="home-catalog"
+            >
+              Toutes les applis
             </button>
           </div>
         </div>
 
-        <main class="container">
-          <p id="outils-count" aria-live="polite"></p>
-          <p id="tools-empty" class="empty-state" hidden>
-            Aucun outil ne correspond à votre recherche. Essayez un autre mot-clé.
+        <div id="home-trust-bar" class="home-trust-bar" hidden></div>
+
+        <section
+          id="home-guided"
+          class="home-guided container"
+          role="tabpanel"
+          aria-labelledby="home-mode-guided"
+        >
+          <p class="home-guided__intro">
+            Choisissez votre besoin du moment : l’accueil vous mène directement vers les bons outils.
           </p>
-          <ul id="tools-list" class="tools-list" role="list"></ul>
-        </main>
+          <div id="home-guided-content" class="home-guided__content"></div>
+          <div class="home-guided__catalog-block">
+            <p class="home-guided__catalog-text">Vous cherchez un outil précis ?</p>
+            <button type="button" class="btn btn--ghost home-guided__catalog-btn" id="btn-show-catalog">
+              Voir toutes les applis
+            </button>
+          </div>
+        </section>
+
+        <div id="home-catalog" class="home-catalog" role="tabpanel" aria-labelledby="home-mode-catalog" hidden>
+          <div class="search-wrap search-wrap--actions">
+            <label for="search-outils">Rechercher un outil</label>
+            <div class="search-wrap__row">
+              <input
+                type="search"
+                id="search-outils"
+                name="q"
+                placeholder="Rechercher par nom, catégorie…"
+                autocomplete="off"
+              />
+              <button
+                type="button"
+                class="search-wrap__fav-btn"
+                id="btn-favoris"
+                aria-haspopup="dialog"
+                aria-controls="dialog-favoris"
+                title="Gérer mes favoris"
+              >
+                <span class="search-wrap__fav-icon" aria-hidden="true">★</span>
+                <span class="search-wrap__fav-label">Favoris</span>
+              </button>
+            </div>
+          </div>
+
+          <main class="container">
+            <p id="outils-count" aria-live="polite"></p>
+            <p id="tools-empty" class="empty-state" hidden>
+              Aucun outil ne correspond à votre recherche. Essayez un autre mot-clé.
+            </p>
+            <ul id="tools-list" class="tools-list" role="list"></ul>
+          </main>
+        </div>
 
         <footer class="site-footer site-footer--compact">
           <p>
@@ -458,7 +512,9 @@
     <script src="dom-utils.js"></script>
     <script src="data-manager.js"></script>
     <script src="shared/outils-catalog.js"></script>
+    <script src="shared/home-parcours.js"></script>
     <script src="shared/tool-accueil.js"></script>
+    <script src="vendor/qrcode.min.js"></script>
     <script src="script.js"></script>
     <script src="pwa-register.js" data-sw="sw.js"></script>
   </body>

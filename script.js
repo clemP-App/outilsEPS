@@ -20,6 +20,7 @@
   var FAVORIS_KEY = "outils_eps_favoris_v1";
   var VIEW_KEY = "outils_eps_view_v1";
   var PROF_VIEW_KEY = "outils_eps_prof_view_v1";
+  var HOME_MODE_KEY = "outilseps.homeMode";
   var MAX_OUTILS_PAR_SECTION = 5;
   var MAX_ICONES_AUTRE_ECRAN = 6;
   var AUDIENCE = (document.body && document.body.dataset.audience) || "all";
@@ -411,7 +412,488 @@
     renderListe(filtreOutils(searchInput ? searchInput.value : ""));
   }
 
+  function chargerModeAccueil() {
+    try {
+      var saved = localStorage.getItem(HOME_MODE_KEY);
+      return saved === "catalog" ? "catalog" : "guided";
+    } catch (e) {
+      return "guided";
+    }
+  }
+
+  function sauverModeAccueil(mode) {
+    try {
+      localStorage.setItem(HOME_MODE_KEY, mode === "catalog" ? "catalog" : "guided");
+    } catch (e) {
+      /* quota ou mode privé strict */
+    }
+  }
+
+  function actionLabel(action) {
+    return action.displayAs || action.label;
+  }
+
+  function creerIcone(icone, className) {
+    var span = document.createElement("span");
+    span.className = className || "home-icon";
+    span.setAttribute("aria-hidden", "true");
+    span.textContent = icone || "•";
+    return span;
+  }
+
+  function creerLienAction(action) {
+    var link = document.createElement("a");
+    link.className = "home-action" + (action.primary ? " home-action--primary" : "");
+    link.href = action.href;
+    if (action.icon) {
+      link.appendChild(creerIcone(action.icon, "home-icon home-icon--action"));
+    }
+    var text = document.createElement("span");
+    text.className = "home-action__text";
+    text.textContent = actionLabel(action);
+    link.appendChild(text);
+    return link;
+  }
+
+  function creerListeActions(actions, options) {
+    options = options || {};
+    var list = document.createElement("div");
+    list.className = "home-actions";
+    if (options.variant) {
+      list.classList.add("home-actions--" + options.variant);
+    }
+    (actions || []).forEach(function (action) {
+      list.appendChild(creerLienAction(action));
+    });
+    return list;
+  }
+
+  function creerBlocConfiance(items) {
+    var wrap = document.createElement("div");
+    wrap.className = "home-trust";
+    wrap.setAttribute("role", "list");
+    if (!Array.isArray(items)) {
+      var fallback = document.createElement("p");
+      fallback.className = "home-trust__text";
+      fallback.textContent = items;
+      wrap.appendChild(fallback);
+      return wrap;
+    }
+    items.forEach(function (item) {
+      var pill = document.createElement("span");
+      pill.className = "home-trust__pill";
+      pill.setAttribute("role", "listitem");
+      if (item.icon) {
+        pill.appendChild(creerIcone(item.icon, "home-icon home-icon--trust"));
+      }
+      var text = document.createElement("span");
+      text.textContent = item.text;
+      pill.appendChild(text);
+      wrap.appendChild(pill);
+    });
+    return wrap;
+  }
+
+  function creerFlecheFlow() {
+    var arrow = document.createElement("span");
+    arrow.className = "home-flow__arrow";
+    arrow.setAttribute("aria-hidden", "true");
+    arrow.textContent = "→";
+    return arrow;
+  }
+
+  function flowStepLabel(step) {
+    return typeof step === "string" ? step : step.label || "";
+  }
+
+  function creerFlowVisuel(steps) {
+    if (!steps || !steps.length) return null;
+    var wrap = document.createElement("div");
+    wrap.className = "home-flow";
+    steps.forEach(function (step, index) {
+      var chip = document.createElement("span");
+      chip.className = "home-flow__step";
+      if (step && typeof step === "object" && step.icon) {
+        chip.appendChild(creerIcone(step.icon, "home-icon home-icon--flow"));
+      }
+      var label = document.createElement("span");
+      label.className = "home-flow__label";
+      label.textContent = flowStepLabel(step);
+      chip.appendChild(label);
+      wrap.appendChild(chip);
+      if (index < steps.length - 1) {
+        wrap.appendChild(creerFlecheFlow());
+      }
+    });
+    return wrap;
+  }
+
+  function creerBlocPartageEleves(partage) {
+    partage = partage || {};
+    var block = document.createElement("div");
+    block.className = "home-qr-share";
+
+    var wrap = document.createElement("div");
+    wrap.className = "home-qr-share__qr-wrap";
+
+    var img = document.createElement("img");
+    img.className = "home-qr-share__qr";
+    img.id = "home-qr-eleves-inline";
+    img.alt = "Qr Code — page élèves Outils EPS";
+    img.width = 168;
+    img.height = 168;
+    img.decoding = "async";
+    img.loading = "lazy";
+    wrap.appendChild(img);
+    block.appendChild(wrap);
+
+    var actions = document.createElement("div");
+    actions.className = "home-qr-share__actions home-actions home-actions--qr";
+
+    if (partage.ouvrir) {
+      actions.appendChild(creerLienAction(partage.ouvrir));
+    }
+
+    var copyLabel =
+      partage.copier && partage.copier.label
+        ? partage.copier.label
+        : "Copier le lien de la page élève";
+    var copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "btn btn--ghost btn--sm home-qr-copy";
+    copyBtn.id = "btn-copy-eleves-home";
+    copyBtn.appendChild(creerIcone("🔗", "home-icon home-icon--action"));
+    var copyText = document.createElement("span");
+    copyText.className = "home-qr-copy__text";
+    copyText.textContent = copyLabel;
+    copyBtn.appendChild(copyText);
+    actions.appendChild(copyBtn);
+    block.appendChild(actions);
+
+    return block;
+  }
+
+  function renderQrInto(hostEl, targetUrl, size) {
+    if (!hostEl || !targetUrl) return;
+    size = size || 200;
+    if (typeof QRCode === "undefined") {
+      if (hostEl.tagName === "IMG") {
+        hostEl.removeAttribute("src");
+        hostEl.alt = "Qr Code indisponible";
+      }
+      return;
+    }
+
+    var sandbox = document.createElement("div");
+    sandbox.setAttribute("aria-hidden", "true");
+    sandbox.style.cssText =
+      "position:absolute;width:0;height:0;overflow:hidden;clip:rect(0,0,0,0);";
+    document.body.appendChild(sandbox);
+    try {
+      new QRCode(sandbox, {
+        text: targetUrl,
+        width: size,
+        height: size,
+        correctLevel: QRCode.CorrectLevel.L,
+      });
+      var generated = sandbox.querySelector("img");
+      var canvas = sandbox.querySelector("canvas");
+      var dataUrl = "";
+      if (generated && generated.src) {
+        dataUrl = generated.src;
+      } else if (canvas && canvas.toDataURL) {
+        dataUrl = canvas.toDataURL("image/png");
+      }
+      if (hostEl.tagName === "IMG") {
+        if (dataUrl) hostEl.src = dataUrl;
+      } else {
+        hostEl.textContent = "";
+        if (dataUrl) {
+          var out = document.createElement("img");
+          out.src = dataUrl;
+          out.alt = "Qr Code";
+          out.width = size;
+          out.height = size;
+          hostEl.appendChild(out);
+        } else {
+          new QRCode(hostEl, {
+            text: targetUrl,
+            width: size,
+            height: size,
+            correctLevel: QRCode.CorrectLevel.L,
+          });
+        }
+      }
+    } finally {
+      document.body.removeChild(sandbox);
+    }
+  }
+
+  function actualiserQrElevesAccueil() {
+    var img = document.getElementById("home-qr-eleves-inline");
+    if (!img || typeof shareUrlEleves !== "function") return;
+    renderQrInto(img, shareUrlEleves(), 168);
+  }
+
+  function creerTitreZone(texte, options) {
+    options = options || {};
+    var title = document.createElement("h2");
+    title.className = "home-zone__title" + (options.modifier ? " " + options.modifier : "");
+    if (options.icon) {
+      title.appendChild(creerIcone(options.icon, "home-icon home-icon--zone"));
+      title.appendChild(document.createTextNode(" "));
+    }
+    title.appendChild(document.createTextNode(texte));
+    return title;
+  }
+
+  function creerCarteEntree(entree) {
+    var card = document.createElement("article");
+    card.className = "home-entree";
+
+    var head = document.createElement("div");
+    head.className = "home-entree__head";
+    if (entree.icone) {
+      head.appendChild(creerIcone(entree.icone, "home-icon home-icon--entree"));
+    }
+
+    var text = document.createElement("div");
+    text.className = "home-entree__text";
+
+    var title = document.createElement("h3");
+    title.className = "home-entree__title";
+    title.textContent = entree.titre;
+    text.appendChild(title);
+
+    var desc = document.createElement("p");
+    desc.className = "home-entree__desc";
+    desc.textContent = entree.description;
+    text.appendChild(desc);
+
+    head.appendChild(text);
+    card.appendChild(head);
+    card.appendChild(creerListeActions(entree.actions, { variant: "entree" }));
+    return card;
+  }
+
+  function creerCarteRapide(parcours) {
+    var card = document.createElement("article");
+    card.className = "home-rapide";
+
+    var head = document.createElement("div");
+    head.className = "home-rapide__head";
+    if (parcours.icone) {
+      head.appendChild(creerIcone(parcours.icone, "home-icon home-icon--rapide"));
+    }
+
+    var text = document.createElement("div");
+    text.className = "home-rapide__text";
+
+    var title = document.createElement("h3");
+    title.className = "home-rapide__title";
+    title.textContent = parcours.titre;
+    text.appendChild(title);
+
+    if (parcours.description) {
+      var desc = document.createElement("p");
+      desc.className = "home-rapide__desc";
+      desc.textContent = parcours.description;
+      text.appendChild(desc);
+    }
+
+    head.appendChild(text);
+    card.appendChild(head);
+    card.appendChild(creerListeActions(parcours.actions));
+    return card;
+  }
+
+  function renderBarreConfiance() {
+    var bar = document.getElementById("home-trust-bar");
+    if (!bar) return;
+    var guided =
+      window.OutilsEPS && window.OutilsEPS.HOME_GUIDED ? window.OutilsEPS.HOME_GUIDED : null;
+    OutilsDom.clear(bar);
+    if (!guided || !guided.confiance) {
+      bar.hidden = true;
+      return;
+    }
+    bar.appendChild(creerBlocConfiance(guided.confiance));
+    bar.hidden = false;
+  }
+
+  function renderParcoursGuide() {
+    var container = document.getElementById("home-guided-content");
+    if (!container) return;
+    var guided =
+      window.OutilsEPS && window.OutilsEPS.HOME_GUIDED ? window.OutilsEPS.HOME_GUIDED : null;
+    if (!guided) return;
+
+    renderBarreConfiance();
+    OutilsDom.clear(container);
+
+    var zoneEntrees = document.createElement("section");
+    zoneEntrees.className = "home-zone home-zone--entrees";
+    zoneEntrees.appendChild(
+      creerTitreZone("Choisir mon point de départ", { icon: "🎯" })
+    );
+
+    var grilleEntrees = document.createElement("div");
+    grilleEntrees.className = "home-entrees";
+    (guided.entrees || []).forEach(function (entree) {
+      grilleEntrees.appendChild(creerCarteEntree(entree));
+    });
+    zoneEntrees.appendChild(grilleEntrees);
+    container.appendChild(zoneEntrees);
+
+    if (guided.qrBloc) {
+      var qr = guided.qrBloc;
+      var zoneQr = document.createElement("section");
+      zoneQr.className = "home-zone home-zone--qr";
+
+      zoneQr.appendChild(
+        creerTitreZone(qr.titre, {
+          modifier: "home-zone__title--qr",
+          icon: qr.icone || "📲",
+        })
+      );
+
+      if (qr.intro) {
+        var introQr = document.createElement("p");
+        introQr.className = "home-zone__intro";
+        introQr.textContent = qr.intro;
+        zoneQr.appendChild(introQr);
+      }
+
+      zoneQr.appendChild(creerBlocPartageEleves(qr.partage));
+
+      if (qr.reception) {
+        var reception = document.createElement("div");
+        reception.className = "home-qr-reception";
+
+        if (qr.reception.titre) {
+          var receptionTitle = document.createElement("h3");
+          receptionTitle.className = "home-qr-reception__title";
+          receptionTitle.textContent = qr.reception.titre;
+          reception.appendChild(receptionTitle);
+        }
+
+        var receptionActions = creerListeActions(qr.reception.actions);
+        receptionActions.classList.add("home-actions--qr");
+        reception.appendChild(receptionActions);
+        zoneQr.appendChild(reception);
+      }
+
+      container.appendChild(zoneQr);
+    }
+
+    if (guided.parcoursRapides && guided.parcoursRapides.length) {
+      var zoneRapides = document.createElement("section");
+      zoneRapides.className = "home-zone home-zone--rapides";
+
+      zoneRapides.appendChild(
+        creerTitreZone(guided.parcoursRapidesTitre || "Selon mon besoin", { icon: "🧭" })
+      );
+
+      var grilleRapides = document.createElement("div");
+      grilleRapides.className = "home-rapides";
+      guided.parcoursRapides.forEach(function (p) {
+        grilleRapides.appendChild(creerCarteRapide(p));
+      });
+      zoneRapides.appendChild(grilleRapides);
+      container.appendChild(zoneRapides);
+    }
+
+    actualiserQrElevesAccueil();
+  }
+
+  function appliquerModeAccueil(mode) {
+    var guided = document.getElementById("home-guided");
+    var catalog = document.getElementById("home-catalog");
+    var btnGuided = document.getElementById("home-mode-guided");
+    var btnCatalog = document.getElementById("home-mode-catalog");
+    if (!guided || !catalog) return;
+
+    var isGuided = mode !== "catalog";
+    guided.hidden = !isGuided;
+    catalog.hidden = isGuided;
+
+    if (btnGuided) {
+      btnGuided.classList.toggle("is-active", isGuided);
+      btnGuided.setAttribute("aria-selected", isGuided ? "true" : "false");
+    }
+    if (btnCatalog) {
+      btnCatalog.classList.toggle("is-active", !isGuided);
+      btnCatalog.setAttribute("aria-selected", !isGuided ? "true" : "false");
+    }
+
+    document.body.classList.toggle("app--home-guided", isGuided);
+    document.body.classList.toggle("app--home-catalog", !isGuided);
+
+    var trustBar = document.getElementById("home-trust-bar");
+    if (trustBar) {
+      trustBar.hidden = !isGuided || !trustBar.childElementCount;
+    }
+  }
+
+  function basculerModeAccueil(mode) {
+    var next = mode === "catalog" ? "catalog" : "guided";
+    sauverModeAccueil(next);
+    appliquerModeAccueil(next);
+  }
+
+  function initAccueilGuide() {
+    var toggle = document.getElementById("home-mode-toggle");
+    if (!toggle || AUDIENCE === "eleve") return;
+
+    renderParcoursGuide();
+    appliquerModeAccueil(chargerModeAccueil());
+
+    toggle.querySelectorAll("[data-home-mode]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        basculerModeAccueil(btn.getAttribute("data-home-mode"));
+      });
+    });
+
+    var btnShowCatalog = document.getElementById("btn-show-catalog");
+    if (btnShowCatalog) {
+      btnShowCatalog.addEventListener("click", function () {
+        basculerModeAccueil("catalog");
+      });
+    }
+
+    var guidedContent = document.getElementById("home-guided-content");
+    if (guidedContent && window.OutilsAccueil) {
+      guidedContent.addEventListener("click", function (e) {
+        if (!e.target.closest("a.home-action")) return;
+        OutilsAccueil.setAccueil("index");
+      });
+    }
+
+    var btnCopyElevesHome = document.getElementById("btn-copy-eleves-home");
+    if (btnCopyElevesHome) {
+      var copyLabelEl = btnCopyElevesHome.querySelector(".home-qr-copy__text");
+      var copyLabelDefault =
+        copyLabelEl && copyLabelEl.textContent
+          ? copyLabelEl.textContent
+          : "Copier le lien de la page élève";
+      btnCopyElevesHome.addEventListener("click", function () {
+        var url = shareUrlEleves();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function () {
+            if (copyLabelEl) copyLabelEl.textContent = "Lien copié";
+            setTimeout(function () {
+              if (copyLabelEl) copyLabelEl.textContent = copyLabelDefault;
+            }, 2000);
+          });
+          return;
+        }
+        window.prompt("Copiez le lien de la page élève :", url);
+      });
+    }
+  }
+
   renderListe(OUTILS);
+  initAccueilGuide();
   window.dispatchEvent(new Event("outils-eps-home-ready"));
   if (searchInput) {
     searchInput.addEventListener("input", onSearch);
@@ -434,17 +916,8 @@
   var siteSidebar = document.getElementById("site-sidebar");
   var siteSidebarBackdrop = document.getElementById("site-sidebar-backdrop");
   var btnSiteSidebarClose = document.getElementById("btn-site-sidebar-close");
-  var sidebarWideMq =
-    typeof window !== "undefined" && window.matchMedia
-      ? window.matchMedia("(min-width: 1024px)")
-      : null;
-
-  function isSidebarWide() {
-    return sidebarWideMq && sidebarWideMq.matches;
-  }
-
   function openSiteSidebar() {
-    if (!siteSidebar || isSidebarWide()) return;
+    if (!siteSidebar) return;
     siteSidebar.classList.add("is-open");
     if (siteSidebarBackdrop) {
       siteSidebarBackdrop.hidden = false;
@@ -466,7 +939,13 @@
   }
 
   if (btnSiteMenu && siteSidebar) {
-    btnSiteMenu.addEventListener("click", openSiteSidebar);
+    btnSiteMenu.addEventListener("click", function () {
+      if (siteSidebar.classList.contains("is-open")) {
+        closeSiteSidebar();
+      } else {
+        openSiteSidebar();
+      }
+    });
   }
   if (btnSiteSidebarClose) {
     btnSiteSidebarClose.addEventListener("click", closeSiteSidebar);
@@ -474,12 +953,6 @@
   if (siteSidebarBackdrop) {
     siteSidebarBackdrop.addEventListener("click", closeSiteSidebar);
   }
-  if (sidebarWideMq && sidebarWideMq.addEventListener) {
-    sidebarWideMq.addEventListener("change", function () {
-      closeSiteSidebar();
-    });
-  }
-
   if (siteSidebar) {
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && siteSidebar.classList.contains("is-open")) {
@@ -489,7 +962,7 @@
     siteSidebar.querySelectorAll("[data-menu-action]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var action = btn.getAttribute("data-menu-action");
-        if (!isSidebarWide()) closeSiteSidebar();
+        closeSiteSidebar();
         if (action === "info" && dialogInfo && dialogInfo.showModal) {
           dialogInfo.showModal();
         } else if (action === "share") {
@@ -500,7 +973,7 @@
     });
     siteSidebar.querySelectorAll("a.site-menu__link").forEach(function (link) {
       link.addEventListener("click", function () {
-        if (!isSidebarWide()) closeSiteSidebar();
+        closeSiteSidebar();
       });
     });
   }
@@ -668,13 +1141,6 @@
     return AUDIENCE === "eleve" ? shareUrlEleves() : shareUrlApp();
   }
 
-  function qrCodeSrc(targetUrl) {
-    return (
-      "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" +
-      encodeURIComponent(targetUrl)
-    );
-  }
-
   function shareMetaForTarget(target) {
     var body = document.body;
     if (target === "eleve") {
@@ -704,13 +1170,13 @@
     var elevesUrl = shareUrlEleves();
     if (shareDual) {
       if (shareLink) shareLink.value = appUrl;
-      if (shareQr) shareQr.src = qrCodeSrc(appUrl);
+      if (shareQr) renderQrInto(shareQr, appUrl, 200);
       if (shareLinkEleves) shareLinkEleves.value = elevesUrl;
-      if (shareQrEleves) shareQrEleves.src = qrCodeSrc(elevesUrl);
+      if (shareQrEleves) renderQrInto(shareQrEleves, elevesUrl, 200);
     } else {
       var url = shareUrl();
       if (shareLink) shareLink.value = url;
-      if (shareQr) shareQr.src = qrCodeSrc(url);
+      if (shareQr) renderQrInto(shareQr, url, 200);
     }
     var canShare = !!navigator.share;
     if (btnNativeShareApp) btnNativeShareApp.hidden = !canShare;
