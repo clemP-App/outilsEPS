@@ -197,6 +197,20 @@
       : "Pour organiser, gérer ou piloter la séance.";
   }
 
+  function creerBoutonPartagePageEleves() {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn btn--ghost btn--sm tools-list__share-eleves-btn";
+    btn.setAttribute("aria-label", "Partager la page élèves");
+    btn.appendChild(creerIcone("📱", "tools-list__share-eleves-icon"));
+    var label = document.createElement("span");
+    label.className = "tools-list__share-eleves-label";
+    label.textContent = "Partager la page élèves";
+    btn.appendChild(label);
+    btn.addEventListener("click", ouvrirPartagePageEleves);
+    return btn;
+  }
+
   function creerEnteteSection(publicCible, count) {
     var li = document.createElement("li");
     li.className = "tools-list__section";
@@ -210,7 +224,13 @@
     title.textContent = publicLabel(publicCible);
     top.appendChild(title);
 
-    top.appendChild(creerSelecteurVueOutils(publicCible));
+    var sectionActions = document.createElement("div");
+    sectionActions.className = "tools-list__section-actions";
+    if (publicCible === "eleve" && AUDIENCE !== "eleve") {
+      sectionActions.appendChild(creerBoutonPartagePageEleves());
+    }
+    sectionActions.appendChild(creerSelecteurVueOutils(publicCible));
+    top.appendChild(sectionActions);
 
     var meta = document.createElement("p");
     meta.className = "tools-list__section-desc";
@@ -1184,6 +1204,24 @@
     setShareMsg("");
   }
 
+  function ouvrirPartagePageEleves() {
+    prepareShareDialog();
+    if (!dialogShare || !dialogShare.showModal) {
+      nativeShareTarget("eleve").catch(function () {
+        copyShareLink(shareUrlEleves(), shareLinkEleves, "Lien page élèves copié");
+      });
+      return;
+    }
+    dialogShare.classList.add("share-dialog--focus-eleves");
+    dialogShare.showModal();
+    var blockEleves = dialogShare.querySelector(".share-dialog__block--eleves");
+    if (blockEleves) {
+      window.requestAnimationFrame(function () {
+        blockEleves.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }
+
   function nativeShareTarget(target) {
     var meta = shareMetaForTarget(target);
     if (!navigator.share) return Promise.reject(new Error("Partage natif indisponible"));
@@ -1214,6 +1252,9 @@
   }
 
   if (dialogShare) {
+    dialogShare.addEventListener("close", function () {
+      dialogShare.classList.remove("share-dialog--focus-eleves");
+    });
     dialogShare.querySelectorAll(".share-dialog__dismiss").forEach(function (btn) {
       btn.addEventListener("click", function () {
         dialogShare.close();
