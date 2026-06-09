@@ -1,5 +1,5 @@
 /**
- * Pont entre le cahier de texte (cycles c3/c4/lycee) et eps-referentiel-data.js (cycle3/cycle4/lycee).
+ * Pont entre le cahier de texte (cycles c3/c4/lycee/lyceePro) et eps-referentiel-data.js (cycle3/cycle4/lycee/lyceePro).
  */
 (function (global) {
   "use strict";
@@ -13,7 +13,8 @@
   function cycleToEps(cycleId) {
     if (cycleId === "c3") return "cycle3";
     if (cycleId === "c4") return "cycle4";
-    if (cycleId === "cycle3" || cycleId === "cycle4") return cycleId;
+    if (cycleId === "lyceePro") return "lyceePro";
+    if (cycleId === "cycle3" || cycleId === "cycle4" || cycleId === "lycee") return cycleId;
     return "lycee";
   }
 
@@ -42,7 +43,8 @@
   function getChampsDisponibles(cycleId) {
     var ref = eps();
     if (!ref) {
-      return cycleToEps(cycleId) === "lycee"
+      var epsCycle = cycleToEps(cycleId);
+      return epsCycle === "lycee" || epsCycle === "lyceePro"
         ? ["perf", "adapt", "expr", "coop", "ca5"]
         : ["perf", "adapt", "expr", "coop"];
     }
@@ -136,7 +138,7 @@
         hit = findIn(ref.objectifsSequencePourCycle(a, cycleToEps(cycleId), null, familles));
         if (hit) return hit;
       }
-      var cycles = ["cycle3", "cycle4", "lycee"];
+      var cycles = ["cycle3", "cycle4", "lycee", "lyceePro"];
       for (var c = 0; c < cycles.length; c++) {
         hit = findIn(ref.objectifsSequencePourCycle(a, cycles[c], null, familles));
         if (hit) return hit;
@@ -183,6 +185,7 @@
     if (!item) return "";
     if (cycleId === "c3" && item.phraseC3) return item.phraseC3;
     if (cycleId === "c4" && item.phraseC4) return item.phraseC4;
+    if (cycleId === "lyceePro" && item.phraseLyceePro) return item.phraseLyceePro;
     if (cycleId === "lycee" && item.phraseLycee) return item.phraseLycee;
     return item.phrase || "";
   }

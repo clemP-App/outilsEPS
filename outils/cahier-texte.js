@@ -15,7 +15,13 @@
   var NIVEAUX = [
     { id: "c3", label: "Cycle 3", resume: "6e — 5e : formulations simplifiées, progressivité renforcée." },
     { id: "c4", label: "Cycle 4", resume: "4e — 3e : attendus Eduscol cycle 4." },
-    { id: "lycee", label: "Lycée", resume: "2de — Terminale : vocabulaire et exigences adaptés au lycée." },
+    { id: "lycee", label: "Lycée", resume: "2de — Terminale : vocabulaire et exigences adaptés au lycée général." },
+    {
+      id: "lyceePro",
+      label: "Lycée pro",
+      resume:
+        "Seconde pro — Terminale pro : langage concret, coopération, autonomie et lien avec la santé au quotidien et en situation professionnelle.",
+    },
   ];
 
   var COLLECTIFS_APSA = {
@@ -150,6 +156,8 @@
           "Fractionné simple : courses courtes avec récupération marchée, consignes d’allure et ressenti de l’effort.",
         phraseLycee:
           "Travail VMA / fractionné : allures cibles, temps de récupération, auto-évaluation (RPE) et analyse de la séance.",
+        phraseLyceePro:
+          "Fractionné adapté au niveau de chacun : repères d’allure simples, récupération active et ressenti de l’effort (RPE).",
       },
       {
         id: "fond",
@@ -503,7 +511,14 @@
         label: "Opposition semi-opposée",
         phrase: "Opposition semi-opposée : contraintes de vitesse ou de zones, fair-play et sécurité.",
       },
-      { id: "opposition", label: "Opposition libre", phrase: "Oppositions adaptées : consignes de sécurité, respect du partenaire.", phraseLycee: "Oppositions libres encadrées : application des règles, gestion de l’intensité et fair-play." },
+      {
+        id: "opposition",
+        label: "Opposition libre",
+        phrase: "Oppositions adaptées : consignes de sécurité, respect du partenaire.",
+        phraseLycee: "Oppositions libres encadrées : application des règles, gestion de l’intensité et fair-play.",
+        phraseLyceePro:
+          "Oppositions encadrées : règles rappelées, intensité adaptée au niveau de chacun, respect du partenaire et fair-play.",
+      },
     ],
     judo: [
       {
@@ -579,12 +594,22 @@
         id: "circuit",
         label: "Circuit",
         phrase: "Circuit training en autonomie : fiches d’exercices, intensité adaptée, bilan individuel.",
+        phraseLyceePro:
+          "Circuit par niveaux (facile / moyen / exigeant) : fiches d’exercices, autonomie encadrée et bilan individuel.",
       },
-      { id: "projet", label: "Projet perso", phrase: "Séance en lien avec le projet personnel d’entraînement de chaque élève." },
+      {
+        id: "projet",
+        label: "Projet perso",
+        phrase: "Séance en lien avec le projet personnel d’entraînement de chaque élève.",
+        phraseLyceePro:
+          "Séance personnalisée : chaque élève choisit un objectif concret (endurance, force, souplesse) et s’entraîne en autonomie.",
+      },
       {
         id: "params-effort",
         label: "Paramètres d’effort",
         phrase: "Séance avec paramètres d’effort précis (RPE, FC cible, temps de récupération) renseignés ci-dessous.",
+        phraseLyceePro:
+          "Séance avec repères d’effort simples (RPE, sensations, récupération) : lien avec la gestion de l’effort au quotidien.",
       },
     ],
     "course-duree": [
@@ -592,16 +617,22 @@
         id: "fond",
         label: "Course continue",
         phrase: "Course en durée : gestion de l’allure, effort et hydratation si besoin.",
+        phraseLyceePro:
+          "Course en durée à allure modérée : régularité, respiration et lien avec l’endurance utile au quotidien et en activité professionnelle.",
       },
       {
         id: "fractionne",
         label: "Fractionné",
         phrase: "Travail par intervalles : consignes de vitesse et temps de récupération.",
+        phraseLyceePro:
+          "Fractionné adapté : alternance effort / récupération avec repères simples (temps, sensations).",
       },
       {
         id: "params-effort",
         label: "Paramètres d’effort",
         phrase: "Séance avec paramètres d’effort précis (RPE, FC cible, temps de récupération) renseignés ci-dessous.",
+        phraseLyceePro:
+          "Séance avec repères d’effort (RPE, FC, récupération) pour apprendre à s’entraîner de façon autonome et durable.",
       },
     ],
     "nat-duree": [
@@ -980,23 +1011,31 @@
         label: "Projet d’entraînement",
         phrase:
           "Concevoir et mener un projet personnel d’entraînement pour développer ses ressources et s’entretenir.",
+        phraseLyceePro:
+          "Organiser un projet d’entraînement personnel pour prendre soin de sa santé et s’entretenir au-delà du cours.",
       },
       {
         id: "ca5-parametres",
         label: "Paramètres",
         phrase:
           "Choisir et moduler les paramètres d’entraînement (intensité, durée, répétitions, récupération) selon les effets recherchés.",
+        phraseLyceePro:
+          "Ajuster l’intensité, la durée et la récupération à partir de repères simples (RPE, sensations, FC).",
       },
       {
         id: "ca5-autonomie",
         label: "Autonomie",
         phrase: "S’entraîner en autonomie (seul ou collectivement) en régulant l’effort à partir de ses ressentis.",
+        phraseLyceePro:
+          "S’entraîner en autonomie en régulant son effort : utile pour la santé, la gestion du stress et la vie professionnelle.",
       },
       {
         id: "ca5-effets",
         label: "Effets recherchés",
         phrase:
           "S’engager pour obtenir les effets recherchés (endurance, force, souplesse…) liés au thème de séquence.",
+        phraseLyceePro:
+          "Comprendre les effets de l’activité physique (endurance, force, souplesse) sur la santé et le bien-être au quotidien.",
       },
     ],
   };
@@ -1695,6 +1734,13 @@
   function infererNiveauDepuisClasse(classeId, classeNom) {
     var nom = (classeNom || nomClasse(classeId) || "").toLowerCase();
     if (!nom) return null;
+    if (
+      /bac\s*pro|lyc[eé]e\s*pro|seconde\s*pro|2\s*de\s*pro|2nde\s*pro|1\s*re\s*pro|1\s*ère\s*pro|1re\s*pro|terminale\s*pro|tle\s*pro|\btle\s*pro\b|\bbac\s*pro\b/i.test(
+        nom
+      )
+    ) {
+      return "lyceePro";
+    }
     if (/2\s*de|seconde|\b1\s*re\b|1re|première|premiere|terminale|\btle\b|\b1\s*ère\b/.test(nom)) return "lycee";
     if (/6[eè]|5[eè]|\b6\s*e|\b5\s*e/.test(nom)) return "c3";
     if (/4[eè]|3[eè]|\b4\s*e|\b3\s*e/.test(nom)) return "c4";
@@ -1730,7 +1776,7 @@
       var fromRef = ref.getChampsDisponibles(cycleId);
       if (fromRef && fromRef.length) return fromRef;
     }
-    if (cycleId === "lycee") return ["perf", "adapt", "expr", "coop", "ca5"];
+    if (cycleId === "lycee" || cycleId === "lyceePro") return ["perf", "adapt", "expr", "coop", "ca5"];
     return ["perf", "adapt", "expr", "coop"];
   }
 
@@ -1749,6 +1795,7 @@
     if (!item) return "";
     if (cycle === "c3" && item.phraseC3) return item.phraseC3;
     if (cycle === "c4" && item.phraseC4) return item.phraseC4;
+    if (cycle === "lyceePro" && item.phraseLyceePro) return item.phraseLyceePro;
     if (cycle === "lycee" && item.phraseLycee) return item.phraseLycee;
     return item.phrase || "";
   }

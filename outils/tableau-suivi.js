@@ -178,6 +178,39 @@
     { id: "5", glyph: "5", label: "Repère 5", cls: "num" },
   ];
 
+  var PRESENCE_RETARD = "retard";
+  var PRESENCE_JUSTIFIE = "justifie";
+  var PRESENCE_ATTITUDE = "attitude";
+  var PRESENCE_LONG_PRESS_MS = 500;
+  var PRESENCE_STATUTS = [
+    { id: true, label: "Présent", glyph: "✓", exportGlyph: "✓", cls: "tab-suivi-check--ok" },
+    {
+      id: PRESENCE_RETARD,
+      label: "En retard",
+      glyphKind: "clock",
+      exportGlyph: "⏱",
+      cls: "tab-suivi-check--retard",
+    },
+    {
+      id: PRESENCE_ATTITUDE,
+      label: "Souci d’attitude",
+      glyph: "!",
+      exportGlyph: "!",
+      cls: "tab-suivi-check--attitude",
+    },
+    {
+      id: PRESENCE_JUSTIFIE,
+      label: "Absent justifié",
+      glyphKind: "cross-j",
+      exportGlyph: "✗J",
+      cls: "tab-suivi-check--justifie",
+    },
+    { id: false, label: "Absent non justifié", glyph: "✗", exportGlyph: "✗", cls: "tab-suivi-check--ko" },
+    { id: null, label: "Effacer", glyph: "·", exportGlyph: "", cls: "tab-suivi-check--vide" },
+  ];
+  var presenceMenuEl = null;
+  var presenceMenuAnchor = null;
+
   var RUBRIQUES_PARAM_ID = "tableau-suivi-rubriques-v1";
   var RUBRIQUES_CATALOG_URL = "../shared/evaluation-rubrics-catalog.json";
   var RUBRIQUES_SUBMIT_MAIL = "mailto:clement.pignet@gmail.com";
@@ -2259,17 +2292,240 @@
     return def.glyph + " " + label;
   }
 
+  function statutPresenceDef(val) {
+    for (var i = 0; i < PRESENCE_STATUTS.length; i++) {
+      if (PRESENCE_STATUTS[i].id === val) return PRESENCE_STATUTS[i];
+    }
+    return PRESENCE_STATUTS[PRESENCE_STATUTS.length - 1];
+  }
+
+  function remplirGlyphPresence(el, st) {
+    el.textContent = "";
+    if (st.glyphKind === "clock") {
+      var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "tab-suivi-check__clock");
+      svg.setAttribute("viewBox", "0 0 16 16");
+      svg.setAttribute("aria-hidden", "true");
+      var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      circle.setAttribute("cx", "8");
+      circle.setAttribute("cy", "8");
+      circle.setAttribute("r", "6.25");
+      circle.setAttribute("fill", "none");
+      circle.setAttribute("stroke", "currentColor");
+      circle.setAttribute("stroke-width", "1.35");
+      var hand = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      hand.setAttribute("d", "M8 4.25V8l2.25 1.35");
+      hand.setAttribute("fill", "none");
+      hand.setAttribute("stroke", "currentColor");
+      hand.setAttribute("stroke-width", "1.35");
+      hand.setAttribute("stroke-linecap", "round");
+      svg.appendChild(circle);
+      svg.appendChild(hand);
+      el.appendChild(svg);
+      return;
+    }
+    if (st.glyphKind === "cross-j") {
+      var combo = document.createElement("span");
+      combo.className = "tab-suivi-check__combo";
+      var main = document.createElement("span");
+      main.className = "tab-suivi-check__combo-main";
+      main.textContent = "✗";
+      var sub = document.createElement("span");
+      sub.className = "tab-suivi-check__combo-sub";
+      sub.textContent = "J";
+      combo.appendChild(main);
+      combo.appendChild(sub);
+      el.appendChild(combo);
+      return;
+    }
+    el.textContent = st.glyph || "·";
+  }
+
+  function appliquerStyleBoutonCheck(btn, val) {
+    var def = statutPresenceDef(val);
+    btn.className = "tab-suivi-check " + def.cls;
+    remplirGlyphPresence(btn, def);
+    btn.setAttribute("aria-label", def.label);
+  }
+
+  function scoreTriPresence(v) {
+    if (v === true) return 5;
+    if (v === PRESENCE_RETARD) return 4;
+    if (v === PRESENCE_ATTITUDE) return 4;
+    if (v === PRESENCE_JUSTIFIE) return 2;
+    if (v === false) return 1;
+    return 0;
+  }
+
+  function fermerMenuPresence(e) {
+    if (!presenceMenuEl || presenceMenuEl.hidden) return;
+    if (e && e.target && presenceMenuEl.contains(e.target)) return;
+    presenceMenuEl.hidden = true;
+    presenceMenuAnchor = null;
+  }
+
+  function positionnerMenuPresence(anchorBtn) {
+    if (!presenceMenuEl) return;
+    presenceMenuEl.hidden = false;
+    var rect = anchorBtn.getBoundingClientRect();
+    var menuW = presenceMenuEl.offsetWidth;
+    var menuH = presenceMenuEl.offsetHeight;
+    var left = rect.right + 6;
+    if (left + menuW > window.innerWidth - 8) {
+      left = rect.left - menuW - 6;
+    }
+    if (left < 8) left = 8;
+    var top = rect.top + (rect.height - menuH) / 2;
+    if (top + menuH > window.innerHeight - 8) top = window.innerHeight - menuH - 8;
+    if (top < 8) top = 8;
+    presenceMenuEl.style.left = left + "px";
+    presenceMenuEl.style.top = top + "px";
+  }
+
+  function getPresenceMenu() {
+    if (!presenceMenuEl) {
+      presenceMenuEl = document.createElement("div");
+      presenceMenuEl.className = "tab-suivi-presence-menu";
+      presenceMenuEl.setAttribute("role", "menu");
+      presenceMenuEl.hidden = true;
+      document.body.appendChild(presenceMenuEl);
+      document.addEventListener("pointerdown", fermerMenuPresence, true);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") fermerMenuPresence();
+      });
+      window.addEventListener("scroll", fermerMenuPresence, true);
+      window.addEventListener("resize", fermerMenuPresence);
+    }
+    return presenceMenuEl;
+  }
+
+  function ouvrirMenuPresence(anchorBtn, onSelect) {
+    var menu = getPresenceMenu();
+    presenceMenuAnchor = anchorBtn;
+    menu.innerHTML = "";
+    PRESENCE_STATUTS.forEach(function (st) {
+      var item = document.createElement("button");
+      item.type = "button";
+      item.className = "tab-suivi-presence-menu__item " + st.cls;
+      item.setAttribute("role", "menuitem");
+      var glyph = document.createElement("span");
+      glyph.className = "tab-suivi-presence-menu__glyph " + st.cls;
+      remplirGlyphPresence(glyph, st);
+      glyph.setAttribute("aria-hidden", "true");
+      var lab = document.createElement("span");
+      lab.className = "tab-suivi-presence-menu__label";
+      lab.textContent = st.label;
+      item.appendChild(glyph);
+      item.appendChild(lab);
+      item.addEventListener("click", function (e) {
+        e.stopPropagation();
+        onSelect(st.id);
+        fermerMenuPresence();
+      });
+      menu.appendChild(item);
+    });
+    positionnerMenuPresence(anchorBtn);
+  }
+
+  function lierLongPressPresence(btn, onLongPress) {
+    var timer = null;
+    var fired = false;
+    function clearTimer() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    }
+    btn.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      fired = false;
+      clearTimer();
+      timer = setTimeout(function () {
+        fired = true;
+        timer = null;
+        if (typeof navigator.vibrate === "function") navigator.vibrate(12);
+        onLongPress();
+      }, PRESENCE_LONG_PRESS_MS);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach(function (ev) {
+      btn.addEventListener(ev, clearTimer);
+    });
+    btn.addEventListener("contextmenu", function (e) {
+      e.preventDefault();
+      fired = true;
+      onLongPress();
+    });
+    return function () {
+      return fired;
+    };
+  }
+
+  function glypheTextePresencePdf(v) {
+    if (v === null || v === undefined) return "—";
+    var def = statutPresenceDef(v);
+    return def.exportGlyph != null ? def.exportGlyph : def.glyph || "—";
+  }
+
+  function reinitialiserStyleTextePdf(doc) {
+    doc.setTextColor(15, 23, 42);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setDrawColor(15, 23, 42);
+    doc.setLineWidth(0.12);
+  }
+
+  function dessinerCheckPdf(doc, cx, cy, couleur) {
+    doc.setDrawColor(couleur[0], couleur[1], couleur[2]);
+    doc.setLineWidth(0.38);
+    doc.line(cx - 1.15, cy + 0.05, cx - 0.35, cy + 0.85);
+    doc.line(cx - 0.35, cy + 0.85, cx + 1.2, cy - 0.95);
+  }
+
+  function dessinerCroixPdf(doc, cx, cy, rayon, couleur) {
+    doc.setDrawColor(couleur[0], couleur[1], couleur[2]);
+    doc.setLineWidth(0.34);
+    doc.line(cx - rayon, cy - rayon, cx + rayon, cy + rayon);
+    doc.line(cx + rayon, cy - rayon, cx - rayon, cy + rayon);
+  }
+
+  function dessinerStatutPresencePdf(doc, val, cx, y) {
+    var cy = y - 2.1;
+    if (val === true) {
+      dessinerCheckPdf(doc, cx, cy, [4, 120, 87]);
+    } else if (val === false) {
+      dessinerCroixPdf(doc, cx, cy, 1.1, [185, 28, 28]);
+    } else if (val === PRESENCE_RETARD) {
+      doc.setDrawColor(180, 83, 9);
+      doc.setLineWidth(0.22);
+      doc.circle(cx, cy, 1.75, "S");
+      doc.line(cx, cy, cx, cy - 1.05);
+      doc.line(cx, cy, cx + 0.95, cy + 0.35);
+    } else if (val === PRESENCE_ATTITUDE) {
+      doc.setTextColor(109, 40, 217);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.text("!", cx, y, { align: "center" });
+    } else if (val === PRESENCE_JUSTIFIE) {
+      dessinerCroixPdf(doc, cx - 0.15, cy, 0.95, [29, 78, 216]);
+      doc.setTextColor(29, 78, 216);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(4.8);
+      doc.text("J", cx + 1.55, y + 0.55, { align: "center" });
+    } else {
+      doc.setTextColor(148, 163, 184);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text("·", cx, y, { align: "center" });
+    }
+    reinitialiserStyleTextePdf(doc);
+  }
+
   function valeurVersTexte(t, rowId, col, pourPdf) {
     var v = valeurCellule(t, rowId, col);
     if (col.type === "check") {
-      if (pourPdf) {
-        if (v === true) return "Oui";
-        if (v === false) return "Non";
-        return "—";
-      }
-      if (v === true) return "✓";
-      if (v === false) return "✗";
-      return "";
+      if (pourPdf) return glypheTextePresencePdf(v);
+      var def = statutPresenceDef(v);
+      return def.exportGlyph != null ? def.exportGlyph : def.glyph || "";
     }
     if (col.type === "rubric") {
       return v === null || v === undefined || isNaN(v) ? "" : formatNombreAffiche(v);
@@ -2340,24 +2596,42 @@
     return isNaN(parsed) ? null : parsed;
   }
 
-  function majStatsColonneDom(colId, texte) {
-    if (!scrollEl || !colId) return;
+  function compterPresentsColonneAppel(t, col) {
+    var n = 0;
+    t.rows.forEach(function (row) {
+      var v = getCell(t, row.id, col.id);
+      if (v === true || v === PRESENCE_RETARD || v === PRESENCE_ATTITUDE) n++;
+    });
+    return n;
+  }
+
+  function syntheseColonneAppelTexte(t, col) {
+    return compterPresentsColonneAppel(t, col) + " él.";
+  }
+
+  function majStatsColonneDom(t, col) {
+    if (!scrollEl || !col || !col.id) return;
     var th = scrollEl.querySelector(
-      '.tab-suivi-head-stats .tab-suivi-th--col[data-col-id="' + colId + '"]'
+      '.tab-suivi-head-stats .tab-suivi-th--col[data-col-id="' + col.id + '"]'
     );
-    if (th) th.textContent = texte;
+    if (!th) return;
+    if (col.type === "check" && !col.horsSynthese) {
+      th.textContent = syntheseColonneAppelTexte(t, col);
+      return;
+    }
+    th.textContent = syntheseColonne(t, col);
   }
 
   function majToutesStatsDom(t) {
     t.cols.forEach(function (col) {
-      majStatsColonneDom(col.id, syntheseColonne(t, col));
+      majStatsColonneDom(t, col);
     });
   }
 
   function rafraichirColonnesCalcLiees(t, sourceColId) {
     t.cols.forEach(function (col) {
       if (col.type !== "calc" || !col.sourceIds || col.sourceIds.indexOf(sourceColId) < 0) return;
-      majStatsColonneDom(col.id, syntheseColonne(t, col));
+      majStatsColonneDom(t, col);
       if (!tbodyEl) return;
       t.rows.forEach(function (row) {
         var el = tbodyEl.querySelector(
@@ -2379,7 +2653,7 @@
 
   function appliquerValeurDepuisInput(num, t, row, col) {
     setCell(t, row.id, col.id, parseValeurNombre(num.value));
-    majStatsColonneDom(col.id, syntheseColonne(t, col));
+    majStatsColonneDom(t, col);
     rafraichirColonnesCalcLiees(t, col.id);
     planifierSauvegarde();
   }
@@ -2467,7 +2741,7 @@
       return;
     }
     setCell(ctx.tableau, ctx.row.id, ctx.col.id, ctx.value);
-    majStatsColonneDom(ctx.col.id, syntheseColonne(ctx.tableau, ctx.col));
+    majStatsColonneDom(ctx.tableau, ctx.col);
     majBoutonRubriqueCellule(ctx.tableau, ctx.row.id, ctx.col);
     planifierSauvegarde();
     majScoreDialogRubrique(ctx);
@@ -2633,11 +2907,7 @@
     if (col.type === "eleveInfo") return "—";
     if (col.type === "check") {
       if (col.horsSynthese) return "—";
-      var ok = 0;
-      t.rows.forEach(function (row) {
-        if (getCell(t, row.id, col.id) === true) ok++;
-      });
-      return ok + " ✓";
+      return syntheseColonneAppelTexte(t, col);
     }
     if ((col.type === "number" || col.type === "calc") && !colonneEstNote(col)) return "—";
     var sum = 0;
@@ -2817,12 +3087,7 @@
         var va = valeurCellule(t, a.id, col);
         var vb = valeurCellule(t, b.id, col);
         if (col.type === "check") {
-          var score = function (v) {
-            if (v === true) return 2;
-            if (v === false) return 1;
-            return 0;
-          };
-          return sens * (score(va) - score(vb));
+          return sens * (scoreTriPresence(va) - scoreTriPresence(vb));
         }
         if (
           col.type === "eleveInfo" &&
@@ -2960,7 +3225,10 @@
         thS.className = "tab-suivi-th tab-suivi-th--col tab-suivi-th--stats";
         thS.scope = "col";
         thS.setAttribute("data-col-id", col.id);
-        thS.textContent = syntheseColonne(t, col);
+        thS.textContent =
+          col.type === "check" && !col.horsSynthese
+            ? syntheseColonneAppelTexte(t, col)
+            : syntheseColonne(t, col);
         trStats.appendChild(thS);
       });
 
@@ -3035,36 +3303,29 @@
         } else if (col.type === "check") {
           var btn = document.createElement("button");
           btn.type = "button";
-          btn.className = "tab-suivi-check";
-          var val = getCell(t, row.id, col.id);
-          if (val === true) {
-            btn.classList.add("tab-suivi-check--ok");
-            btn.textContent = "✓";
-          } else if (val === false) {
-            btn.classList.add("tab-suivi-check--ko");
-            btn.textContent = "✗";
-          } else {
-            btn.classList.add("tab-suivi-check--vide");
-            btn.textContent = "·";
-          }
+          appliquerStyleBoutonCheck(btn, getCell(t, row.id, col.id));
+          btn.setAttribute(
+            "title",
+            "Clic : ✓ / ✗ / vide — appui long : menu complet (retard, attitude, absences…)"
+          );
+          var wasLongPress = lierLongPressPresence(btn, function () {
+            ouvrirMenuPresence(btn, function (statut) {
+              setCell(t, row.id, col.id, statut);
+              appliquerStyleBoutonCheck(btn, statut);
+              majStatsColonneDom(t, col);
+              planifierSauvegarde();
+            });
+          });
           btn.addEventListener("click", function () {
+            if (wasLongPress()) return;
             var cur = getCell(t, row.id, col.id);
             var next;
             if (cur === true) next = false;
             else if (cur === false) next = null;
             else next = true;
             setCell(t, row.id, col.id, next);
-            majStatsColonneDom(col.id, syntheseColonne(t, col));
-            if (next === true) {
-              btn.className = "tab-suivi-check tab-suivi-check--ok";
-              btn.textContent = "✓";
-            } else if (next === false) {
-              btn.className = "tab-suivi-check tab-suivi-check--ko";
-              btn.textContent = "✗";
-            } else {
-              btn.className = "tab-suivi-check tab-suivi-check--vide";
-              btn.textContent = "·";
-            }
+            appliquerStyleBoutonCheck(btn, next);
+            majStatsColonneDom(t, col);
             planifierSauvegarde();
           });
           td.appendChild(btn);
@@ -3234,7 +3495,7 @@
     });
     rendreGrille();
     t.cols.forEach(function (c) {
-      if (c.type === "calc") majStatsColonneDom(c.id, syntheseColonne(t, c));
+      if (c.type === "calc") majStatsColonneDom(t, c);
     });
     planifierSauvegarde();
     montrerOk("Colonne « " + (col.label || "") + " » mise à jour pour tous les élèves.");
@@ -3476,9 +3737,8 @@
     dlgColRemplirBody.innerHTML = "";
     if (col.type === "check") {
       [
-        { label: "Tout marquer ✓", val: true, cls: "tab-suivi-remplir-ok" },
-        { label: "Tout marquer ✗", val: false, cls: "tab-suivi-remplir-ko" },
-        { label: "Tout effacer", val: null, cls: "" },
+        { label: "Tout marquer présent", val: true, cls: "tab-suivi-remplir-ok" },
+        { label: "Tout marquer absent", val: false, cls: "tab-suivi-remplir-ko" },
       ].forEach(function (opt) {
         var b = document.createElement("button");
         b.type = "button";
@@ -4591,11 +4851,32 @@
           newPage(suiteCols + " (suite)");
           dessinerEnteteTable(cols, wCol);
         }
-        var cells = [labelEleveAvecIcone(row, true)];
+        var x = tableX;
+        var tableW = wNom + wCol * Math.max(0, cols.length);
+        var bg = ri % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
+        rgb(bg);
+        doc.rect(tableX, y - rowH + 2.2, tableW, rowH, "F");
+        rgb([226, 232, 240]);
+        doc.setLineWidth(0.12);
+        doc.rect(tableX, y - rowH + 2.2, tableW, rowH, "S");
+        doc.setTextColor(15, 23, 42);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.text(labelEleveAvecIcone(row, true).slice(0, Math.floor(wNom / 2.1)), x + 2, y);
+        x += wNom;
         cols.forEach(function (col) {
-          cells.push(valeurVersTexte(t, row.id, col, true));
+          if (col.type === "check") {
+            dessinerStatutPresencePdf(doc, getCell(t, row.id, col.id), x + wCol / 2, y);
+          } else {
+            reinitialiserStyleTextePdf(doc);
+            var txt = valeurVersTexte(t, row.id, col, false);
+            doc.text(String(txt || "").slice(0, Math.max(3, Math.floor(wCol / 2.1))), x + wCol / 2, y, {
+              align: "center",
+            });
+          }
+          x += wCol;
         });
-        drawTableRow(cells, "body", ri, wCol);
+        y += rowH;
       });
       y += 3;
     }

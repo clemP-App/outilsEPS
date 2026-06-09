@@ -157,6 +157,57 @@
     };
   }
 
+  function proSc(intention, contexte) {
+    return {
+      os: {
+        decouverte: [
+          "Comprendre ce qu’on doit faire : " + intention + ".",
+          "Repérer un critère de réussite concret et observable.",
+        ],
+        apprentissage: [
+          "Répéter une action efficace dans " + contexte + ".",
+          "Ajuster son geste à partir d’un retour simple (observation, consigne).",
+        ],
+        stabilisation: [
+          "Reproduire l’action malgré une contrainte supplémentaire (fatigue, opposition, temps).",
+          "Rester concentré et respectueux des consignes de sécurité.",
+        ],
+        evaluation: [
+          "Montrer ce qu’on sait faire dans une situation de référence.",
+          "Identifier un point fort et un axe de progrès pour la suite.",
+        ],
+      },
+      co: {
+        decouverte: [
+          "Situation d’entrée simple avec consigne unique affichée.",
+          "Mise en commun : qu’est-ce qui aide à réussir ?",
+        ],
+        apprentissage: [
+          "Atelier par niveaux de difficulté (facile / moyen / exigeant).",
+          "Jeu ou parcours avec critère de réussite visible pour tous.",
+        ],
+        stabilisation: [
+          "Opposition ou parcours avec règles rappelées, rôles définis.",
+          "Alternance pratiquant / observateur avec feedback court.",
+        ],
+        evaluation: [
+          "Situation de référence avec grille de critères affichée.",
+          "Bilan individuel ou par binôme : réussite, difficulté, prochain objectif.",
+        ],
+      },
+      pointsAttention: [
+        "Adapter la difficulté pour que chaque élève trouve une réussite accessible.",
+        "Gérer l’hétérogénéité du groupe (niveaux, motivation, expérience sportive).",
+        "Relier l’activité à la coopération, au respect et à la santé au quotidien.",
+        "Prévoir des temps de récupération adaptés à l’intensité.",
+      ],
+      criteresReussite: [
+        "L’action répond à la consigne annoncée.",
+        "Le comportement reste sécurisé et respectueux.",
+      ],
+    };
+  }
+
   function richSc(intention, contexte) {
     return {
       os: {
@@ -224,6 +275,11 @@
           obj("bad-ly-rompre", "Rompre sur replacement", "Rompre l’échange au moment où l’adversaire se replace.", richSc("rompre au moment opportun", "une opposition avec annonces tactiques")),
           obj("bad-ly-adapter", "Adapter aux points forts/faiblesses", "Adapter ses choix aux points forts et faiblesses identifiés.", richSc("exploiter les fragilités adverses", "une analyse vidéo courte")),
         ]),
+        lyceePro: cycleBlock([
+          obj("bad-lypro-echanger", "Maintenir l’échange", "Maintenir un échange régulier en respectant les règles et le partenaire.", proSc("échanger de façon continue", "des duels à zones cibles")),
+          obj("bad-lypro-placer", "Placer la balle", "Viser un espace libre pour marquer le point ou déstabiliser l’adversaire.", proSc("frapper dans une zone libre", "des matchs à thème simple")),
+          obj("bad-lypro-cooperer", "Coopérer en double", "Coopérer en double : communication, placement et respect des rôles.", proSc("aider son partenaire à réussir", "des matchs en double encadrés")),
+        ]),
       },
     },
     hand: {
@@ -242,6 +298,11 @@
           obj("hand-ly-projet", "Projet collectif rapport de force", "Construire un projet de jeu collectif selon le rapport de force.", richSc("lire puis exploiter le rapport de force", "des matchs à séquences courtes")),
           obj("hand-ly-alterner", "Alterner rapide et placé", "Alterner jeu rapide et attaque placée selon l’évolution du match.", richSc("basculer entre deux rythmes", "une opposition avec temps morts tactiques")),
           obj("hand-ly-surnombre", "Exploiter surnombres et espaces faibles", "Exploiter les surnombres et les espaces faibles identifiés.", richSc("concrétiser l’avantage numérique", "des situations à thème tactique")),
+        ]),
+        lyceePro: cycleBlock([
+          obj("hand-lypro-cooperer", "Coopérer en équipe", "Coopérer efficacement en équipe avec des rôles clairs et une communication simple.", proSc("aider le groupe à progresser", "des situations à effectif réduit")),
+          obj("hand-lypro-regles", "Respecter et jouer", "Respecter les règles, les adversaires et les consignes de sécurité en situation d’opposition.", proSc("jouer dans le respect des règles", "des matchs avec arbitre élève")),
+          obj("hand-lypro-engager", "S’engager pour le collectif", "S’engager personnellement et contribuer à la réussite du groupe.", proSc("rester actif et disponible", "des rotations avec rôles définis")),
         ]),
       },
     },
@@ -262,6 +323,11 @@
           obj("orient-ly-optimiser", "Optimiser distance/sécurité/vitesse", "Optimiser l’itinéraire entre distance, sécurité et vitesse.", richSc("arbitrer entre sécurité et performance", "des comparaisons d’itinéraires")),
           obj("orient-ly-analyser", "Analyser les erreurs d’orientation", "Analyser ses erreurs d’orientation pour ajuster la stratégie suivante.", richSc("identifier la cause d’une erreur", "un debrief cartographique")),
         ]),
+        lyceePro: cycleBlock([
+          obj("orient-lypro-carte", "Lire la carte", "Orienter la carte et choisir un itinéraire simple et sûr.", proSc("faire coïncider carte et terrain", "des parcours courts balisés")),
+          obj("orient-lypro-securite", "Se déplacer en sécurité", "Se déplacer en respectant les consignes, le groupe et les limites du terrain.", proSc("rester dans les zones autorisées", "un parcours avec points de contrôle")),
+          obj("orient-lypro-temps", "Gérer son temps", "Revenir au regroupement dans le temps prévu en gérant son effort.", proSc("organiser son déplacement dans le temps imparti", "un contrat de retour annoncé")),
+        ]),
       },
     },
     danse: {
@@ -280,6 +346,11 @@
           obj("danse-ly-projet", "Projet artistique argumenté", "Construire un projet artistique argumenté.", richSc("justifier ses choix artistiques", "un carnet de création")),
           obj("danse-ly-mise-scene", "Mise en scène intention/procédés", "Mettre en scène une intention via des procédés chorégraphiques.", richSc("choisir des procédés adaptés", "une composition de groupe")),
           obj("danse-ly-interpretation", "Affiner l’effet spectateur", "Affiner l’interprétation pour produire un effet précis sur le spectateur.", richSc("ajuster interprétation et présence", "des retours spectateurs structurés")),
+        ]),
+        lyceePro: cycleBlock([
+          obj("danse-lypro-mouvement", "Créer un mouvement", "Transformer des gestes simples en mouvements dansés lisibles.", proSc("donner une qualité au mouvement", "des improvisations guidées")),
+          obj("danse-lypro-oser", "Oser se montrer", "Présenter une courte phrase devant le groupe en assumant le regard des autres.", proSc("oser montrer sa production", "des passages courts en demi-groupe")),
+          obj("danse-lypro-groupe", "Coopérer à la création", "Contribuer à une création collective en respectant les rôles et les consignes.", proSc("coopérer dans un petit groupe", "une composition simple en équipe")),
         ]),
       },
     },
@@ -300,6 +371,11 @@
           obj("esc-ly-optimiser", "Optimiser déplacements et lecture", "Optimiser déplacements et lecture de voie.", richSc("anticiper les sections clés", "une lecture au sol puis en action")),
           obj("esc-ly-autonomie", "Autonomie grimpeur/assureur/observateur", "Assumer en autonomie les rôles grimpeur, assureur et observateur.", richSc("tenir les trois rôles avec fiabilité", "des ateliers en autonomie encadrée")),
         ]),
+        lyceePro: cycleBlock([
+          obj("esc-lypro-securite", "Sécurité et rôles", "Appliquer les règles de sécurité et tenir un rôle clair (grimpeur, assureur, observateur).", proSc("respecter la chaîne de sécurité", "une rotation de rôles encadrée")),
+          obj("esc-lypro-grimper", "Grimper à son niveau", "Grimper une voie adaptée à ses ressources en cherchant les appuis utiles.", proSc("trouver des appuis efficaces", "des voies de difficulté progressive")),
+          obj("esc-lypro-hauteur", "Gérer l’engagement", "Accepter de grimper à une hauteur adaptée en gérant son engagement.", proSc("rester concentré en hauteur", "des contrats de hauteur progressifs")),
+        ]),
       },
     },
     "course-duree": {
@@ -318,6 +394,11 @@
           obj("cd-ly-projet", "Projet d’entraînement personnalisé", "Conduire un projet d’entraînement personnalisé.", richSc("choisir un format cohérent avec l’objectif", "un cycle d’entraînement court")),
           obj("cd-ly-reguler", "Réguler FC/RPE/vitesse/sensations", "Réguler l’effort avec FC, RPE, vitesse et sensations.", richSc("croiser plusieurs indicateurs", "des blocs de course différenciés")),
           obj("cd-ly-parametres", "Ajuster les paramètres selon l’effet", "Ajuster les paramètres selon l’effet recherché.", richSc("faire évoluer charge et récupération", "un bilan comparatif des séances")),
+        ]),
+        lyceePro: cycleBlock([
+          obj("cd-lypro-sante", "Activité et santé", "Comprendre l’intérêt de la course en durée pour la santé et l’endurance au quotidien.", proSc("relier effort et bien-être", "des courses à allure modérée")),
+          obj("cd-lypro-allure", "Tenir une allure", "Tenir une allure régulière sur la durée en repérant ses sensations.", proSc("gérer son effort sur la durée", "des blocs de course chronométrés")),
+          obj("cd-lypro-autonomie", "S’entraîner seul", "Organiser son entraînement avec des repères simples (temps, RPE, récupération).", proSc("choisir ses paramètres d’effort", "un projet personnel d’entraînement")),
         ]),
       },
     },
@@ -359,6 +440,16 @@
           obj("ath-ly-lan-1", "Stratégie de lancer", "Construire une stratégie de lancer selon ses points forts.", { famille: "lancer", os: richSc("adapter technique et prise d’élan", "des séries comparées").os, co: richSc("adapter technique et prise d’élan", "des séries comparées").co, pointsAttention: ["Stabiliser le protocole de préparation."], criteresReussite: ["Régularité des performances et progression."] }),
           obj("ath-ly-lan-2", "Analyser pour optimiser", "Analyser ses essais pour optimiser trajectoire et transfert d’énergie.", { famille: "lancer", os: richSc("objectiver les causes d’échec", "une grille d’analyse technique").os, co: richSc("objectiver les causes d’échec", "une grille d’analyse technique").co, pointsAttention: ["Associer observation, mesure et ressenti."], criteresReussite: ["Choix techniques ajustés et efficaces."] }),
         ]),
+        lyceePro: cycleBlock([
+          obj("ath-lypro-spr-1", "Courir vite en sécurité", "Courir vite en tenant sa ligne et en respectant les consignes de sécurité.", { famille: "sprint", os: proSc("accélérer sur une courte distance", "des sprints encadrés").os, co: proSc("accélérer sur une courte distance", "des sprints encadrés").co, pointsAttention: ["Adapter les distances à chaque élève."], criteresReussite: ["Course rapide et sécurisée."] }),
+          obj("ath-lypro-spr-2", "Améliorer sa course", "Améliorer sa course à partir de repères simples (chrono, sensations).", { famille: "sprint", os: proSc("comparer deux essais", "des chronométrages courts").os, co: proSc("comparer deux essais", "des chronométrages courts").co, pointsAttention: ["Récupération complète entre essais."], criteresReussite: ["Progrès visible entre les essais."] }),
+          obj("ath-lypro-dem-1", "Tenir l’effort", "Tenir une allure régulière sur la durée en gérant son effort.", { famille: "demiFond", os: proSc("ne pas s’arrêter sur le bloc annoncé", "des boucles de course").os, co: proSc("ne pas s’arrêter sur le bloc annoncé", "des boucles de course").co, pointsAttention: ["Proposer des durées adaptées au groupe."], criteresReussite: ["Allure régulière du début à la fin."] }),
+          obj("ath-lypro-dem-2", "Gérer son rythme", "Alterner course et récupération pour tenir la séance sans rupture.", { famille: "demiFond", os: proSc("respecter les temps de travail et de repos", "un fractionné simple").os, co: proSc("respecter les temps de travail et de repos", "un fractionné simple").co, pointsAttention: ["Lier à la gestion de l’effort au quotidien."], criteresReussite: ["Alternance respectée et efficace."] }),
+          obj("ath-lypro-saut-1", "Sauter en sécurité", "Coordonner élan et impulsion en respectant la zone de sécurité.", { famille: "saut", os: proSc("sauter plus loin ou plus haut qu’avant", "des ateliers à marques").os, co: proSc("sauter plus loin ou plus haut qu’avant", "des ateliers à marques").co, pointsAttention: ["Adapter la difficulté à chaque élève."], criteresReussite: ["Impulsion franche et réception stable."] }),
+          obj("ath-lypro-saut-2", "Progresser au saut", "Comparer ses essais pour identifier ce qui améliore le saut.", { famille: "saut", os: proSc("retenir un conseil utile", "des observations croisées").os, co: proSc("retenir un conseil utile", "des observations croisées").co, pointsAttention: ["Un seul axe de correction à la fois."], criteresReussite: ["Progrès entre les essais."] }),
+          obj("ath-lypro-lan-1", "Lancer en sécurité", "Lancer dans la zone autorisée en coordonnant élan et geste.", { famille: "lancer", os: proSc("lancer plus loin en restant précis", "des lancers encadrés").os, co: proSc("lancer plus loin en restant précis", "des lancers encadrés").co, pointsAttention: ["Zones de sécurité clairement matérialisées."], criteresReussite: ["Geste coordonné et trajectoire régulière."] }),
+          obj("ath-lypro-lan-2", "Mesurer et progresser", "Mesurer ses lancers et chercher à progresser en sécurité.", { famille: "lancer", os: proSc("noter sa performance et un point à améliorer", "des séries de trois essais").os, co: proSc("noter sa performance et un point à améliorer", "des séries de trois essais").co, pointsAttention: ["Prioriser la technique avant la puissance."], criteresReussite: ["Distance en progrès ou régularité améliorée."] }),
+        ]),
       },
     },
   };
@@ -368,46 +459,55 @@
       cycle3: [["basket-c3-espaces", "Jouer écarté pour garder des solutions vers le panier."], ["basket-c3-passes", "Enchaîner passe et déplacement pour conserver la continuité du jeu."]],
       cycle4: [["basket-c4-fixer", "Fixer un défenseur puis transmettre au partenaire démarqué."], ["basket-c4-choix-tir", "Choisir entre tir proche, tir extérieur ou passe de renversement."], ["basket-c4-repli", "Alterner montée rapide et attaque placée selon le contexte."]],
       lycee: [["basket-ly-projet", "Conduire un projet collectif de création d’avantages."], ["basket-ly-matchups", "Exploiter les duels favorables et les aides défensives tardives."]],
+      lyceePro: [["basket-lypro-cooperer", "Coopérer pour créer des occasions de tir en équipe."], ["basket-lypro-regles", "Respecter les règles et communiquer pendant le jeu."]],
     },
     foot: {
       cycle3: [["foot-c3-soutien", "Offrir des soutiens proches pour progresser sans perdre le ballon."], ["foot-c3-tir", "Conclure rapidement quand la cible est ouverte."]],
       cycle4: [["foot-c4-renversement", "Renverser le jeu pour attaquer l’espace faible."], ["foot-c4-fixer", "Fixer puis transmettre dans la course d’un partenaire."], ["foot-c4-pression", "Réagir vite à la perte de balle pour gêner la relance."]],
       lycee: [["foot-ly-plan", "Ajuster le plan de jeu selon le bloc adverse."], ["foot-ly-zones", "Exploiter les intervalles entre lignes pour créer une occasion nette."]],
+      lyceePro: [["foot-lypro-cooperer", "Coopérer en équipe pour faire avancer le ballon."], ["foot-lypro-respect", "Respecter les règles, l’adversaire et les consignes de sécurité."]],
     },
     rugby: {
       cycle3: [["rugby-c3-continuer", "Maintenir la continuité en avançant avec soutien immédiat."], ["rugby-c3-securite", "Maîtriser les contacts autorisés en sécurité."]],
       cycle4: [["rugby-c4-fixer", "Fixer la défense puis jouer dans l’intervalle libéré."], ["rugby-c4-occupation", "Occuper largeur et profondeur pour conserver l’avancée."], ["rugby-c4-rideau", "Reformer rapidement le rideau défensif après perte."]],
       lycee: [["rugby-ly-rapport", "Piloter l’alternance jeu d’évitement / jeu de conquête selon le rapport de force."], ["rugby-ly-temps", "Exploiter les temps faibles adverses pour marquer."]],
+      lyceePro: [["rugby-lypro-continuite", "Avancer en équipe en respectant les contacts autorisés."], ["rugby-lypro-securite", "Jouer en sécurité et coopérer pour faire progresser le ballon."]],
     },
     volley: {
       cycle3: [["volley-c3-reception", "Stabiliser la réception pour renvoyer en continuité."], ["volley-c3-communication", "Communiquer pour éviter les ballons laissés."]],
       cycle4: [["volley-c4-2touches", "Construire en deux ou trois touches avant l’attaque."], ["volley-c4-zones", "Orienter l’attaque vers les zones peu défendues."], ["volley-c4-placement", "Adapter le placement défensif à la trajectoire adverse."]],
       lycee: [["volley-ly-systeme", "Organiser un système collectif service-réception-attaque."], ["volley-ly-lecture", "Lire la qualité de passe pour choisir l’option offensive pertinente."]],
+      lyceePro: [["volley-lypro-echanger", "Échanger le ballon en équipe avec communication."], ["volley-lypro-placement", "Se placer correctement pour aider son équipe."]],
     },
     tennis: {
       cycle3: [["tennis-c3-regularite", "Maintenir l’échange avec des trajectoires hautes et longues."], ["tennis-c3-replacement", "Se replacer au centre après chaque frappe."]],
       cycle4: [["tennis-c4-variation", "Varier zones et effets pour déplacer l’adversaire."], ["tennis-c4-preparation", "Préparer la balle d’attaque avant de conclure."], ["tennis-c4-service", "Mettre en jeu de façon fiable et orientée."]],
       lycee: [["tennis-ly-plan", "Construire un plan de match selon le profil adverse."], ["tennis-ly-filiere", "Exploiter sa filière forte en ciblant la faiblesse adverse."]],
+      lyceePro: [["tennis-lypro-echanger", "Maintenir un échange régulier en respectant les règles."], ["tennis-lypro-replacer", "Se replacer après chaque frappe pour rester disponible."]],
     },
     hockey: {
       cycle3: [["hockey-c3-conduite", "Conduire la balle en sécurité pour progresser."], ["hockey-c3-passes", "Passer dans la course d’un partenaire disponible."]],
       cycle4: [["hockey-c4-changer", "Changer de côté pour contourner la densité défensive."], ["hockey-c4-fixer", "Fixer avec la conduite puis servir un appui latéral."], ["hockey-c4-tir", "Déclencher un tir dès qu’une fenêtre apparaît."]],
       lycee: [["hockey-ly-projet", "Conduire un projet collectif de création d’occasions nettes."], ["hockey-ly-transition", "Exploiter les transitions rapides pour attaquer l’axe faible."]],
+      lyceePro: [["hockey-lypro-cooperer", "Coopérer pour progresser et créer des occasions."], ["hockey-lypro-securite", "Conduire la balle et jouer en respectant les consignes de sécurité."]],
     },
     boxe: {
       cycle3: [["boxe-c3-garde", "Conserver la garde active en entrant/sortant de distance."], ["boxe-c3-toucher", "Toucher contrôlé sur cible autorisée puis se replacer."]],
       cycle4: [["boxe-c4-enchainement", "Enchaîner attaque simple et sortie en sécurité."], ["boxe-c4-leurre", "Utiliser une feinte pour créer une ouverture."], ["boxe-c4-defense", "Choisir esquive, blocage ou retrait selon l’attaque adverse."]],
       lycee: [["boxe-ly-plan", "Construire un plan d’assaut adapté au profil adverse."], ["boxe-ly-rythme", "Alterner rythmes pour provoquer puis exploiter l’ouverture."]],
+      lyceePro: [["boxe-lypro-garde", "Garder la garde et respecter le partenaire en opposition."], ["boxe-lypro-controle", "Toucher la cible autorisée avec contrôle puis se replacer."]],
     },
     judo: {
       cycle3: [["judo-c3-saisie", "Installer une saisie stable et sécurisée."], ["judo-c3-deseq", "Créer un déséquilibre avant toute projection."]],
       cycle4: [["judo-c4-attaque", "Choisir une entrée pertinente selon la réaction adverse."], ["judo-c4-enchainement", "Enchaîner projection et contrôle au sol."], ["judo-c4-defense", "Neutraliser l’attaque adverse sans rompre la sécurité."]],
       lycee: [["judo-ly-strategie", "Construire une stratégie de combat à partir de séquences observées."], ["judo-ly-adapter", "Adapter ses attaques aux points forts et faibles repérés."]],
+      lyceePro: [["judo-lypro-saisie", "Installer une saisie stable en respectant les consignes de sécurité."], ["judo-lypro-respect", "S’opposer dans le respect du partenaire et des règles."]],
     },
     lutte: {
       cycle3: [["lutte-c3-appuis", "Conserver des appuis stables pour contrôler l’opposition."], ["lutte-c3-retourner", "Retourner l’adversaire par placement et leviers simples."]],
       cycle4: [["lutte-c4-chaine", "Enchaîner attaque, contrôle et maintien."], ["lutte-c4-anticiper", "Anticiper la réaction adverse pour rester dominant."], ["lutte-c4-arbitrer", "Arbitrer un duel en repérant les actions valides."]],
       lycee: [["lutte-ly-projet", "Conduire un projet d’affrontement basé sur l’analyse des séquences."], ["lutte-ly-temps-forts", "Exploiter les temps forts pour scorer sans se désorganiser."]],
+      lyceePro: [["lutte-lypro-appuis", "Garder des appuis stables pour contrôler l’adversaire."], ["lutte-lypro-respect", "S’affronter en sécurité et respecter les règles du combat."]],
     },
   };
 
@@ -416,41 +516,49 @@
       cycle3: [["nat-c3-alignement", "Nager aligné pour limiter les résistances."], ["nat-c3-respiration", "Respirer de manière coordonnée sans rupture d’action."]],
       cycle4: [["nat-c4-allure", "Réguler l’allure sur une distance de référence."], ["nat-c4-virage", "Optimiser départs et virages pour préserver la vitesse."], ["nat-c4-observer", "Observer un partenaire pour ajuster fréquence et amplitude."]],
       lycee: [["nat-ly-projet", "Conduire un projet de performance basé sur des données mesurées."], ["nat-ly-efficience", "Optimiser l’efficience de nage selon sa spécialité."]],
+      lyceePro: [["nat-lypro-nager", "Nager une distance en régulant son effort et sa respiration."], ["nat-lypro-securite", "Appliquer les consignes de sécurité et coopérer dans le bassin."]],
     },
     gym: {
       cycle3: [["gym-c3-maitrise", "Réaliser des éléments simples avec départ et réception contrôlés."], ["gym-c3-securite", "Respecter aides et parades sur chaque atelier."]],
       cycle4: [["gym-c4-continuité", "Enchaîner plusieurs éléments sans rupture majeure."], ["gym-c4-amplitude", "Améliorer amplitude et tenue des postures."], ["gym-c4-choix", "Choisir des éléments cohérents avec son niveau."]],
       lycee: [["gym-ly-projet", "Construire un enchaînement personnel répondant à des critères annoncés."], ["gym-ly-affiner", "Affiner exécution et composition grâce aux retours d’observation."]],
+      lyceePro: [["gym-lypro-realiser", "Réaliser des éléments adaptés à son niveau en sécurité."], ["gym-lypro-enchainement", "Composer un court enchaînement personnel ou en binôme."]],
     },
     kayak: {
       cycle3: [["kayak-c3-propulsion", "Propulser et diriger l’embarcation en zone calme."], ["kayak-c3-securite", "Appliquer les procédures de sécurité aquatique."]],
       cycle4: [["kayak-c4-trajet", "Choisir une trajectoire adaptée au courant et au vent."], ["kayak-c4-manoeuvre", "Enchaîner propulsion, freinage et rotation."], ["kayak-c4-cooperer", "Coopérer pour réussir un parcours collectif."]],
       lycee: [["kayak-ly-strategie", "Construire une stratégie de parcours selon les contraintes du milieu."], ["kayak-ly-analyse", "Analyser ses choix de trajectoire pour gagner en efficience."]],
+      lyceePro: [["kayak-lypro-propulser", "Propulser et diriger l’embarcation en respectant les consignes."], ["kayak-lypro-cooperer", "Coopérer pour réussir un parcours en sécurité."]],
     },
     voile: {
       cycle3: [["voile-c3-vent", "Identifier la direction du vent pour orienter l’embarcation."], ["voile-c3-roles", "Tenir un rôle clair à bord dans les manœuvres simples."]],
       cycle4: [["voile-c4-allures", "Adapter réglages et allures selon le vent."], ["voile-c4-manoeuvres", "Coordonner virements et changements de trajectoire."], ["voile-c4-anticiper", "Anticiper la manœuvre avant la zone contrainte."]],
       lycee: [["voile-ly-projet", "Conduire un projet de navigation en autonomie relative."], ["voile-ly-optimiser", "Optimiser trajectoire et réglages avec analyse des choix réalisés."]],
+      lyceePro: [["voile-lypro-roles", "Tenir un rôle clair à bord et respecter les consignes de sécurité."], ["voile-lypro-cooperer", "Coopérer à bord pour réaliser les manœuvres annoncées."]],
     },
     acrosport: {
       cycle3: [["acro-c3-figures", "Construire des figures stables avec rôles sécurisés."], ["acro-c3-transitions", "Relier deux figures par une transition simple."]],
       cycle4: [["acro-c4-composer", "Composer un enchaînement lisible avec début et fin marqués."], ["acro-c4-fluidite", "Fluidifier les transitions sans perte de sécurité."], ["acro-c4-observer", "Observer stabilité et alignement pour corriger la production."]],
       lycee: [["acro-ly-projet", "Concevoir une composition collective argumentée."], ["acro-ly-effet", "Affiner la relation prouesse/intention pour produire un effet clair."]],
+      lyceePro: [["acro-lypro-figures", "Réaliser des figures stables en assumant un rôle sécurisé."], ["acro-lypro-groupe", "Coopérer en groupe pour présenter un court enchaînement."]],
     },
     cirque: {
       cycle3: [["cirque-c3-prouesse", "Stabiliser une prouesse simple dans une famille d’actions choisie."], ["cirque-c3-oser", "Présenter une courte séquence devant les autres."]],
       cycle4: [["cirque-c4-composer", "Composer un numéro avec entrée, temps fort et sortie."], ["cirque-c4-transition", "Maîtriser les transitions pour garder la lisibilité."], ["cirque-c4-securiser", "Sécuriser les actions à risque avant présentation."]],
       lycee: [["cirque-ly-projet", "Construire un projet artistique en assumant les choix scéniques."], ["cirque-ly-spectateur", "Ajuster jeu et rythme selon l’effet produit sur le spectateur."]],
+      lyceePro: [["cirque-lypro-prouesse", "Stabiliser une action simple en sécurité."], ["cirque-lypro-oser", "Présenter une courte séquence devant le groupe."]],
     },
     cross: {
       cycle3: [["cross-c3-technique", "Exécuter correctement les mouvements du circuit."], ["cross-c3-rythme", "Gérer effort et récupération sur un format court."]],
       cycle4: [["cross-c4-reguler", "Réguler l’intensité d’un circuit selon l’objectif annoncé."], ["cross-c4-variantes", "Choisir la variante d’exercice adaptée à son niveau."], ["cross-c4-qualite", "Maintenir la qualité malgré la fatigue progressive."]],
       lycee: [["cross-ly-projet", "Conduire un projet d’entraînement personnalisé sur plusieurs séances."], ["cross-ly-parametres", "Ajuster charge, densité et récupération selon l’effet recherché."]],
+      lyceePro: [["cross-lypro-circuit", "Réaliser un circuit en gérant effort et récupération."], ["cross-lypro-sante", "Comprendre l’intérêt du cross-training pour la santé et l’entretien physique."]],
     },
     "nat-duree": {
       cycle3: [["natd-c3-allure", "Trouver une allure aquatique soutenable sans rupture."], ["natd-c3-respiration", "Réguler respiration et glisse pour prolonger l’effort."]],
       cycle4: [["natd-c4-reguler", "Réguler allure et récupération sur des blocs en durée."], ["natd-c4-reperes", "Utiliser des repères de distance, temps et ressenti."], ["natd-c4-technique", "Maintenir une technique efficace malgré la durée."]],
       lycee: [["natd-ly-projet", "Construire un projet personnel en natation de durée."], ["natd-ly-analyser", "Analyser données et sensations pour ajuster la charge de travail."]],
+      lyceePro: [["natd-lypro-allure", "Nager en durée à une allure soutenable."], ["natd-lypro-autonomie", "Organiser son entraînement aquatique avec des repères simples."]],
     },
   };
 
@@ -466,8 +574,30 @@
         cycle3: cycleBlock((variants.cycle3 || []).map(function (x) { return mkObjective(x[0], x[1]); })),
         cycle4: cycleBlock((variants.cycle4 || []).map(function (x) { return mkObjective(x[0], x[1]); })),
         lycee: cycleBlock((variants.lycee || []).map(function (x) { return mkObjective(x[0], x[1]); })),
+        lyceePro: cycleBlock((variants.lyceePro || []).map(function (x) { return mkObjective(x[0], x[1]); })),
       },
     };
+  }
+
+  function genererLyceeProDepuisLycee() {
+    var apsaMap = (E && E.APSA) || {};
+    var ids = Object.keys(apsaMap);
+    for (var i = 0; i < ids.length; i++) {
+      var a = apsaMap[ids[i]];
+      if (!a || !a.cycles || a.cycles.lyceePro || !a.cycles.lycee) continue;
+      var source = a.cycles.lycee.objectifsSequence || [];
+      a.cycles.lyceePro = {
+        objectifsSequence: source.map(function (o) {
+          var cfg = proSc(o.phrase, "la séance");
+          return obj(
+            o.id.replace(/-ly-/g, "-lypro-").replace(/^([^-]+)-ly([^-])/, "$1-lypro$2"),
+            o.label,
+            o.phrase,
+            cfg
+          );
+        }),
+      };
+    }
   }
 
   function genererCyclesManquants() {
@@ -487,4 +617,5 @@
 
   applyPatch(patch);
   genererCyclesManquants();
+  genererLyceeProDepuisLycee();
 })(globalThis);

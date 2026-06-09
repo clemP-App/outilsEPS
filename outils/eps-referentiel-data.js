@@ -41,6 +41,11 @@
       label: "Lycée",
       champsAutorises: ["perf", "adapt", "expr", "coop", "ca5"],
     },
+    lyceePro: {
+      id: "lyceePro",
+      label: "Lycée pro",
+      champsAutorises: ["perf", "adapt", "expr", "coop", "ca5"],
+    },
   };
 
   var CHAMPS = {
@@ -1780,6 +1785,73 @@
         },
       ],
     },
+    lyceePro: {
+      perf: [
+        {
+          id: "fb-lypro-perf-concret",
+          label: "Performance concrète",
+          phrase: "Améliorer une performance mesurable avec des repères simples (temps, distance, nombre de réussites).",
+        },
+        {
+          id: "fb-lypro-perf-autonomie",
+          label: "S’entraîner seul",
+          phrase: "Organiser ses essais et ajuster son action à partir d’observations concrètes.",
+        },
+      ],
+      adapt: [
+        {
+          id: "fb-lypro-adapt-securite",
+          label: "Se déplacer en sécurité",
+          phrase: "Se déplacer dans le milieu en respectant les consignes de sécurité et les règles du groupe.",
+        },
+        {
+          id: "fb-lypro-adapt-choix",
+          label: "Choisir une solution",
+          phrase: "Choisir une solution adaptée à la situation (itinéraire, appui, trajectoire) à partir d’indices visibles.",
+        },
+      ],
+      expr: [
+        {
+          id: "fb-lypro-expr-oser",
+          label: "Oser se montrer",
+          phrase: "Présenter une courte production devant les autres en respectant l’espace et le regard du groupe.",
+        },
+        {
+          id: "fb-lypro-expr-cooperer",
+          label: "Coopérer à la prestation",
+          phrase: "Contribuer à une prestation collective en assumant un rôle clair et en respectant les autres.",
+        },
+      ],
+      coop: [
+        {
+          id: "fb-lypro-coop-equipe",
+          label: "Coopérer en équipe",
+          phrase: "Coopérer efficacement en équipe : communication, respect des règles et engagement personnel.",
+        },
+        {
+          id: "fb-lypro-coop-respect",
+          label: "Respecter et s’opposer",
+          phrase: "S’opposer dans le respect de l’adversaire, des consignes de sécurité et du fair-play.",
+        },
+      ],
+      ca5: [
+        {
+          id: "fb-lypro-ca5-sante",
+          label: "Santé et entretien",
+          phrase: "Comprendre l’intérêt de l’activité physique pour la santé et s’entretenir au quotidien.",
+        },
+        {
+          id: "fb-lypro-ca5-projet",
+          label: "Projet personnel",
+          phrase: "Organiser un entraînement personnel avec des repères simples (durée, intensité, récupération).",
+        },
+        {
+          id: "fb-lypro-ca5-autonomie",
+          label: "Autonomie durable",
+          phrase: "S’entraîner en autonomie en régulant son effort : utile pour la vie professionnelle et la gestion du stress.",
+        },
+      ],
+    },
   };
 
   function normaliserListe(valeur) {
@@ -1790,6 +1862,7 @@
   function normaliserCycleId(cycleId) {
     if (cycleId === "c3") return "cycle3";
     if (cycleId === "c4") return "cycle4";
+    if (cycleId === "lyceePro") return "lyceePro";
     if (cycleId === "cycle3" || cycleId === "cycle4" || cycleId === "lycee") return cycleId;
     return "cycle4";
   }

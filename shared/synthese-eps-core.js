@@ -608,6 +608,9 @@
     if (type === "check") {
       if (v === true) return "✓";
       if (v === false) return "✗";
+      if (v === "retard") return "⏱";
+      if (v === "attitude") return "!";
+      if (v === "justifie") return "✗J";
       return "—";
     }
     if (v === null || v === undefined || v === "") return "—";
@@ -675,8 +678,11 @@
       };
       if (type === "check") {
         entree.horsSynthese = col.horsSynthese === true;
-        entree.present = v === true;
+        entree.present = v === true || v === "retard" || v === "attitude";
         entree.absent = v === false;
+        entree.retard = v === "retard";
+        entree.attitude = v === "attitude";
+        entree.absentJustifie = v === "justifie";
       }
       out.push(entree);
     });
@@ -733,15 +739,22 @@
     var numberCols = (t.cols || []).filter(function (c) {
       return c && c.type === "number" && estNoteColonne(c);
     });
-    var ok = 0;
+    var present = 0;
     var ko = 0;
+    var retard = 0;
+    var justifie = 0;
+    var attitude = 0;
     var notes = [];
     var notesParColonne = {};
     checkCols.forEach(function (col) {
       var v = getCell(t, row.id, col.id);
-      if (v === true) ok++;
+      if (v === true) present++;
       else if (v === false) ko++;
+      else if (v === "retard") retard++;
+      else if (v === "attitude") attitude++;
+      else if (v === "justifie") justifie++;
     });
+    var ok = present + retard + attitude;
     numberCols.forEach(function (col) {
       var v = getCell(t, row.id, col.id);
       if (typeof v === "number" && !isNaN(v)) {
@@ -762,12 +775,20 @@
       if (!notesParColonne[lblCalc]) notesParColonne[lblCalc] = [];
       notesParColonne[lblCalc].push(v);
     });
-    var total = ok + ko;
+    var total = ok + ko + justifie;
     var meta = row.meta || {};
     var icone = meta.icone ? String(meta.icone).trim() : "";
     var colonnesDetail = extractColonnesLigne(t, row);
     return {
-      presenceStats: { ok: ok, ko: ko, total: total, ratioAbsence: total ? ko / total : null },
+      presenceStats: {
+        ok: ok,
+        ko: ko,
+        retard: retard,
+        attitude: attitude,
+        justifie: justifie,
+        total: total,
+        ratioAbsence: total ? ko / total : null,
+      },
       notes: notes,
       notesParColonne: notesParColonne,
       colonnesDetail: colonnesDetail,

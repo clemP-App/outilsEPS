@@ -17663,6 +17663,45 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   padding-top: 0.15rem;
   padding-bottom: 0.2rem;
   z-index: 2;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.page-outil--tableau-suivi .tab-suivi-stat-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.14rem 0.22rem;
+  max-width: 4.5rem;
+}
+
+.page-outil--tableau-suivi .tab-suivi-stat {
+  display: inline-block;
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.page-outil--tableau-suivi .tab-suivi-stat--ok {
+  color: #047857;
+}
+
+.page-outil--tableau-suivi .tab-suivi-stat--retard {
+  color: #b45309;
+}
+
+.page-outil--tableau-suivi .tab-suivi-stat--attitude {
+  color: #6d28d9;
+}
+
+.page-outil--tableau-suivi .tab-suivi-stat--justifie {
+  color: #1d4ed8;
+}
+
+.page-outil--tableau-suivi .tab-suivi-stat--ko {
+  color: #b91c1c;
 }
 
 .page-outil--tableau-suivi .tab-suivi-head-stats .tab-suivi-th--nom {
@@ -17812,6 +17851,9 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
 }
 
 .page-outil--tableau-suivi .tab-suivi-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 2rem;
   height: 2rem;
   min-width: 2rem;
@@ -17822,6 +17864,7 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
   font-weight: 800;
   cursor: pointer;
   line-height: 1;
+  padding: 0;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
@@ -17839,6 +17882,206 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
 
 .page-outil--tableau-suivi .tab-suivi-check--vide {
   color: var(--text-muted);
+}
+
+.page-outil--tableau-suivi .tab-suivi-check--retard {
+  background: rgba(254, 243, 199, 0.95);
+  border-color: rgba(217, 119, 6, 0.45);
+  color: #b45309;
+}
+
+.page-outil--tableau-suivi .tab-suivi-check--attitude {
+  background: rgba(237, 233, 254, 0.95);
+  border-color: rgba(124, 58, 237, 0.45);
+  color: #6d28d9;
+  font-size: 1.1rem;
+}
+
+.page-outil--tableau-suivi .tab-suivi-check--justifie {
+  background: rgba(219, 234, 254, 0.95);
+  border-color: rgba(37, 99, 235, 0.4);
+  color: #1d4ed8;
+}
+
+.page-outil--tableau-suivi .tab-suivi-check__clock {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+
+.page-outil--tableau-suivi .tab-suivi-check__combo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  line-height: 1;
+}
+
+.page-outil--tableau-suivi .tab-suivi-check__combo-main {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.page-outil--tableau-suivi .tab-suivi-check__combo-sub {
+  position: absolute;
+  right: -0.28rem;
+  bottom: -0.12rem;
+  font-size: 0.48rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #1d4ed8;
+  background: rgba(219, 234, 254, 0.98);
+  border-radius: 0.12rem;
+  padding: 0 0.06rem;
+}
+
+.tab-suivi-presence-menu {
+  position: fixed;
+  z-index: 12000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 11.5rem;
+  padding: 0.35rem;
+  border-radius: 0.55rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+}
+
+.tab-suivi-presence-menu[hidden] {
+  display: none !important;
+}
+
+.tab-suivi-presence-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  padding: 0.38rem 0.45rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  border-left: 3px solid transparent;
+}
+
+.tab-suivi-presence-menu__item.tab-suivi-check--ok {
+  background: rgba(209, 250, 229, 0.42);
+  border-left-color: #059669;
+}
+
+.tab-suivi-presence-menu__item.tab-suivi-check--retard {
+  background: rgba(254, 243, 199, 0.42);
+  border-left-color: #d97706;
+}
+
+.tab-suivi-presence-menu__item.tab-suivi-check--attitude {
+  background: rgba(237, 233, 254, 0.5);
+  border-left-color: #7c3aed;
+}
+
+.tab-suivi-presence-menu__item.tab-suivi-check--justifie {
+  background: rgba(219, 234, 254, 0.42);
+  border-left-color: #2563eb;
+}
+
+.tab-suivi-presence-menu__item.tab-suivi-check--ko {
+  background: rgba(254, 226, 226, 0.42);
+  border-left-color: #dc2626;
+}
+
+.tab-suivi-presence-menu__item.tab-suivi-check--vide {
+  background: rgba(248, 250, 252, 0.75);
+  border-left-color: rgba(148, 163, 184, 0.55);
+}
+
+.tab-suivi-presence-menu__item:hover {
+  filter: brightness(0.97);
+}
+
+.tab-suivi-presence-menu__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.tab-suivi-presence-menu__glyph.tab-suivi-check--ok {
+  background: rgba(209, 250, 229, 0.95);
+  border-color: rgba(5, 150, 105, 0.45);
+  color: #047857;
+}
+
+.tab-suivi-presence-menu__glyph.tab-suivi-check--retard {
+  background: rgba(254, 243, 199, 0.95);
+  border-color: rgba(217, 119, 6, 0.45);
+  color: #b45309;
+}
+
+.tab-suivi-presence-menu__glyph.tab-suivi-check--attitude {
+  background: rgba(237, 233, 254, 0.95);
+  border-color: rgba(124, 58, 237, 0.45);
+  color: #6d28d9;
+  font-size: 0.95rem;
+}
+
+.tab-suivi-presence-menu__glyph.tab-suivi-check--justifie {
+  background: rgba(219, 234, 254, 0.95);
+  border-color: rgba(37, 99, 235, 0.4);
+  color: #1d4ed8;
+}
+
+.tab-suivi-presence-menu__glyph.tab-suivi-check--ko {
+  background: rgba(254, 226, 226, 0.95);
+  border-color: rgba(220, 38, 38, 0.4);
+  color: #b91c1c;
+}
+
+.tab-suivi-presence-menu__glyph.tab-suivi-check--vide {
+  background: rgba(248, 250, 252, 0.95);
+  border-color: rgba(148, 163, 184, 0.45);
+  color: var(--text-muted);
+}
+
+.tab-suivi-presence-menu__glyph .tab-suivi-check__clock {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.tab-suivi-presence-menu__glyph .tab-suivi-check__combo {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.tab-suivi-presence-menu__glyph .tab-suivi-check__combo-main {
+  font-size: 0.82rem;
+}
+
+.tab-suivi-presence-menu__glyph .tab-suivi-check__combo-sub {
+  font-size: 0.42rem;
+  right: -0.22rem;
+  bottom: -0.08rem;
+}
+
+.tab-suivi-presence-menu__label {
+  line-height: 1.25;
 }
 
 .page-outil--tableau-suivi .tab-suivi-cell-input {
