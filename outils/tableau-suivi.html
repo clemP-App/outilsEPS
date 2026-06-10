@@ -209,6 +209,15 @@
                   <span class="tab-suivi-type-card__hint">Équipe, niveau, sexe, VMA… (fiche classe)</span>
                 </span>
               </button>
+              <button type="button" class="tab-suivi-type-card" data-dlg-col-type="resultatSeance">
+                <span class="tab-suivi-type-card__icon tab-suivi-type-card__icon--resultat" aria-hidden="true"
+                  >★</span
+                >
+                <span class="tab-suivi-type-card__text">
+                  <span class="tab-suivi-type-card__label">Résultat séance</span>
+                  <span class="tab-suivi-type-card__hint">Lier une séance d’outil ou saisir à la main</span>
+                </span>
+              </button>
             </div>
           </section>
         </div>
@@ -609,6 +618,23 @@
               synthèse notes.
             </p>
           </div>
+          <div class="field-group tab-suivi-col-resultat-opt" id="dlg-col-resultat-wrap" hidden>
+            <label class="field-label" for="dlg-col-resultat-tool">Outil</label>
+            <select id="dlg-col-resultat-tool"></select>
+            <label class="field-label" for="dlg-col-resultat-session">Séance</label>
+            <select id="dlg-col-resultat-session">
+              <option value="">— Saisie manuelle —</option>
+            </select>
+            <p class="hint" id="dlg-col-resultat-hint">
+              Choisissez une séance enregistrée dans un outil (championnat, défi ATP, tournoi…). Les
+              résultats sont importés pour chaque élève de la feuille.
+            </p>
+            <div class="tab-suivi-col-resultat-actions">
+              <button type="button" class="btn btn--ghost btn--sm" id="btn-col-resultat-refresh">
+                Rafraîchir les résultats
+              </button>
+            </div>
+          </div>
           <div class="field-group tab-suivi-col-info-opt" id="dlg-col-info-wrap" hidden>
             <label class="field-label" for="dlg-col-info-champ">Donnée affichée</label>
             <select id="dlg-col-info-champ">
@@ -683,6 +709,11 @@
     </dialog>
 
     <script src="../data-manager.js"></script>
+    <script src="../shared/sessions-core.js"></script>
+    <script src="../shared/championnat-standings.js"></script>
+    <script src="../shared/synthese-identity.js"></script>
+    <script src="../shared/synthese-facts.js"></script>
+    <script src="../shared/synthese-eps-activites.js"></script>
     <script src="../shared/eleve-display.js"></script>
     <script src="../class-import.js"></script>
     <script src="../vendor/jspdf.umd.min.js"></script>
@@ -718,6 +749,7 @@
               "Dans une case nombre, touche Entrée pour passer à l’élève suivant.",
               "Cochez « C’est une note » sur une colonne chiffre (▼) pour le barème /20 et les moyennes ; laissez décoché pour une mesure (VMA, temps…).",
               "Colonne Grille d’évaluation : choisissez un exemple, importez un CSV, testez la grille puis cliquez la note d’un élève pour sélectionner ses niveaux.",
+              "Colonne « Résultat séance » : liez une séance (championnat, défi ATP, tournoi…) pour importer classements et perfs, ou saisissez à la main.",
               "Filtrez l’affichage : Tout, Note, Appel ou Autre (mesures, sommes, info élève…).",
               "Colonne « Info élève » : équipe, niveau, sexe, VMA… Depuis ▼, cochez « Permettre la modification » pour mettre à jour les fiches Classes depuis le tableau.",
               "Le bouton ▼ au-dessus d’une colonne permet de la renommer, la déplacer ou la remplir.",

@@ -553,6 +553,13 @@
     var block = document.createElement("div");
     block.className = "home-qr-share";
 
+    if (partage.titre) {
+      var shareTitle = document.createElement("h3");
+      shareTitle.className = "home-qr-share__title";
+      shareTitle.textContent = partage.titre;
+      block.appendChild(shareTitle);
+    }
+
     var wrap = document.createElement("div");
     wrap.className = "home-qr-share__qr-wrap";
 

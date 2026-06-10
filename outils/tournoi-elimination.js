@@ -140,6 +140,24 @@
     msgEl.textContent = msg || "";
   }
 
+  function reinitialiserEtat(opts) {
+    opts = opts || {};
+    var format = opts.format === "classement" ? "classement" : "elimination";
+    state = {
+      format: format,
+      participants: [],
+      participantsText: "",
+      levels: {},
+      totalParticipants: 0,
+      size: 0,
+      rounds: [],
+      tables: [],
+      placements: {},
+    };
+    if (textareaEl) textareaEl.value = "";
+    setFormat(format);
+  }
+
   function appliquerPayload(data) {
     if (!data || !Array.isArray(data.rounds)) return;
     state = {
@@ -180,7 +198,11 @@
         return DataManager.getTournoiForSession(sessionId);
       })
       .then(function (res) {
-        if (res && res.payload) appliquerPayload(res.payload);
+        if (res && res.payload) {
+          appliquerPayload(res.payload);
+        } else {
+          reinitialiserEtat();
+        }
       })
       .catch(function (err) {
         montrerMsg(err && err.message ? err.message : "Séance introuvable.");
@@ -811,18 +833,7 @@
 
   function effacer() {
     if (!confirm("Effacer le tournoi ?")) return;
-    state = {
-      format: state.format,
-      participants: [],
-      participantsText: "",
-      levels: {},
-      totalParticipants: 0,
-      size: 0,
-      rounds: [],
-      tables: [],
-      placements: {},
-    };
-    if (textareaEl) textareaEl.value = "";
+    reinitialiserEtat({ format: state.format });
     save().then(function () {
       renderSeedingList();
       render();
@@ -1274,19 +1285,7 @@
       toolLabel: "Tournoi éliminatoire",
       onSessionReady: demarrerSession,
       onSessionCleared: function () {
-        state = {
-          format: "elimination",
-          participants: [],
-          participantsText: "",
-          levels: {},
-          totalParticipants: 0,
-          size: 0,
-          rounds: [],
-          tables: [],
-          placements: {},
-        };
-        if (textareaEl) textareaEl.value = "";
-        setFormat("elimination");
+        reinitialiserEtat();
         renderSeedingList();
         render();
       },

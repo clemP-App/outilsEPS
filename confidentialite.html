@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a2744" />
+    <meta
+      name="description"
+      content="Politique de confidentialité et RGPD — Outils EPS : stockage local, services tiers, Supabase, GoatCounter, QR code."
+    />
+    <title>Confidentialité &amp; RGPD — Outils EPS</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="app app--tool app--legal">
+    <div class="page-outil page-outil--legal">
+      <header class="page-outil__header">
+        <a class="tool-back" href="index.html"><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a>
+        <h1>Confidentialité &amp; RGPD</h1>
+        <p class="page-outil__subtitle">
+          Où sont stockées vos données, ce qui quitte votre appareil, et comment reprendre la main.
+        </p>
+      </header>
+
+      <section class="card legal-summary" aria-label="Résumé">
+        <h2 class="legal-section__title">En bref</h2>
+        <ul class="legal-list">
+          <li>
+            <strong>Données pédagogiques</strong> (classes, élèves, notes, présences, dispenses, imports…) :
+            stockées <strong>en local</strong> sur votre appareil (IndexedDB du navigateur), sans compte obligatoire
+            ni cloud imposé.
+          </li>
+          <li>
+            <strong>Aucun profil élève nominatif</strong> n’est envoyé par défaut à un service tiers pour faire
+            fonctionner l’application.
+          </li>
+          <li>
+            <strong>GoatCounter</strong> : statistiques de visite anonymes, uniquement sur le site publié
+            (GitHub Pages).
+          </li>
+          <li>
+            <strong>Supabase</strong> (optionnel) : pour la synchronisation entre deux appareils, vos données ne
+            transitent que <strong>le temps de la synchro</strong> (session temporaire, puis suppression). À part :
+            catalogue collaboratif de grilles si vous choisissez de publier une grille.
+          </li>
+          <li>
+            <strong>Qr Code</strong> : transferts ponctuels entre appareils (élève → professeur), générés localement
+            dans le navigateur.
+          </li>
+        </ul>
+        <p class="hint legal-updated">Dernière mise à jour : juin 2026.</p>
+      </section>
+
+      <nav class="card legal-toc" aria-label="Sommaire">
+        <h2 class="legal-section__title">Sommaire</h2>
+        <ol class="legal-toc__list">
+          <li><a href="#donnees-locales">Données stockées localement</a></li>
+          <li><a href="#ou-elles-restent">Où elles restent</a></li>
+          <li><a href="#supprimer">Comment les supprimer ou les exporter</a></li>
+          <li><a href="#services-tiers">Services tiers</a></li>
+          <li><a href="#qr-transferts">Qr Code et transferts</a></li>
+          <li><a href="#vos-droits">Vos responsabilités et bonnes pratiques</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ol>
+      </nav>
+
+      <section class="card legal-section" id="donnees-locales">
+        <h2 class="legal-section__title">1. Données stockées localement</h2>
+        <p>
+          Outils EPS manipule des données à caractère personnel au sens du RGPD (noms et prénoms d’élèves, classes,
+          notes, présences, dispenses, observations, résultats sportifs, etc.). Ces données sont enregistrées sur
+          <strong>votre téléphone, tablette ou ordinateur</strong>, dans la base <strong>IndexedDB</strong> du
+          navigateur (ou de l’application installée).
+        </p>
+        <p>Exemples de contenus conservés en local :</p>
+        <div class="legal-table-wrap">
+          <table class="legal-table">
+            <thead>
+              <tr>
+                <th scope="col">Type de données</th>
+                <th scope="col">Exemples d’outils concernés</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Identité des élèves, classes et groupes</td>
+                <td>Classes et groupes, Appel et notes, Dossier élève</td>
+              </tr>
+              <tr>
+                <td>Présences, notes, grilles d’évaluation</td>
+                <td>Appel et notes, Grilles d’évaluation</td>
+              </tr>
+              <tr>
+                <td>Dispenses, inaptitudes, oublis de matériel</td>
+                <td>Dispenses / Inaptitudes, Oubli de matériel</td>
+              </tr>
+              <tr>
+                <td>Résultats, chronos, championnats, imports élèves</td>
+                <td>Données élèves, Radar, Championnats, Synthèse EPS…</td>
+              </tr>
+              <tr>
+                <td>Cahier de texte, paramètres, favoris</td>
+                <td>Cahier de texte, préférences d’accueil (localStorage)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="hint">
+          Les grilles d’évaluation que vous créez restent d’abord sur votre appareil. Elles ne sont envoyées en ligne
+          que si vous cochez explicitement « Visible sur le catalogue en ligne » et que la publication est acceptée
+          (voir Supabase ci-dessous).
+        </p>
+      </section>
+
+      <section class="card legal-section" id="ou-elles-restent">
+        <h2 class="legal-section__title">2. Où elles restent</h2>
+        <ul class="legal-list">
+          <li>
+            <strong>Sur votre appareil</strong> — IndexedDB et, pour quelques préférences légères, localStorage
+            (mode d’accueil, favoris, identifiant anonyme de vote catalogue).
+          </li>
+          <li>
+            <strong>Pas de compte centralisé</strong> — aucune base « élèves de France » hébergée par Outils EPS.
+          </li>
+          <li>
+            <strong>Safari ≠ application installée</strong> — sur iPhone/iPad (et souvent sur Android), le navigateur
+            et l’icône installée ne partagent pas les mêmes données. Utilisez toujours la même entrée.
+          </li>
+          <li>
+            <strong>Fichiers d’export</strong> — un fichier <code>outilsEPS-backup.json</code> que vous enregistrez
+            où vous le souhaitez (cloud personnel, clé USB, messagerie…) relève de votre responsabilité une fois
+            exporté.
+          </li>
+        </ul>
+      </section>
+
+      <section class="card legal-section" id="supprimer">
+        <h2 class="legal-section__title">3. Comment les supprimer ou les exporter</h2>
+        <h3 class="legal-section__subtitle">Exporter (recommandé avant toute suppression)</h3>
+        <p>
+          Outil <a href="outils/sauvegarde.html">Sauvegarde</a> → <strong>Exporter la sauvegarde</strong> : vous
+          obtenez une copie complète de vos données locales.
+        </p>
+        <h3 class="legal-section__subtitle">Supprimer ou réinitialiser</h3>
+        <ul class="legal-list">
+          <li>
+            <strong>Imports élèves (Qr Code)</strong> — outil
+            <a href="outils/donnees-eleves.html">Données élèves</a> : suppression des imports reçus.
+          </li>
+          <li>
+            <strong>Préparer une nouvelle année</strong> — outil
+            <a href="outils/nouvelle-annee-scolaire.html">Nouvelle année scolaire</a> : choix de ce que vous archivez
+            ou supprimez.
+          </li>
+          <li>
+            <strong>Effacement complet</strong> — supprimer les données du site dans les réglages du navigateur, ou
+            désinstaller l’application. Sans export préalable, les données locales sont perdues.
+          </li>
+        </ul>
+        <p class="hint">
+          La synchronisation entre appareils via Supabase ne conserve pas volontairement votre sauvegarde après la
+          fusion : la session temporaire est supprimée à la fin du transfert.
+        </p>
+      </section>
+
+      <section class="card legal-section" id="services-tiers">
+        <h2 class="legal-section__title">4. Services tiers</h2>
+
+        <article class="legal-block">
+          <h3 class="legal-section__subtitle">GoatCounter (statistiques de visite)</h3>
+          <ul class="legal-list">
+            <li><strong>Quoi</strong> — pages vues, volume de trafic agrégé.</li>
+            <li><strong>Quand</strong> — uniquement sur le site publié (<code>*.github.io</code>), pas en local.</li>
+            <li><strong>Données élèves</strong> — aucune donnée nominative d’élève n’est transmise.</li>
+            <li>
+              <strong>Hébergeur</strong> —
+              <a href="https://www.goatcounter.com/" target="_blank" rel="noopener noreferrer">GoatCounter</a>
+              (compteur <code>clempapp.goatcounter.com</code>).
+            </li>
+          </ul>
+        </article>
+
+        <article class="legal-block">
+          <h3 class="legal-section__subtitle">Supabase — synchronisation de sauvegarde (optionnelle)</h3>
+          <ul class="legal-list">
+            <li>
+              <strong>Quoi</strong> — lorsque vous lancez « Synchroniser deux appareils », une copie temporaire de
+              votre sauvegarde est déposée sur Supabase le temps de comparer et fusionner.
+            </li>
+            <li>
+              <strong>Protection</strong> — jeton affiché dans le Qr Code ; session limitée dans le temps ; suppression
+              après validation ou expiration.
+            </li>
+            <li>
+              <strong>Clé API</strong> — seule la clé <em>anon</em> publique est présente côté client (non secrète) ;
+              l’accès est limité par les règles RLS du projet Supabase.
+            </li>
+          </ul>
+        </article>
+
+        <article class="legal-block">
+          <h3 class="legal-section__subtitle">Supabase — catalogue collaboratif de grilles (optionnel)</h3>
+          <ul class="legal-list">
+            <li>
+              <strong>Quoi</strong> — si vous publiez une grille au catalogue en ligne : structure de la grille, titre,
+              activité APSA, niveau, pseudonyme d’auteur (« Enseignant1 » par défaut), votes 👍/👎.
+            </li>
+            <li>
+              <strong>Pas d’élèves</strong> — les listes de classes et noms d’élèves ne sont pas envoyées au
+              catalogue.
+            </li>
+            <li>
+              <strong>Contrôles</strong> — validation côté navigateur, filtres de contenu, taille maximale, règles
+              SQL et RLS ; archivage automatique après seuil de votes négatifs.
+            </li>
+            <li>
+              <strong>Vote</strong> — identifiant anonyme généré dans votre navigateur (localStorage), pas de compte
+              enseignant.
+            </li>
+          </ul>
+          <p class="hint">
+            Si Supabase n’est pas configuré, le catalogue en ligne est indisponible et les grilles restent uniquement
+            sur votre appareil.
+          </p>
+        </article>
+      </section>
+
+      <section class="card legal-section" id="qr-transferts">
+        <h2 class="legal-section__title">5. Qr Code et transferts</h2>
+        <ul class="legal-list">
+          <li>
+            <strong>Page élèves</strong> — le Qr Code affiché sur l’accueil prof est généré <strong>localement</strong>
+            dans votre navigateur (<code>vendor/qrcode.min.js</code>) : aucun service externe n’est appelé pour
+            l’afficher.
+          </li>
+          <li>
+            <strong>Outils élèves → professeur</strong> — débrief, journal de musculation, résultats de séance… : l’élève
+            génère un Qr Code ou un lien contenant une <strong>donnée ciblée</strong> (pas toute votre base). Vous
+            scannez ou collez le lien dans <a href="outils/donnees-eleves.html">Données élèves</a>.
+          </li>
+          <li>
+            <strong>Synchronisation</strong> — le Qr Code de sync contient un jeton de session pour relier deux de vos
+            appareils ; ne le partagez qu’avec un appareil de confiance.
+          </li>
+        </ul>
+      </section>
+
+      <section class="card legal-section" id="vos-droits">
+        <h2 class="legal-section__title">6. Vos responsabilités et bonnes pratiques</h2>
+        <p>En tant qu’enseignant utilisateur, vous restez responsable du traitement des données de vos élèves :</p>
+        <ul class="legal-list">
+          <li>Informer votre établissement et vos élèves selon le cadre de votre établissement.</li>
+          <li>Ne pas laisser l’appareil de cours accessible sans verrouillage.</li>
+          <li>Exporter régulièrement une sauvegarde et sécuriser les fichiers exportés.</li>
+          <li>Ne publier au catalogue que des grilles sans données personnelles d’élèves.</li>
+          <li>Utiliser la page élèves pour limiter l’exposition des outils professeur en séance.</li>
+        </ul>
+        <p>
+          Pour les questions générales sur l’utilisation :
+          <a href="faq.html">FAQ Outils EPS</a>.
+        </p>
+      </section>
+
+      <section class="card legal-section" id="contact">
+        <h2 class="legal-section__title">7. Contact</h2>
+        <p>
+          Responsable du projet : <strong>ClemP</strong> (enseignant EPS).
+        </p>
+        <p>
+          <a
+            class="btn btn--ghost btn--sm"
+            href="mailto:clement.pignet@gmail.com?subject=Confidentialit%C3%A9%20RGPD%20%E2%80%94%20Outils%20EPS"
+            >Signaler une question confidentialité</a
+          >
+        </p>
+      </section>
+    </div>
+  </body>
+</html>

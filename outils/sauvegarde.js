@@ -51,6 +51,90 @@
   var syncApplying = false;
   var syncCompleted = false;
   var syncRunId = 0;
+  var LAST_BACKUP_KEY = "outils_eps_last_backup_export_v1";
+  var lastBackupStatusCardEl = document.getElementById("sauvegarde-status-card");
+  var lastBackupBadgeEl = document.getElementById("last-backup-status-badge");
+  var lastBackupDateEl = document.getElementById("last-backup-date");
+  var lastBackupHintEl = document.getElementById("last-backup-hint");
+  var sauvegardeAdvancedDetailsEl = document.getElementById("sauvegarde-advanced-details");
+
+  var BACKUP_FRESHNESS_LABELS = {
+    never: "Pas encore exportée",
+    recent: "Récente",
+    soon: "À renouveler",
+    old: "Ancienne",
+  };
+
+  function loadLastBackupStatus() {
+    try {
+      return localStorage.getItem(LAST_BACKUP_KEY) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveLastBackupStatus(exportedAt) {
+    var value = exportedAt || new Date().toISOString();
+    try {
+      localStorage.setItem(LAST_BACKUP_KEY, value);
+    } catch (e) {}
+    return value;
+  }
+
+  function getBackupAgeDays(isoDate) {
+    var d = new Date(isoDate);
+    if (Number.isNaN(d.getTime())) return null;
+    return Math.floor((Date.now() - d.getTime()) / 86400000);
+  }
+
+  function getBackupFreshness(isoDate) {
+    if (!isoDate) return "never";
+    var days = getBackupAgeDays(isoDate);
+    if (days === null) return "never";
+    if (days < 7) return "recent";
+    if (days <= 30) return "soon";
+    return "old";
+  }
+
+  function renderLastBackupStatus() {
+    if (!lastBackupStatusCardEl || !lastBackupBadgeEl || !lastBackupDateEl) return;
+    var exportedAt = loadLastBackupStatus();
+    var freshness = getBackupFreshness(exportedAt);
+
+    lastBackupStatusCardEl.className =
+      "card sauvegarde-status-card sauvegarde-status-card--" + freshness;
+    lastBackupBadgeEl.textContent = BACKUP_FRESHNESS_LABELS[freshness] || BACKUP_FRESHNESS_LABELS.never;
+
+    if (!exportedAt) {
+      lastBackupDateEl.textContent = "Dernière exportation : aucune pour le moment";
+      if (lastBackupHintEl) {
+        lastBackupHintEl.hidden = true;
+        lastBackupHintEl.textContent = "";
+      }
+      return;
+    }
+
+    lastBackupDateEl.textContent = "Dernière exportation : le " + formatBackupDate(exportedAt);
+    if (lastBackupHintEl) {
+      if (freshness === "old") {
+        lastBackupHintEl.hidden = false;
+        lastBackupHintEl.textContent = "Une exportation datant de plus d’un mois peut être renouvelée.";
+      } else if (freshness === "soon") {
+        lastBackupHintEl.hidden = false;
+        lastBackupHintEl.textContent = "Pensez à refaire une exportation si vous avez beaucoup travaillé depuis.";
+      } else {
+        lastBackupHintEl.hidden = true;
+        lastBackupHintEl.textContent = "";
+      }
+    }
+  }
+
+  function maybeOpenAdvancedStorage(level) {
+    if (!sauvegardeAdvancedDetailsEl) return;
+    if (level === "critical" || level === "warning") {
+      sauvegardeAdvancedDetailsEl.open = true;
+    }
+  }
 
   function syncDetectDeviceName() {
     var ua = navigator.userAgent || "";
@@ -64,11 +148,12 @@
   }
 
   function setSauvegardeQuickActive(action) {
-    var cards = document.querySelectorAll(".sauvegarde-quick-card[data-sauvegarde-action]");
+    var cards = document.querySelectorAll("[data-sauvegarde-action]");
     cards.forEach(function (card) {
       var key = card.getAttribute("data-sauvegarde-action");
       var btn = card.querySelector(".btn");
       var isActive = key === action;
+      card.classList.toggle("sauvegarde-action-card--active", isActive);
       card.classList.toggle("sauvegarde-quick-card--active", isActive);
       if (!btn) return;
       if (key === "export") {
@@ -219,7 +304,7 @@
       if (!est.supported) {
         stockageQuotaHintEl.hidden = false;
         stockageQuotaHintEl.textContent =
-          "Ce navigateur n’affiche pas le quota total. En cas d’erreur à l’enregistrement, supprimez des données ci-dessous.";
+          "Cet appareil n’affiche pas l’espace total disponible. En cas d’erreur à l’enregistrement, supprimez des données ci-dessous.";
       } else if (
         est.supported &&
         overview.breakdown.totalBytes > 0 &&
@@ -227,12 +312,14 @@
       ) {
         stockageQuotaHintEl.hidden = false;
         stockageQuotaHintEl.textContent =
-          "Le quota navigateur inclut aussi le cache de l’application (hors liste ci-dessous).";
+          "L’espace utilisé inclut aussi le cache de l’application (hors liste ci-dessous).";
       } else {
         stockageQuotaHintEl.hidden = true;
         stockageQuotaHintEl.textContent = "";
       }
     }
+
+    maybeOpenAdvancedStorage(level);
   }
 
   function creerItemStockage(cat) {
@@ -468,10 +555,11 @@
       btnImportMerge.disabled = preview.summary.willImport === 0;
       btnImportMerge.textContent =
         preview.summary.willImport > 0
-          ? "Fusionner " +
+          ? "Fusionner sans effacer (" +
             preview.summary.willImport +
             " donnée" +
-            (preview.summary.willImport > 1 ? "s" : "")
+            (preview.summary.willImport > 1 ? "s" : "") +
+            ")"
           : "Rien à fusionner";
     }
 
@@ -686,7 +774,7 @@
     if (btnSyncApply) btnSyncApply.disabled = true;
     if (btnSyncScan) btnSyncScan.disabled = true;
     syncRenderQr("");
-    if (syncTimerEl) syncTimerEl.textContent = "Synchronisation terminee.";
+    if (syncTimerEl) syncTimerEl.textContent = "Synchronisation terminée.";
     montrerOk(
       "Synchronisation réussie : les deux appareils ont les mêmes données. Vous pouvez fermer le panneau de synchronisation."
     );
@@ -743,13 +831,13 @@
   function syncScanErrorMessage(err) {
     var msg = err && err.message ? String(err.message) : String(err || "");
     if (msg.indexOf("not allowed") >= 0 || msg.indexOf("denied") >= 0) {
-      return "Camera refusee ou indisponible. Autorisez la camera, puis reessayez.";
+      return "Caméra refusée ou indisponible. Autorisez la caméra, puis réessayez.";
     }
     if (msg.indexOf("Permission") >= 0 || msg.indexOf("permission") >= 0) {
-      return "Autorisez la camera pour scanner le QR.";
+      return "Autorisez la caméra pour scanner le QR.";
     }
     if (msg.indexOf("Requested device not found") >= 0 || msg.indexOf("No camera") >= 0) {
-      return "Aucune camera disponible sur cet appareil.";
+      return "Aucune caméra disponible sur cet appareil.";
     }
     return msg || "Scan impossible.";
   }
@@ -760,7 +848,7 @@
       .start({ facingMode: "environment" }, config, onDecoded)
       .catch(function () {
         return Html5Qrcode.getCameras().then(function (cams) {
-          if (!cams || !cams.length) throw new Error("Aucune camera disponible.");
+          if (!cams || !cams.length) throw new Error("Aucune caméra disponible.");
           var rear = cams.find(function (cam) {
             return /back|rear|environment|arriere|arrière|dos/i.test(cam.label || "");
           });
@@ -771,7 +859,7 @@
 
   function syncExpireSession() {
     if (syncCompleted || syncApplying) return;
-    if (syncTimerEl) syncTimerEl.textContent = "Connexion expiree. Relancez une synchronisation.";
+    if (syncTimerEl) syncTimerEl.textContent = "Connexion expirée. Relancez une synchronisation.";
     syncStopTimers();
     syncStopScanner();
     syncRenderQr("");
@@ -779,7 +867,7 @@
     syncHideSuccess();
     if (btnSyncScan) btnSyncScan.disabled = true;
     if (btnSyncApply) btnSyncApply.disabled = true;
-    syncSetStatus("La connexion a expire. Le QR a ete masque.");
+    syncSetStatus("La connexion a expiré. Le QR a été masqué.");
   }
 
   function syncCountdown(expiresAt) {
@@ -883,7 +971,7 @@
         "</span></div>" +
         '<div class="sauvegarde-import-stat sauvegarde-import-stat--warn"><span class="sauvegarde-import-stat__value">' +
         compare.summary.conflicts +
-        '</span><span class="sauvegarde-import-stat__label">difference(s) a choisir</span></div>' +
+        '</span><span class="sauvegarde-import-stat__label">différence(s) à choisir</span></div>' +
         "</div>";
     }
 
@@ -897,7 +985,7 @@
         var localAll = document.createElement("button");
         var remoteAll = document.createElement("button");
         bulk.className = "backup-sync-conflict-actions";
-        bulkTitle.textContent = "Appliquer le meme choix a toutes les differences";
+        bulkTitle.textContent = "Appliquer le même choix à toutes les différences";
         mergeAll.type = "button";
         localAll.type = "button";
         remoteAll.type = "button";
@@ -965,8 +1053,8 @@
     syncSetProgress(80);
     syncSetStatus(
       compare.summary.conflicts
-        ? "Analyse terminee. Choisissez quoi faire pour les donnees en conflit."
-        : "Analyse terminee. Les donnees peuvent etre fusionnees."
+        ? "Analyse terminée. Choisissez quoi faire pour les données en conflit."
+        : "Analyse terminée. Les données peuvent être fusionnées."
     );
   }
 
@@ -988,11 +1076,11 @@
         } else if (row.b_joined) {
           syncSetPhase2Visible(true);
           syncSetProgress(55);
-          syncSetStatus("Appareils associes. Envoi et attente des deux sauvegardes.");
+          syncSetStatus("Appareils associés. Envoi et attente des deux sauvegardes.");
         } else {
           syncSetPhase2Visible(false);
           syncSetProgress(35);
-          syncSetStatus("QR pret. Scannez-le avec l'autre appareil.");
+          syncSetStatus("QR prêt. Scannez-le avec l’autre appareil.");
         }
       })
       .catch(function (e) {
@@ -1020,7 +1108,7 @@
 
   function syncStartCreatedSession(runId) {
     syncSetProgress(10);
-    syncSetStatus("Creation de la session temporaire.");
+    syncSetStatus("Création de la session temporaire.");
     return OutilsEPS.BackupSync.createSession()
       .then(function (session) {
         if (runId !== syncRunId || !syncPanelEl || syncPanelEl.hidden) return null;
@@ -1066,7 +1154,7 @@
   function syncOpen() {
     if (!syncPanelEl) return;
     if (!window.OutilsEPS || !OutilsEPS.BackupSync) {
-      montrerErreur("Synchronisation indisponible : Supabase n'est pas charge.");
+      montrerErreur("Synchronisation indisponible : Supabase n’est pas chargé.");
       return;
     }
     montrerErreur("");
@@ -1096,7 +1184,7 @@
     syncSetProgress(0);
     syncStartCreatedSession(runId).catch(function (e) {
       if (runId !== syncRunId) return;
-      syncSetStatus(e.message || "Creation impossible.");
+      syncSetStatus(e.message || "Création impossible.");
     });
   }
 
@@ -1140,7 +1228,7 @@
       if (!syncPanelEl || syncPanelEl.hidden) return;
       syncReaderEl.hidden = false;
       syncScanner = new Html5Qrcode("backup-sync-reader");
-      syncSetStatus("Ouverture de la camera arriere.");
+      syncSetStatus("Ouverture de la caméra arrière.");
       return syncStartScannerWithFallback(function (decodedText) {
         var pairing = OutilsEPS.BackupSync.parsePairingText(decodedText);
         return syncStopScanner().then(function () {
@@ -1158,7 +1246,7 @@
     if (syncApplying || !syncRemoteState) return Promise.resolve();
     syncApplying = true;
     syncSetProgress(90);
-    syncSetStatus("Application du fichier fusionne sur cet appareil.");
+    syncSetStatus("Application du fichier fusionné sur cet appareil.");
     var a = syncPayloadFromRow(syncRemoteState, "a_payload");
     var b = syncPayloadFromRow(syncRemoteState, "b_payload");
     var merged = BackupSyncCore.mergeBackups(a, b, (decision && decision.choices) || {});
@@ -1169,7 +1257,7 @@
     return applyPromise
       .then(function () {
         syncSetProgress(100);
-        syncSetStatus("Synchronisation terminee. Les deux appareils ont le meme fichier de donnees.");
+        syncSetStatus("Synchronisation terminée. Les deux appareils ont le même fichier de données.");
         syncShowSuccess();
         if (window.OutilsEPS && OutilsEPS.BackupSync && OutilsEPS.BackupSync.markApplied) {
           return OutilsEPS.BackupSync.markApplied(syncSession);
@@ -1199,7 +1287,23 @@
       });
   }
 
+  function exportBackup() {
+    montrerErreur("");
+    setSauvegardeQuickActive("export");
+    return DataManager.exportBackupFile()
+      .then(function (data) {
+        var exportedAt = data && data.metadata && data.metadata.exportedAt;
+        saveLastBackupStatus(exportedAt || new Date().toISOString());
+        renderLastBackupStatus();
+        montrerOk("Sauvegarde exportée : " + DataManager.BACKUP_FILENAME);
+      })
+      .catch(function (e) {
+        montrerErreur(e.message || "Export impossible.");
+      });
+  }
+
   function init() {
+    renderLastBackupStatus();
     return DataManager.ready
       .then(function () {
         return renderStockage();
@@ -1211,17 +1315,12 @@
 
   var btnExport = document.getElementById("btn-export-backup");
   if (btnExport) {
-    btnExport.addEventListener("click", function () {
-      montrerErreur("");
-      setSauvegardeQuickActive("export");
-      DataManager.exportBackupFile()
-        .then(function () {
-          montrerOk("Sauvegarde exportée : " + DataManager.BACKUP_FILENAME);
-        })
-        .catch(function (e) {
-          montrerErreur(e.message || "Export impossible.");
-        });
-    });
+    btnExport.addEventListener("click", exportBackup);
+  }
+
+  var btnExportHero = document.getElementById("btn-export-backup-hero");
+  if (btnExportHero) {
+    btnExportHero.addEventListener("click", exportBackup);
   }
 
   var btnImport = document.getElementById("btn-import-backup");

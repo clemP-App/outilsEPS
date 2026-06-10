@@ -11,6 +11,15 @@
   var saveTimer = null;
   var pret = false;
   var cacheElevesParId = null;
+  var cacheDonneesSeances = null;
+  var RESULTAT_SEANCE_TOOLS = [
+    "championnat-poule",
+    "tournoi-elimination",
+    "pyramide-victoires",
+    "defi-atp",
+    "composition-equipes",
+    "course-orientation",
+  ];
 
   var INFO_ELEVE_CHAMPS = [
     { id: "equipe", label: "Équipe" },
@@ -131,6 +140,11 @@
   var dlgColInfoChamp = document.getElementById("dlg-col-info-champ");
   var dlgColInfoEditable = document.getElementById("dlg-col-info-editable");
   var dlgColInfoHint = document.getElementById("dlg-col-info-hint");
+  var dlgColResultatWrap = document.getElementById("dlg-col-resultat-wrap");
+  var dlgColResultatTool = document.getElementById("dlg-col-resultat-tool");
+  var dlgColResultatSession = document.getElementById("dlg-col-resultat-session");
+  var dlgColResultatHint = document.getElementById("dlg-col-resultat-hint");
+  var btnColResultatRefresh = document.getElementById("btn-col-resultat-refresh");
   var dialogInfoEleve = document.getElementById("dialog-tab-suivi-info-eleve");
   var dlgInfoEleveChamp = document.getElementById("dlg-info-eleve-champ");
   var btnColRubricTest = document.getElementById("btn-col-rubric-test");
@@ -1158,6 +1172,305 @@
     });
   }
 
+  function libelleOutilSeance(toolId) {
+    if (typeof SessionsCore !== "undefined" && SessionsCore.toolLabel) {
+      return SessionsCore.toolLabel(toolId);
+    }
+    return toolId || "Outil";
+  }
+
+  function formatDateSeanceCourte(iso) {
+    if (!iso) return "";
+    try {
+      return new Date(iso).toLocaleDateString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+      });
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function chargerDonneesSeances(force) {
+    if (!force && cacheDonneesSeances) return Promise.resolve(cacheDonneesSeances);
+    if (typeof DataManager === "undefined" || !DataManager.getAll) {
+      cacheDonneesSeances = null;
+      return Promise.resolve(null);
+    }
+    return Promise.all([
+      DataManager.getClasses(),
+      DataManager.getAll("eleves"),
+      DataManager.getAll("sessions"),
+      DataManager.getAll("championnats"),
+      DataManager.getAll("tournoisElimination"),
+      DataManager.getAll("parametres"),
+    ]).then(function (res) {
+      cacheDonneesSeances = {
+        classes: res[0] || [],
+        eleves: res[1] || [],
+        sessions: res[2] || [],
+        championnats: res[3] || [],
+        tournoisElimination: res[4] || [],
+        parametres: res[5] || [],
+      };
+      return cacheDonneesSeances;
+    });
+  }
+
+  function memesLibellesClasse(a, b) {
+    if (!a || !b) return false;
+    if (typeof SyntheseEpsCore !== "undefined" && SyntheseEpsCore.sameClasseLabel) {
+      return SyntheseEpsCore.sameClasseLabel(a, b);
+    }
+    return String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+  }
+
+  function contexteClasseFeuille(t) {
+    if (!t) return { classeId: "", classeNom: "" };
+    var classeId = (t.classeId || "").trim();
+    var classeNom = "";
+    (t.rows || []).forEach(function (row) {
+      var m = row && row.meta ? row.meta : {};
+      if (!classeId && m.classeId) classeId = String(m.classeId).trim();
+      if (!classeNom && m.classe) classeNom = String(m.classe).trim();
+    });
+    if (cacheDonneesSeances && Array.isArray(cacheDonneesSeances.classes)) {
+      cacheDonneesSeances.classes.forEach(function (c) {
+        if (!c) return;
+        if (classeId && c.id === classeId && !classeNom) classeNom = (c.nom || "").trim();
+        if (!classeId && classeNom && c.id && memesLibellesClasse(c.nom, classeNom)) {
+          classeId = c.id;
+        }
+      });
+    }
+    return { classeId: classeId, classeNom: classeNom };
+  }
+
+  function sessionConvientFeuille(session, ctx) {
+    if (!session || session.archived) return false;
+    ctx = ctx || { classeId: "", classeNom: "" };
+    if (!ctx.classeId && !ctx.classeNom) return false;
+    if (session.classeId) {
+      if (ctx.classeId) return session.classeId === ctx.classeId;
+      if (ctx.classeNom && cacheDonneesSeances && Array.isArray(cacheDonneesSeances.classes)) {
+        var classeSession = null;
+        cacheDonneesSeances.classes.forEach(function (c) {
+          if (c && c.id === session.classeId) classeSession = c;
+        });
+        if (classeSession && memesLibellesClasse(classeSession.nom, ctx.classeNom)) return true;
+      }
+      return false;
+    }
+    if (ctx.classeNom && session.classeNomSnapshot) {
+      if (memesLibellesClasse(ctx.classeNom, session.classeNomSnapshot)) return true;
+    }
+    if (
+      ctx.classeId &&
+      cacheDonneesSeances &&
+      typeof SyntheseEpsActivites !== "undefined" &&
+      SyntheseEpsActivites.sessionLinkedToClasse
+    ) {
+      return SyntheseEpsActivites.sessionLinkedToClasse(session, cacheDonneesSeances, ctx.classeId);
+    }
+    return false;
+  }
+
+  function trouverSessionParId(sessionId, data) {
+    if (!sessionId || !data || !Array.isArray(data.sessions)) return null;
+    for (var i = 0; i < data.sessions.length; i++) {
+      if (data.sessions[i] && data.sessions[i].id === sessionId) return data.sessions[i];
+    }
+    return null;
+  }
+
+  function remplirSelectOutilsResultat(sel, selectedToolId) {
+    if (!sel) return;
+    sel.innerHTML = "";
+    RESULTAT_SEANCE_TOOLS.forEach(function (toolId) {
+      var opt = document.createElement("option");
+      opt.value = toolId;
+      opt.textContent = libelleOutilSeance(toolId);
+      sel.appendChild(opt);
+    });
+    if (selectedToolId && RESULTAT_SEANCE_TOOLS.indexOf(selectedToolId) >= 0) {
+      sel.value = selectedToolId;
+    } else if (RESULTAT_SEANCE_TOOLS.length) {
+      sel.value = RESULTAT_SEANCE_TOOLS[0];
+    }
+  }
+
+  function remplirSelectSessionsResultat(sel, toolId, t, selectedSessionId) {
+    if (!sel) return Promise.resolve();
+    sel.innerHTML = "";
+    var manuel = document.createElement("option");
+    manuel.value = "";
+    manuel.textContent = "— Saisie manuelle —";
+    sel.appendChild(manuel);
+    if (!toolId || typeof DataManager === "undefined" || !DataManager.listSessionsByTool) {
+      sel.value = "";
+      return Promise.resolve();
+    }
+    return chargerDonneesSeances().then(function () {
+      var ctx = contexteClasseFeuille(t);
+      if (!ctx.classeId && !ctx.classeNom) {
+        var noClasse = document.createElement("option");
+        noClasse.value = "";
+        noClasse.disabled = true;
+        noClasse.textContent = "Importez d’abord une classe sur cette feuille";
+        sel.appendChild(noClasse);
+        sel.value = "";
+        return;
+      }
+      return DataManager.listSessionsByTool(toolId, { includeArchived: false }).then(function (list) {
+        var sessions = (list || []).filter(function (s) {
+          return sessionConvientFeuille(s, ctx);
+        });
+        if (!sessions.length) {
+          var vide = document.createElement("option");
+          vide.value = "";
+          vide.disabled = true;
+          var libClasse = ctx.classeNom || "cette classe";
+          vide.textContent = "Aucune séance « " + libClasse + " » pour cet outil";
+          sel.appendChild(vide);
+          sel.value = "";
+          return;
+        }
+        sessions.forEach(function (s) {
+          var opt = document.createElement("option");
+          opt.value = s.id;
+          var date = formatDateSeanceCourte(s.lastOpenedAt || s.updatedAt || s.createdAt);
+          opt.textContent = (s.nomSession || "Séance") + (date ? " (" + date + ")" : "");
+          sel.appendChild(opt);
+        });
+        if (selectedSessionId && sessions.some(function (s) { return s.id === selectedSessionId; })) {
+          sel.value = selectedSessionId;
+        } else {
+          sel.value = "";
+        }
+      });
+    });
+  }
+
+  function eleveDepuisRow(row, t) {
+    if (!row) return { id: "", nom: "", prenom: "", classeId: "" };
+    var meta = row.meta || {};
+    var eid = meta.eleveId;
+    if (eid && cacheElevesParId && cacheElevesParId[eid]) {
+      return cacheElevesParId[eid];
+    }
+    var eleve = {
+      id: eid || "",
+      nom: (meta.nom || "").trim(),
+      prenom: (meta.prenom || "").trim(),
+      classeId: (meta.classeId || (t && t.classeId) || "").trim(),
+    };
+    if (!eleve.nom && !eleve.prenom && row.label) {
+      var parts = String(row.label).trim().split(/\s+/);
+      if (parts.length >= 2) {
+        eleve.nom = parts[0];
+        eleve.prenom = parts.slice(1).join(" ");
+      } else {
+        eleve.nom = parts[0] || "";
+      }
+    }
+    if (!eleve.classeId && t && t.classeId) eleve.classeId = t.classeId;
+    return eleve;
+  }
+
+  function texteResultatActivite(activite) {
+    if (!activite) return "";
+    if (activite.resume) return String(activite.resume);
+    if (activite.headline) return String(activite.headline);
+    return "";
+  }
+
+  function resultatSeancePourRow(t, col, row, data, session) {
+    if (!col || !col.sessionId || typeof SyntheseEpsActivites === "undefined") return "";
+    session = session || trouverSessionParId(col.sessionId, data);
+    if (!session) return "";
+    var eleve = eleveDepuisRow(row, t);
+    if (!eleve.nom && !eleve.prenom && !eleve.id) return "";
+    var act = SyntheseEpsActivites.extractActivitePourSession(session, data, eleve);
+    return texteResultatActivite(act);
+  }
+
+  function rafraichirColonneResultatSeance(t, col) {
+    if (!t || !col || col.type !== "resultatSeance" || !col.sessionId) {
+      return Promise.resolve(false);
+    }
+    return chargerDonneesSeances(true).then(function (data) {
+      if (!data) return false;
+      var session = trouverSessionParId(col.sessionId, data);
+      if (!session) return false;
+      if (!col.sessionToolId) col.sessionToolId = session.toolId || "";
+      var changed = false;
+      t.rows.forEach(function (row) {
+        var txt = resultatSeancePourRow(t, col, row, data, session);
+        var next = txt || null;
+        var prev = getCell(t, row.id, col.id);
+        if (prev !== next) {
+          setCell(t, row.id, col.id, next);
+          changed = true;
+        }
+      });
+      return changed;
+    });
+  }
+
+  function rafraichirColonnesResultatLiees(t) {
+    if (!t || !t.cols) return Promise.resolve();
+    var cols = t.cols.filter(function (c) {
+      return c.type === "resultatSeance" && c.sessionId;
+    });
+    if (!cols.length) return Promise.resolve();
+    return chargerCacheEleves().then(function () {
+      return chargerDonneesSeances(true);
+    }).then(function () {
+      return Promise.all(
+        cols.map(function (col) {
+          return rafraichirColonneResultatSeance(t, col);
+        })
+      );
+    });
+  }
+
+  function majDialogColonneResultat(t, col) {
+    if (!dlgColResultatWrap) return Promise.resolve();
+    var estResultat = col && col.type === "resultatSeance";
+    dlgColResultatWrap.hidden = !estResultat;
+    if (!estResultat) return Promise.resolve();
+    remplirSelectOutilsResultat(dlgColResultatTool, col.sessionToolId || "");
+    var toolId = dlgColResultatTool ? dlgColResultatTool.value : "";
+    return remplirSelectSessionsResultat(
+      dlgColResultatSession,
+      toolId,
+      t,
+      col.sessionId || ""
+    ).then(function () {
+      if (!dlgColResultatHint) return;
+      var ctx = contexteClasseFeuille(t);
+      var libClasse = ctx.classeNom || (ctx.classeId ? "cette classe" : "");
+      if (!ctx.classeId && !ctx.classeNom) {
+        dlgColResultatHint.textContent =
+          "Importez une classe sur cette feuille pour proposer uniquement les séances de cette classe.";
+      } else if (col.sessionId) {
+        dlgColResultatHint.textContent =
+          "Colonne liée à une séance de « " +
+          libClasse +
+          " » — les cellules sont remplies automatiquement. Choisissez « Saisie manuelle » pour éditer à la main.";
+      } else {
+        dlgColResultatHint.textContent =
+          "Seules les séances de « " +
+          libClasse +
+          " » sont proposées (championnat, défi ATP, tournoi…). Les résultats sont importés pour chaque élève.";
+      }
+      if (btnColResultatRefresh) {
+        btnColResultatRefresh.disabled = !col.sessionId;
+      }
+    });
+  }
+
   function couleurEquipeFallback(label) {
     var s = String(label || "").trim();
     if (!s) return "";
@@ -2030,6 +2343,22 @@
         delete c.sourceIds;
         delete c.rubric;
         delete c.horsSynthese;
+      } else if (c.type === "resultatSeance") {
+        delete c.estNote;
+        delete c.max;
+        delete c.calcOp;
+        delete c.sourceIds;
+        delete c.rubric;
+        delete c.horsSynthese;
+        delete c.infoChamp;
+        delete c.infoEditable;
+        if (c.sessionId && typeof c.sessionId !== "string") delete c.sessionId;
+        if (!c.sessionId) {
+          delete c.sessionId;
+          delete c.sessionToolId;
+        } else if (c.sessionToolId && typeof c.sessionToolId !== "string") {
+          delete c.sessionToolId;
+        }
       } else {
         delete c.estNote;
         delete c.max;
@@ -2039,7 +2368,8 @@
         c.type !== "number" &&
         c.type !== "calc" &&
         c.type !== "rubric" &&
-        c.type !== "eleveInfo"
+        c.type !== "eleveInfo" &&
+        c.type !== "resultatSeance"
       ) {
         c.type = "number";
       }
@@ -2078,6 +2408,7 @@
 
   function colonneAutre(col) {
     if (col.type === "eleveInfo") return true;
+    if (col.type === "resultatSeance") return true;
     if (col.type === "number" || col.type === "calc") return col.estNote !== true;
     return false;
   }
@@ -2532,7 +2863,7 @@
     if (col.type === "rubric") {
       return v === null || v === undefined || isNaN(v) ? "" : formatNombreAffiche(v);
     }
-    if (col.type === "eleveInfo") {
+    if (col.type === "eleveInfo" || col.type === "resultatSeance") {
       return v === null || v === undefined ? "" : String(v);
     }
     if (v === null || v === undefined || v === "") return "";
@@ -2657,6 +2988,13 @@
     setCell(t, row.id, col.id, parseValeurNombre(num.value));
     majStatsColonneDom(t, col);
     rafraichirColonnesCalcLiees(t, col.id);
+    planifierSauvegarde();
+  }
+
+  function appliquerValeurTexteDepuisInput(inp, t, row, col) {
+    var val = (inp.value || "").trim();
+    setCell(t, row.id, col.id, val || null);
+    majStatsColonneDom(t, col);
     planifierSauvegarde();
   }
 
@@ -2906,7 +3244,7 @@
 
   function syntheseColonne(t, col) {
     if (!t.rows.length) return "—";
-    if (col.type === "eleveInfo") return "—";
+    if (col.type === "eleveInfo" || col.type === "resultatSeance") return "—";
     if (col.type === "check") {
       if (col.horsSynthese) return "—";
       return syntheseColonneAppelTexte(t, col);
@@ -3101,7 +3439,7 @@
           if (naN === nbN) return sens * comparateurTexte(a.label, b.label);
           return sens * (naN - nbN);
         }
-        if (col.type === "eleveInfo") {
+        if (col.type === "eleveInfo" || col.type === "resultatSeance") {
           var ta = va === null || va === undefined ? "" : String(va);
           var tb = vb === null || vb === undefined ? "" : String(vb);
           var ct = comparateurTexte(ta, tb);
@@ -3138,7 +3476,7 @@
             : filtreColonnes === "note"
               ? "Aucune colonne de note sur cette feuille."
               : filtreColonnes === "autre"
-                ? "Aucune autre colonne (mesure, somme…) sur cette feuille."
+                ? "Aucune autre colonne (mesure, résultat séance, somme…) sur cette feuille."
                 : "Aucune colonne à afficher.";
       } else if (hasGrid) {
         emptyEl.textContent =
@@ -3174,6 +3512,7 @@
           (col.type === "calc" ? " tab-suivi-th--calc" : "") +
           (col.type === "rubric" ? " tab-suivi-th--rubric" : "") +
           (col.type === "number" ? " tab-suivi-th--number" : "") +
+          (col.type === "resultatSeance" ? " tab-suivi-th--resultat" : "") +
           (col.type === "eleveInfo" ? " tab-suivi-th--info-eleve" : "") +
           (col.type === "eleveInfo" && normaliserChampInfoEleve(col.infoChamp) === "vma"
             ? " tab-suivi-th--info-vma"
@@ -3206,6 +3545,11 @@
           baremeHint.className = "tab-suivi-col-bareme";
           baremeHint.textContent = "/" + bareme;
           stack.appendChild(baremeHint);
+        } else if (col.type === "resultatSeance" && col.sessionId) {
+          var linkHint = document.createElement("span");
+          linkHint.className = "tab-suivi-col-bareme tab-suivi-col-bareme--linked";
+          linkHint.textContent = "séance";
+          stack.appendChild(linkHint);
         } else if (col.type === "check" && col.horsSynthese) {
           var horsHint = document.createElement("span");
           horsHint.className = "tab-suivi-col-bareme tab-suivi-col-bareme--hors-synth";
@@ -3287,6 +3631,7 @@
         var td = document.createElement("td");
         td.className = "tab-suivi-td tab-suivi-td--cell";
         if (col.type === "number") td.classList.add("tab-suivi-td--number");
+        if (col.type === "resultatSeance") td.classList.add("tab-suivi-td--resultat");
         if (col.type === "eleveInfo") {
           td.classList.add("tab-suivi-td--info-eleve");
           if (normaliserChampInfoEleve(col.infoChamp) === "vma") td.classList.add("tab-suivi-td--info-vma");
@@ -3319,6 +3664,38 @@
           td.appendChild(btnRubric);
         } else if (col.type === "eleveInfo") {
           td.appendChild(creerCelluleInfoEleve(t, row, col, rowIndex));
+        } else if (col.type === "resultatSeance") {
+          var rv = getCell(t, row.id, col.id);
+          if (col.sessionId) {
+            var rsSpan = document.createElement("span");
+            rsSpan.className =
+              "tab-suivi-cell-resultat tab-suivi-cell-resultat--linked" +
+              (rv === null || rv === undefined || rv === "" ? " tab-suivi-cell-resultat--empty" : "");
+            rsSpan.textContent =
+              rv === null || rv === undefined || rv === "" ? "—" : String(rv);
+            rsSpan.title = "Résultat importé depuis la séance liée";
+            td.appendChild(rsSpan);
+          } else {
+            var rsWrap = document.createElement("div");
+            rsWrap.className = "tab-suivi-cell-text";
+            var rsInp = document.createElement("input");
+            rsInp.type = "text";
+            rsInp.className = "tab-suivi-cell-input tab-suivi-cell-input--text";
+            rsInp.setAttribute("data-col-id", col.id);
+            rsInp.placeholder = "ex. 3e, 12,4 s…";
+            rsInp.value = rv === null || rv === undefined ? "" : String(rv);
+            rsInp.addEventListener("change", function () {
+              appliquerValeurTexteDepuisInput(rsInp, t, row, col);
+            });
+            rsInp.addEventListener("keydown", function (e) {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              appliquerValeurTexteDepuisInput(rsInp, t, row, col);
+              focusCelluleSaisie(rowIndex + 1, col.id);
+            });
+            rsWrap.appendChild(rsInp);
+            td.appendChild(rsWrap);
+          }
         } else if (col.type === "check") {
           var btn = document.createElement("button");
           btn.type = "button";
@@ -3444,7 +3821,8 @@
       type !== "number" &&
       type !== "calc" &&
       type !== "rubric" &&
-      type !== "eleveInfo"
+      type !== "eleveInfo" &&
+      type !== "resultatSeance"
     ) {
       return null;
     }
@@ -3745,6 +4123,23 @@
       if (col.infoEditable) libInfo += " (modifiable)";
       return libInfo;
     }
+    if (col.type === "resultatSeance") {
+      if (col.sessionId) {
+        var sess = cacheDonneesSeances
+          ? trouverSessionParId(col.sessionId, cacheDonneesSeances)
+          : null;
+        var nomSess = sess && sess.nomSession ? sess.nomSession : "séance liée";
+        var outil = col.sessionToolId ? libelleOutilSeance(col.sessionToolId) : "";
+        return (
+          "Résultat séance — importé depuis " +
+          (outil ? outil + " · " : "") +
+          "« " +
+          nomSess +
+          " »"
+        );
+      }
+      return "Résultat séance — saisie manuelle (classement, perf, temps…)";
+    }
     if (col.estNote) {
       return "Note" + (col.max > 0 ? " /" + col.max : "");
     }
@@ -3793,6 +4188,32 @@
       fg.appendChild(inp);
       dlgColRemplirBody.appendChild(fg);
       dlgColRemplirBody.appendChild(btnAppliquer);
+      return;
+    }
+    if (col.type === "resultatSeance") {
+      var fgRs = document.createElement("div");
+      fgRs.className = "field-group";
+      var lblRs = document.createElement("label");
+      lblRs.className = "field-label";
+      lblRs.setAttribute("for", "dlg-col-remplir-valeur");
+      lblRs.textContent = "Résultat pour tous les élèves";
+      var inpRs = document.createElement("input");
+      inpRs.type = "text";
+      inpRs.id = "dlg-col-remplir-valeur";
+      inpRs.className = "tab-suivi-remplir-input";
+      inpRs.placeholder = "ex. 3e, 12,4 s, 1er relais…";
+      var btnAppliquerRs = document.createElement("button");
+      btnAppliquerRs.type = "button";
+      btnAppliquerRs.className = "btn btn--primary";
+      btnAppliquerRs.textContent = "Appliquer à tous";
+      btnAppliquerRs.addEventListener("click", function () {
+        var val = (inpRs.value || "").trim();
+        remplirColonneEntiere(col.id, val || null);
+      });
+      fgRs.appendChild(lblRs);
+      fgRs.appendChild(inpRs);
+      dlgColRemplirBody.appendChild(fgRs);
+      dlgColRemplirBody.appendChild(btnAppliquerRs);
     }
   }
 
@@ -3816,12 +4237,21 @@
     colonneDialogId = colId;
     if (dlgColTitre) dlgColTitre.textContent = "Colonne « " + (col.label || "") + " »";
     if (dlgColTypeHint) dlgColTypeHint.textContent = typeColonneLabel(col);
+    if (col.type === "resultatSeance" && col.sessionId) {
+      chargerDonneesSeances().then(function () {
+        if (dlgColTypeHint && colonneDialogId === col.id) {
+          dlgColTypeHint.textContent = typeColonneLabel(col);
+        }
+      });
+    }
     if (dlgColNom) dlgColNom.value = col.label || "";
     if (dlgColInfoWrap) dlgColInfoWrap.hidden = col.type !== "eleveInfo";
+    if (dlgColResultatWrap) dlgColResultatWrap.hidden = col.type !== "resultatSeance";
     if (dlgColInfoChamp) {
       dlgColInfoChamp.value = normaliserChampInfoEleve(col.infoChamp);
     }
     majDialogColonneInfoUi(col);
+    majDialogColonneResultat(t, col);
     if (dlgColNoteWrap) dlgColNoteWrap.hidden = col.type !== "number" && col.type !== "calc";
     if (dlgColEstNote) {
       dlgColEstNote.checked =
@@ -3838,7 +4268,11 @@
     if (dlgColRubricWrap) dlgColRubricWrap.hidden = col.type !== "rubric";
 
     var peutRemplir =
-      col.type !== "calc" && col.type !== "rubric" && col.type !== "eleveInfo" && t.rows.length > 0;
+      col.type !== "calc" &&
+      col.type !== "rubric" &&
+      col.type !== "eleveInfo" &&
+      !(col.type === "resultatSeance" && col.sessionId) &&
+      t.rows.length > 0;
     if (dlgColRemplirSection) dlgColRemplirSection.hidden = !peutRemplir;
     if (dlgColCalcHint) dlgColCalcHint.hidden = col.type !== "calc";
     if (col.type === "calc" && dlgColCalcHint && !t.rows.length) {
@@ -3883,6 +4317,8 @@
     var col = t.cols.filter(function (c) {
       return c.id === colonneDialogId;
     })[0];
+    var prevSessionId = col && col.sessionId ? col.sessionId : "";
+    var doitRafraichirResultat = false;
     if (col && dlgColNom) {
       col.label = normaliserNom(dlgColNom.value) || col.label;
     }
@@ -3907,6 +4343,18 @@
       if (dlgColInfoChamp) col.infoChamp = normaliserChampInfoEleve(dlgColInfoChamp.value);
       if (dlgColInfoEditable) col.infoEditable = dlgColInfoEditable.checked;
     }
+    if (col && col.type === "resultatSeance") {
+      var nextTool = dlgColResultatTool ? dlgColResultatTool.value : "";
+      var nextSession = dlgColResultatSession ? dlgColResultatSession.value : "";
+      if (nextSession) {
+        col.sessionId = nextSession;
+        col.sessionToolId = nextTool || col.sessionToolId || "";
+        if (nextSession !== prevSessionId) doitRafraichirResultat = true;
+      } else {
+        delete col.sessionId;
+        delete col.sessionToolId;
+      }
+    }
     if (dialogColonne && dialogColonne.open) dialogColonne.close();
     colonneDialogId = null;
     var colInfo = col && col.type === "eleveInfo";
@@ -3915,6 +4363,24 @@
       planifierSauvegarde();
       montrerOk("Colonne mise à jour.");
     };
+    if (doitRafraichirResultat && col) {
+      chargerCacheEleves(true)
+        .then(function () {
+          return rafraichirColonneResultatSeance(t, col);
+        })
+        .then(function () {
+          if (colInfo) {
+            return chargerCacheEleves(true)
+              .then(function () {
+                if (hydraterEquipesFeuilleSync(t)) planifierSauvegarde();
+              })
+              .then(finMajColonne);
+          }
+          finMajColonne();
+        })
+        .catch(finMajColonne);
+      return;
+    }
     if (colInfo) {
       chargerCacheEleves(true)
         .then(function () {
@@ -5059,8 +5525,10 @@
           actifId = found ? saved : tableaux[0].id;
           sauverActifIdLocal(actifId);
           pret = true;
-          toutRafraichir();
-          if (dirty) return DataManager.saveTableauxSuivi(tableaux);
+          return rafraichirColonnesResultatLiees(getActif()).then(function () {
+            toutRafraichir();
+            if (dirty) return DataManager.saveTableauxSuivi(tableaux);
+          });
         });
       })
       .catch(function (err) {
@@ -5088,7 +5556,7 @@
       var col = ajouterColonne(type, true);
       if (!col) return;
       fermerDialogGestionSansPrompt();
-      if (type === "number") {
+      if (type === "number" || type === "resultatSeance") {
         setTimeout(function () {
           demanderNomColonne(col);
         }, 80);
@@ -5311,6 +5779,61 @@
       dlgColInfoHint.textContent = dlgColInfoEditable.checked
         ? "Les modifications dans le tableau mettent à jour la fiche élève dans Classes (élèves importés depuis une classe)."
         : "Lecture seule : donnée issue de la fiche élève (Classes). Utilisez « Tri » pour ordonner selon cette colonne.";
+    });
+  }
+
+  if (dlgColResultatTool) {
+    remplirSelectOutilsResultat(dlgColResultatTool, "");
+    dlgColResultatTool.addEventListener("change", function () {
+      var t = getActif();
+      var col = t && colonneDialogId
+        ? t.cols.filter(function (c) {
+            return c.id === colonneDialogId;
+          })[0]
+        : null;
+      remplirSelectSessionsResultat(
+        dlgColResultatSession,
+        dlgColResultatTool.value,
+        t,
+        col && col.sessionId ? col.sessionId : ""
+      );
+    });
+  }
+
+  if (dlgColResultatSession) {
+    dlgColResultatSession.addEventListener("change", function () {
+      if (btnColResultatRefresh) {
+        btnColResultatRefresh.disabled = !dlgColResultatSession.value;
+      }
+    });
+  }
+
+  if (btnColResultatRefresh) {
+    btnColResultatRefresh.addEventListener("click", function () {
+      var t = getActif();
+      if (!t || !colonneDialogId || !dlgColResultatSession || !dlgColResultatSession.value) return;
+      var col = t.cols.filter(function (c) {
+        return c.id === colonneDialogId;
+      })[0];
+      if (!col || col.type !== "resultatSeance") return;
+      col.sessionId = dlgColResultatSession.value;
+      col.sessionToolId = dlgColResultatTool ? dlgColResultatTool.value : col.sessionToolId;
+      btnColResultatRefresh.disabled = true;
+      chargerCacheEleves(true)
+        .then(function () {
+          return rafraichirColonneResultatSeance(t, col);
+        })
+        .then(function () {
+          rendreGrille();
+          planifierSauvegarde();
+          montrerOk("Résultats mis à jour depuis la séance.");
+        })
+        .catch(function () {
+          montrerMsg("Impossible de charger les résultats de la séance.");
+        })
+        .then(function () {
+          if (btnColResultatRefresh) btnColResultatRefresh.disabled = !col.sessionId;
+        });
     });
   }
 

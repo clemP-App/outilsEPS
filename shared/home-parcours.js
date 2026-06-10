@@ -66,6 +66,7 @@
       intro:
         "Les élèves utilisent leur page dédiée, génèrent un QR code, puis vous retrouvez leurs résultats dans le Dossier élève.",
       partage: {
+        titre: "QR code que les élèves doivent scanner",
         ouvrir: {
           label: "Ouvrir la page élève",
           href: "eleves.html",

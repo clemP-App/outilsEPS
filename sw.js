@@ -55,6 +55,50 @@ function onlineOnlyResponse() {
   );
 }
 
+function offlineNavigationFallback() {
+  return new Response(
+    "<!doctype html><html lang=\"fr\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Hors ligne</title><body style=\"font-family:system-ui,sans-serif;margin:2rem;line-height:1.5\"><h1>Hors ligne</h1><p>Cette page n\u2019est pas disponible sans connexion. Ouvrez l\u2019accueil ou reconnectez-vous pour mettre l\u2019app à jour.</p><p><a href=\"./index.html\">Accueil Outils EPS</a></p></body></html>",
+    { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } }
+  );
+}
+
+function offlineAssetResponse(request) {
+  return new Response("Ressource indisponible hors ligne.", {
+    status: 404,
+    statusText: "Not Found",
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  });
+}
+
+function ensureResponse(promise, fallback) {
+  return Promise.resolve(promise)
+    .then(function (response) {
+      return response || fallback();
+    })
+    .catch(function () {
+      return fallback();
+    });
+}
+
+function matchCacheCascade(request, extraUrls) {
+  return caches.match(request).then(function (cached) {
+    if (cached) return cached;
+    return caches.match(request, { ignoreSearch: true }).then(function (loose) {
+      if (loose) return loose;
+      var urls = extraUrls || [];
+      var i = 0;
+      function next() {
+        if (i >= urls.length) return undefined;
+        var url = urls[i++];
+        return caches.match(url).then(function (hit) {
+          return hit || next();
+        });
+      }
+      return next();
+    });
+  });
+}
+
 function putInCache(request, response) {
   if (!response || response.status !== 200 || response.type !== "basic") return;
   caches.open(CACHE_NAME).then(function (cache) {
@@ -63,37 +107,45 @@ function putInCache(request, response) {
 }
 
 function networkFirstNavigation(request) {
-  return fetch(request)
-    .then(function (response) {
-      putInCache(request, response);
-      return response;
-    })
-    .catch(function () {
-      return caches.match(request).then(function (cached) {
-        if (cached) return cached;
-        return caches.match("./index.html").then(function (indexCached) {
-          return indexCached || caches.match("index.html");
-        });
-      });
-    });
+  return ensureResponse(
+    fetch(request)
+      .then(function (response) {
+        putInCache(request, response);
+        return response;
+      })
+      .catch(function () {
+        return matchCacheCascade(request, ["./index.html", "index.html", "./", "/index.html"]);
+      }),
+    offlineNavigationFallback
+  );
 }
 
 function staleWhileRevalidate(request) {
-  return caches.open(CACHE_NAME).then(function (cache) {
-    return cache.match(request).then(function (cached) {
-      var networkPromise = fetch(request)
-        .then(function (response) {
-          if (response && response.status === 200 && response.type === "basic") {
-            cache.put(request, response.clone());
-          }
-          return response;
-        })
-        .catch(function () {
-          return cached;
-        });
-      return cached || networkPromise;
-    });
-  });
+  return ensureResponse(
+    caches.open(CACHE_NAME).then(function (cache) {
+      function fromCacheOrNetwork(cached) {
+        var networkPromise = fetch(request)
+          .then(function (response) {
+            if (response && response.status === 200 && response.type === "basic") {
+              cache.put(request, response.clone());
+            }
+            return response;
+          })
+          .catch(function () {
+            return cached;
+          });
+        return cached || networkPromise;
+      }
+
+      return cache.match(request).then(function (cached) {
+        if (cached) return fromCacheOrNetwork(cached);
+        return cache.match(request, { ignoreSearch: true }).then(fromCacheOrNetwork);
+      });
+    }),
+    function () {
+      return offlineAssetResponse(request);
+    }
+  );
 }
 
 self.addEventListener("install", function (event) {
@@ -141,16 +193,21 @@ self.addEventListener("fetch", function (event) {
   if (isStaticAsset(url)) {
     if (isNetworkFirstToolScript(url)) {
       event.respondWith(
-        fetch(event.request)
-          .then(function (response) {
-            if (response && response.status === 200 && response.type === "basic") {
-              putInCache(event.request, response);
-            }
-            return response;
-          })
-          .catch(function () {
-            return caches.match(event.request);
-          })
+        ensureResponse(
+          fetch(event.request)
+            .then(function (response) {
+              if (response && response.status === 200 && response.type === "basic") {
+                putInCache(event.request, response);
+              }
+              return response;
+            })
+            .catch(function () {
+              return matchCacheCascade(event.request);
+            }),
+          function () {
+            return offlineAssetResponse(event.request);
+          }
+        )
       );
       return;
     }
@@ -159,14 +216,17 @@ self.addEventListener("fetch", function (event) {
   }
 
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      return (
-        cached ||
-        fetch(event.request).then(function (response) {
+    ensureResponse(
+      matchCacheCascade(event.request).then(function (cached) {
+        if (cached) return cached;
+        return fetch(event.request).then(function (response) {
           putInCache(event.request, response);
           return response;
-        })
-      );
-    })
+        });
+      }),
+      function () {
+        return offlineAssetResponse(event.request);
+      }
+    )
   );
 });

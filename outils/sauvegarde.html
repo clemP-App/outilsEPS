@@ -28,132 +28,101 @@
       <p id="sauvegarde-msg" class="msg-error sauvegarde-msg" role="alert" hidden></p>
       <p id="sauvegarde-ok" class="msg-ok sauvegarde-msg" role="status" hidden></p>
 
-      <details class="card sauvegarde-hero" aria-labelledby="lbl-hero">
-        <summary class="sauvegarde-hero__summary" id="lbl-hero">
-          <span class="sauvegarde-hero__badge" aria-hidden="true">💾</span>
-          <span class="sauvegarde-hero__summary-text">
-            <span class="sauvegarde-hero__summary-title">Où sont stockées vos données ?</span>
-            <span class="sauvegarde-hero__summary-hint">Stockage local, risques et bonnes pratiques</span>
-          </span>
-        </summary>
-
-        <div class="sauvegarde-hero__body">
-          <p class="sauvegarde-hero__lead">
-            Outils EPS enregistre vos <strong>classes, cahier de texte, championnats, réglages…</strong>
-            directement sur <strong>ce téléphone ou cet ordinateur</strong>.
-            Rien n’est envoyé automatiquement sur internet et vous n’avez <strong>pas besoin de créer un compte</strong>.
-          </p>
-
-          <div class="sauvegarde-hero__panel sauvegarde-hero__panel--warn">
-            <h3 class="sauvegarde-hero__panel-title">En pratique, cela veut dire que…</h3>
-            <ul class="sauvegarde-hero__list">
-              <li>Vos données <strong>ne suivent pas</strong> toutes seules si vous changez d’appareil.</li>
-              <li>Si vous <strong>videz le cache</strong> du navigateur ou supprimez l’icône de l’app, tout peut disparaître.</li>
-              <li>Si l’appareil est <strong>perdu ou cassé</strong> sans copie de sauvegarde, les données sont perdues.</li>
-            </ul>
-          </div>
-
-          <div class="sauvegarde-hero__panel sauvegarde-hero__panel--help">
-            <h3 class="sauvegarde-hero__panel-title">Pourquoi exporter avant tout ?</h3>
-            <p class="sauvegarde-hero__sync-text">
-              L’<strong>export</strong> télécharge un fichier <code>outilsEPS-backup.json</code>&nbsp;: une
-              <strong>copie complète</strong> de vos données, à garder dans un endroit sûr (Drive, iCloud, mail…).
-              C’est votre filet de sécurité avant un import ou une synchronisation.
-            </p>
-          </div>
-
-          <div class="sauvegarde-hero__panel sauvegarde-hero__panel--sync">
-            <h3 class="sauvegarde-hero__panel-title">Importer ou synchroniser ensuite</h3>
-            <ul class="sauvegarde-hero__list">
-              <li>
-                <strong>Importer</strong> — restaure un fichier exporté sur cet appareil ou un autre
-                (fusion avec l’existant ou remplacement complet).
-              </li>
-              <li>
-                <strong>Synchroniser</strong> — aligne deux appareils à vous (ex. téléphone et tablette) via QR code.
-                Ouvrez cette page sur les deux, lancez la sync&nbsp;; une connexion internet est nécessaire le temps du transfert.
-              </li>
-            </ul>
-          </div>
-
-          <p class="sauvegarde-hero__note hint">
-            <strong>À part :</strong> les réponses remontées par QR code depuis les outils élèves (débrief, musculation…)
-            se gèrent dans l’outil
-            <a href="donnees-eleves.html">Données élèves</a>, pas sur cette page.
-          </p>
+      <section
+        class="card sauvegarde-status-card sauvegarde-status-card--never"
+        id="sauvegarde-status-card"
+        aria-labelledby="lbl-sauvegarde-etat"
+      >
+        <div class="sauvegarde-status-card__head">
+          <h2 id="lbl-sauvegarde-etat">Ma sauvegarde</h2>
+          <span class="sauvegarde-status-card__badge" id="last-backup-status-badge">Pas encore exportée</span>
         </div>
-      </details>
-
-      <section class="card sauvegarde-parcours" aria-labelledby="lbl-parcours">
-        <h2 id="lbl-parcours" class="sauvegarde-parcours__title">Comment procéder</h2>
-        <ol class="sauvegarde-parcours__steps">
-          <li class="sauvegarde-parcours__step sauvegarde-parcours__step--first">
-            <span class="sauvegarde-parcours__num" aria-hidden="true">1</span>
-            <span class="sauvegarde-parcours__text">
-              <strong>Exportez d’abord</strong> une copie de vos données pour être sûr de ne rien perdre.
-            </span>
-          </li>
-          <li class="sauvegarde-parcours__step">
-            <span class="sauvegarde-parcours__num" aria-hidden="true">2</span>
-            <span class="sauvegarde-parcours__text">
-              <strong>Ensuite</strong>, selon votre besoin&nbsp;: <strong>importez</strong> une sauvegarde
-              <em>ou</em> <strong>synchronisez</strong> deux appareils.
-            </span>
-          </li>
-        </ol>
+        <p class="sauvegarde-status-card__date" id="last-backup-date">
+          Dernière exportation : aucune pour le moment
+        </p>
+        <p class="sauvegarde-status-card__hint" id="last-backup-hint" hidden></p>
+        <p class="sauvegarde-status-card__lead">
+          Exporter crée un fichier avec toutes vos classes et réglages. Conservez-le où vous voulez (cloud, mail,
+          clé USB) pour le retrouver plus tard ou sur un autre appareil.
+        </p>
+        <button type="button" class="btn btn--primary btn--labeled" id="btn-export-backup-hero">
+          <span class="btn__icon" aria-hidden="true">💾</span>
+          <span class="btn__text">Exporter une sauvegarde</span>
+        </button>
+        <p class="hint sauvegarde-status-card__note">
+          Ce rappel correspond au dernier export lancé depuis cet appareil. Le fichier téléchargé reste chez vous.
+        </p>
       </section>
 
-      <section class="sauvegarde-flow" aria-label="Actions de sauvegarde">
-        <div class="sauvegarde-flow__step">
-          <p class="sauvegarde-flow__label">
-            <span class="sauvegarde-flow__badge">Étape 1</span>
-            D’abord — sécuriser vos données
+      <section class="card sauvegarde-compr" aria-labelledby="lbl-comprendre">
+        <h2 id="lbl-comprendre" class="sauvegarde-compr__title">Comprendre en 30 secondes</h2>
+        <p class="sauvegarde-compr__lead">
+          Outils EPS garde vos données principales sur cet appareil&nbsp;: classes, élèves, cahier de texte, appels,
+          notes, réglages. Elles ne sont pas liées à un compte. Si vous changez d’appareil, videz le cache ou
+          supprimez l’app, vous pouvez les perdre sans fichier de sauvegarde.
+        </p>
+        <ul class="sauvegarde-compr__points">
+          <li><strong>Exporter</strong> = télécharger une copie de sécurité</li>
+          <li><strong>Importer</strong> = restaurer ou fusionner un fichier</li>
+          <li><strong>Synchroniser</strong> = aligner deux appareils, avec internet</li>
+        </ul>
+        <details class="sauvegarde-compr__details">
+          <summary>Stockage local et confidentialité</summary>
+          <p class="hint">
+            Rien n’est envoyé automatiquement sur internet. La synchronisation utilise Supabase uniquement le temps
+            de comparer et fusionner deux appareils&nbsp;; les données y sont supprimées après validation.
           </p>
-          <article
-            class="sauvegarde-quick-card sauvegarde-quick-card--export sauvegarde-quick-card--active"
-            data-sauvegarde-action="export"
-          >
-            <span class="sauvegarde-quick-card__icon" aria-hidden="true">📤</span>
-            <h3>Exporter</h3>
-            <p>
-              Téléchargez une copie complète (<code>outilsEPS-backup.json</code>) et conservez-la en lieu sûr
-              avant toute importation ou synchronisation.
-            </p>
-            <button type="button" class="btn btn--primary btn--labeled" id="btn-export-backup">
-              <span class="btn__icon" aria-hidden="true">💾</span>
-              <span class="btn__text">Exporter la sauvegarde</span>
-            </button>
-          </article>
-        </div>
+          <p class="hint">
+            Les réponses remontées par QR code depuis les outils élèves (débrief, musculation…) se gèrent dans
+            l’outil <a href="donnees-eleves.html">Données élèves</a>, pas sur cette page.
+          </p>
+        </details>
+      </section>
 
-        <div class="sauvegarde-flow__step">
-          <p class="sauvegarde-flow__label">
-            <span class="sauvegarde-flow__badge">Étape 2</span>
-            Ensuite — au choix
-          </p>
-          <div class="sauvegarde-quick sauvegarde-quick--secondary">
-            <article class="sauvegarde-quick-card" data-sauvegarde-action="import">
-              <span class="sauvegarde-quick-card__icon" aria-hidden="true">📥</span>
-              <h3>Importer</h3>
-              <p>Restaurez un fichier exporté&nbsp;: fusionnez avec l’existant ou remplacez tout le contenu de l’appareil.</p>
-              <p class="sauvegarde-quick-card__tip hint">Conseillé&nbsp;: exportez d’abord si ce n’est pas déjà fait.</p>
-              <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-backup">
-                <span class="btn__icon" aria-hidden="true">📂</span>
-                <span class="btn__text">Importer une sauvegarde</span>
-              </button>
-            </article>
-            <article class="sauvegarde-quick-card" data-sauvegarde-action="sync">
-              <span class="sauvegarde-quick-card__icon" aria-hidden="true">⇄</span>
-              <h3>Synchroniser</h3>
-              <p>Alignez deux appareils (ex. téléphone et tablette) via QR code. Connexion internet requise.</p>
-              <p class="sauvegarde-quick-card__tip hint">Conseillé&nbsp;: exportez d’abord sur chaque appareil.</p>
-              <button type="button" class="btn btn--ghost btn--labeled" id="btn-sync-backup">
-                <span class="btn__icon" aria-hidden="true">⇄</span>
-                <span class="btn__text">Synchroniser deux appareils</span>
-              </button>
-            </article>
+      <section class="sauvegarde-actions" aria-label="Actions de sauvegarde">
+        <article
+          class="sauvegarde-action-card sauvegarde-action-card--export sauvegarde-action-card--active"
+          data-sauvegarde-action="export"
+        >
+          <div class="sauvegarde-action-card__head">
+            <span class="sauvegarde-action-card__icon" aria-hidden="true">📤</span>
+            <h3>Exporter</h3>
+            <span class="sauvegarde-action-card__badge sauvegarde-action-card__badge--primary">Recommandé</span>
           </div>
-        </div>
+          <p>Télécharge une copie complète de vos données. À faire régulièrement.</p>
+          <button type="button" class="btn btn--primary btn--labeled" id="btn-export-backup">
+            <span class="btn__icon" aria-hidden="true">💾</span>
+            <span class="btn__text">Exporter maintenant</span>
+          </button>
+        </article>
+
+        <article class="sauvegarde-action-card sauvegarde-action-card--secondary" data-sauvegarde-action="import">
+          <div class="sauvegarde-action-card__head">
+            <span class="sauvegarde-action-card__icon" aria-hidden="true">📥</span>
+            <h3>Importer</h3>
+            <span class="sauvegarde-action-card__badge">J’ai déjà un fichier</span>
+          </div>
+          <p>Ajoute ou restaure les données depuis une sauvegarde Outils EPS.</p>
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-import-backup">
+            <span class="btn__icon" aria-hidden="true">📂</span>
+            <span class="btn__text">Importer un fichier</span>
+          </button>
+        </article>
+
+        <article class="sauvegarde-action-card sauvegarde-action-card--secondary" data-sauvegarde-action="sync">
+          <div class="sauvegarde-action-card__head">
+            <span class="sauvegarde-action-card__icon" aria-hidden="true">⇄</span>
+            <h3>Synchroniser</h3>
+            <span class="sauvegarde-action-card__badge sauvegarde-action-card__badge--advanced"
+              >Avancé · internet requis</span
+            >
+          </div>
+          <p>Aligne deux appareils à vous, par exemple téléphone et tablette.</p>
+          <button type="button" class="btn btn--ghost btn--labeled" id="btn-sync-backup">
+            <span class="btn__icon" aria-hidden="true">⇄</span>
+            <span class="btn__text">Synchroniser deux appareils</span>
+          </button>
+        </article>
       </section>
 
       <section
@@ -165,7 +134,7 @@
         <div class="sauvegarde-import-panel__head">
           <div>
             <h2 id="lbl-backup-sync">Synchronisation avec un autre appareil</h2>
-            <p class="hint" id="backup-sync-status">Preparation de la session temporaire.</p>
+            <p class="hint" id="backup-sync-status">Préparation de la session temporaire.</p>
           </div>
           <button type="button" class="btn btn--ghost btn--small" id="btn-sync-cancel">
             Fermer
@@ -203,13 +172,15 @@
           <div class="backup-sync-box">
             <h3>1. Associer les appareils</h3>
             <p class="hint">
-              Ouvrez cette page sur les deux appareils. Une connexion internet est nécessaire.
-              Sur l'un, scannez le QR code affiché par l'autre.
+              Ouvrez cette page sur les deux appareils. Connexion internet nécessaire.
+              Le QR sert à associer les deux appareils. Les sauvegardes passent ensuite temporairement par
+              Supabase le temps de comparer et fusionner.
+              Sur l’un, scannez le QR code affiché par l’autre.
             </p>
             <div id="backup-sync-qr" class="backup-sync-qr" aria-live="polite"></div>
-            <div class="sauvegarde-actions">
+            <div class="sauvegarde-panel-actions">
               <button type="button" class="btn btn--primary btn--small" id="btn-sync-scan">
-                Scanner avec la camera arriere
+                Scanner avec la caméra arrière
               </button>
             </div>
             <div id="backup-sync-reader" class="backup-sync-reader" hidden></div>
@@ -218,7 +189,8 @@
           <div class="backup-sync-box" id="backup-sync-phase2" hidden>
             <h3>2. Analyse et fusion</h3>
             <p class="hint">
-              Internet est indispensable pendant quelques minutes. Les sauvegardes sont supprimees de Supabase a la fin du transfert.
+              Connexion internet nécessaire pendant quelques minutes. Les sauvegardes sont supprimées de Supabase
+              à la fin du transfert.
             </p>
             <div id="backup-sync-analysis" class="backup-sync-analysis" hidden></div>
             <div id="backup-sync-conflicts" class="backup-sync-conflicts" hidden></div>
@@ -229,15 +201,16 @@
         </div>
 
         <details class="sauvegarde-import-details backup-sync-rgpd">
-          <summary>Confidentialite et RGPD</summary>
+          <summary>Confidentialité et RGPD</summary>
           <p class="hint">
-            La synchronisation cree une session temporaire protegee par un jeton affiche uniquement dans le QR code.
-            Supabase ne recoit les sauvegardes que le temps de comparer et fusionner les deux appareils.
-            Aucune conservation volontaire n'est faite apres validation ou fermeture de session.
+            La synchronisation crée une session temporaire protégée par un jeton affiché uniquement dans le QR code.
+            Supabase ne reçoit les sauvegardes que le temps de comparer et fusionner les deux appareils.
+            Aucune conservation volontaire n’est faite après validation ou fermeture de session.
           </p>
           <p class="hint">
-            Le QR code impose une action physique entre les deux appareils. Sans ce jeton, une autre personne ne peut pas recuperer la sauvegarde.
-            Pour rester conforme, utilisez cette fonction seulement avec vos appareils et une connexion de confiance.
+            Le QR code impose une action physique entre les deux appareils. Sans ce jeton, une autre personne ne peut
+            pas récupérer la sauvegarde. Pour rester conforme, utilisez cette fonction seulement avec vos appareils
+            et une connexion de confiance.
           </p>
         </details>
       </section>
@@ -273,23 +246,38 @@
           </div>
         </div>
 
+        <p class="sauvegarde-import-choices__lead hint">
+          Si vous hésitez, choisissez <strong>Fusionner sans effacer</strong>&nbsp;: cela ajoute les données du
+          fichier sans effacer celles déjà présentes.
+        </p>
+
         <div class="sauvegarde-import-choices">
           <div class="sauvegarde-import-choice sauvegarde-import-choice--merge">
-            <h3>Fusionner avec cet appareil</h3>
+            <div class="sauvegarde-import-choice__head">
+              <h3>Fusionner sans effacer</h3>
+              <span class="sauvegarde-import-choice__badge">Recommandé</span>
+            </div>
             <p class="hint">
-              Les données nouvelles sont ajoutées. Les données déjà présentes sont gardées. Si une donnée porte le même identifiant mais contient autre chose, elle est ajoutée comme copie.
+              Les données nouvelles sont ajoutées. Les données déjà présentes sont gardées. Si une donnée porte le
+              même identifiant mais contient autre chose, elle est ajoutée comme copie.
             </p>
             <button type="button" class="btn btn--primary" id="btn-import-merge">
-              Fusionner
+              Fusionner sans effacer
             </button>
           </div>
           <div class="sauvegarde-import-choice sauvegarde-import-choice--replace">
-            <h3>Remplacer toutes les données</h3>
+            <div class="sauvegarde-import-choice__head">
+              <h3>Effacer cet appareil et remplacer</h3>
+              <span class="sauvegarde-import-choice__badge sauvegarde-import-choice__badge--danger"
+                >Risqué</span
+              >
+            </div>
             <p class="hint">
-              Les données actuelles de cet appareil sont effacées puis remplacées par le fichier. C’est utile pour restaurer une sauvegarde complète.
+              Les données actuelles de cet appareil sont effacées puis remplacées par le fichier. À utiliser seulement
+              si vous voulez restaurer entièrement une sauvegarde.
             </p>
             <button type="button" class="btn btn--danger" id="btn-import-replace">
-              Remplacer tout
+              Effacer cet appareil et remplacer
             </button>
           </div>
         </div>
@@ -313,46 +301,52 @@
         </details>
       </section>
 
-      <section class="card sauvegarde-stockage" aria-labelledby="lbl-stockage">
-        <div class="sauvegarde-stockage__head">
-          <h2 id="lbl-stockage">Espace utilisé &amp; suppression</h2>
-          <p class="hint sauvegarde-stockage__intro">
-            Seuls les outils ayant déjà enregistré des données apparaissent ci-dessous.
-            Supprimez un type entier ou ouvrez un groupe pour cibler un outil précis.
+      <details class="stockage-accordion sauvegarde-advanced" id="sauvegarde-advanced-details">
+        <summary class="stockage-accordion__summary">
+          <div class="stockage-accordion__summary-main">
+            <span class="stockage-accordion__title">Libérer de l’espace ou supprimer des données</span>
+            <span class="stockage-accordion__meta">Option avancée</span>
+          </div>
+        </summary>
+        <div class="stockage-accordion__body sauvegarde-advanced__body">
+          <p class="hint sauvegarde-advanced__intro">
+            Exportez d’abord une sauvegarde, puis supprimez ici ce dont vous n’avez plus besoin.
           </p>
-        </div>
-        <div
-          id="stockage-alert"
-          class="stockage-alert"
-          hidden
-          role="status"
-          aria-live="polite"
-        ></div>
-        <div class="sauvegarde-stockage__summary">
-          <p class="stockage-total" aria-live="polite">
-            Données Outils EPS : <strong id="stockage-total">—</strong>
-          </p>
-          <div id="stockage-quota-wrap" class="stockage-quota-wrap" hidden>
-            <p class="stockage-quota__line">
-              Quota navigateur (estimation) :
-              <strong id="stockage-quota-text">—</strong>
-            </p>
+          <div class="sauvegarde-stockage" aria-labelledby="lbl-stockage">
             <div
-              class="stockage-quota__bar"
-              role="progressbar"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-valuenow="0"
-              id="stockage-quota-bar"
-            >
-              <div id="stockage-quota-fill" class="stockage-quota__fill"></div>
+              id="stockage-alert"
+              class="stockage-alert"
+              hidden
+              role="status"
+              aria-live="polite"
+            ></div>
+            <div class="sauvegarde-stockage__summary">
+              <p class="stockage-total" aria-live="polite" id="lbl-stockage">
+                Données sur cet appareil : <strong id="stockage-total">—</strong>
+              </p>
+              <div id="stockage-quota-wrap" class="stockage-quota-wrap" hidden>
+                <p class="stockage-quota__line">
+                  Espace disponible (estimation) :
+                  <strong id="stockage-quota-text">—</strong>
+                </p>
+                <div
+                  class="stockage-quota__bar"
+                  role="progressbar"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  aria-valuenow="0"
+                  id="stockage-quota-bar"
+                >
+                  <div id="stockage-quota-fill" class="stockage-quota__fill"></div>
+                </div>
+              </div>
             </div>
+            <p id="stockage-quota-hint" class="hint stockage-quota-hint" hidden></p>
+            <div id="stockage-outils" class="stockage-accordions" aria-live="polite"></div>
+            <p id="stockage-vide" class="hint stockage-vide" hidden>Aucune donnée enregistrée pour le moment.</p>
           </div>
         </div>
-        <p id="stockage-quota-hint" class="hint stockage-quota-hint" hidden></p>
-        <div id="stockage-outils" class="stockage-accordions" aria-live="polite"></div>
-        <p id="stockage-vide" class="hint stockage-vide" hidden>Aucune donnée enregistrée pour le moment.</p>
-      </section>
+      </details>
     </div>
 
     <script src="../data-manager.js"></script>
@@ -367,20 +361,20 @@
     <script>
       ToolInfo.init({
         intro:
-          "Exportez d’abord une copie de vos données, puis importez ou synchronisez selon votre besoin.",
+          "Exportez régulièrement une copie de vos données. Importez ou synchronisez seulement si vous en avez besoin.",
         sections: [
           {
-            title: "L’ordre à suivre",
+            title: "Que faire en premier",
             list: [
-              "1. Exporter → télécharge outilsEPS-backup.json (filet de sécurité).",
-              "2. Importer → restaure ou fusionne un fichier exporté.",
-              "2. Synchroniser → aligne deux appareils via QR code (internet requis).",
+              "Exporter → télécharge un fichier à garder en lieu sûr (action recommandée).",
+              "Importer → restaure ou fusionne un fichier (si vous en avez déjà un).",
+              "Synchroniser → aligne deux appareils via QR code (avancé, internet requis).",
             ],
           },
           {
             title: "À retenir",
             text:
-              "Outils EPS ne stocke rien sur un compte en ligne. Sans export régulier, un cache vidé ou un appareil perdu peut effacer vos classes et réglages. Les données QR code élèves se gèrent dans l’outil Données élèves.",
+              "Vos données restent sur cet appareil, sans compte en ligne. Sans export régulier, un changement d’appareil ou une suppression de l’app peut effacer vos classes et réglages.",
           },
         ],
       });
