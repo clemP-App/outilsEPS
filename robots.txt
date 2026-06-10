@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://clemp-app.github.io/outilsEPS/sitemap.xml

@@ -2263,7 +2263,7 @@ var DataManager = (function () {
     },
     {
       id: "tableau-noir",
-      label: "Tableau Noir",
+      label: "Tableau tactique",
       groupe: "Séance",
       paramIds: ["tableau-noir"],
     },

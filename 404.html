@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="index, follow" />
+    <title>Page introuvable – Outils EPS</title>
+    <link rel="canonical" href="https://clemp-app.github.io/outilsEPS/" />
+    <meta name="theme-color" content="#1a2744" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .page-404 {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem max(1rem, env(safe-area-inset-left)) 2rem max(1rem, env(safe-area-inset-right));
+      }
+
+      .page-404__card {
+        max-width: 28rem;
+        width: 100%;
+        margin: 0;
+        padding: 2rem 1.5rem;
+        text-align: center;
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        box-shadow: var(--shadow);
+      }
+
+      .page-404__title {
+        margin: 0 0 0.75rem;
+        font-size: 1.5rem;
+        line-height: 1.3;
+        color: var(--text);
+      }
+
+      .page-404__text {
+        margin: 0 0 1.25rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+
+      .page-404__link {
+        display: inline-block;
+        padding: 0.65rem 1.15rem;
+        border-radius: var(--radius-pill);
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .page-404__link:hover {
+        background: var(--accent-deep);
+      }
+
+      .page-404__link:focus-visible {
+        outline: 2px solid var(--accent-deep);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page-404">
+      <article class="page-404__card">
+        <h1 class="page-404__title">Page introuvable</h1>
+        <p class="page-404__text">
+          La page que vous cherchez n’existe pas ou a été déplacée. Retournez à l’accueil d’Outils EPS pour accéder
+          aux applications et outils numériques pour professeurs d’EPS.
+        </p>
+        <a class="page-404__link" href="https://clemp-app.github.io/outilsEPS/">Retour à Outils EPS</a>
+      </article>
+    </main>
+  </body>
+</html>

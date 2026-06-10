@@ -143,6 +143,8 @@
   var dlgColResultatWrap = document.getElementById("dlg-col-resultat-wrap");
   var dlgColResultatTool = document.getElementById("dlg-col-resultat-tool");
   var dlgColResultatSession = document.getElementById("dlg-col-resultat-session");
+  var dlgColResultatAffichageWrap = document.getElementById("dlg-col-resultat-affichage-wrap");
+  var dlgColResultatAffichage = document.getElementById("dlg-col-resultat-affichage");
   var dlgColResultatHint = document.getElementById("dlg-col-resultat-hint");
   var btnColResultatRefresh = document.getElementById("btn-col-resultat-refresh");
   var dialogInfoEleve = document.getElementById("dialog-tab-suivi-info-eleve");
@@ -224,6 +226,26 @@
   ];
   var presenceMenuEl = null;
   var presenceMenuAnchor = null;
+
+  var RESULTAT_SEANCE_AFFICHAGES = [
+    { id: "resume", label: "Résumé" },
+    { id: "classement", label: "Classement" },
+    { id: "points", label: "Points" },
+    { id: "vd", label: "V / D" },
+    { id: "vnd", label: "V / N / D" },
+    { id: "place", label: "Place" },
+    { id: "equipe", label: "Équipe" },
+    { id: "temps", label: "Meilleur temps" },
+    { id: "detail", label: "Détail complet" },
+  ];
+  var RESULTAT_SEANCE_AFFICHAGES_PAR_OUTIL = {
+    "championnat-poule": ["resume", "classement", "points", "vd", "vnd", "detail"],
+    "tournoi-elimination": ["resume", "place", "detail"],
+    "pyramide-victoires": ["resume", "classement", "vd", "detail"],
+    "defi-atp": ["resume", "classement", "points", "vd", "detail"],
+    "composition-equipes": ["resume", "equipe", "detail"],
+    "course-orientation": ["resume", "temps", "detail"],
+  };
 
   var RUBRIQUES_PARAM_ID = "tableau-suivi-rubriques-v1";
   var RUBRIQUES_CATALOG_URL = "../shared/evaluation-rubrics-catalog.json";
@@ -1378,11 +1400,119 @@
     return eleve;
   }
 
-  function texteResultatActivite(activite) {
+  function libelleResultatAffichage(id) {
+    for (var i = 0; i < RESULTAT_SEANCE_AFFICHAGES.length; i++) {
+      if (RESULTAT_SEANCE_AFFICHAGES[i].id === id) return RESULTAT_SEANCE_AFFICHAGES[i].label;
+    }
+    return id;
+  }
+
+  function affichagesPourOutil(toolId) {
+    var ids = RESULTAT_SEANCE_AFFICHAGES_PAR_OUTIL[toolId];
+    if (ids && ids.length) return ids.slice();
+    return ["resume", "detail"];
+  }
+
+  function normaliserResultatAffichage(mode, toolId) {
+    var s = String(mode == null ? "" : mode);
+    var permis = affichagesPourOutil(toolId);
+    if (permis.indexOf(s) >= 0) return s;
+    return "resume";
+  }
+
+  function remplirSelectAffichageResultat(sel, toolId, selectedMode) {
+    if (!sel) return;
+    var permis = affichagesPourOutil(toolId);
+    var mode = normaliserResultatAffichage(selectedMode, toolId);
+    sel.innerHTML = "";
+    permis.forEach(function (id) {
+      var o = document.createElement("option");
+      o.value = id;
+      o.textContent = libelleResultatAffichage(id);
+      sel.appendChild(o);
+    });
+    sel.value = mode;
+  }
+
+  function formatMeilleurTempsMs(ms) {
+    if (ms == null || isNaN(ms)) return "";
+    var sec = ms / 1000;
+    if (sec >= 60) {
+      var m = Math.floor(sec / 60);
+      var s = (sec % 60).toFixed(1).replace(".", ",");
+      return m + " min " + s + " s";
+    }
+    return sec.toFixed(2).replace(".", ",") + " s";
+  }
+
+  function formatResultatActivite(activite, mode, toolId) {
     if (!activite) return "";
-    if (activite.resume) return String(activite.resume);
-    if (activite.headline) return String(activite.headline);
-    return "";
+    mode = normaliserResultatAffichage(mode, toolId || activite.toolId);
+    if (mode === "detail") {
+      return activite.headline ? String(activite.headline) : activite.resume ? String(activite.resume) : "";
+    }
+    if (mode === "resume") {
+      return activite.resume ? String(activite.resume) : activite.headline ? String(activite.headline) : "";
+    }
+    var m = activite.metrics || {};
+    if (mode === "classement") {
+      if (m.rang != null) return m.rang + "e";
+      if (m.place != null) return m.place + (m.place === 1 ? "er" : "e");
+    } else if (mode === "points") {
+      if (m.points != null && !isNaN(m.points)) return m.points + " pts";
+    } else if (mode === "vd") {
+      if (m.victoires != null && m.defaites != null) return m.victoires + "V-" + m.defaites + "D";
+      if (m.victoires != null) return m.victoires + "V";
+    } else if (mode === "vnd") {
+      if (m.victoires != null && m.nuls != null && m.defaites != null) {
+        return m.victoires + "V " + m.nuls + "N " + m.defaites + "D";
+      }
+      if (m.victoires != null && m.defaites != null) return m.victoires + "V-" + m.defaites + "D";
+    } else if (mode === "place") {
+      if (m.place != null) return m.place + (m.place === 1 ? "er" : "e");
+    } else if (mode === "equipe") {
+      if (m.equipe != null) {
+        return "Éq. " + m.equipe + (m.nbEquipes ? "/" + m.nbEquipes : "");
+      }
+    } else if (mode === "temps") {
+      if (m.meilleurMs != null) return formatMeilleurTempsMs(m.meilleurMs);
+      if (m.passages != null) return m.passages + " passage(s)";
+    }
+    return activite.resume ? String(activite.resume) : activite.headline ? String(activite.headline) : "";
+  }
+
+  function texteResultatActivite(activite, mode, toolId) {
+    return formatResultatActivite(activite, mode || "resume", toolId);
+  }
+
+  function extraireValeurNumeriqueClassement(texte) {
+    if (texte === null || texte === undefined || texte === "") return null;
+    var s = String(texte).trim();
+    var m = s.match(/^(\d+)\s*(?:e|er)\b/i);
+    if (m) return parseInt(m[1], 10);
+    m = s.match(/^(\d+)/);
+    if (m) return parseInt(m[1], 10);
+    return null;
+  }
+
+  function appliquerAffichageResultatColonne(t, col, mode) {
+    if (!t || !col || col.type !== "resultatSeance") return Promise.resolve();
+    col.resultatAffichage = normaliserResultatAffichage(mode, col.sessionToolId);
+    if (!col.sessionId) {
+      planifierSauvegarde();
+      return Promise.resolve();
+    }
+    return chargerCacheEleves()
+      .then(function () {
+        return chargerDonneesSeances(true);
+      })
+      .then(function () {
+        return rafraichirColonneResultatSeance(t, col);
+      })
+      .then(function () {
+        rendreGrille();
+        planifierSauvegarde();
+      });
   }
 
   function resultatSeancePourRow(t, col, row, data, session) {
@@ -1392,7 +1522,8 @@
     var eleve = eleveDepuisRow(row, t);
     if (!eleve.nom && !eleve.prenom && !eleve.id) return "";
     var act = SyntheseEpsActivites.extractActivitePourSession(session, data, eleve);
-    return texteResultatActivite(act);
+    var toolId = col.sessionToolId || session.toolId || "";
+    return formatResultatActivite(act, col.resultatAffichage, toolId);
   }
 
   function rafraichirColonneResultatSeance(t, col) {
@@ -1404,6 +1535,7 @@
       var session = trouverSessionParId(col.sessionId, data);
       if (!session) return false;
       if (!col.sessionToolId) col.sessionToolId = session.toolId || "";
+      col.resultatAffichage = normaliserResultatAffichage(col.resultatAffichage, col.sessionToolId);
       var changed = false;
       t.rows.forEach(function (row) {
         var txt = resultatSeancePourRow(t, col, row, data, session);
@@ -1467,6 +1599,17 @@
       }
       if (btnColResultatRefresh) {
         btnColResultatRefresh.disabled = !col.sessionId;
+      }
+      if (dlgColResultatAffichageWrap) {
+        dlgColResultatAffichageWrap.hidden = !col.sessionId;
+      }
+      if (dlgColResultatAffichage) {
+        remplirSelectAffichageResultat(
+          dlgColResultatAffichage,
+          toolId || col.sessionToolId,
+          col.resultatAffichage
+        );
+        dlgColResultatAffichage.disabled = !col.sessionId;
       }
     });
   }
@@ -2359,6 +2502,7 @@
         } else if (c.sessionToolId && typeof c.sessionToolId !== "string") {
           delete c.sessionToolId;
         }
+        c.resultatAffichage = normaliserResultatAffichage(c.resultatAffichage, c.sessionToolId);
       } else {
         delete c.estNote;
         delete c.max;
@@ -3439,6 +3583,17 @@
           if (naN === nbN) return sens * comparateurTexte(a.label, b.label);
           return sens * (naN - nbN);
         }
+        if (col.type === "resultatSeance") {
+          var modeTri = normaliserResultatAffichage(col.resultatAffichage, col.sessionToolId);
+          if (modeTri === "classement" || modeTri === "place") {
+            var ra = extraireValeurNumeriqueClassement(va);
+            var rb = extraireValeurNumeriqueClassement(vb);
+            var rna = ra != null ? ra : Infinity;
+            var rnb = rb != null ? rb : Infinity;
+            if (rna === rnb) return sens * comparateurTexte(a.label, b.label);
+            return sens * (rna - rnb);
+          }
+        }
         if (col.type === "eleveInfo" || col.type === "resultatSeance") {
           var ta = va === null || va === undefined ? "" : String(va);
           var tb = vb === null || vb === undefined ? "" : String(vb);
@@ -3545,11 +3700,6 @@
           baremeHint.className = "tab-suivi-col-bareme";
           baremeHint.textContent = "/" + bareme;
           stack.appendChild(baremeHint);
-        } else if (col.type === "resultatSeance" && col.sessionId) {
-          var linkHint = document.createElement("span");
-          linkHint.className = "tab-suivi-col-bareme tab-suivi-col-bareme--linked";
-          linkHint.textContent = "séance";
-          stack.appendChild(linkHint);
         } else if (col.type === "check" && col.horsSynthese) {
           var horsHint = document.createElement("span");
           horsHint.className = "tab-suivi-col-bareme tab-suivi-col-bareme--hors-synth";
@@ -3844,6 +3994,9 @@
     }
     if (type === "number") {
       col.estNote = false;
+    }
+    if (type === "resultatSeance") {
+      col.resultatAffichage = "resume";
     }
     if (type === "rubric") {
       col.rubric = normaliserRubrique(options.rubric || {});
@@ -4318,6 +4471,7 @@
       return c.id === colonneDialogId;
     })[0];
     var prevSessionId = col && col.sessionId ? col.sessionId : "";
+    var prevAffichage = col && col.resultatAffichage ? col.resultatAffichage : "resume";
     var doitRafraichirResultat = false;
     if (col && dlgColNom) {
       col.label = normaliserNom(dlgColNom.value) || col.label;
@@ -4346,10 +4500,18 @@
     if (col && col.type === "resultatSeance") {
       var nextTool = dlgColResultatTool ? dlgColResultatTool.value : "";
       var nextSession = dlgColResultatSession ? dlgColResultatSession.value : "";
+      if (dlgColResultatAffichage) {
+        col.resultatAffichage = normaliserResultatAffichage(
+          dlgColResultatAffichage.value,
+          nextTool || col.sessionToolId
+        );
+      }
       if (nextSession) {
         col.sessionId = nextSession;
         col.sessionToolId = nextTool || col.sessionToolId || "";
-        if (nextSession !== prevSessionId) doitRafraichirResultat = true;
+        if (nextSession !== prevSessionId || col.resultatAffichage !== prevAffichage) {
+          doitRafraichirResultat = true;
+        }
       } else {
         delete col.sessionId;
         delete col.sessionToolId;
@@ -5782,6 +5944,19 @@
     });
   }
 
+  function majDialogAffichageResultat(toolId, col) {
+    var liee = !!(dlgColResultatSession && dlgColResultatSession.value);
+    if (dlgColResultatAffichageWrap) dlgColResultatAffichageWrap.hidden = !liee;
+    if (!dlgColResultatAffichage) return;
+    dlgColResultatAffichage.disabled = !liee;
+    if (!liee) return;
+    remplirSelectAffichageResultat(
+      dlgColResultatAffichage,
+      toolId,
+      col && col.resultatAffichage ? col.resultatAffichage : "resume"
+    );
+  }
+
   if (dlgColResultatTool) {
     remplirSelectOutilsResultat(dlgColResultatTool, "");
     dlgColResultatTool.addEventListener("change", function () {
@@ -5791,20 +5966,29 @@
             return c.id === colonneDialogId;
           })[0]
         : null;
+      var toolId = dlgColResultatTool.value;
       remplirSelectSessionsResultat(
         dlgColResultatSession,
-        dlgColResultatTool.value,
+        toolId,
         t,
         col && col.sessionId ? col.sessionId : ""
-      );
+      ).then(function () {
+        majDialogAffichageResultat(toolId, col);
+      });
     });
   }
 
   if (dlgColResultatSession) {
     dlgColResultatSession.addEventListener("change", function () {
-      if (btnColResultatRefresh) {
-        btnColResultatRefresh.disabled = !dlgColResultatSession.value;
-      }
+      var liee = !!dlgColResultatSession.value;
+      if (btnColResultatRefresh) btnColResultatRefresh.disabled = !liee;
+      var t = getActif();
+      var col = t && colonneDialogId
+        ? t.cols.filter(function (c) {
+            return c.id === colonneDialogId;
+          })[0]
+        : null;
+      majDialogAffichageResultat(dlgColResultatTool ? dlgColResultatTool.value : "", col);
     });
   }
 

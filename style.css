@@ -1010,6 +1010,55 @@ main.container {
   color: #fff;
 }
 
+.faq-section-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.faq-priority {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr));
+  gap: 0.5rem;
+}
+
+.faq-priority-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.72rem 0.85rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.faq-priority-card:hover {
+  border-color: rgba(13, 148, 136, 0.45);
+  background: #fff;
+}
+
+.faq-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+}
+
+.faq-empty-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
 .faq-list {
   display: flex;
   flex-direction: column;
@@ -1055,6 +1104,54 @@ main.container {
 .faq-item__a {
   padding: 0 0.85rem 0.85rem;
   color: var(--text);
+}
+
+.faq-item__a-lead {
+  margin: 0 0 0.55rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.faq-item__a-p {
+  margin: 0 0 0.45rem;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.faq-item__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+}
+
+.faq-item__more {
+  margin-top: 0.65rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
+  padding-top: 0.55rem;
+}
+
+.faq-item__more summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent-deep);
+  padding: 0.25rem 0;
+  list-style: none;
+}
+
+.faq-item__more summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-item__more-body {
+  margin-top: 0.45rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.faq-item__more-p {
+  margin: 0 0 0.4rem;
+  line-height: 1.45;
   white-space: pre-line;
 }
 
@@ -19084,7 +19181,7 @@ dialog.tab-suivi-dialog .tab-suivi-icone-opt__label {
 }
 
 .page-outil--tableau-suivi .tab-suivi-th--col.tab-suivi-th--resultat .tab-suivi-col-title {
-  max-width: 6.25rem;
+  max-width: 6.5rem;
 }
 
 .page-outil--tableau-suivi .tab-suivi-th--col.tab-suivi-th--info-vma .tab-suivi-col-title,
@@ -22248,7 +22345,7 @@ body.orient-arrivee-modal-open {
   }
 }
 
-/* —— Tableau Noir (schémas tactiques EPS) —— */
+/* —— Tableau tactique (schémas tactiques EPS) —— */
 .tn-body {
   margin: 0;
   overflow: hidden;
@@ -25247,5 +25344,194 @@ body.asns-modal-open {
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.85rem;
+}
+
+/* --- Contenu SEO accueil (index.html) --- */
+.seo-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem max(1rem, env(safe-area-inset-left)) 1rem max(1rem, env(safe-area-inset-right));
+}
+
+.seo-nav {
+  margin-bottom: 1.5rem;
+}
+
+.seo-nav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.55rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  list-style: none;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+}
+
+.seo-nav__list a {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  line-height: 1.35;
+}
+
+.seo-nav__list a:hover {
+  background: rgba(13, 148, 136, 0.18);
+}
+
+.seo-nav__list a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.seo-section {
+  margin-bottom: 2rem;
+  padding: 1.35rem 1.25rem;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  box-shadow: var(--shadow);
+}
+
+.seo-section h2 {
+  margin: 0 0 0.85rem;
+  font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.seo-section p {
+  margin: 0 0 0.85rem;
+  color: var(--text);
+  line-height: 1.65;
+}
+
+.seo-section p:last-child {
+  margin-bottom: 0;
+}
+
+.seo-section a {
+  color: var(--accent-deep);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.seo-section a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.seo-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text);
+}
+
+.seo-list li {
+  margin-bottom: 0.65rem;
+  line-height: 1.6;
+}
+
+.seo-list li:last-child {
+  margin-bottom: 0;
+}
+
+.seo-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.seo-card {
+  margin: 0;
+  padding: 1rem 0.95rem;
+  border-radius: var(--radius-sm);
+  background: rgba(236, 253, 245, 0.45);
+  border: 1px solid rgba(13, 148, 136, 0.18);
+}
+
+.seo-card__title {
+  margin: 0 0 0.45rem;
+  font-size: 0.98rem;
+  line-height: 1.35;
+  color: var(--accent-deep);
+}
+
+.seo-card p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.seo-section--faq {
+  margin-bottom: 1.25rem;
+}
+
+.seo-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.seo-faq__item {
+  margin: 0;
+  padding: 0.95rem 1rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.seo-faq__question {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.seo-faq__answer {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+@media (min-width: 900px) {
+  .app--home .seo-content {
+    max-width: min(1400px, 100%);
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
+@media (min-width: 1200px) {
+  .app--home .seo-content {
+    max-width: min(1600px, 100%);
+    padding-left: max(2rem, env(safe-area-inset-left));
+    padding-right: max(2rem, env(safe-area-inset-right));
+  }
+}
+
+@media (max-width: 520px) {
+  .seo-nav__list {
+    padding: 0.75rem 0.85rem;
+  }
+
+  .seo-nav__list a {
+    font-size: 0.8rem;
+    padding: 0.32rem 0.62rem;
+  }
+
+  .seo-section {
+    padding: 1.1rem 0.95rem;
+  }
 }
 

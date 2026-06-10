@@ -132,7 +132,7 @@
     },
     {
       id: "tableau-noir",
-      titre: "Tableau Noir",
+      titre: "Tableau tactique",
       description:
         "Schémas tactiques sur terrains sportifs : dessin, joueurs, animation, export PNG/PDF, mode présentation.",
       icone: "👨‍🏫",

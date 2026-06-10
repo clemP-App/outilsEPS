@@ -18,19 +18,28 @@
 
       <section class="card">
         <p class="hint">
-          La FAQ couvre les questions générales et les cas concrets par outil. Tapez directement le nom de l’application
-          ou un mot-clé (ex: ASNS, classes, QR, sauvegarde, Défi ATP) pour trouver rapidement la réponse.
-          Pour le détail RGPD (stockage, Supabase, suppression) :
+          Réponses par thème pour débuter, sauvegarder, utiliser les QR élèves et dépanner un blocage.
+          Détail RGPD (stockage, Supabase, suppression) :
           <a href="confidentialite.html">page Confidentialité &amp; RGPD</a>.
         </p>
         <div class="field-group">
           <label class="field-label" for="faq-search">Rechercher une question</label>
-          <input id="faq-search" type="search" placeholder="Ex: RGPD, QR code, Défi ATP, sauvegarde..." />
+          <input id="faq-search" type="search" placeholder="Ex : sauvegarde, QR, dossier élève, grille…" autocomplete="off" />
         </div>
+        <div id="faq-filters" class="faq-filters" role="toolbar" aria-label="Filtrer les questions"></div>
         <p id="faq-count" class="hint" aria-live="polite"></p>
       </section>
 
       <section class="card">
+        <h2 class="faq-section-title">Questions fréquentes</h2>
+        <div id="faq-priority" class="faq-priority"></div>
+      </section>
+
+      <section class="card">
+        <div class="faq-toolbar">
+          <button type="button" class="btn btn--ghost btn--small" id="faq-expand-all">Tout ouvrir</button>
+          <button type="button" class="btn btn--ghost btn--small" id="faq-collapse-all">Tout replier</button>
+        </div>
         <div id="faq-list" class="faq-list"></div>
       </section>
     </div>
@@ -38,138 +47,850 @@
     <script>
       (function () {
         "use strict";
+
+        var FILTER_DEFS = [
+          { id: "all", label: "Tout" },
+          { id: "debuter", label: "Débuter" },
+          { id: "donnees", label: "Données & sauvegarde" },
+          { id: "qr", label: "QR élèves" },
+          { id: "evaluer", label: "Évaluer" },
+          { id: "prof", label: "Outils prof" },
+          { id: "eleves", label: "Outils élèves" },
+          { id: "depannage", label: "Dépannage" },
+        ];
+
+        var PRIORITY_CARDS = [
+          { id: "debuter-premier", label: "Je débute : que dois-je faire en premier ?" },
+          { id: "stockage-donnees", label: "Où sont stockées mes données ?" },
+          { id: "sauvegarde-donnees", label: "Comment sauvegarder mes données ?" },
+          { id: "changement-appareil", label: "J’ai changé d’appareil : comment récupérer mes données ?" },
+          { id: "scanner-qr-eleves", label: "Mes élèves ont un QR : où dois-je le scanner ?" },
+          { id: "qr-internet", label: "Les QR codes nécessitent-ils internet ?" },
+          { id: "pwa-safari-donnees", label: "Safari et l’app installée n’ont pas les mêmes données : pourquoi ?" },
+          { id: "reception-vs-dossier", label: "Quelle différence entre Dossier élève et Réception QR ?" },
+        ];
+
+        var ELEVE_TOOL_CATS = {
+          "table-marque": 1,
+          ptb: 1,
+          bonus: 1,
+          plots: 1,
+          ratio: 1,
+          debrief: 1,
+          impact: 1,
+          convertisseur: 1,
+          "distance-vma": 1,
+          rm1: 1,
+          "journal-muscu": 1,
+          "vitesse-course": 1,
+          "relais-eleve": 1,
+        };
+
         var FAQ_DATA = [
-          { cat: "general", q: "Qu’est-ce qu’Outils EPS ?", a: "Outils EPS est une suite d’outils pratiques pour les enseignants d’EPS et, selon les usages, pour les élèves. L’objectif est de réduire la charge logistique en séance: appel, suivi, évaluations, classements, chronos, observation, exports et partage." },
-          { cat: "general", q: "Comment bien débuter sur Outils EPS ?", a: "Commencez par l’outil « Classes et groupes »: c’est la base de travail qui sera réutilisée dans la grande majorité des applications.\n\nÉtapes conseillées:\n1) Créez vos classes et groupes.\n2) Vérifiez les noms/prénoms.\n3) Ensuite seulement, lancez les autres outils (Appel et notes, ASNS, Défi ATP, etc.) en important ces classes.\n\nPourquoi c’est important:\n- vous évitez les ressaisies,\n- vous limitez les erreurs de noms,\n- vous gardez une continuité de suivi d’un outil à l’autre." },
-          { cat: "general", q: "Pourquoi utiliser Outils EPS en cours ?", a: "Parce que vous gagnez du temps sur les tâches répétitives et vous rendez la séance plus fluide: moins de papier, plus de visibilité en direct, meilleure traçabilité des résultats, exports immédiats et retour d’information motivant pour les élèves." },
-          { cat: "general", q: "Faut-il un compte pour démarrer ?", a: "Non. Aucun compte obligatoire n’est nécessaire pour utiliser la majorité des outils." },
           {
+            id: "quest-ce-outils-eps",
             cat: "general",
+            filters: ["debuter"],
+            tags: ["accueil", "presentation", "debut"],
+            q: "Qu’est-ce qu’Outils EPS ?",
+            a: "Outils EPS est une suite d’outils pour les enseignants d’EPS (et, selon les usages, pour les élèves) afin de gagner du temps en séance : appel, suivi, évaluations, classements, chronos et partage par QR.",
+            links: [{ label: "Retour à l’accueil", href: "index.html" }],
+          },
+          {
+            id: "debuter-premier",
+            cat: "general",
+            filters: ["debuter"],
+            priority: true,
+            tags: ["debut", "premiers pas", "classe", "demarrage"],
+            q: "Comment bien débuter sur Outils EPS ?",
+            a: "Commencez par créer vos classes dans « Classes et groupes », puis réutilisez cette base dans les autres outils.\n\n1) Créez vos classes et groupes.\n2) Vérifiez noms et prénoms.\n3) Lancez ensuite Appel et notes, ASNS, tournois, etc. en important ces classes.",
+            links: [
+              { label: "Ouvrir Classes et groupes", href: "outils/classes.html" },
+              { label: "Ouvrir Appel et notes", href: "outils/tableau-suivi.html" },
+            ],
+          },
+          {
+            id: "pourquoi-utiliser",
+            cat: "general",
+            filters: ["debuter"],
+            tags: ["cours", "seance", "gain de temps"],
+            q: "Pourquoi utiliser Outils EPS en cours ?",
+            a: "Vous gagnez du temps sur les tâches répétitives et rendez la séance plus fluide : moins de papier, plus de visibilité en direct, meilleure traçabilité et retours motivants pour les élèves.",
+          },
+          {
+            id: "compte-demarrage",
+            cat: "general",
+            filters: ["debuter"],
+            tags: ["compte", "inscription", "connexion"],
+            q: "Faut-il un compte pour démarrer ?",
+            a: "Non : aucun compte obligatoire n’est nécessaire pour utiliser la majorité des outils.",
+          },
+          {
+            id: "prof-vs-eleve-outils",
+            cat: "general",
+            filters: ["debuter", "qr"],
+            tags: ["prof", "eleve", "outil prof", "outil eleve", "difference"],
+            q: "Quelle différence entre outil prof et outil élève ?",
+            a: "Les outils prof servent à piloter et centraliser le suivi (classes, appel, Dossier élève, Réception QR…). Les outils élèves servent à produire des résultats sur le terrain, souvent partageables au professeur par QR.",
+            links: [
+              { label: "Ouvrir la page élèves", href: "eleves.html" },
+              { label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" },
+            ],
+          },
+          {
             id: "stockage-donnees",
-            q: "Où sont stockées vos données ?",
-            a: "Outils EPS enregistre vos classes, cahier de texte, championnats, réglages… directement sur ce téléphone ou cet ordinateur (stockage local du navigateur, IndexedDB). Rien n’est envoyé automatiquement sur internet et vous n’avez pas besoin de créer un compte.\n\nEn pratique:\n- vos données ne suivent pas toutes seules si vous changez d’appareil,\n- vider le cache du navigateur ou supprimer l’icône de l’app peut tout effacer,\n- un appareil perdu ou cassé sans copie de sauvegarde entraîne une perte des données.\n\nPour ne rien perdre:\n1) Exportez régulièrement un fichier outilsEPS-backup.json (outil Sauvegarde) et conservez-le en lieu sûr (cloud, clé USB, mail…).\n2) Importez ce fichier pour restaurer ou fusionner sur le même appareil ou un autre.\n3) Synchronisez deux appareils (ex. téléphone et tablette) via l’outil Sauvegarde: ouvrez cette page sur les deux appareils, lancez « Synchroniser deux appareils », scannez le QR code. Une connexion internet est nécessaire le temps du transfert.\n\nÀ part: les réponses remontées par QR code depuis les outils élèves (débrief, musculation…) se gèrent dans l’outil Données élèves, pas dans Sauvegarde."
-          },
-          { cat: "general", q: "RGPD: où vont les données élèves ?", a: "Par défaut, les données pédagogiques restent stockées localement sur votre appareil (IndexedDB). Il n’y a pas de synchronisation cloud imposée ni de base élèves centralisée obligatoire. Vous gardez la maîtrise de vos exports et sauvegardes.\n\nPage dédiée : confidentialite.html (données stockées, services tiers GoatCounter/Supabase, Qr Code, suppression)." },
-          { cat: "general", q: "Quels éléments sont collectés côté stats ?", a: "Des statistiques de fréquentation anonymes peuvent être utilisées pour améliorer l’application (ex: pages visitées, volume d’usage). Ce n’est pas un suivi individualisé d’élèves." },
-          { cat: "general", q: "Qui a créé Outils EPS et pourquoi ?", a: "Outils EPS est créé et maintenu par ClemP, pour répondre à des besoins concrets de terrain: simplifier l’organisation de séance, fiabiliser les traces d’évaluation et rendre les retours aux élèves plus lisibles et motivants." },
-          { cat: "general", q: "Puis-je installer Outils EPS comme une appli ?", a: "Oui, via la PWA.\n\nSur iPhone (Safari)\n1) Ouvrez Outils EPS dans Safari.\n2) Touchez Partager.\n3) Choisissez « Sur l’écran d’accueil ».\n\nSur Android (Chrome)\n1) Ouvrez Outils EPS dans Chrome.\n2) Ouvrez le menu (⋮).\n3) Choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».\n\nSur ordinateur (Chrome / Edge)\n1) Ouvrez Outils EPS.\n2) Cliquez l’icône d’installation dans la barre d’adresse (si proposée).\n\nRésultat\nUne fois installée, l’application se lance comme une app classique depuis l’écran d’accueil ou le menu des applications." },
-          {
             cat: "general",
-            id: "pwa-safari-donnees",
-            q: "Safari ou app installée : pourquoi mes données ne sont pas les mêmes ?",
-            a: "Sur iPhone, iPad et souvent sur Android, le site ouvert dans le navigateur (Safari, Chrome…) et l’icône installée sur l’écran d’accueil sont deux applications distinctes.\n\nConséquence\nLes classes, imports QR, sauvegardes et réglages enregistrés dans Safari ne sont pas visibles dans l’app installée, et inversement.\n\nDétection\nLe site ne peut pas savoir avec certitude, depuis Safari sur iPhone, si l’app est installée. Un rappel n’apparaît que si une installation a été signalée (événement d’installation, confirmation après « Ajouter à l’écran d’accueil », ou détection Chrome/Android). Sinon, utilisez « Pas d’app installée » sur le bandeau.\n\nRecommandation\n1) Choisissez un mode principal (en général l’icône installée).\n2) Ouvrez toujours Outils EPS de la même façon.\n3) Exportez régulièrement une sauvegarde JSON (outil Sauvegarde).\n\nException caméra\nCertains outils vidéo (Photo Finish, Vidéo retard) peuvent demander Safari sur iPad pour la caméra : les résultats partagés au professeur passent alors par le QR, pas par le stockage local du navigateur.",
+            filters: ["donnees", "debuter"],
+            priority: true,
+            tags: ["stockage", "local", "indexeddb", "appareil", "donnees", "perte"],
+            q: "Où sont stockées vos données ?",
+            a: "Vos données (classes, cahier de texte, championnats, réglages…) sont enregistrées sur cet appareil, dans le stockage local du navigateur. Rien n’est envoyé automatiquement sur internet.",
+            detailsLabel: "Bonnes pratiques et limites",
+            details:
+              "En pratique, vos données ne suivent pas toutes seules si vous changez d’appareil. Vider le cache ou supprimer l’icône de l’app peut tout effacer.\n\nPour ne rien perdre :\n1) Exportez régulièrement un fichier outilsEPS-backup.json (outil Sauvegarde).\n2) Importez ce fichier pour restaurer ou fusionner.\n3) Pour synchroniser deux appareils, utilisez « Synchroniser deux appareils » dans Sauvegarde (internet requis le temps du transfert).\n\nLes réponses remontées par QR depuis les outils élèves se gèrent dans Réception QR, pas dans Sauvegarde.",
+            links: [
+              { label: "Ouvrir Sauvegarde", href: "outils/sauvegarde.html" },
+              { label: "Voir Confidentialité & RGPD", href: "confidentialite.html" },
+            ],
           },
-          { cat: "general", q: "Comment sauvegarder et restaurer mes données ?", a: "Ouvrez l’outil Sauvegarde: exportez un fichier JSON régulièrement (fin de journée / fin de cycle), stockez-le sur un espace sûr (cloud + clé USB conseillé), puis restaurez-le sur un autre appareil via import JSON." },
-          { cat: "general", q: "Que se passe-t-il si je change d’appareil ou vide le cache ?", a: "Les données locales peuvent être perdues si vous effacez les données du navigateur, changez d’appareil sans export, ou désinstallez l’app. D’où l’importance de la sauvegarde JSON." },
-          { cat: "general", q: "Comment partager aux élèves sans exposer les outils prof ?", a: "Utilisez le bouton Partager et diffusez le lien/QR de la page élèves. Les élèves arrivent sur une interface dédiée, sans les outils de pilotage enseignant." },
-          { cat: "general", q: "Le mode hors ligne fonctionne-t-il ?", a: "Oui en grande partie après premier chargement. Certaines ressources externes (liens officiels, contenus web) nécessitent une connexion Internet." },
-          { cat: "general", q: "Que faire en cas de bug ou de blocage ?", a: "1) Recharger la page. 2) Vérifier la séance active et les champs requis. 3) Faire une sauvegarde JSON. 4) Contacter le support via le lien Contacter dans le footer avec contexte, appareil et étapes de reproduction." },
+          {
+            id: "rgpd-donnees-eleves",
+            cat: "general",
+            filters: ["donnees"],
+            tags: ["rgpd", "confidentialite", "donnees eleves", "eleves", "supabase"],
+            q: "RGPD : où vont les données élèves ?",
+            a: "Par défaut, les données pédagogiques restent sur votre appareil (IndexedDB). Il n’y a pas de synchronisation cloud imposée ni de base élèves centralisée obligatoire.",
+            detailsLabel: "Détail complet (services tiers, QR, suppression)",
+            details:
+              "Vous gardez la maîtrise de vos exports et sauvegardes. Des statistiques de fréquentation anonymes peuvent être utilisées (GoatCounter). La synchronisation Sauvegarde et certains QR peuvent passer par Supabase le temps du transfert.\n\nConsultez la page Confidentialité pour le détail des traitements et la procédure de suppression.",
+            links: [{ label: "Voir Confidentialité & RGPD", href: "confidentialite.html" }],
+          },
+          {
+            id: "stats-anonymes",
+            cat: "general",
+            filters: ["donnees"],
+            tags: ["statistiques", "analytics", "goatcounter"],
+            q: "Quels éléments sont collectés côté stats ?",
+            a: "Des statistiques de fréquentation anonymes peuvent être utilisées pour améliorer l’application (pages visitées, volume d’usage). Ce n’est pas un suivi individualisé d’élèves.",
+            links: [{ label: "Voir Confidentialité & RGPD", href: "confidentialite.html" }],
+          },
+          {
+            id: "createur",
+            cat: "general",
+            filters: ["debuter"],
+            tags: ["auteur", "clemp", "support"],
+            q: "Qui a créé Outils EPS et pourquoi ?",
+            a: "Outils EPS est créé et maintenu par ClemP, pour répondre à des besoins concrets de terrain : simplifier l’organisation de séance, fiabiliser les traces d’évaluation et rendre les retours aux élèves plus lisibles.",
+          },
+          {
+            id: "installer-pwa",
+            cat: "general",
+            filters: ["debuter", "depannage"],
+            tags: ["pwa", "installation", "ecran accueil", "android", "iphone"],
+            q: "Puis-je installer Outils EPS comme une appli ?",
+            a: "Oui, via la PWA : ajoutez Outils EPS à l’écran d’accueil depuis Safari (iPhone), Chrome (Android) ou l’icône d’installation sur ordinateur.",
+            detailsLabel: "Étapes détaillées par appareil",
+            details:
+              "Sur iPhone (Safari) : Partager → « Sur l’écran d’accueil ».\n\nSur Android (Chrome) : menu (⋮) → « Installer l’application » ou « Ajouter à l’écran d’accueil ».\n\nSur ordinateur (Chrome / Edge) : icône d’installation dans la barre d’adresse si proposée.\n\nUne fois installée, l’application se lance comme une app classique.",
+          },
+          {
+            id: "pwa-safari-donnees",
+            cat: "general",
+            filters: ["depannage", "donnees"],
+            priority: true,
+            tags: ["safari", "pwa", "app installee", "donnees differentes", "iphone", "ipad"],
+            q: "Safari ou app installée : pourquoi mes données ne sont pas les mêmes ?",
+            a: "Sur iPhone, iPad et souvent sur Android, le navigateur et l’icône installée sont deux applications distinctes : les données enregistrées dans l’un ne sont pas visibles dans l’autre.",
+            detailsLabel: "Que faire concrètement",
+            details:
+              "Le site ne peut pas toujours détecter si l’app est installée depuis Safari. Utilisez le bandeau « Pas d’app installée » si besoin.\n\nRecommandation :\n1) Choisissez un mode principal (en général l’icône installée).\n2) Ouvrez toujours Outils EPS de la même façon.\n3) Exportez régulièrement une sauvegarde JSON.\n\nException caméra : Photo Finish et Vidéo retard peuvent demander Safari sur iPad ; les résultats partagés passent alors par le QR.",
+            links: [{ label: "Ouvrir Sauvegarde", href: "outils/sauvegarde.html" }],
+          },
+          {
+            id: "sauvegarde-donnees",
+            cat: "general",
+            filters: ["donnees"],
+            priority: true,
+            tags: ["sauvegarde", "backup", "export", "import", "json", "restaurer"],
+            q: "Comment sauvegarder et restaurer mes données ?",
+            a: "Exportez régulièrement un fichier JSON depuis l’outil Sauvegarde, conservez-le en lieu sûr, puis importez-le sur le même appareil ou un autre pour restaurer ou fusionner.",
+            detailsLabel: "Fréquence conseillée",
+            details: "Exportez en fin de journée ou de cycle. Stockez la copie sur cloud + clé USB si possible. Pour synchroniser deux appareils, utilisez « Synchroniser deux appareils » (QR + internet le temps du transfert).",
+            links: [{ label: "Ouvrir Sauvegarde", href: "outils/sauvegarde.html" }],
+          },
+          {
+            id: "changement-appareil",
+            cat: "general",
+            filters: ["donnees"],
+            priority: true,
+            tags: ["changement appareil", "cache", "perte", "restauration", "nouveau telephone"],
+            q: "Que se passe-t-il si je change d’appareil ou vide le cache ?",
+            a: "Les données locales peuvent être perdues si vous effacez les données du navigateur, changez d’appareil sans export, ou désinstallez l’app — d’où l’importance de la sauvegarde JSON.",
+            links: [{ label: "Ouvrir Sauvegarde", href: "outils/sauvegarde.html" }],
+          },
+          {
+            id: "partager-eleves",
+            cat: "general",
+            filters: ["debuter", "qr"],
+            tags: ["partager", "page eleves", "lien", "qr lien"],
+            q: "Comment partager aux élèves sans exposer les outils prof ?",
+            a: "Utilisez le bouton Partager et diffusez le lien ou QR de la page élèves : les élèves arrivent sur une interface dédiée, sans les outils de pilotage enseignant.",
+            links: [{ label: "Ouvrir la page élèves", href: "eleves.html" }],
+          },
+          {
+            id: "mode-hors-ligne",
+            cat: "general",
+            filters: ["depannage", "qr"],
+            tags: ["hors ligne", "offline", "internet", "connexion"],
+            q: "Le mode hors ligne fonctionne-t-il ?",
+            a: "Oui en grande partie après le premier chargement. Certaines ressources externes (liens officiels, ouverture d’une page non encore chargée) nécessitent internet.",
+          },
+          {
+            id: "depannage-bug",
+            cat: "general",
+            filters: ["depannage"],
+            tags: ["bug", "blocage", "erreur", "support", "recharger"],
+            q: "Que faire en cas de bug ou de blocage ?",
+            a: "Rechargez la page, vérifiez la séance active et les champs requis, exportez une sauvegarde JSON, puis contactez le support via Contacter dans le footer avec appareil et étapes de reproduction.",
+            links: [{ label: "Ouvrir Sauvegarde", href: "outils/sauvegarde.html" }],
+          },
 
-          { cat: "classes", q: "Classes et groupes: à quoi sert cet outil ?", a: "C’est votre socle: vous créez les classes une seule fois puis vous les réutilisez dans la plupart des outils.\n\nConcrètement:\n- cliquez sur création de classe,\n- ajoutez les élèves (saisie ou import),\n- créez des groupes si nécessaire,\n- réutilisez ensuite cette base dans Appel et notes, ASNS, Défi ATP, Tournois, etc." },
-          { cat: "classes", q: "Classes et groupes: bonne méthode de démarrage ?", a: "Méthode simple et robuste:\n1) Créez toutes les classes du niveau concerné.\n2) Vérifiez orthographe nom/prénom dès le départ.\n3) Créez des groupes pédagogiques si besoin.\n4) Faites un test d’import dans un autre outil.\n\nIntérêt:\n- moins de ressaisie,\n- moins d’erreurs d’identité,\n- meilleure continuité du suivi sur tout le cycle." },
+          {
+            id: "classes-usage",
+            cat: "classes",
+            filters: ["debuter", "prof"],
+            tags: ["classes", "groupes", "eleves", "import"],
+            q: "Classes et groupes : à quoi sert cet outil ?",
+            a: "C’est votre socle : créez les classes une seule fois puis réutilisez-les dans la plupart des outils.",
+            detailsLabel: "Actions clés",
+            details:
+              "1) Créez une classe.\n2) Ajoutez les élèves (saisie ou import).\n3) Créez des groupes si nécessaire.\n4) Réutilisez cette base dans Appel et notes, ASNS, Défi ATP, tournois, etc.",
+            links: [{ label: "Ouvrir Classes et groupes", href: "outils/classes.html" }],
+          },
+          {
+            id: "classes-demarrage",
+            cat: "classes",
+            filters: ["debuter", "prof"],
+            tags: ["classes", "demarrage", "methode"],
+            q: "Classes et groupes : bonne méthode de démarrage ?",
+            a: "Créez toutes les classes du niveau, vérifiez l’orthographe dès le départ, créez des groupes si besoin, puis testez un import dans un autre outil.",
+            links: [{ label: "Ouvrir Classes et groupes", href: "outils/classes.html" }],
+          },
 
-          { cat: "tableau-suivi", q: "Appel et notes: que permet l’outil ?", a: "Vous pouvez créer des feuilles de suivi, importer des élèves, ajouter des colonnes (présence, note, calcul), trier la liste et exporter en CSV/PDF.\n\nCas d’usage typique:\n- appel rapide,\n- évaluation critériée,\n- note de cycle,\n- synthèse imprimable." },
-          { cat: "tableau-suivi", q: "Appel et notes: comment configurer efficacement ?", a: "Workflow recommandé (clic par clic):\n1) Cliquez « Nouveau » pour créer la feuille.\n2) Cliquez « Importer depuis une classe » pour charger les élèves.\n3) Cliquez « Nouvelle colonne » puis choisissez le type (présence, nombre, calcul).\n4) Cliquez « Tri » si vous devez réordonner la liste.\n5) En fin de séance, cliquez « CSV » ou « PDF ».\n\nPourquoi paramétrer en amont:\n- saisie plus rapide pendant le cours,\n- critères homogènes d’une classe à l’autre,\n- export immédiat sans remise en forme." },
+          {
+            id: "grilles-evaluation-usage",
+            cat: "grilles-evaluation",
+            filters: ["evaluer", "prof"],
+            tags: ["grille", "evaluation", "critere", "notation", "appel"],
+            q: "Comment utiliser une grille d’évaluation ?",
+            a: "Créez la grille, ouvrez Appel et notes, ajoutez une colonne grille, puis retrouvez le suivi dans le Dossier élève.",
+            detailsLabel: "Étapes détaillées",
+            details:
+              "1) Créez ou dupliquez un modèle dans Grilles d’évaluation.\n2) Ouvrez Appel et notes et importez votre classe.\n3) Ajoutez une colonne de type grille.\n4) Saisissez en séance.\n5) Consultez la synthèse par élève dans le Dossier élève.",
+            links: [
+              { label: "Ouvrir Grilles d’évaluation", href: "outils/grilles-evaluation.html" },
+              { label: "Ouvrir Appel et notes", href: "outils/tableau-suivi.html" },
+              { label: "Ouvrir le Dossier élève", href: "outils/synthese-eps.html" },
+            ],
+          },
 
-          { cat: "cahier-texte", q: "Cahier de texte: à quoi sert-il ?", a: "À garder la trace pédagogique de la séquence: objectifs, contenu prévu/réalisé, observations, points d’attention pour la prochaine séance." },
-          { cat: "cahier-texte", q: "Cahier de texte: bénéfice principal ?", a: "Capitaliser votre progression réelle pour ajuster rapidement la séance suivante sans repartir d’une page blanche." },
+          {
+            id: "tableau-suivi-usage",
+            cat: "tableau-suivi",
+            filters: ["evaluer", "prof"],
+            tags: ["appel", "notes", "feuille", "csv", "pdf"],
+            q: "Appel et notes : que permet l’outil ?",
+            a: "Créez des feuilles de suivi, importez des élèves, ajoutez des colonnes (présence, note, calcul, grille), triez et exportez en CSV/PDF.",
+            links: [{ label: "Ouvrir Appel et notes", href: "outils/tableau-suivi.html" }],
+          },
+          {
+            id: "tableau-suivi-config",
+            cat: "tableau-suivi",
+            filters: ["evaluer", "prof"],
+            tags: ["appel", "colonnes", "tri", "export"],
+            q: "Appel et notes : comment configurer efficacement ?",
+            a: "Créez la feuille, importez la classe, ajoutez vos colonnes, triez si besoin, puis exportez en fin de séance.",
+            detailsLabel: "Workflow clic par clic",
+            details:
+              "1) « Nouveau » pour créer la feuille.\n2) « Importer depuis une classe ».\n3) « Nouvelle colonne » (présence, nombre, calcul, grille).\n4) « Tri » si nécessaire.\n5) « CSV » ou « PDF » en fin de séance.",
+            links: [{ label: "Ouvrir Appel et notes", href: "outils/tableau-suivi.html" }],
+          },
 
-          { cat: "asns", q: "Validation ASNS: à quoi sert cet outil ?", a: "Il permet de suivre les validations savoir-nager, élève par élève, avec les étapes officielles, les statuts et la génération d’attestations." },
-          { cat: "asns", q: "Validation ASNS: comment paramétrer et l’utiliser ?", a: "Étapes conseillées:\n1) Ouvrez « Classes » puis importez/choisissez la classe.\n2) Ouvrez « Paramètres » et renseignez académie, établissement, enseignant.\n3) Dans « Élèves », validez les items au fil de la séance.\n4) Vérifiez les statuts (validé / en cours / à revoir).\n5) Générez les attestations dans l’onglet dédié.\n\nPourquoi paramétrer:\n- attestations auto-remplies et cohérentes,\n- moins d’erreurs administratives,\n- production PDF beaucoup plus rapide." },
+          {
+            id: "cahier-texte-usage",
+            cat: "cahier-texte",
+            filters: ["prof"],
+            tags: ["cahier", "sequence", "seance"],
+            q: "Cahier de texte : à quoi sert-il ?",
+            a: "Il garde la trace pédagogique de la séquence : objectifs, contenu prévu/réalisé, observations et points pour la prochaine séance.",
+            links: [{ label: "Ouvrir Cahier de texte", href: "outils/cahier-texte.html" }],
+          },
+          {
+            id: "cahier-texte-benefice",
+            cat: "cahier-texte",
+            filters: ["prof"],
+            tags: ["cahier", "progression"],
+            q: "Cahier de texte : bénéfice principal ?",
+            a: "Capitaliser votre progression réelle pour ajuster rapidement la séance suivante sans repartir d’une page blanche.",
+            links: [{ label: "Ouvrir Cahier de texte", href: "outils/cahier-texte.html" }],
+          },
 
-          { cat: "dispenses", q: "Dispenses / Inaptitudes: usage typique ?", a: "Suivre les dispenses avec dates de début/fin, filtres et statut, pour avoir en un coup d’œil les élèves concernés pendant l’appel et l’organisation d’atelier." },
-          { cat: "dispenses", q: "Dispenses: pourquoi c’est utile ?", a: "Vous sécurisez le suivi administratif et limitez les oublis (retour activité, échéances, continuité de suivi)." },
+          {
+            id: "asns-usage",
+            cat: "asns",
+            filters: ["evaluer", "prof"],
+            tags: ["asns", "natation", "savoir nager"],
+            q: "Validation ASNS : à quoi sert cet outil ?",
+            a: "Il permet de suivre les validations savoir-nager, élève par élève, avec les étapes officielles, les statuts et la génération d’attestations.",
+            links: [{ label: "Ouvrir Validation ASNS", href: "outils/validation-asns.html" }],
+          },
+          {
+            id: "asns-config",
+            cat: "asns",
+            filters: ["evaluer", "prof"],
+            tags: ["asns", "attestation", "parametres"],
+            q: "Validation ASNS : comment paramétrer et l’utiliser ?",
+            a: "Importez la classe, renseignez académie/établissement/enseignant, validez les items en séance, puis générez les attestations.",
+            detailsLabel: "Étapes conseillées",
+            details:
+              "1) Importez/choisissez la classe.\n2) Renseignez les paramètres établissement.\n3) Validez les items au fil de la séance.\n4) Vérifiez les statuts.\n5) Générez les attestations PDF.",
+            links: [{ label: "Ouvrir Validation ASNS", href: "outils/validation-asns.html" }],
+          },
 
-          { cat: "oubli", q: "Oubli de matériel: que fait l’outil ?", a: "Il enregistre les oublis par élève et garde un historique lisible, utile pour objectiver les échanges et suivre l’évolution des comportements." },
-          { cat: "oubli", q: "Oubli de matériel: conseil terrain ?", a: "Saisir au fil de l’appel et montrer l’historique si besoin pour éviter les débats de mémoire." },
+          {
+            id: "dispenses-usage",
+            cat: "dispenses",
+            filters: ["evaluer", "prof"],
+            tags: ["dispense", "inaptitude"],
+            q: "Dispenses / Inaptitudes : usage typique ?",
+            a: "Suivez les dispenses avec dates de début/fin et filtres pour voir en un coup d’œil les élèves concernés pendant l’appel.",
+            links: [{ label: "Ouvrir Dispenses / Inaptitudes", href: "outils/dispenses-eps.html" }],
+          },
+          {
+            id: "dispenses-utilite",
+            cat: "dispenses",
+            filters: ["evaluer", "prof"],
+            tags: ["dispense", "administratif"],
+            q: "Dispenses : pourquoi c’est utile ?",
+            a: "Vous sécurisez le suivi administratif et limitez les oublis (retour activité, échéances, continuité de suivi).",
+            links: [{ label: "Ouvrir Dispenses / Inaptitudes", href: "outils/dispenses-eps.html" }],
+          },
 
-          { cat: "donnees-eleves", q: "Données élèves: à quoi sert cet outil ?", a: "Il centralise les données reçues des élèves (souvent via QR), pour les consulter et les exploiter au même endroit.\n\nActions clés:\n- démarrer/arrêter le scan,\n- coller un lien d’import,\n- filtrer par outil, élève, classe, date,\n- exporter en CSV/PDF." },
-          { cat: "donnees-eleves", q: "Données élèves: quand l’utiliser ?", a: "Utilisez-le dès que les élèves produisent des retours individuels (débrief, journal, observation). Vous gagnez une vue unifiée de la classe et évitez de chercher les infos outil par outil." },
+          {
+            id: "oubli-usage",
+            cat: "oubli",
+            filters: ["evaluer", "prof"],
+            tags: ["oubli", "materiel"],
+            q: "Oubli de matériel : que fait l’outil ?",
+            a: "Il enregistre les oublis par élève et garde un historique lisible pour objectiver les échanges.",
+            links: [{ label: "Ouvrir Oubli de matériel", href: "outils/oubli-materiel.html" }],
+          },
+          {
+            id: "oubli-conseil",
+            cat: "oubli",
+            filters: ["evaluer", "prof"],
+            tags: ["oubli", "appel"],
+            q: "Oubli de matériel : conseil terrain ?",
+            a: "Saisissez au fil de l’appel et montrez l’historique si besoin pour éviter les débats de mémoire.",
+            links: [{ label: "Ouvrir Oubli de matériel", href: "outils/oubli-materiel.html" }],
+          },
 
-          { cat: "ressources", q: "Ressources EPS: quel intérêt ?", a: "Avoir vos références (officielles + personnelles) au même endroit: liens rapides, favoris, ressources de préparation et veille." },
+          {
+            id: "dossier-eleve-usage",
+            cat: "synthese-eps",
+            filters: ["evaluer", "prof"],
+            priority: true,
+            tags: ["dossier eleve", "synthese", "fiche eleve", "bilan", "presence", "performance"],
+            q: "À quoi sert le Dossier élève ?",
+            a: "Il centralise le suivi d’un élève ou d’une classe : présences, dispenses, oublis, QR reçus, performances, évaluations et bilans.",
+            links: [{ label: "Ouvrir le Dossier élève", href: "outils/synthese-eps.html" }],
+          },
+          {
+            id: "reception-vs-dossier",
+            cat: "synthese-eps",
+            filters: ["qr", "evaluer", "prof"],
+            priority: true,
+            tags: ["reception qr", "donnees eleves", "dossier eleve", "synthese", "difference", "import"],
+            q: "Quelle différence entre Réception QR et Dossier élève ?",
+            a: "Réception QR sert à importer et consulter les données reçues des élèves (scan, filtre, export). Le Dossier élève sert à synthétiser le suivi global (présences, évaluations, bilans…).",
+            detailsLabel: "Complément",
+            details:
+              "Réception QR (anciennement « Données élèves ») est l’entrée des imports QR. Le Dossier élève (anciennement « Synthèse ») agrège ces éléments avec le reste du suivi pédagogique.",
+            links: [
+              { label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" },
+              { label: "Ouvrir le Dossier élève", href: "outils/synthese-eps.html" },
+            ],
+          },
 
-          { cat: "video-retard", q: "Vidéo avec retard: principe ?", a: "Filmer une action et la rejouer avec décalage pour l’auto-correction immédiate (feedback visuel en quelques secondes)." },
-          { cat: "video-retard", q: "Vidéo avec retard: scénario efficace ?", a: "L’élève réalise, observe sa tentative avec retard, ajuste, puis reteste. Très utile pour posture, trajectoire, enchaînement technique." },
+          {
+            id: "reception-qr-usage",
+            cat: "donnees-eleves",
+            filters: ["qr", "prof"],
+            tags: ["reception qr", "donnees eleves", "scan", "import", "csv"],
+            q: "Réception QR : à quoi sert cet outil ?",
+            a: "Il centralise les données reçues des élèves via QR pour les consulter, filtrer et exporter au même endroit.",
+            detailsLabel: "Actions clés",
+            details:
+              "1) Démarrer/arrêter le scan.\n2) Coller un lien d’import si besoin.\n3) Filtrer par outil, élève, classe, date.\n4) Exporter en CSV/PDF.",
+            links: [{ label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" }],
+          },
+          {
+            id: "reception-qr-quand",
+            cat: "donnees-eleves",
+            filters: ["qr", "prof"],
+            tags: ["reception qr", "donnees eleves", "debrief", "journal"],
+            q: "Réception QR : quand l’utiliser ?",
+            a: "Dès que les élèves produisent des retours individuels (débrief, journal, observation) : vous obtenez une vue unifiée sans chercher outil par outil.",
+            links: [{ label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" }],
+          },
+          {
+            id: "scanner-qr-eleves",
+            cat: "donnees-eleves",
+            filters: ["qr"],
+            priority: true,
+            tags: ["scanner", "qr", "eleves", "reception", "donnees eleves", "resultats"],
+            q: "Mes élèves ont un QR : où dois-je le scanner ?",
+            a: "Scannez le QR des résultats élèves dans Réception QR. Pour le QR qui ouvre la page élèves, les élèves le scannent eux-mêmes ; vous partagez ce lien depuis l’accueil.",
+            links: [
+              { label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" },
+              { label: "Ouvrir la page élèves", href: "eleves.html" },
+            ],
+          },
 
-          { cat: "tableau-noir", q: "Tableau Noir: à quoi sert-il ?", a: "Créer et présenter des schémas tactiques interactifs.\n\nCe que vous pouvez faire:\n- choisir un fond terrain,\n- placer joueurs/objets,\n- dessiner trajectoires et consignes,\n- créer des étapes (frames) d’animation,\n- exporter en image/PDF pour vos supports." },
-          { cat: "tableau-noir", q: "Tableau Noir: comment l’utiliser en séance ?", a: "Méthode efficace:\n1) Préparez 2 à 3 schémas avant le cours.\n2) En séance, cliquez les outils (dessin, joueur, texte) pour ajuster en direct.\n3) Utilisez lecture d’animation pour expliquer la progression action par action.\n4) Exportez si vous voulez garder une trace.\n\nIntérêt:\n- visualisation immédiate pour les élèves,\n- correction collective plus claire,\n- meilleure compréhension tactique." },
+          {
+            id: "ressources-usage",
+            cat: "ressources",
+            filters: ["prof"],
+            tags: ["ressources", "eduscol", "liens"],
+            q: "Ressources EPS : quel intérêt ?",
+            a: "Avoir vos références (officielles + personnelles) au même endroit : liens rapides, favoris et veille.",
+            links: [{ label: "Ouvrir Ressources EPS", href: "outils/ressources-eps.html" }],
+          },
 
-          { cat: "composition-equipes", q: "Composition d’équipes homogènes: but ?", a: "Générer des équipes équilibrées (niveaux) rapidement et ajuster manuellement si besoin." },
-          { cat: "composition-equipes", q: "Composition d’équipes: astuce ?", a: "Renseigner un niveau simple (1–5) améliore fortement l’équilibrage automatique." },
+          {
+            id: "video-retard-principe",
+            cat: "video-retard",
+            filters: ["prof"],
+            tags: ["video", "retard", "feedback"],
+            q: "Vidéo avec retard : principe ?",
+            a: "Filmez une action et rejouez-la avec décalage pour l’auto-correction immédiate (feedback visuel en quelques secondes).",
+            links: [{ label: "Ouvrir Vidéo avec retard", href: "outils/video-retard.html" }],
+          },
+          {
+            id: "video-retard-scenario",
+            cat: "video-retard",
+            filters: ["prof"],
+            tags: ["video", "auto correction"],
+            q: "Vidéo avec retard : scénario efficace ?",
+            a: "L’élève réalise, observe sa tentative avec retard, ajuste, puis reteste — utile pour posture, trajectoire et enchaînement technique.",
+            links: [{ label: "Ouvrir Vidéo avec retard", href: "outils/video-retard.html" }],
+          },
 
-          { cat: "championnat-poule", q: "Championnat: usage ?", a: "Créer des poules, saisir les résultats match par match et suivre les classements automatiquement." },
-          { cat: "championnat-poule", q: "Championnat: bénéfice pédagogique ?", a: "Donner un cadre clair de progression collective et favoriser l’engagement sur la durée." },
+          {
+            id: "tableau-tactique-usage",
+            cat: "tableau-noir",
+            filters: ["prof"],
+            tags: ["tableau tactique", "tableau noir", "schema", "tactique"],
+            q: "Tableau tactique : à quoi sert-il ?",
+            a: "Créer et présenter des schémas tactiques interactifs : fond terrain, joueurs, dessins, animation et export image/PDF.",
+            links: [{ label: "Ouvrir Tableau tactique", href: "outils/tableau-noir.html" }],
+          },
+          {
+            id: "tableau-tactique-seance",
+            cat: "tableau-noir",
+            filters: ["prof"],
+            tags: ["tableau tactique", "tableau noir", "seance"],
+            q: "Tableau tactique : comment l’utiliser en séance ?",
+            a: "Préparez 2 à 3 schémas avant le cours, ajustez en direct, utilisez l’animation pour expliquer, exportez si besoin.",
+            links: [{ label: "Ouvrir Tableau tactique", href: "outils/tableau-noir.html" }],
+          },
 
-          { cat: "tournoi-elimination", q: "Tournoi éliminatoire: que fait l’outil ?", a: "Construit un tableau type tennis et fait progresser les vainqueurs automatiquement jusqu’à la finale." },
+          {
+            id: "composition-equipes-but",
+            cat: "composition-equipes",
+            filters: ["prof"],
+            tags: ["equipes", "homogene", "niveau"],
+            q: "Composition d’équipes homogènes : but ?",
+            a: "Générer des équipes équilibrées (niveaux) rapidement et ajuster manuellement si besoin.",
+            links: [{ label: "Ouvrir Composition d’équipes", href: "outils/composition-equipes.html" }],
+          },
+          {
+            id: "composition-equipes-astuce",
+            cat: "composition-equipes",
+            filters: ["prof"],
+            tags: ["equipes", "niveau"],
+            q: "Composition d’équipes : astuce ?",
+            a: "Renseigner un niveau simple (1–5) améliore fortement l’équilibrage automatique.",
+            links: [{ label: "Ouvrir Composition d’équipes", href: "outils/composition-equipes.html" }],
+          },
 
-          { cat: "pyramide", q: "Pyramide de victoires: principe ?", a: "Les élèves montent par paliers avec les victoires, sans redescendre sur défaite. Très motivant pour un suivi de cycle." },
+          {
+            id: "championnat-usage",
+            cat: "championnat-poule",
+            filters: ["prof"],
+            tags: ["championnat", "poules", "classement"],
+            q: "Championnat multi-poules : usage ?",
+            a: "Créez des poules, saisissez les résultats match par match et suivez les classements automatiquement.",
+            links: [{ label: "Ouvrir Championnat multi-poules", href: "outils/championnat-poule.html" }],
+          },
+          {
+            id: "championnat-pedago",
+            cat: "championnat-poule",
+            filters: ["prof"],
+            tags: ["championnat", "engagement"],
+            q: "Championnat multi-poules : bénéfice pédagogique ?",
+            a: "Donner un cadre clair de progression collective et favoriser l’engagement sur la durée.",
+            links: [{ label: "Ouvrir Championnat multi-poules", href: "outils/championnat-poule.html" }],
+          },
 
-          { cat: "defi-atp", q: "Défi ATP: ce que l’outil apporte ?", a: "Défis entre élèves avec classement dynamique, badges, historique détaillé, Hall of Fame, popups de progression et exports.\n\nC’est un format très motivant pour les cycles de confrontation." },
-          { cat: "defi-atp", q: "Défi ATP: comment paramétrer intelligemment ?", a: "Démarrage recommandé:\n1) Cliquez l’accordéon « Paramètres ».\n2) Choisissez la formule de points adaptée à votre objectif.\n3) Réglez arbitre/score (obligatoire, facultatif, masqué).\n4) Activez les bonus uniquement si vous voulez distinguer certains scénarios.\n5) Enregistrez puis lancez la saisie des matchs.\n\nPourquoi paramétrer:\n- adapter la compétition au niveau de la classe,\n- valoriser les comportements ciblés (engagement, arbitrage, progression),\n- rendre les règles transparentes donc acceptées." },
+          {
+            id: "tournoi-usage",
+            cat: "tournoi-elimination",
+            filters: ["prof"],
+            tags: ["tournoi", "elimination", "tableau"],
+            q: "Tournoi éliminatoire : que fait l’outil ?",
+            a: "Construit un tableau type tennis et fait progresser les vainqueurs automatiquement jusqu’à la finale.",
+            links: [{ label: "Ouvrir Tournoi éliminatoire", href: "outils/tournoi-elimination.html" }],
+          },
 
-          { cat: "orientation", q: "Course d’orientation: comment bien lancer une séance ?", a: "Préparation conseillée:\n1) Créez les parcours et balises dans l’outil.\n2) Importez les élèves.\n3) Configurez pénalités/bonus et type de départ.\n4) Lancez les départs puis suivez les chronos en direct.\n5) Utilisez le classement pour le debrief final.\n\nPourquoi paramétrer:\n- départs plus fluides,\n- résultats comparables,\n- debrief plus objectif." },
+          {
+            id: "pyramide-principe",
+            cat: "pyramide",
+            filters: ["prof"],
+            tags: ["pyramide", "victoires"],
+            q: "Pyramide de victoires : principe ?",
+            a: "Les élèves montent par paliers avec les victoires, sans redescendre sur défaite — motivant pour un suivi de cycle.",
+            links: [{ label: "Ouvrir Pyramide de victoires", href: "outils/pyramide-victoires.html" }],
+          },
 
-          { cat: "timer-hiit", q: "Timer HIIT / Tabata: quand l’utiliser ?", a: "Pour structurer des circuits travail/récupération avec rythme sonore et visuel clair, sans surveiller l’horloge en permanence." },
+          {
+            id: "defi-atp-apport",
+            cat: "defi-atp",
+            filters: ["prof"],
+            tags: ["defi atp", "classement", "badges"],
+            q: "Défi ATP : ce que l’outil apporte ?",
+            a: "Défis entre élèves avec classement dynamique, badges, historique, Hall of Fame et exports — format motivant pour les cycles de confrontation.",
+            links: [{ label: "Ouvrir Défi ATP", href: "outils/defi-atp.html" }],
+          },
+          {
+            id: "defi-atp-config",
+            cat: "defi-atp",
+            filters: ["prof"],
+            tags: ["defi atp", "parametres", "points"],
+            q: "Défi ATP : comment paramétrer intelligemment ?",
+            a: "Réglez la formule de points, l’arbitre/score et les bonus selon vos objectifs, puis lancez la saisie des matchs.",
+            detailsLabel: "Démarrage recommandé",
+            details:
+              "1) Ouvrez « Paramètres ».\n2) Choisissez la formule de points.\n3) Réglez arbitre/score.\n4) Activez les bonus si utile.\n5) Enregistrez et lancez les matchs.",
+            links: [{ label: "Ouvrir Défi ATP", href: "outils/defi-atp.html" }],
+          },
 
-          { cat: "maxi-timer", q: "Maxi timer: quelle différence avec HIIT ?", a: "Maxi timer privilégie l’affichage géant ultra lisible (décompte ou chrono), parfait pour grand groupe et vision à distance." },
+          {
+            id: "orientation-lancer",
+            cat: "orientation",
+            filters: ["prof"],
+            tags: ["orientation", "course", "chrono"],
+            q: "Course d’orientation : comment bien lancer une séance ?",
+            a: "Créez parcours et balises, importez les élèves, configurez pénalités et départs, lancez les chronos puis debriefez avec le classement.",
+            links: [{ label: "Ouvrir Course d’orientation", href: "outils/course-orientation.html" }],
+          },
 
-          { cat: "tirage", q: "Tirage au sort: utilité ?", a: "Sélectionner rapidement un élève ou un ordre de passage de manière transparente et aléatoire." },
+          {
+            id: "photo-finish-compatibilite",
+            cat: "photo-finish",
+            filters: ["prof", "depannage"],
+            tags: ["photo finish", "camera", "navigateur", "chrono", "beta"],
+            q: "Photo Finish fonctionne-t-il partout ?",
+            a: "Cela dépend de la caméra et du navigateur : testez avant la séance, privilégiez un appareil stable et exportez/sauvegardez les résultats.",
+            detailsLabel: "Conseils terrain",
+            details:
+              "Sur iPad, Safari peut être nécessaire pour la caméra. En cas de blocage, rechargez la page ou changez de navigateur. Les résultats peuvent être partagés par QR vers Réception QR.",
+            links: [
+              { label: "Ouvrir Photo Finish", href: "outils/photo-finish.html" },
+              { label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" },
+            ],
+          },
 
-          { cat: "danse", q: "Inducteur danse: intérêt pédagogique ?", a: "Stimuler l’improvisation et la créativité via des contraintes/inducteurs tirés au sort (espace, énergie, relation, objet…)." },
+          {
+            id: "relais-prof-usage",
+            cat: "relais",
+            filters: ["prof"],
+            tags: ["relais", "chrono", "zones", "transmission"],
+            q: "Relais (prof) : à quoi sert l’outil ?",
+            a: "Chronométrez un relais en 3 zones (course, transmission, reprise) avec associations donneur/receveur, meilleures perfs et export — version prof de l’outil élève.",
+            links: [
+              { label: "Ouvrir Relais (prof)", href: "outils/relais.html" },
+              { label: "Ouvrir Relais élève", href: "outils/relais-eleve.html" },
+            ],
+          },
 
-          { cat: "vma-test", q: "Test VMA: que couvre l’outil ?", a: "Chronométrage assisté (bips/voix/paliers) pour différents protocoles de VMA: suivi fiable et plus fluide du test collectif." },
+          {
+            id: "timer-hiit-usage",
+            cat: "timer-hiit",
+            filters: ["prof"],
+            tags: ["hiit", "tabata", "timer"],
+            q: "Timer HIIT / Tabata : quand l’utiliser ?",
+            a: "Pour structurer des circuits travail/récupération avec rythme sonore et visuel clair, sans surveiller l’horloge en permanence.",
+            links: [{ label: "Ouvrir Timer HIIT / Tabata", href: "outils/timer-hiit-tabata.html" }],
+          },
 
-          { cat: "radar", q: "Radar vitesse: à quoi sert-il ?", a: "Calculer vitesse et allure à partir d’une distance + temps, avec suivi de performances par classe." },
+          {
+            id: "maxi-timer-diff",
+            cat: "maxi-timer",
+            filters: ["prof"],
+            tags: ["maxi timer", "chrono", "affichage"],
+            q: "Maxi timer : quelle différence avec HIIT ?",
+            a: "Maxi timer privilégie l’affichage géant ultra lisible (décompte ou chrono), parfait pour grand groupe et vision à distance.",
+            links: [{ label: "Ouvrir Maxi timer", href: "outils/maxi-timer.html" }],
+          },
 
-          { cat: "ecartement", q: "Écartement des plots: pourquoi l’utiliser ?", a: "Préparer précisément les distances entre plots en demi-fond pour aligner repères terrain et vitesse cible." },
+          {
+            id: "tirage-usage",
+            cat: "tirage",
+            filters: ["prof"],
+            tags: ["tirage", "sort", "aleatoire"],
+            q: "Tirage au sort : utilité ?",
+            a: "Sélectionner rapidement un élève ou un ordre de passage de manière transparente et aléatoire.",
+            links: [{ label: "Ouvrir Tirage au sort", href: "outils/tirage-au-sort.html" }],
+          },
 
-          { cat: "table-marque", q: "Table de marque (élèves): usage ?", a: "Gérer score et temps de match simplement sur le terrain, avec gros affichage et commandes rapides." },
+          {
+            id: "danse-interet",
+            cat: "danse",
+            filters: ["prof"],
+            tags: ["danse", "improvisation"],
+            q: "Inducteur danse : intérêt pédagogique ?",
+            a: "Stimuler l’improvisation et la créativité via des contraintes tirées au sort (espace, énergie, relation, objet…).",
+            links: [{ label: "Ouvrir Inducteur danse", href: "outils/inducteur-danse.html" }],
+          },
 
-          { cat: "ptb", q: "Compteur PTB (élèves): que mesure-t-il ?", a: "Pertes, tirs, buts pour deux équipes, avec indicateurs comparatifs utiles pour l’analyse collective." },
+          {
+            id: "vma-test-couverture",
+            cat: "vma-test",
+            filters: ["prof"],
+            tags: ["vma", "test", "chrono"],
+            q: "Test VMA : que couvre l’outil ?",
+            a: "Chronométrage assisté (bips/voix/paliers) pour différents protocoles de VMA : suivi fiable et plus fluide du test collectif.",
+            links: [{ label: "Ouvrir Test VMA", href: "outils/test-vma.html" }],
+          },
 
-          { cat: "bonus", q: "Compteur bonus (élèves): à quoi sert-il ?", a: "Suivre bonus/malus/actions pour deux joueurs en direct et visualiser l’évolution de performance." },
+          {
+            id: "radar-usage",
+            cat: "radar",
+            filters: ["prof"],
+            tags: ["radar", "vitesse", "allure"],
+            q: "Radar vitesse : à quoi sert-il ?",
+            a: "Calculer vitesse et allure à partir d’une distance + temps, avec suivi de performances par classe.",
+            links: [{ label: "Ouvrir Radar vitesse", href: "outils/radar.html" }],
+          },
 
-          { cat: "plots", q: "Vitesse aux plots (élèves): intérêt ?", a: "Chronométrer les passages intermédiaires et mieux comprendre la régularité/allure sur effort fractionné." },
+          {
+            id: "ecartement-usage",
+            cat: "ecartement",
+            filters: ["prof"],
+            tags: ["plots", "demi fond", "distance"],
+            q: "Écartement des plots : pourquoi l’utiliser ?",
+            a: "Préparer précisément les distances entre plots en demi-fond pour aligner repères terrain et vitesse cible.",
+            links: [{ label: "Ouvrir Écartement des plots", href: "outils/ecartement-plots.html" }],
+          },
 
-          { cat: "ratio", q: "Compteur ratio (élèves): quand l’utiliser ?", a: "Observation simple réussite/échec (technique ou tactique) avec ratio instantané." },
+          {
+            id: "table-marque-usage",
+            cat: "table-marque",
+            filters: ["eleves"],
+            tags: ["table marque", "score", "match"],
+            q: "Table de marque (élèves) : usage ?",
+            a: "Gérer score et temps de match simplement sur le terrain, avec gros affichage et commandes rapides.",
+            links: [{ label: "Ouvrir Table de marque", href: "outils/table-marque.html" }],
+          },
 
-          { cat: "debrief", q: "Questions débrief (élèves): bénéfice ?", a: "Structurer le retour réflexif élève (critères + questions ouvertes) et récupérer rapidement les réponses via QR côté enseignant.\n\nIntérêt pédagogique:\n- rendre l’élève acteur de son analyse,\n- objectiver le ressenti de séance,\n- alimenter l’évaluation formative." },
+          {
+            id: "ptb-usage",
+            cat: "ptb",
+            filters: ["eleves"],
+            tags: ["ptb", "pertes", "tirs", "buts"],
+            q: "Compteur PTB (élèves) : que mesure-t-il ?",
+            a: "Pertes, tirs, buts pour deux équipes, avec indicateurs comparatifs utiles pour l’analyse collective.",
+            links: [{ label: "Ouvrir Compteur PTB", href: "outils/compteur-ptb.html" }],
+          },
 
-          { cat: "impact", q: "Zone d’impact (élèves): but ?", a: "Visualiser les zones touchées/visées selon l’activité pour améliorer la prise d’information tactique." },
+          {
+            id: "bonus-usage",
+            cat: "bonus",
+            filters: ["eleves"],
+            tags: ["bonus", "malus", "compteur"],
+            q: "Compteur bonus (élèves) : à quoi sert-il ?",
+            a: "Suivre bonus/malus/actions pour deux joueurs en direct et visualiser l’évolution de performance.",
+            links: [{ label: "Ouvrir Compteur bonus", href: "outils/compteur-bonus.html" }],
+          },
 
-          { cat: "convertisseur", q: "Convertisseur km/h ↔ min/km: pour qui ?", a: "Pour élèves et enseignants qui veulent passer instantanément d’une vitesse à une allure de course sans calcul mental." },
+          {
+            id: "plots-usage",
+            cat: "plots",
+            filters: ["eleves"],
+            tags: ["plots", "vitesse", "chrono"],
+            q: "Vitesse aux plots (élèves) : intérêt ?",
+            a: "Chronométrer les passages intermédiaires et mieux comprendre la régularité/allure sur effort fractionné.",
+            links: [{ label: "Ouvrir Vitesse aux plots", href: "outils/vitesse-plots.html" }],
+          },
 
-          { cat: "distance-vma", q: "Distance VMA: cas d’usage ?", a: "Préparer des séances de course en convertissant VMA, distance et temps de passage de façon fiable." },
+          {
+            id: "ratio-usage",
+            cat: "ratio",
+            filters: ["eleves"],
+            tags: ["ratio", "reussite", "echec"],
+            q: "Compteur ratio (élèves) : quand l’utiliser ?",
+            a: "Observation simple réussite/échec (technique ou tactique) avec ratio instantané.",
+            links: [{ label: "Ouvrir Compteur ratio", href: "outils/compteur-ratio.html" }],
+          },
 
-          { cat: "rm1", q: "Calcul du 1RM: utilité ?", a: "Estimer une charge maximale de référence à partir d’un effort sous-maximal, pour planifier des charges adaptées." },
+          {
+            id: "debrief-usage",
+            cat: "debrief",
+            filters: ["eleves", "qr"],
+            tags: ["debrief", "questions", "qr", "reflexion"],
+            q: "Questions débrief (élèves) : bénéfice ?",
+            a: "Structurer le retour réflexif élève (critères + questions ouvertes) et récupérer les réponses via QR côté enseignant.",
+            links: [
+              { label: "Ouvrir Questions débrief", href: "outils/questions-debrief.html" },
+              { label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" },
+            ],
+          },
 
-          { cat: "journal-muscu", q: "Journal de musculation: pourquoi c’est utile ?", a: "Tracer les séances (exercices/séries/charges), visualiser la progression et partager un bilan ciblé via QR.\n\nComment faire simplement:\n1) Créez une séance.\n2) Ajoutez les exercices et séries.\n3) Enregistrez la séance.\n4) Partagez au besoin via QR.\n\nIntérêt:\n- suivi individualisé clair,\n- meilleure régularité des élèves,\n- discussions prof-élève appuyées sur des traces concrètes." },
+          {
+            id: "impact-usage",
+            cat: "impact",
+            filters: ["eleves"],
+            tags: ["impact", "zone", "tactique"],
+            q: "Zone d’impact (élèves) : but ?",
+            a: "Visualiser les zones touchées/visées selon l’activité pour améliorer la prise d’information tactique.",
+            links: [{ label: "Ouvrir Zone d’impact", href: "outils/impact-badminton.html" }],
+          },
 
-          { cat: "vitesse-course", q: "Vitesse de course: que calcule l’outil ?", a: "Conversion distance/temps en km/h, m/s et allure min/km pour aider à fixer des objectifs de rythme." },
+          {
+            id: "convertisseur-usage",
+            cat: "convertisseur",
+            filters: ["eleves"],
+            tags: ["convertisseur", "allure", "km/h"],
+            q: "Convertisseur km/h ↔ min/km : pour qui ?",
+            a: "Pour élèves et enseignants qui veulent passer instantanément d’une vitesse à une allure de course sans calcul mental.",
+            links: [{ label: "Ouvrir Convertisseur allure", href: "outils/convertisseur-allure.html" }],
+          },
 
-          { cat: "qr", q: "Transfert QR code: comment ça marche concrètement ?", a: "Principe:\n1) L’appareil A génère un QR (lien, résultat, réponse, résumé d’une action).\n2) L’appareil B scanne ce QR.\n3) L’outil cible récupère la donnée utile.\n\nPourquoi c’est pratique:\n- transfert rapide en séance,\n- moins de ressaisie,\n- moins d’erreurs de copie." },
-          { cat: "qr", q: "Le QR transmet-il toute ma base de données ?", a: "Non. En règle générale, le QR transporte une donnée ciblée liée à la tâche en cours, pas l’intégralité de votre base locale." }
+          {
+            id: "distance-vma-usage",
+            cat: "distance-vma",
+            filters: ["eleves"],
+            tags: ["vma", "distance", "course"],
+            q: "Distance VMA : cas d’usage ?",
+            a: "Préparer des séances de course en convertissant VMA, distance et temps de passage de façon fiable.",
+            links: [{ label: "Ouvrir Distance VMA", href: "outils/distance-vma.html" }],
+          },
+
+          {
+            id: "rm1-usage",
+            cat: "rm1",
+            filters: ["eleves"],
+            tags: ["1rm", "musculation", "charge"],
+            q: "Calcul du 1RM : utilité ?",
+            a: "Estimer une charge maximale de référence à partir d’un effort sous-maximal, pour planifier des charges adaptées.",
+            links: [{ label: "Ouvrir Calcul du 1RM", href: "outils/calcul-1rm.html" }],
+          },
+
+          {
+            id: "journal-muscu-usage",
+            cat: "journal-muscu",
+            filters: ["eleves", "qr"],
+            tags: ["journal", "musculation", "qr", "progression"],
+            q: "Journal de musculation : pourquoi c’est utile ?",
+            a: "Tracer les séances (exercices/séries/charges), visualiser la progression et partager un bilan via QR.",
+            detailsLabel: "Comment faire",
+            details: "1) Créez une séance.\n2) Ajoutez exercices et séries.\n3) Enregistrez.\n4) Partagez via QR si besoin.",
+            links: [
+              { label: "Ouvrir Journal musculation", href: "outils/journal-musculation.html" },
+              { label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" },
+            ],
+          },
+
+          {
+            id: "vitesse-course-usage",
+            cat: "vitesse-course",
+            filters: ["eleves"],
+            tags: ["vitesse", "course", "allure"],
+            q: "Vitesse de course : que calcule l’outil ?",
+            a: "Conversion distance/temps en km/h, m/s et allure min/km pour aider à fixer des objectifs de rythme.",
+            links: [{ label: "Ouvrir Vitesse de course", href: "outils/vitesse-course.html" }],
+          },
+
+          {
+            id: "relais-eleve-usage",
+            cat: "relais-eleve",
+            filters: ["eleves"],
+            tags: ["relais", "eleve", "chrono", "zones"],
+            q: "Relais (élève) : à quoi sert l’outil ?",
+            a: "Chronométrer un relais en 3 zones (course, transmission, reprise) avec vitesses et relecture vidéo optionnelle de la zone de transmission.",
+            links: [{ label: "Ouvrir Relais élève", href: "outils/relais-eleve.html" }],
+          },
+
+          {
+            id: "qr-transfert",
+            cat: "qr",
+            filters: ["qr"],
+            tags: ["qr", "transfert", "scan", "partage"],
+            q: "Transfert QR code : comment ça marche concrètement ?",
+            a: "L’appareil A génère un QR, l’appareil B le scanne, et l’outil cible récupère la donnée utile — rapide, sans ressaisie.",
+            detailsLabel: "Exemples",
+            details:
+              "Résultats d’un outil élève vers Réception QR, lien de sauvegarde entre deux appareils, partage d’un résumé d’action.",
+            links: [{ label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" }],
+          },
+          {
+            id: "qr-pas-toute-base",
+            cat: "qr",
+            filters: ["qr"],
+            tags: ["qr", "securite", "donnees"],
+            q: "Le QR transmet-il toute ma base de données ?",
+            a: "Non : le QR transporte en règle générale une donnée ciblée liée à la tâche en cours, pas l’intégralité de votre base locale.",
+          },
+          {
+            id: "qr-internet",
+            cat: "qr",
+            filters: ["qr", "depannage"],
+            priority: true,
+            tags: ["qr", "internet", "hors ligne", "offline", "eleves", "synchronisation", "wifi"],
+            q: "Les QR codes nécessitent-ils internet ?",
+            a: "Cela dépend du type de QR : les résultats élèves scannés dans Réception QR fonctionnent hors ligne une fois l’app chargée ; le QR de lien vers la page élèves nécessite internet pour ouvrir la page si elle n’est pas déjà en cache ; la synchronisation Sauvegarde nécessite internet.",
+            links: [
+              { label: "Ouvrir Réception QR", href: "outils/donnees-eleves.html" },
+              { label: "Ouvrir Sauvegarde", href: "outils/sauvegarde.html" },
+              { label: "Ouvrir la page élèves", href: "eleves.html" },
+            ],
+          },
         ];
 
         var LABELS = {
-          all: "Tout",
           general: "Général",
           classes: "Classes et groupes",
+          "grilles-evaluation": "Grilles d’évaluation",
           "tableau-suivi": "Appel et notes",
           "cahier-texte": "Cahier de texte",
           asns: "Validation ASNS",
           dispenses: "Dispenses / Inaptitudes",
           oubli: "Oubli de matériel",
-          "donnees-eleves": "Données élèves",
+          "synthese-eps": "Dossier élève",
+          "donnees-eleves": "Réception QR",
           ressources: "Ressources EPS",
           "video-retard": "Vidéo avec retard",
-          "tableau-noir": "Tableau Noir",
+          "tableau-noir": "Tableau tactique",
           "composition-equipes": "Composition d’équipes",
-          "championnat-poule": "Championnat",
+          "championnat-poule": "Championnat multi-poules",
           "tournoi-elimination": "Tournoi éliminatoire",
           pyramide: "Pyramide de victoires",
           "defi-atp": "Défi ATP",
           orientation: "Course d’orientation",
+          "photo-finish": "Photo Finish",
+          relais: "Relais (prof)",
+          "relais-eleve": "Relais (élève)",
           "timer-hiit": "Timer HIIT / Tabata",
           "maxi-timer": "Maxi timer",
           tirage: "Tirage au sort",
@@ -189,62 +910,246 @@
           rm1: "Calcul du 1RM",
           "journal-muscu": "Journal musculation",
           "vitesse-course": "Vitesse de course",
-          qr: "QR code"
+          qr: "QR code",
         };
 
-        var state = { q: "" };
+        var state = { q: "", filter: "all" };
         var list = document.getElementById("faq-list");
         var count = document.getElementById("faq-count");
         var search = document.getElementById("faq-search");
+        var filtersEl = document.getElementById("faq-filters");
+        var priorityEl = document.getElementById("faq-priority");
+        var expandAllBtn = document.getElementById("faq-expand-all");
+        var collapseAllBtn = document.getElementById("faq-collapse-all");
 
-        function matchItem(item) {
-          if (!state.q) return true;
-          var hay = (item.q + " " + item.a + " " + (LABELS[item.cat] || "")).toLowerCase();
-          return hay.indexOf(state.q) >= 0;
+        function normaliseFaqText(text) {
+          return String(text || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
         }
 
-        function render() {
-          var rows = FAQ_DATA.filter(matchItem);
-          list.innerHTML = "";
-          if (!rows.length) {
-            var p = document.createElement("p");
-            p.className = "empty-state";
-            p.textContent = "Aucune question ne correspond à votre recherche.";
-            list.appendChild(p);
-          } else {
-            rows.forEach(function (item) {
-              var d = document.createElement("details");
-              d.className = "faq-item";
-              if (item.id) d.id = item.id;
-              var s = document.createElement("summary");
-              s.innerHTML = '<span class="faq-item__cat">' + (LABELS[item.cat] || "FAQ") + "</span>" +
-                            '<span class="faq-item__q">' + item.q + "</span>";
-              var body = document.createElement("div");
-              body.className = "faq-item__a";
-              body.textContent = item.a;
-              d.appendChild(s);
-              d.appendChild(body);
-              list.appendChild(d);
+        function getItemFilters(item) {
+          if (item.filters && item.filters.length) return item.filters;
+          if (item.cat === "general") return ["debuter"];
+          if (item.cat === "qr" || item.cat === "donnees-eleves") return ["qr"];
+          if (item.cat === "synthese-eps" || item.cat === "grilles-evaluation" || item.cat === "tableau-suivi" || item.cat === "asns" || item.cat === "dispenses" || item.cat === "oubli") {
+            return ["evaluer", "prof"];
+          }
+          if (ELEVE_TOOL_CATS[item.cat]) return ["eleves"];
+          return ["prof"];
+        }
+
+        function itemSearchBlob(item) {
+          var parts = [item.q, item.a, item.details || "", LABELS[item.cat] || ""];
+          if (item.tags) parts = parts.concat(item.tags);
+          if (item.links) {
+            item.links.forEach(function (link) {
+              parts.push(link.label);
             });
           }
-          count.textContent = rows.length + " question(s) affichée(s).";
+          return normaliseFaqText(parts.join(" "));
         }
 
-        search.addEventListener("input", function () {
-          state.q = (search.value || "").trim().toLowerCase();
-          render();
-        });
+        function matchItem(item) {
+          if (state.filter !== "all" && getItemFilters(item).indexOf(state.filter) < 0) return false;
+          if (!state.q) return true;
+          return itemSearchBlob(item).indexOf(state.q) >= 0;
+        }
 
-        render();
+        function appendParagraphs(parent, text, className) {
+          if (!text) return;
+          text.split("\n\n").forEach(function (block) {
+            var trimmed = block.trim();
+            if (!trimmed) return;
+            var p = document.createElement("p");
+            p.className = className;
+            p.textContent = trimmed;
+            parent.appendChild(p);
+          });
+        }
 
-        var hashId = (location.hash || "").replace(/^#/, "");
-        if (hashId) {
+        function renderAnswer(container, item) {
+          container.textContent = "";
+          var parts = item.a.split("\n\n");
+          if (parts[0]) {
+            var lead = document.createElement("p");
+            lead.className = "faq-item__a-lead";
+            lead.textContent = parts[0].trim();
+            container.appendChild(lead);
+          }
+          if (parts.length > 1) {
+            appendParagraphs(container, parts.slice(1).join("\n\n"), "faq-item__a-p");
+          }
+          if (item.links && item.links.length) {
+            var linksWrap = document.createElement("div");
+            linksWrap.className = "faq-item__links";
+            item.links.forEach(function (link) {
+              var a = document.createElement("a");
+              a.className = "btn btn--ghost btn--small";
+              a.href = link.href;
+              a.textContent = link.label;
+              linksWrap.appendChild(a);
+            });
+            container.appendChild(linksWrap);
+          }
+          if (item.details) {
+            var det = document.createElement("details");
+            det.className = "faq-item__more";
+            var sum = document.createElement("summary");
+            sum.textContent = item.detailsLabel || "En savoir plus";
+            det.appendChild(sum);
+            var detBody = document.createElement("div");
+            detBody.className = "faq-item__more-body";
+            appendParagraphs(detBody, item.details, "faq-item__more-p");
+            det.appendChild(detBody);
+            container.appendChild(det);
+          }
+        }
+
+        function renderFaqItem(item) {
+          var d = document.createElement("details");
+          d.className = "faq-item";
+          if (item.id) d.id = item.id;
+          var s = document.createElement("summary");
+          var catSpan = document.createElement("span");
+          catSpan.className = "faq-item__cat";
+          catSpan.textContent = LABELS[item.cat] || "FAQ";
+          var qSpan = document.createElement("span");
+          qSpan.className = "faq-item__q";
+          qSpan.textContent = item.q;
+          s.appendChild(catSpan);
+          s.appendChild(qSpan);
+          var body = document.createElement("div");
+          body.className = "faq-item__a";
+          renderAnswer(body, item);
+          d.appendChild(s);
+          d.appendChild(body);
+          return d;
+        }
+
+        function applyHash() {
+          var hashId = (location.hash || "").replace(/^#/, "");
+          if (!hashId) return;
           var target = document.getElementById(hashId);
-          if (target && target.tagName === "DETAILS") {
+          if (target && target.classList.contains("faq-item")) {
             target.open = true;
             target.scrollIntoView({ behavior: "smooth", block: "start" });
           }
         }
+
+        function openFaqItem(id) {
+          state.filter = "all";
+          state.q = "";
+          search.value = "";
+          updateFilterButtons();
+          render();
+          applyHash();
+          if (!location.hash || location.hash.replace(/^#/, "") !== id) {
+            history.replaceState(null, "", "#" + id);
+          }
+          var target = document.getElementById(id);
+          if (target) {
+            target.open = true;
+            target.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        }
+
+        function render() {
+          var rows = FAQ_DATA.filter(matchItem);
+          list.textContent = "";
+          if (!rows.length) {
+            var empty = document.createElement("div");
+            empty.className = "empty-state";
+            var p = document.createElement("p");
+            p.textContent = "Aucun résultat.";
+            var hint = document.createElement("p");
+            hint.className = "faq-empty-hint";
+            hint.textContent = "Essayez : sauvegarde, QR, classe, appel, dossier élève.";
+            empty.appendChild(p);
+            empty.appendChild(hint);
+            list.appendChild(empty);
+          } else {
+            rows.forEach(function (item) {
+              list.appendChild(renderFaqItem(item));
+            });
+          }
+          var filterLabel = FILTER_DEFS.find(function (f) {
+            return f.id === state.filter;
+          });
+          var suffix = state.q ? " (recherche active)" : "";
+          count.textContent =
+            rows.length +
+            " question(s) affichée(s)" +
+            (filterLabel && state.filter !== "all" ? " — filtre « " + filterLabel.label + " »" : "") +
+            suffix +
+            ".";
+          applyHash();
+        }
+
+        function updateFilterButtons() {
+          filtersEl.querySelectorAll(".faq-filter").forEach(function (btn) {
+            var active = btn.getAttribute("data-filter") === state.filter;
+            btn.classList.toggle("is-active", active);
+            btn.setAttribute("aria-pressed", active ? "true" : "false");
+          });
+        }
+
+        function renderFilters() {
+          filtersEl.textContent = "";
+          FILTER_DEFS.forEach(function (def) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn btn--ghost btn--small faq-filter";
+            btn.setAttribute("data-filter", def.id);
+            btn.setAttribute("aria-pressed", def.id === state.filter ? "true" : "false");
+            if (def.id === state.filter) btn.classList.add("is-active");
+            btn.textContent = def.label;
+            btn.addEventListener("click", function () {
+              state.filter = def.id;
+              updateFilterButtons();
+              render();
+            });
+            filtersEl.appendChild(btn);
+          });
+        }
+
+        function renderPriority() {
+          priorityEl.textContent = "";
+          PRIORITY_CARDS.forEach(function (card) {
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "faq-priority-card";
+            btn.textContent = card.label;
+            btn.addEventListener("click", function () {
+              openFaqItem(card.id);
+            });
+            priorityEl.appendChild(btn);
+          });
+        }
+
+        search.addEventListener("input", function () {
+          state.q = normaliseFaqText((search.value || "").trim());
+          render();
+        });
+
+        expandAllBtn.addEventListener("click", function () {
+          list.querySelectorAll(".faq-item").forEach(function (d) {
+            d.open = true;
+          });
+        });
+
+        collapseAllBtn.addEventListener("click", function () {
+          list.querySelectorAll(".faq-item").forEach(function (d) {
+            d.open = false;
+          });
+        });
+
+        window.addEventListener("hashchange", applyHash);
+
+        renderFilters();
+        renderPriority();
+        render();
       })();
     </script>
   </body>

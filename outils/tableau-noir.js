@@ -1,5 +1,5 @@
 /**
- * Tableau Noir — schémas tactiques EPS (Canvas, IndexedDB, hors ligne).
+ * Tableau tactique — schémas tactiques EPS (Canvas, IndexedDB, hors ligne).
  */
 (function () {
   "use strict";
@@ -1557,7 +1557,7 @@
       var url = canvasEl.toDataURL("image/png");
       var a = document.createElement("a");
       a.href = url;
-      a.download = (state.name || "tableau-noir").replace(/\s+/g, "-") + ".png";
+      a.download = (state.name || "tableau-tactique").replace(/\s+/g, "-") + ".png";
       a.click();
       showToast("PNG exporté");
     } catch (e) {
@@ -1584,9 +1584,9 @@
         iw = (canvasEl.width / canvasEl.height) * ih;
       }
       pdf.setFontSize(14);
-      pdf.text(state.name || "Tableau Noir", margin, margin + 4);
+      pdf.text(state.name || "Tableau tactique", margin, margin + 4);
       pdf.addImage(data, "JPEG", margin, margin + 8, iw, ih);
-      pdf.save((state.name || "tableau-noir").replace(/\s+/g, "-") + ".pdf");
+      pdf.save((state.name || "tableau-tactique").replace(/\s+/g, "-") + ".pdf");
       showToast("PDF exporté");
     } catch (e) {
       showMsg("Erreur export PDF.", true);
@@ -1597,7 +1597,7 @@
     if (!canvasEl) return;
     canvasEl.toBlob(function (blob) {
       if (!blob) return;
-      var file = new File([blob], "tableau-noir.png", { type: "image/png" });
+      var file = new File([blob], "tableau-tactique.png", { type: "image/png" });
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         navigator.share({ title: state.name, files: [file] }).catch(function () {});
       } else {

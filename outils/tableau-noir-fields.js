@@ -1,5 +1,5 @@
 /**
- * Fonds de terrains sportifs — rendu Canvas (Tableau Noir).
+ * Fonds de terrains sportifs — rendu Canvas (Tableau tactique).
  * Proportions et tracés alignés sur les dimensions officielles (FIFA, FIBA, FIVB, IHF, etc.).
  */
 (function (global) {
