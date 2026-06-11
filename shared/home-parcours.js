@@ -16,7 +16,7 @@
         titreAction: {
           label: "Tuto vidéo",
           title: "Tutoriel vidéo : bien débuter",
-          href: "https://youtu.be/02dCYWwZEkI?si=HO7Sm5BPqqQlR0EZ",
+          href: "https://youtu.be/vSFjbIGB87s",
           icon: "▶",
           target: "_blank",
           rel: "noopener noreferrer",
