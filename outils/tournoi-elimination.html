@@ -138,6 +138,12 @@
             <strong>Exempt</strong> (le joueur avance seul) ou <strong>Attente de joueur</strong> (adversaire pas encore
             connu). En format avec reclassement, le perdant rejoint automatiquement son tableau de classement.
           </p>
+          <div class="tournoi-bracket-actions">
+            <button type="button" class="btn btn--ghost btn--labeled" id="tournoi-export-pdf">
+              <span class="btn__icon" aria-hidden="true">📄</span>
+              <span class="btn__text">Exporter le tableau en PDF</span>
+            </button>
+          </div>
           <div class="tournoi-bracket-wrap">
             <div class="tournoi-bracket" id="tournoi-bracket"></div>
           </div>
@@ -156,6 +162,7 @@
     <script src="../shared/eleve-display.js"></script>
     <script src="../class-import.js"></script>
     <script src="../shared/import-eleve-presence.js"></script>
+    <script src="../vendor/jspdf.umd.min.js"></script>
     <script src="tournoi-elimination.js"></script>
     <script src="../tool-info.js"></script>
     <script>

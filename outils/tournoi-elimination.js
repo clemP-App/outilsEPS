@@ -19,6 +19,7 @@
   var btnEffacerResultats = document.getElementById("tournoi-effacer-resultats");
   var btnEffacer = document.getElementById("tournoi-effacer");
   var btnValiderListe = document.getElementById("tournoi-valider-liste");
+  var btnExportPdf = document.getElementById("tournoi-export-pdf");
 
   var listeSaisieMeta =
     typeof ListeSaisieUi !== "undefined" && textareaEl
@@ -425,6 +426,7 @@
       placements: {},
     };
     if (textareaEl) textareaEl.value = "";
+    if (state.format === "classement") assurerTableauxPerdants();
     autoAdvanceByes();
     save();
     render();
@@ -604,6 +606,32 @@
     child.sourceRound = roundIndex;
     state.tables.push(child);
     return child;
+  }
+
+  function preCreerTousTableauxPerdants(table) {
+    if (!table || !table.rounds || !table.rounds.length) return;
+    var lastRound = table.rounds.length - 1;
+    for (var r = 0; r < lastRound; r++) {
+      var child = getOrCreateLoserTable(table, r);
+      if (child) preCreerTousTableauxPerdants(child);
+    }
+  }
+
+  function assurerTableauxPerdants() {
+    if (state.format !== "classement" || !tableauDejaGenere()) return;
+    var main = findTable("principal");
+    if (!main) return;
+    preCreerTousTableauxPerdants(main);
+  }
+
+  function tableauxPerdantsTries() {
+    return (state.tables || [])
+      .filter(function (table) {
+        return table.id !== "principal";
+      })
+      .sort(function (a, b) {
+        return (a.rangeStart || 0) - (b.rangeStart || 0);
+      });
   }
 
   function removeDescendantTables(tableId) {
@@ -793,12 +821,45 @@
     if (match.players[otherSlot]) {
       return brancheAdverseVide(table, roundIndex, matchIndex, otherSlot);
     }
-    var sourceMatchIndex = matchIndex * 2 + slotIndex;
-    return !branchHasPlayer(table, roundIndex - 1, sourceMatchIndex);
+    return false;
   }
 
   function emptySlotLabel(tableId, roundIndex, matchIndex, slotIndex) {
     return isExemptSlot(tableId, roundIndex, matchIndex, slotIndex) ? "Exempt" : "Attente de joueur";
+  }
+
+  function hintSourcePerdantSlot(table, matchIndex, slotIndex) {
+    table = tableCompletPourPdf(table);
+    if (!table || table.sourceTableId == null || table.sourceRound == null) return "";
+    var parent = findTable(table.sourceTableId);
+    if (!parent || !parent.rounds[table.sourceRound]) return "";
+    var parentMatchIndex = matchIndex * 2 + slotIndex;
+    if (!parent.rounds[table.sourceRound][parentMatchIndex]) return "";
+    return "Perdant " + matchLabel(table.sourceRound, parentMatchIndex, parent.rounds.length);
+  }
+
+  function tableCompletPourPdf(table) {
+    if (!table) return null;
+    if (table.bracketSize != null && table.rangeStart != null) return table;
+    return findTable(table.id) || table;
+  }
+
+  function hintDestinationPerdantMatch(table, roundIndex) {
+    if (state.format !== "classement" || !table) return "";
+    var t = tableCompletPourPdf(table);
+    if (!t || t.bracketSize == null || t.rangeStart == null) return "";
+    var range = loserRange(t, roundIndex);
+    if (range.size < 2 || isNaN(range.start) || isNaN(range.end)) return "";
+    return "Perdant - " + rangeTitle(range.start, range.end);
+  }
+
+  function libelleSlotVideTournoi(table, tableId, roundIndex, matchIndex, slotIndex) {
+    if (isExemptSlot(tableId, roundIndex, matchIndex, slotIndex)) return "Exempt";
+    if (roundIndex === 0 && table) {
+      var hint = hintSourcePerdantSlot(table, matchIndex, slotIndex);
+      if (hint) return hint;
+    }
+    return "Attente de joueur";
   }
 
   function resetResults() {
@@ -814,6 +875,7 @@
       state.tables = [freshMain];
       state.rounds = freshMain.rounds;
       state.placements = {};
+      assurerTableauxPerdants();
       autoAdvanceByes();
       save();
       render();
@@ -1043,15 +1105,17 @@
     });
   }
 
-  function renderPlayer(tableId, match, player, roundIndex, matchIndex, slotIndex) {
+  function renderPlayer(table, tableId, match, player, roundIndex, matchIndex, slotIndex) {
     var btn = document.createElement("button");
     btn.type = "button";
     btn.className = "tournoi-player";
     if (!player) {
       var exempt = isExemptSlot(tableId, roundIndex, matchIndex, slotIndex);
-      btn.className += " is-empty" + (exempt ? " is-exempt" : " is-waiting");
+      var slotLabel = libelleSlotVideTournoi(table, tableId, roundIndex, matchIndex, slotIndex);
+      var isHint = !exempt && slotLabel.indexOf("Perdant ") === 0;
+      btn.className += " is-empty" + (exempt ? " is-exempt" : isHint ? " is-perdant-hint" : " is-waiting");
       btn.disabled = true;
-      btn.textContent = emptySlotLabel(tableId, roundIndex, matchIndex, slotIndex);
+      btn.textContent = slotLabel;
       return btn;
     }
     btn.textContent = player;
@@ -1093,7 +1157,7 @@
 
       round.forEach(function (match, m) {
         var matchEl = document.createElement("div");
-        matchEl.className = "tournoi-match";
+        matchEl.className = "tournoi-match" + (r > 0 ? " tournoi-match--compact" : "");
         matchEl.setAttribute("data-table", table.id);
         matchEl.setAttribute("data-round", String(r));
         matchEl.setAttribute("data-match", String(m));
@@ -1103,8 +1167,29 @@
         label.className = "tournoi-match__label";
         label.textContent = matchLabel(r, m, totalRounds);
         matchEl.appendChild(label);
-        matchEl.appendChild(renderPlayer(table.id, match, match.players[0], r, m, 0));
-        matchEl.appendChild(renderPlayer(table.id, match, match.players[1], r, m, 1));
+        if (r === 0) {
+          matchEl.appendChild(renderPlayer(table, table.id, match, match.players[0], r, m, 0));
+          matchEl.appendChild(renderPlayer(table, table.id, match, match.players[1], r, m, 1));
+        } else if (match.winner) {
+          var winSlot = match.players[0] === match.winner ? 0 : 1;
+          matchEl.appendChild(renderPlayer(table, table.id, match, match.winner, r, m, winSlot));
+        } else {
+          var hasP0 = !!match.players[0];
+          var hasP1 = !!match.players[1];
+          if (!hasP0 && !hasP1) {
+            matchEl.appendChild(renderPlayer(table, table.id, match, null, r, m, 0));
+          } else {
+            if (hasP0) matchEl.appendChild(renderPlayer(table, table.id, match, match.players[0], r, m, 0));
+            if (hasP1) matchEl.appendChild(renderPlayer(table, table.id, match, match.players[1], r, m, 1));
+          }
+        }
+        var destHint = hintDestinationPerdantMatch(table, r);
+        if (destHint) {
+          var hintEl = document.createElement("span");
+          hintEl.className = "tournoi-match__perdant-hint";
+          hintEl.textContent = destHint;
+          matchEl.appendChild(hintEl);
+        }
         roundEl.appendChild(matchEl);
       });
       tableEl.appendChild(roundEl);
@@ -1159,9 +1244,27 @@
     }
 
     if (state.format === "classement") {
-      (state.tables || []).forEach(function (table) {
-        bracketEl.appendChild(renderTable(table));
-      });
+      assurerTableauxPerdants();
+      var main = findTable("principal");
+      if (main) bracketEl.appendChild(renderTable(main));
+      var perdants = tableauxPerdantsTries();
+      if (perdants.length) {
+        var sectionPerdants = document.createElement("section");
+        sectionPerdants.className = "tournoi-perdants-section";
+        var titrePerdants = document.createElement("h2");
+        titrePerdants.className = "tournoi-perdants-title";
+        titrePerdants.textContent = "Tableaux de reclassement (perdants)";
+        sectionPerdants.appendChild(titrePerdants);
+        var hintPerdants = document.createElement("p");
+        hintPerdants.className = "hint tournoi-perdants-hint";
+        hintPerdants.textContent =
+          "Cases vides à compléter au fil des matchs, ou à imprimer pour noter les perdants à la main.";
+        sectionPerdants.appendChild(hintPerdants);
+        perdants.forEach(function (table) {
+          sectionPerdants.appendChild(renderTable(table));
+        });
+        bracketEl.appendChild(sectionPerdants);
+      }
       var classement = renderClassement();
       if (classement) bracketEl.appendChild(classement);
     } else {
@@ -1242,6 +1345,491 @@
     });
   }
 
+  function slugExport(nom) {
+    return String(nom || "tournoi")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  function metaTablePdf(table, kind) {
+    var src = tableCompletPourPdf(table) || table;
+    return {
+      id: src.id,
+      title: src.title || "Tableau",
+      rounds: src.rounds,
+      rangeStart: src.rangeStart,
+      rangeEnd: src.rangeEnd,
+      bracketSize: src.bracketSize,
+      sourceTableId: src.sourceTableId,
+      sourceRound: src.sourceRound,
+      kind: kind || "principal",
+    };
+  }
+
+  function tablesPourExport() {
+    if (state.format === "classement") {
+      assurerTableauxPerdants();
+      var out = [];
+      var main = findTable("principal");
+      if (main) out.push(metaTablePdf(main, "principal"));
+      tableauxPerdantsTries().forEach(function (table) {
+        out.push(metaTablePdf(table, "perdant"));
+      });
+      return out;
+    }
+    if (!state.rounds.length) return [];
+    return [
+      metaTablePdf(
+        {
+          id: "principal",
+          title: "Tableau principal",
+          rounds: state.rounds,
+          rangeStart: 1,
+          rangeEnd: state.totalParticipants,
+          bracketSize: state.size,
+        },
+        "principal"
+      ),
+    ];
+  }
+
+  function libelleJoueurPdf(table, tableId, roundIndex, matchIndex, slotIndex, player) {
+    if (player) return { text: player, kind: "player" };
+    if (isExemptSlot(tableId, roundIndex, matchIndex, slotIndex)) {
+      return { text: "Exempt", kind: "exempt" };
+    }
+    if (roundIndex === 0 && table) {
+      var hint = hintSourcePerdantSlot(table, matchIndex, slotIndex);
+      if (hint) return { text: hint, kind: "perdant-hint" };
+    }
+    return { text: "", kind: "empty" };
+  }
+
+  function tronquerTextePdf(doc, texte, maxW, taille) {
+    doc.setFontSize(taille);
+    var t = String(texte || "");
+    if (doc.getTextWidth(t) <= maxW) return t;
+    while (t.length > 1 && doc.getTextWidth(t + "…") > maxW) t = t.slice(0, -1);
+    return t + "…";
+  }
+
+  function centreMatchPdf(roundIndex, matchIndex, slotH, debutContenuY) {
+    return debutContenuY + (matchIndex * Math.pow(2, roundIndex) + Math.pow(2, roundIndex - 1)) * slotH;
+  }
+
+  function dessinerConnecteurPdf(doc, x1, y1, x2, y2, couleur) {
+    var mid = x1 + Math.max(4, (x2 - x1) / 2);
+    doc.setDrawColor(couleur[0], couleur[1], couleur[2]);
+    doc.setLineWidth(0.25);
+    doc.line(x1, y1, mid, y1);
+    doc.line(mid, y1, mid, y2);
+    doc.line(mid, y2, x2, y2);
+  }
+
+  function metriquesMatchPdf(roundIndex) {
+    var compact = roundIndex > 0;
+    var labelH = 2.8;
+    var labelSize = 6.2;
+    var hintH = state.format === "classement" ? 2.5 : 0;
+    var pad = 0.28;
+    var playerH = compact ? 3.8 : 3.5;
+    var playerGap = compact ? 0 : 0.22;
+    var fontSize = compact ? 6.4 : 6.8;
+    var boxH = compact
+      ? labelH + playerH + pad * 2 + hintH
+      : labelH + playerH * 2 + playerGap + pad * 3 + hintH;
+    return {
+      boxH: boxH,
+      labelH: labelH,
+      labelSize: labelSize,
+      playerH: playerH,
+      playerGap: playerGap,
+      fontSize: fontSize,
+      pad: pad,
+      hintH: hintH,
+      compact: compact,
+    };
+  }
+
+  function dessinerJoueurPdf(doc, x, y, w, h, slot, opts) {
+    opts = opts || {};
+    var taille = opts.fontSize || 7.5;
+    var isHint = slot.kind === "perdant-hint";
+    var isEmpty = slot.kind === "empty" || slot.kind === "exempt";
+    var fond = opts.winner ? [240, 253, 250] : isEmpty && !isHint ? [248, 250, 252] : [255, 255, 255];
+    var bord = opts.winner ? [13, 148, 136] : [226, 232, 240];
+    doc.setFillColor(fond[0], fond[1], fond[2]);
+    doc.setDrawColor(bord[0], bord[1], bord[2]);
+    doc.setLineWidth(opts.winner ? 0.3 : 0.18);
+    var radius = Math.min(1.2, h * 0.2);
+    doc.roundedRect(x, y, w, h, radius, radius, "FD");
+    if (!slot.text) return;
+    doc.setFont("helvetica", opts.winner ? "bold" : "normal");
+    doc.setFontSize(isHint ? Math.min(taille, 5.4) : taille);
+    if (isHint || (isEmpty && slot.kind === "exempt")) doc.setTextColor(148, 163, 184);
+    else if (opts.winner) doc.setTextColor(15, 118, 110);
+    else doc.setTextColor(15, 23, 42);
+    doc.text(
+      tronquerTextePdf(doc, slot.text, w - 2.5, isHint ? Math.min(taille, 5.4) : taille),
+      x + 1.2,
+      y + h * 0.68
+    );
+  }
+
+  function dessinerSlotsMatchPdf(doc, table, tableId, match, roundIndex, matchIndex, x, y, innerW, m, fontSize) {
+    function drawSlot(slotIndex, slotY, slot, slotH) {
+      dessinerJoueurPdf(doc, x, slotY, innerW, slotH || m.playerH, slot, {
+        winner: !!match.players[slotIndex] && match.winner === match.players[slotIndex],
+        fontSize: fontSize,
+      });
+    }
+
+    if (!m.compact) {
+      var p1y = y;
+      var p2y = y + m.playerH + m.playerGap;
+      drawSlot(0, p1y, libelleJoueurPdf(table, tableId, roundIndex, matchIndex, 0, match.players[0]));
+      drawSlot(1, p2y, libelleJoueurPdf(table, tableId, roundIndex, matchIndex, 1, match.players[1]));
+      return;
+    }
+
+    if (match.winner) {
+      var winSlot = match.players[0] === match.winner ? 0 : 1;
+      drawSlot(winSlot, y, libelleJoueurPdf(table, tableId, roundIndex, matchIndex, winSlot, match.winner));
+      return;
+    }
+    if (match.players[0] && match.players[1]) {
+      var halfH = Math.max(2.6, m.playerH / 2 - 0.1);
+      drawSlot(
+        0,
+        y,
+        libelleJoueurPdf(table, tableId, roundIndex, matchIndex, 0, match.players[0]),
+        halfH
+      );
+      drawSlot(
+        1,
+        y + halfH + 0.1,
+        libelleJoueurPdf(table, tableId, roundIndex, matchIndex, 1, match.players[1]),
+        halfH
+      );
+      return;
+    }
+    if (match.players[0]) {
+      drawSlot(0, y, libelleJoueurPdf(table, tableId, roundIndex, matchIndex, 0, match.players[0]));
+      return;
+    }
+    if (match.players[1]) {
+      drawSlot(1, y, libelleJoueurPdf(table, tableId, roundIndex, matchIndex, 1, match.players[1]));
+      return;
+    }
+    drawSlot(0, y, libelleJoueurPdf(table, tableId, roundIndex, matchIndex, 0, null));
+  }
+
+  function dessinerMatchPdf(doc, table, tableId, match, roundIndex, matchIndex, totalRounds, x, centreY, boxW) {
+    var m = metriquesMatchPdf(roundIndex);
+    var y = centreY - m.boxH / 2;
+    var innerW = boxW - 2.4;
+    var fontSize = boxW < 36 ? Math.min(m.fontSize, 6.2) : m.fontSize;
+
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.15);
+    doc.roundedRect(x, y, boxW, m.boxH, 1.5, 1.5, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(m.labelSize);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      tronquerTextePdf(doc, matchLabel(roundIndex, matchIndex, totalRounds), innerW, m.labelSize),
+      x + 1.2,
+      y + m.labelH * 0.72
+    );
+
+    var slotsY = y + m.labelH + m.pad;
+    dessinerSlotsMatchPdf(doc, table, tableId, match, roundIndex, matchIndex, x + 1.2, slotsY, innerW, m, fontSize);
+
+    var destHint = hintDestinationPerdantMatch(table, roundIndex);
+    if (destHint) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(5.2);
+      doc.setTextColor(148, 163, 184);
+      doc.text(tronquerTextePdf(doc, destHint, innerW, 5.2), x + 1.2, y + m.boxH - 1.1);
+    }
+
+    return {
+      left: x,
+      right: x + boxW,
+      centerY: centreY,
+      top: y,
+      bottom: y + m.boxH,
+    };
+  }
+
+  var PDF_FOOTER_H = 10;
+  var PDF_GAP_TABLE = 4;
+  var PDF_SECTION_PERDANTS_H = 9;
+  var PDF_TITRE_TABLE_H = 7;
+
+  function hauteurIdealeTableauPdf(table) {
+    var firstMatches = table.rounds[0] ? table.rounds[0].length : 1;
+    var roundHeaderH = 8;
+    var m0 = metriquesMatchPdf(0);
+    var slotH = Math.max(m0.boxH + 0.5, 7.2);
+    return roundHeaderH + firstMatches * slotH + 4;
+  }
+
+  function espaceRestantPdf(y, pageH, margin) {
+    return pageH - y - margin - PDF_FOOTER_H;
+  }
+
+  function planifierHauteurTableauPdf(table, y, pageH, margin, overhead) {
+    var restant = espaceRestantPdf(y, pageH, margin) - (overhead || 0);
+    var ideal = hauteurIdealeTableauPdf(table);
+    if (restant < 28) return { nouvellePage: true, hauteur: ideal };
+    if (ideal <= restant) return { nouvellePage: false, hauteur: ideal };
+    return { nouvellePage: false, hauteur: restant };
+  }
+
+  function dessinerTableauPdf(doc, table, zone) {
+    var totalRounds = table.rounds.length;
+    var firstMatches = table.rounds[0] ? table.rounds[0].length : 1;
+    var colW = 46;
+    var gap = 7;
+    var bracketW = totalRounds * colW + Math.max(0, totalRounds - 1) * gap;
+    if (bracketW > zone.w) {
+      var scale = zone.w / bracketW;
+      colW *= scale;
+      gap *= scale;
+      bracketW = zone.w;
+    }
+
+    var roundHeaderH = 8;
+    var slotH = (zone.h - roundHeaderH) / firstMatches;
+    var bracketH = roundHeaderH + firstMatches * slotH;
+    var startX = zone.x + Math.max(0, (zone.w - bracketW) / 2);
+    var debutContenuY = zone.y + roundHeaderH;
+    var positions = [];
+
+    table.rounds.forEach(function (round, r) {
+      var colX = startX + r * (colW + gap);
+      doc.setFillColor(240, 253, 250);
+      doc.setDrawColor(153, 246, 228);
+      doc.setLineWidth(0.12);
+      doc.roundedRect(colX, zone.y, colW, bracketH, 2, 2, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(15, 118, 110);
+      var titreTour = roundName(r, totalRounds).toUpperCase();
+      doc.text(tronquerTextePdf(doc, titreTour, colW - 3, 7), colX + colW / 2, zone.y + 5.2, {
+        align: "center",
+      });
+
+      positions[r] = [];
+      round.forEach(function (match, m) {
+        var centreY = centreMatchPdf(r, m, slotH, debutContenuY);
+        var boxX = colX + 1.2;
+        var boxW = colW - 2.4;
+        positions[r][m] = dessinerMatchPdf(doc, table, table.id, match, r, m, totalRounds, boxX, centreY, boxW);
+      });
+    });
+
+    var connectorColor = [94, 234, 212];
+    for (var r = 1; r < totalRounds; r++) {
+      table.rounds[r].forEach(function (_match, m) {
+        var target = positions[r][m];
+        if (!target) return;
+        [m * 2, m * 2 + 1].forEach(function (sourceIndex) {
+          var source = positions[r - 1][sourceIndex];
+          if (!source) return;
+          dessinerConnecteurPdf(doc, source.right, source.centerY, target.left, target.centerY, connectorColor);
+        });
+      });
+    }
+
+    return zone.y + bracketH + 6;
+  }
+
+  function classementPdfRempli() {
+    if (!state.totalParticipants || !state.placements) return false;
+    return Object.keys(state.placements).some(function (nom) {
+      return !!state.placements[nom];
+    });
+  }
+
+  function dessinerClassementPdf(doc, zone) {
+    if (!state.totalParticipants || !classementPdfRempli()) return zone.y;
+    var places = {};
+    Object.keys(state.placements || {}).forEach(function (nom) {
+      places[state.placements[nom]] = nom;
+    });
+
+    var y = zone.y;
+    doc.setFillColor(240, 253, 250);
+    doc.setDrawColor(153, 246, 228);
+    doc.setLineWidth(0.12);
+    doc.roundedRect(zone.x, y, zone.w, 8, 1.5, 1.5, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 118, 110);
+    doc.text("Classement validé", zone.x + 2, y + 5.5);
+    y += 11;
+
+    for (var place = 1; place <= state.totalParticipants; place++) {
+      if (y > zone.pageH - 14) {
+        doc.addPage();
+        y = zone.margin;
+      }
+      var nom = places[place] || "";
+      if (!nom) continue;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(ordinalPlace(place), zone.x, y + 4);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(15, 23, 42);
+      doc.text(tronquerTextePdf(doc, nom, zone.w - 18, 8), zone.x + 16, y + 4);
+      y += 6.2;
+    }
+    return y + 4;
+  }
+
+  function exporterPdf() {
+    var JSPDF = window.jspdf && window.jspdf.jsPDF;
+    if (!JSPDF) {
+      montrerMsg("Export PDF indisponible (jsPDF non chargé).");
+      return;
+    }
+    if (!tableauDejaGenere()) {
+      montrerMsg("Générez d’abord le tournoi pour exporter le tableau.");
+      return;
+    }
+
+    var tables = tablesPourExport();
+    if (!tables.length) {
+      montrerMsg("Aucun tableau à exporter.");
+      return;
+    }
+
+    var sess =
+      typeof SessionManager !== "undefined" && SessionManager.getActiveSession
+        ? SessionManager.getActiveSession()
+        : null;
+    var titreSeance = sess && sess.nom ? sess.nom : "Tournoi éliminatoire";
+    var formatLabel =
+      state.format === "classement" ? "Avec reclassement" : "Élimination directe";
+    var meta =
+      state.totalParticipants +
+      " participant" +
+      (state.totalParticipants > 1 ? "s" : "") +
+      " · " +
+      formatLabel +
+      " · " +
+      new Date().toLocaleString("fr-FR");
+
+    var doc = new JSPDF({ unit: "mm", format: "a4", orientation: "landscape" });
+    var margin = 10;
+    var pageW = doc.internal.pageSize.getWidth();
+    var pageH = doc.internal.pageSize.getHeight();
+    var contentW = pageW - margin * 2;
+    var headerH = 18;
+    var y = margin;
+
+    function entetePage() {
+      doc.setFillColor(15, 118, 110);
+      doc.rect(0, 0, pageW, headerH, "F");
+      doc.setFillColor(17, 94, 89);
+      doc.rect(0, headerH - 1.5, pageW, 1.5, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.text("Tournoi éliminatoire", margin, 8);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.text(tronquerTextePdf(doc, titreSeance, contentW * 0.55, 8.5), margin, 13.5);
+      doc.text(tronquerTextePdf(doc, meta, contentW * 0.4, 8.5), pageW - margin, 13.5, { align: "right" });
+      return headerH + 4;
+    }
+
+    function nouvellePageContenu() {
+      doc.addPage();
+      return entetePage();
+    }
+
+    y = entetePage();
+
+    var sectionPerdantsPdf = false;
+    tables.forEach(function (table, index) {
+      var overhead = 0;
+      if (table.kind === "perdant" && !sectionPerdantsPdf) overhead += PDF_SECTION_PERDANTS_H;
+      if (table.title && (tables.length > 1 || table.kind === "perdant")) overhead += PDF_TITRE_TABLE_H;
+
+      var plan = planifierHauteurTableauPdf(table, y, pageH, margin, overhead);
+      if (plan.nouvellePage) {
+        y = nouvellePageContenu();
+        plan = planifierHauteurTableauPdf(table, y, pageH, margin, overhead);
+      }
+
+      if (table.kind === "perdant" && !sectionPerdantsPdf) {
+        sectionPerdantsPdf = true;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(15, 118, 110);
+        doc.text("Tableaux de reclassement (perdants)", margin, y + 4);
+        y += PDF_SECTION_PERDANTS_H;
+      }
+      if (table.title && (tables.length > 1 || table.kind === "perdant")) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text(table.title, margin, y + 4);
+        y += PDF_TITRE_TABLE_H;
+      }
+
+      y = dessinerTableauPdf(doc, table, {
+        x: margin,
+        y: y,
+        w: contentW,
+        h: plan.hauteur,
+        margin: margin,
+        pageH: pageH,
+      });
+      if (index < tables.length - 1) y += PDF_GAP_TABLE;
+    });
+
+    if (state.format === "classement" && classementPdfRempli()) {
+      var besoinClassement = 14;
+      if (espaceRestantPdf(y, pageH, margin) < besoinClassement) {
+        y = nouvellePageContenu();
+      }
+      y = dessinerClassementPdf(doc, {
+        x: margin,
+        y: y,
+        w: contentW,
+        pageH: pageH,
+        margin: margin,
+      });
+    }
+
+    var totalPages = doc.internal.getNumberOfPages();
+    var p;
+    for (p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text("Outils EPS — Tournoi éliminatoire · page " + p + " / " + totalPages, pageW / 2, pageH - 6, {
+        align: "center",
+      });
+    }
+
+    var fileBase = slugExport(titreSeance) || "tournoi";
+    doc.save(fileBase + "-tableau.pdf");
+    montrerMsg("Export PDF téléchargé.");
+  }
+
   if (textareaEl) {
     textareaEl.addEventListener("input", function () {
       if (listeSaisieMeta) listeSaisieMeta.refresh();
@@ -1252,7 +1840,9 @@
     input.addEventListener("change", function () {
       if (!input.checked) return;
       setFormat(input.value);
+      if (state.format === "classement") assurerTableauxPerdants();
       save();
+      render();
     });
   });
   if (btnGenerer) {
@@ -1268,6 +1858,7 @@
   if (btnEffacerResultats) btnEffacerResultats.addEventListener("click", resetResults);
   if (btnEffacer) btnEffacer.addEventListener("click", effacer);
   if (btnImportClasse) btnImportClasse.addEventListener("click", importerClasse);
+  if (btnExportPdf) btnExportPdf.addEventListener("click", exporterPdf);
   if (bracketWrapEl) bracketWrapEl.addEventListener("scroll", drawConnectors);
   window.addEventListener("resize", drawConnectors);
 
@@ -1275,6 +1866,9 @@
     return load().then(function () {
       renderSeedingList();
       autoAdvanceByes();
+      var nbTablesAvant = (state.tables || []).length;
+      assurerTableauxPerdants();
+      if ((state.tables || []).length > nbTablesAvant) save();
       render();
     });
   }

@@ -2913,6 +2913,13 @@
         timer = null;
       }
     }
+    function effacerSelection() {
+      var sel = window.getSelection && window.getSelection();
+      if (sel && !sel.isCollapsed) sel.removeAllRanges();
+    }
+    btn.addEventListener("selectstart", function (e) {
+      e.preventDefault();
+    });
     btn.addEventListener("pointerdown", function (e) {
       if (e.pointerType === "mouse" && e.button !== 0) return;
       fired = false;
@@ -2920,6 +2927,7 @@
       timer = setTimeout(function () {
         fired = true;
         timer = null;
+        effacerSelection();
         if (typeof navigator.vibrate === "function") navigator.vibrate(12);
         onLongPress();
       }, PRESENCE_LONG_PRESS_MS);
