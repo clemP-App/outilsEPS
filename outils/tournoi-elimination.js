@@ -1170,9 +1170,6 @@
         if (r === 0) {
           matchEl.appendChild(renderPlayer(table, table.id, match, match.players[0], r, m, 0));
           matchEl.appendChild(renderPlayer(table, table.id, match, match.players[1], r, m, 1));
-        } else if (match.winner) {
-          var winSlot = match.players[0] === match.winner ? 0 : 1;
-          matchEl.appendChild(renderPlayer(table, table.id, match, match.winner, r, m, winSlot));
         } else {
           var hasP0 = !!match.players[0];
           var hasP1 = !!match.players[1];
@@ -1495,11 +1492,6 @@
       return;
     }
 
-    if (match.winner) {
-      var winSlot = match.players[0] === match.winner ? 0 : 1;
-      drawSlot(winSlot, y, libelleJoueurPdf(table, tableId, roundIndex, matchIndex, winSlot, match.winner));
-      return;
-    }
     if (match.players[0] && match.players[1]) {
       var halfH = Math.max(2.6, m.playerH / 2 - 0.1);
       drawSlot(

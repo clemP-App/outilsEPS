@@ -13,6 +13,14 @@
         icone: "✨",
         titre: "Je débute sur Outils EPS",
         description: "Créer sa classe, faire l’appel, lancer un tournoi.",
+        titreAction: {
+          label: "Tuto vidéo",
+          title: "Tutoriel vidéo : bien débuter",
+          href: "https://youtu.be/02dCYWwZEkI?si=HO7Sm5BPqqQlR0EZ",
+          icon: "▶",
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
         actions: [
           { label: "Créer ma classe", href: "outils/classes.html", icon: "👥", primary: true },
           { label: "Faire l’appel / mettre une note", href: "outils/tableau-suivi.html", icon: "📒" },

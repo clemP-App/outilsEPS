@@ -465,6 +465,10 @@
     var link = document.createElement("a");
     link.className = "home-action" + (action.primary ? " home-action--primary" : "");
     link.href = action.href;
+    if (action.title) link.title = action.title;
+    if (action.target) link.target = action.target;
+    if (action.rel) link.rel = action.rel;
+    else if (action.target === "_blank") link.rel = "noopener noreferrer";
     if (action.icon) {
       link.appendChild(creerIcone(action.icon, "home-icon home-icon--action"));
     }
@@ -687,10 +691,21 @@
     var text = document.createElement("div");
     text.className = "home-entree__text";
 
+    var titleRow = document.createElement("div");
+    titleRow.className = "home-entree__title-row";
+
     var title = document.createElement("h3");
     title.className = "home-entree__title";
     title.textContent = entree.titre;
-    text.appendChild(title);
+    titleRow.appendChild(title);
+
+    if (entree.titreAction) {
+      var headAction = creerLienAction(entree.titreAction);
+      headAction.classList.add("home-entree__head-action");
+      titleRow.appendChild(headAction);
+    }
+
+    text.appendChild(titleRow);
 
     var desc = document.createElement("p");
     desc.className = "home-entree__desc";
