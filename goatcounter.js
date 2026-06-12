@@ -7,7 +7,7 @@
   var host = (location.hostname || "").toLowerCase();
   if (location.protocol === "file:") return;
   if (!host || host === "localhost" || host === "127.0.0.1" || host === "[::1]") return;
-  if (host.indexOf("github.io") < 0) return;
+  if (host.indexOf("github.io") < 0 && host !== "outilseps.fr" && host !== "www.outilseps.fr") return;
 
   if (document.querySelector("script[data-goatcounter]")) return;
 

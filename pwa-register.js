@@ -55,6 +55,33 @@
     loadScriptSibling("pwa-force-update.js");
   }
 
+  function loadScriptSiblingThen(filename, onLoad) {
+    if (!canUsePwa() || !script || !script.src) {
+      if (onLoad) onLoad();
+      return;
+    }
+    var src = script.src.replace(/pwa-register\.js(\?.*)?$/i, filename + "$1");
+    if (src === script.src) {
+      if (onLoad) onLoad();
+      return;
+    }
+    var el = document.createElement("script");
+    el.src = src;
+    el.onload = function () {
+      if (onLoad) onLoad();
+    };
+    el.onerror = function () {
+      if (onLoad) onLoad();
+    };
+    document.body.appendChild(el);
+  }
+
+  function loadMigrationKit() {
+    loadScriptSiblingThen("pwa-migration-modal.js", function () {
+      loadScriptSibling("pwa-migration-banner.js");
+    });
+  }
+
   injectManifest();
 
   if (canUsePwa() && "serviceWorker" in navigator) {
@@ -66,15 +93,32 @@
     });
   }
 
-  if (document.body) {
-    loadInstallBanner();
-    loadContextHint();
-    loadForceUpdate();
-  } else {
-    document.addEventListener("DOMContentLoaded", function () {
+  function ensureSiteConfig(onReady) {
+    if (window.OutilsEPS && window.OutilsEPS.site) {
+      onReady();
+      return;
+    }
+    loadScriptSiblingThen("site-config.js", onReady);
+  }
+
+  function loadPwaUi() {
+    ensureSiteConfig(function () {
+      var legacy =
+        window.OutilsEPS &&
+        window.OutilsEPS.site &&
+        typeof window.OutilsEPS.site.isLegacyHost === "function" &&
+        window.OutilsEPS.site.isLegacyHost();
+      if (legacy) loadMigrationKit();
       loadInstallBanner();
       loadContextHint();
       loadForceUpdate();
     });
+  }
+
+
+  if (document.body) {
+    loadPwaUi();
+  } else {
+    document.addEventListener("DOMContentLoaded", loadPwaUi);
   }
 })();

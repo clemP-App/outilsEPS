@@ -14227,6 +14227,265 @@ body.pwa-context-hint-open.install-banner-open {
   }
 }
 
+/* --- Bannière migration domaine (GitHub → outilseps.fr) --- */
+.migration-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 9020;
+  padding: max(0.5rem, env(safe-area-inset-top, 0px)) max(0.55rem, env(safe-area-inset-right, 0px)) 0.5rem
+    max(0.55rem, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+  transform: translateY(-110%);
+  opacity: 0;
+  transition: transform 0.34s ease, opacity 0.34s ease;
+}
+
+.migration-banner--visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.migration-banner__inner {
+  max-width: 52rem;
+  margin: 0 auto;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 0.55rem 0.85rem;
+  align-items: start;
+  padding: 0.85rem 2.4rem 0.85rem 0.9rem;
+  background: linear-gradient(165deg, #ecfdf5 0%, #f0fdfa 55%, #ffffff 100%);
+  border: 1px solid rgba(22, 163, 74, 0.45);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+
+.migration-banner__icon {
+  grid-row: 1 / span 2;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(22, 163, 74, 0.28);
+}
+
+.migration-banner__body {
+  min-width: 0;
+}
+
+.migration-banner__title {
+  margin: 0 0 0.2rem;
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #14532d;
+  line-height: 1.25;
+}
+
+.migration-banner__text {
+  margin: 0 0 0.2rem;
+  font-size: 0.82rem;
+  line-height: 1.42;
+  color: #166534;
+}
+
+.migration-banner__note {
+  margin: 0.15rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #15803d;
+  font-style: italic;
+}
+
+.migration-banner__link {
+  color: #0f766e;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.migration-banner__actions {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.migration-banner__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #166534;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.migration-banner__close:hover {
+  background: rgba(22, 163, 74, 0.1);
+}
+
+body.migration-banner-open {
+  padding-top: calc(8.5rem + env(safe-area-inset-top, 0px));
+}
+
+body.migration-banner-open.pwa-context-hint-open {
+  padding-top: calc(13.5rem + env(safe-area-inset-top, 0px));
+}
+
+@media (max-width: 640px) {
+  .migration-banner__inner {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    padding-top: 2.1rem;
+  }
+
+  .migration-banner__icon {
+    grid-row: auto;
+    width: 44px;
+    height: 44px;
+  }
+
+  .migration-banner__actions {
+    grid-column: 1;
+  }
+
+  .migration-banner__actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  body.migration-banner-open {
+    padding-top: calc(11.5rem + env(safe-area-inset-top, 0px));
+  }
+
+  body.migration-banner-open.pwa-context-hint-open {
+    padding-top: calc(17rem + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* --- Modale migration domaine --- */
+.migration-dialog {
+  max-width: min(42rem, calc(100vw - 1.5rem));
+}
+
+.migration-dialog__intro {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.migration-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.migration-accordion__item {
+  margin: 0;
+}
+
+.migration-accordion__panel .hint {
+  margin-top: 0;
+}
+
+.migration-figure {
+  margin: 0.75rem 0 0.5rem;
+  text-align: center;
+}
+
+.migration-figure img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.migration-figure--wide img {
+  width: 100%;
+}
+
+.migration-figure figcaption {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.migration-steps {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.migration-steps li {
+  margin-bottom: 0.35rem;
+  line-height: 1.4;
+}
+
+.migration-dual-steps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+}
+
+.migration-dual-steps__block {
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.migration-dual-steps__block h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.migration-dual-steps__block--legacy {
+  background: #eff6ff;
+  border-color: rgba(30, 64, 175, 0.25);
+}
+
+.migration-dual-steps__block--legacy h3 {
+  color: #1e3a8a;
+}
+
+.migration-dual-steps__block--new {
+  background: #ecfdf5;
+  border-color: rgba(22, 163, 74, 0.3);
+}
+
+.migration-dual-steps__block--new h3 {
+  color: #14532d;
+}
+
+.migration-dual-steps__url {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  word-break: break-all;
+  color: var(--text-muted);
+}
+
+.migration-dialog__actions {
+  margin-top: 0;
+}
+
+@media (max-width: 600px) {
+  .migration-dual-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* --- Compteur bonus --- */
 .page-outil--bonus {
   max-width: min(54rem, 100%);

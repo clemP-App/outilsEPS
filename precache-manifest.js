@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "130";
+var APP_CACHE_VERSION = "131";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -10,6 +10,10 @@ var PRECACHE = [
   "./assets/apple-touch-icon.png",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
+  "./assets/migration/export-import.png",
+  "./assets/migration/install-android.png",
+  "./assets/migration/install-iphone.png",
+  "./assets/migration/logo-vert.png",
   "./assets/relais/coureur-1.png",
   "./assets/relais/coureur-2.png",
   "./assets/relais/transmission.png",
@@ -119,10 +123,13 @@ var PRECACHE = [
   "./pwa-context-hint.js",
   "./pwa-force-update.js",
   "./pwa-install-banner.js",
+  "./pwa-migration-banner.js",
+  "./pwa-migration-modal.js",
   "./pwa-register.js",
   "./pwa-splash.js",
   "./script.js",
   "./session-manager.js",
+  "./site-config.js",
   "./shared/backup-sync-core.js",
   "./shared/backup-sync.js",
   "./shared/catalog-grid-validation.js",

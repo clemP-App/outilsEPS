@@ -252,8 +252,17 @@
     });
   }
 
+  function isLegacyMigrationHost() {
+    return (
+      window.OutilsEPS &&
+      window.OutilsEPS.site &&
+      typeof window.OutilsEPS.site.isLegacyHost === "function" &&
+      window.OutilsEPS.site.isLegacyHost()
+    );
+  }
+
   function tryShowForPlatform() {
-    if (isInstalled() || isDismissed()) return;
+    if (isLegacyMigrationHost() || isInstalled() || isDismissed()) return;
 
     likelyHasInstalledApp().then(function (hasInstalled) {
       if (hasInstalled) return;
@@ -291,7 +300,7 @@
   }
 
   window.addEventListener("beforeinstallprompt", function (e) {
-    if (readInstalledMark()) return;
+    if (isLegacyMigrationHost() || readInstalledMark()) return;
     e.preventDefault();
     likelyHasInstalledApp().then(function (hasInstalled) {
       if (hasInstalled) return;
