@@ -69,8 +69,9 @@
         <details class="sauvegarde-compr__details">
           <summary>Stockage local et confidentialité</summary>
           <p class="hint">
-            Rien n’est envoyé automatiquement sur internet. La synchronisation utilise Supabase uniquement le temps
-            de comparer et fusionner deux appareils&nbsp;; les données y sont supprimées après validation.
+            Rien n’est envoyé automatiquement sur internet. La synchronisation passe par le serveur sécurisé
+            outilseps.fr hébergé chez OVH uniquement le temps de comparer et fusionner deux appareils&nbsp;;
+            les données y sont supprimées après validation.
           </p>
           <p class="hint">
             Les réponses remontées par QR code depuis les outils élèves (débrief, musculation…) se gèrent dans
@@ -173,8 +174,8 @@
             <h3>1. Associer les appareils</h3>
             <p class="hint">
               Ouvrez cette page sur les deux appareils. Connexion internet nécessaire.
-              Le QR sert à associer les deux appareils. Les sauvegardes passent ensuite temporairement par
-              Supabase le temps de comparer et fusionner.
+              Le QR sert à associer les deux appareils. Les sauvegardes passent ensuite temporairement par le
+              serveur sécurisé outilseps.fr hébergé chez OVH le temps de comparer et fusionner.
               Sur l’un, scannez le QR code affiché par l’autre.
             </p>
             <div id="backup-sync-qr" class="backup-sync-qr" aria-live="polite"></div>
@@ -189,8 +190,8 @@
           <div class="backup-sync-box" id="backup-sync-phase2" hidden>
             <h3>2. Analyse et fusion</h3>
             <p class="hint">
-              Connexion internet nécessaire pendant quelques minutes. Les sauvegardes sont supprimées de Supabase
-              à la fin du transfert.
+              Connexion internet nécessaire pendant quelques minutes. Les sauvegardes sont supprimées du serveur
+              outilseps.fr à la fin du transfert.
             </p>
             <div id="backup-sync-analysis" class="backup-sync-analysis" hidden></div>
             <div id="backup-sync-conflicts" class="backup-sync-conflicts" hidden></div>
@@ -204,7 +205,8 @@
           <summary>Confidentialité et RGPD</summary>
           <p class="hint">
             La synchronisation crée une session temporaire protégée par un jeton affiché uniquement dans le QR code.
-            Supabase ne reçoit les sauvegardes que le temps de comparer et fusionner les deux appareils.
+            Le serveur sécurisé outilseps.fr hébergé chez OVH ne reçoit les sauvegardes que le temps de comparer
+            et fusionner les deux appareils.
             Aucune conservation volontaire n’est faite après validation ou fermeture de session.
           </p>
           <p class="hint">
@@ -350,10 +352,8 @@
     </div>
 
     <script src="../data-manager.js"></script>
-    <script src="../shared/supabase-config.js"></script>
-    <script src="../shared/supabaseClient.js"></script>
     <script src="../shared/backup-sync-core.js"></script>
-    <script src="../shared/backup-sync.js"></script>
+    <script src="../shared/backup-sync-ovh.js"></script>
     <script src="../vendor/qrcode.min.js"></script>
     <script src="../vendor/html5-qrcode.min.js"></script>
     <script src="sauvegarde.js"></script>

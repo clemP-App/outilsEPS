@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Outils EPS a une nouvelle adresse officielle : outilseps.fr. Guide pas à pas pour continuer avec vos données."
+    />
+    <meta name="robots" content="noindex, follow" />
+    <meta name="theme-color" content="#16a34a" />
+    <title>Outils EPS — Passer sur outilseps.fr</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="site-config.js"></script>
+    <script src="legacy-entry.js" data-legacy-landing-page></script>
+  </head>
+  <body class="app legacy-landing">
+    <main class="legacy-landing__shell">
+      <header class="legacy-landing__hero card">
+        <p class="legacy-landing__eyebrow">Changement d’adresse</p>
+        <h1 class="legacy-landing__title">Outils EPS est maintenant sur <span>outilseps.fr</span></h1>
+        <p class="legacy-landing__lead">
+          L’ancienne adresse GitHub (<strong>clemp-app.github.io/outilsEPS</strong>) n’est plus mise à jour.
+          Pour continuer à recevoir les nouveautés, utilisez le site officiel.
+        </p>
+
+        <div class="legacy-landing__cta-row">
+          <a
+            href="https://outilseps.fr/"
+            class="btn btn--primary btn--labeled legacy-landing__cta-main"
+            id="btn-go-official"
+          >
+            <span class="btn__icon" aria-hidden="true">→</span>
+            <span class="btn__text">Aller sur outilseps.fr</span>
+          </a>
+          <button type="button" class="btn btn--ghost" id="btn-continue-legacy">
+            Continuer sur l’ancienne version
+          </button>
+        </div>
+
+        <div class="legacy-landing__logo-compare" aria-hidden="true">
+          <figure>
+            <img src="assets/icon-192.png" alt="" width="72" height="72" />
+            <figcaption>Ancienne icône (bleue)</figcaption>
+          </figure>
+          <span class="legacy-landing__logo-arrow">→</span>
+          <figure>
+            <img src="assets/migration/logo-vert.png" alt="" width="72" height="72" />
+            <figcaption>Nouvelle icône (verte)</figcaption>
+          </figure>
+        </div>
+      </header>
+
+      <section class="card legacy-landing__alert" aria-labelledby="legacy-alert-title">
+        <h2 id="legacy-alert-title">Vos données ne basculent pas toutes seules</h2>
+        <p>
+          Classes, élèves, notes et réglages sont enregistrés <strong>sur chaque adresse séparément</strong>.
+          Si vous avez déjà travaillé sur l’ancienne version, il faut exporter puis importer votre sauvegarde
+          pour les retrouver sur <strong>outilseps.fr</strong>.
+        </p>
+      </section>
+
+      <section class="legacy-landing__scenarios" aria-labelledby="legacy-scenarios-title">
+        <h2 id="legacy-scenarios-title" class="legacy-landing__section-title">Quelle est votre situation ?</h2>
+        <p class="hint legacy-landing__section-hint">
+          Choisissez votre cas : le guide détaillé s’affiche ci-dessous. Vous pouvez aussi
+          <a href="https://outilseps.fr/" class="info-dialog__link">ouvrir directement outilseps.fr</a>.
+        </p>
+
+        <div class="legacy-landing__scenario-tabs" role="tablist" aria-label="Situations">
+          <button
+            type="button"
+            class="legacy-landing__scenario-tab legacy-landing__scenario-tab--active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="legacy-panel-nouveau"
+            id="legacy-tab-nouveau"
+            data-scenario="nouveau"
+          >
+            <span class="legacy-landing__scenario-tab-icon" aria-hidden="true">✨</span>
+            <span>Je découvre Outils EPS</span>
+          </button>
+          <button
+            type="button"
+            class="legacy-landing__scenario-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="legacy-panel-donnees"
+            id="legacy-tab-donnees"
+            data-scenario="donnees"
+          >
+            <span class="legacy-landing__scenario-tab-icon" aria-hidden="true">💾</span>
+            <span>J’ai des données sur l’ancienne adresse</span>
+          </button>
+          <button
+            type="button"
+            class="legacy-landing__scenario-tab"
+            role="tab"
+            aria-selected="false"
+            aria-controls="legacy-panel-app"
+            id="legacy-tab-app"
+            data-scenario="app"
+          >
+            <span class="legacy-landing__scenario-tab-icon" aria-hidden="true">📱</span>
+            <span>J’utilise l’application sur mon téléphone</span>
+          </button>
+        </div>
+
+        <div
+          class="legacy-landing__scenario-panel card"
+          id="legacy-panel-nouveau"
+          role="tabpanel"
+          aria-labelledby="legacy-tab-nouveau"
+        >
+          <h3>Première visite</h3>
+          <ol class="info-dialog__list migration-steps">
+            <li>Ouvrez <strong><a href="https://outilseps.fr/" class="info-dialog__link">outilseps.fr</a></strong> dans votre navigateur.</li>
+            <li>Utilisez Outils EPS comme d’habitude : aucune manipulation particulière.</li>
+            <li>
+              Sur téléphone ou tablette, vous pourrez ajouter l’<strong>application web</strong> à votre écran d’accueil
+              (voir l’onglet « J’utilise l’application »).
+            </li>
+          </ol>
+          <p class="hint">Repère visuel : sur outilseps.fr, l’icône est <strong>verte</strong>.</p>
+          <a href="https://outilseps.fr/" class="btn btn--primary btn--small">Ouvrir outilseps.fr</a>
+        </div>
+
+        <div
+          class="legacy-landing__scenario-panel card"
+          id="legacy-panel-donnees"
+          role="tabpanel"
+          aria-labelledby="legacy-tab-donnees"
+          hidden
+        >
+          <h3>Transférer vos données (export → import)</h3>
+          <p class="hint">
+            Faites cette manipulation une fois. Vous pouvez encore exporter depuis l’ancienne version en cliquant
+            « Continuer sur l’ancienne version » en haut de page.
+          </p>
+
+          <figure class="migration-figure migration-figure--wide">
+            <img
+              src="assets/migration/export-import.png"
+              alt="Schéma : exporter depuis l’ancienne adresse, importer sur outilseps.fr"
+              width="640"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+
+          <div class="migration-dual-steps">
+            <section class="migration-dual-steps__block migration-dual-steps__block--legacy">
+              <h4>Sur l’ancienne adresse</h4>
+              <p class="migration-dual-steps__url">clemp-app.github.io/outilsEPS</p>
+              <ol class="info-dialog__list migration-steps">
+                <li>Ouvrir le <strong>menu</strong> (☰)</li>
+                <li>Toucher <strong>Sauvegarde</strong></li>
+                <li>Toucher <strong>Exporter une sauvegarde</strong></li>
+              </ol>
+              <p class="hint">Un fichier JSON est enregistré sur votre appareil.</p>
+              <button type="button" class="btn btn--ghost btn--small" id="btn-open-legacy-sauvegarde">
+                Ouvrir Sauvegarde (ancienne version)
+              </button>
+            </section>
+            <section class="migration-dual-steps__block migration-dual-steps__block--new">
+              <h4>Sur outilseps.fr</h4>
+              <p class="migration-dual-steps__url">outilseps.fr</p>
+              <ol class="info-dialog__list migration-steps">
+                <li>Ouvrir <strong>outilseps.fr</strong></li>
+                <li>Menu (☰) → <strong>Sauvegarde</strong></li>
+                <li><strong>Importer une sauvegarde</strong></li>
+                <li>Choisir le fichier exporté à l’étape précédente</li>
+              </ol>
+              <a href="https://outilseps.fr/outils/sauvegarde.html" class="btn btn--primary btn--small">
+                Ouvrir Sauvegarde sur outilseps.fr
+              </a>
+            </section>
+          </div>
+        </div>
+
+        <div
+          class="legacy-landing__scenario-panel card"
+          id="legacy-panel-app"
+          role="tabpanel"
+          aria-labelledby="legacy-tab-app"
+          hidden
+        >
+          <h3>Remplacer l’application sur votre écran d’accueil</h3>
+          <p class="hint">
+            Si vous aviez ajouté Outils EPS à l’écran d’accueil depuis l’ancienne adresse, créez une
+            <strong>nouvelle icône verte</strong> depuis <strong>outilseps.fr</strong>. Ce n’est pas une application
+            du magasin d’apps : c’est une <strong>application web</strong> que vous ajoutez au navigateur.
+          </p>
+
+          <details class="card card--accordion migration-accordion__item" open>
+            <summary>
+              <span class="card--accordion__title">iPhone / iPad</span>
+              <span class="card--accordion__chev" aria-hidden="true"></span>
+            </summary>
+            <div class="card--accordion__panel migration-accordion__panel">
+              <figure class="migration-figure migration-figure--wide">
+                <img
+                  src="assets/migration/install-iphone.png"
+                  alt="Étapes sur iPhone : Safari, Partager, Sur l’écran d’accueil"
+                  width="640"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <ol class="info-dialog__list migration-steps">
+                <li>Ouvrez <strong>Safari</strong> et allez sur <strong>outilseps.fr</strong></li>
+                <li>Appuyez sur <strong>Partager</strong></li>
+                <li>Choisissez <strong>Sur l’écran d’accueil</strong></li>
+                <li>Ouvrez ensuite l’icône <strong>verte</strong> Outils EPS</li>
+              </ol>
+              <p class="hint">Vous pouvez supprimer l’ancienne icône bleue de l’écran d’accueil.</p>
+            </div>
+          </details>
+
+          <details class="card card--accordion migration-accordion__item">
+            <summary>
+              <span class="card--accordion__title">Android</span>
+              <span class="card--accordion__chev" aria-hidden="true"></span>
+            </summary>
+            <div class="card--accordion__panel migration-accordion__panel">
+              <figure class="migration-figure migration-figure--wide">
+                <img
+                  src="assets/migration/install-android.png"
+                  alt="Étapes sur Android : Chrome, Menu, Installer l’application"
+                  width="640"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </figure>
+              <ol class="info-dialog__list migration-steps">
+                <li>Ouvrez <strong>Chrome</strong> et allez sur <strong>outilseps.fr</strong></li>
+                <li>Menu (⋮) → <strong>Installer l’application</strong> ou <strong>Ajouter à l’écran d’accueil</strong></li>
+                <li>Ouvrez l’icône <strong>verte</strong> Outils EPS</li>
+              </ol>
+              <p class="hint">Si vous aviez des données dans l’ancienne application, exportez-les d’abord (onglet « J’ai des données »).</p>
+            </div>
+          </details>
+
+          <a href="https://outilseps.fr/" class="btn btn--primary btn--small">Installer depuis outilseps.fr</a>
+        </div>
+      </section>
+
+      <footer class="legacy-landing__footer card">
+        <h2>Besoin d’accéder encore à l’ancienne version ?</h2>
+        <p class="hint">
+          Vous pouvez continuer sur GitHub le temps d’exporter vos données. Les mises à jour et nouveautés
+          seront uniquement sur <strong>outilseps.fr</strong>.
+        </p>
+        <button type="button" class="btn btn--ghost" id="btn-continue-legacy-footer">
+          Continuer vers l’ancienne version (index)
+        </button>
+      </footer>
+    </main>
+
+    <script>
+      (function () {
+        "use strict";
+
+        function continueLegacy(target) {
+          if (window.OutilsEPS && window.OutilsEPS.legacyLanding) {
+            window.OutilsEPS.legacyLanding.continueOnLegacy(target);
+            return;
+          }
+          try {
+            localStorage.setItem("outils_eps_legacy_skip_landing_v1", "1");
+          } catch (e) {}
+          location.href = target || "index.html";
+        }
+
+        var btnContinue = document.getElementById("btn-continue-legacy");
+        var btnContinueFooter = document.getElementById("btn-continue-legacy-footer");
+        var btnLegacySauvegarde = document.getElementById("btn-open-legacy-sauvegarde");
+
+        if (btnContinue) btnContinue.addEventListener("click", function () {
+          continueLegacy("index.html");
+        });
+        if (btnContinueFooter) btnContinueFooter.addEventListener("click", function () {
+          continueLegacy("index.html");
+        });
+        if (btnLegacySauvegarde) btnLegacySauvegarde.addEventListener("click", function () {
+          continueLegacy("outils/sauvegarde.html");
+        });
+
+        var tabs = document.querySelectorAll(".legacy-landing__scenario-tab");
+        var panels = {
+          nouveau: document.getElementById("legacy-panel-nouveau"),
+          donnees: document.getElementById("legacy-panel-donnees"),
+          app: document.getElementById("legacy-panel-app"),
+        };
+
+        tabs.forEach(function (tab) {
+          tab.addEventListener("click", function () {
+            var key = tab.getAttribute("data-scenario");
+            tabs.forEach(function (t) {
+              var active = t === tab;
+              t.classList.toggle("legacy-landing__scenario-tab--active", active);
+              t.setAttribute("aria-selected", active ? "true" : "false");
+            });
+            Object.keys(panels).forEach(function (k) {
+              if (panels[k]) panels[k].hidden = k !== key;
+            });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

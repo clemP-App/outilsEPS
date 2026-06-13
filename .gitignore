@@ -4,3 +4,4 @@ desktop.ini
 *.log
 .env
 .env.*
+api/sync/config.php

@@ -2,7 +2,7 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "131";
+var APP_CACHE_VERSION = "134";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
@@ -24,7 +24,8 @@ var PRECACHE = [
   "./eleves.html",
   "./faq.html",
   "./goatcounter.js",
-  "./index.html",
+  "./legacy-entry.js",
+  "./passer-sur-outilseps.html",
   "./manifest.webmanifest",
   "./outils/cahier-texte-referentiel.js",
   "./outils/cahier-texte.html",
@@ -131,6 +132,7 @@ var PRECACHE = [
   "./session-manager.js",
   "./site-config.js",
   "./shared/backup-sync-core.js",
+  "./shared/backup-sync-ovh.js",
   "./shared/backup-sync.js",
   "./shared/catalog-grid-validation.js",
   "./shared/catalog-grids.js",

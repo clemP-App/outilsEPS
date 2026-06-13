@@ -70,13 +70,15 @@
     }, 320);
   }
 
+  function landingPageHref() {
+    var script = document.querySelector("script[data-sw]");
+    var sw = script && script.getAttribute("data-sw");
+    if (sw && sw.indexOf("../") === 0) return "../passer-sur-outilseps.html";
+    return "passer-sur-outilseps.html";
+  }
+
   function openGuide() {
-    if (window.OutilsEPS && typeof window.OutilsEPS.openMigrationGuide === "function") {
-      window.OutilsEPS.openMigrationGuide();
-      return;
-    }
-    var evt = new CustomEvent("outils-eps-open-migration-guide");
-    document.dispatchEvent(evt);
+    location.href = landingPageHref();
   }
 
   function showBanner() {
@@ -115,7 +117,7 @@
     var line2 = document.createElement("p");
     line2.className = "migration-banner__text";
     line2.textContent =
-      "Pour continuer à recevoir les mises à jour, installez la nouvelle PWA depuis cette adresse.";
+      "Pour continuer à recevoir les mises à jour, utilisez la nouvelle application web depuis cette adresse.";
 
     var line3 = document.createElement("p");
     line3.className = "migration-banner__note";

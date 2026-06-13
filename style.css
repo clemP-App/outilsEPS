@@ -13798,6 +13798,14 @@ body.video-retard-body-fs {
   font-weight: 800;
 }
 
+.backup-sync-qr-error {
+  margin: 0;
+  padding: 0.75rem;
+  text-align: center;
+  color: #9a3412;
+  line-height: 1.45;
+}
+
 .backup-sync-analysis {
   margin-bottom: 0.75rem;
 }
@@ -14483,6 +14491,204 @@ body.migration-banner-open.pwa-context-hint-open {
 @media (max-width: 600px) {
   .migration-dual-steps {
     grid-template-columns: 1fr;
+  }
+}
+
+/* --- Page d’accueil migration (GitHub → outilseps.fr) --- */
+.legacy-landing {
+  min-height: 100vh;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+    max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background: linear-gradient(165deg, #f0fdfa 0%, #f8fafc 45%, #eff6ff 100%);
+}
+
+.legacy-landing__shell {
+  max-width: 46rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.legacy-landing__hero {
+  padding: 1.35rem 1.25rem 1.25rem;
+  border: 1px solid rgba(22, 163, 74, 0.28);
+  background: linear-gradient(165deg, #ffffff 0%, #ecfdf5 100%);
+}
+
+.legacy-landing__eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #15803d;
+}
+
+.legacy-landing__title {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.35rem, 4vw, 1.85rem);
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.legacy-landing__title span {
+  color: #15803d;
+}
+
+.legacy-landing__lead {
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.legacy-landing__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+
+.legacy-landing__cta-main {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.legacy-landing__logo-compare {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  padding-top: 0.35rem;
+}
+
+.legacy-landing__logo-compare figure {
+  margin: 0;
+  text-align: center;
+}
+
+.legacy-landing__logo-compare img {
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+}
+
+.legacy-landing__logo-compare figcaption {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.legacy-landing__logo-arrow {
+  font-size: 1.5rem;
+  color: #15803d;
+  font-weight: 800;
+}
+
+.legacy-landing__alert {
+  padding: 1rem 1.15rem;
+  border-color: rgba(245, 158, 11, 0.45);
+  background: linear-gradient(165deg, #fffbeb 0%, #fff7ed 100%);
+}
+
+.legacy-landing__alert h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+  color: #9a3412;
+}
+
+.legacy-landing__alert p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #7c2d12;
+}
+
+.legacy-landing__section-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.legacy-landing__section-hint {
+  margin: 0 0 0.85rem;
+}
+
+.legacy-landing__scenario-tabs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.45rem;
+  margin-bottom: 0.75rem;
+}
+
+.legacy-landing__scenario-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.legacy-landing__scenario-tab:hover {
+  border-color: rgba(13, 148, 136, 0.45);
+}
+
+.legacy-landing__scenario-tab--active {
+  border-color: rgba(22, 163, 74, 0.55);
+  background: #ecfdf5;
+  color: #14532d;
+}
+
+.legacy-landing__scenario-tab-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.legacy-landing__scenario-panel {
+  padding: 1.1rem 1.15rem;
+}
+
+.legacy-landing__scenario-panel h3 {
+  margin: 0 0 0.55rem;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.legacy-landing__scenario-panel h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+}
+
+.legacy-landing__footer {
+  padding: 1rem 1.15rem;
+  text-align: center;
+}
+
+.legacy-landing__footer h2 {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+}
+
+@media (min-width: 640px) {
+  .legacy-landing__scenario-tabs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .legacy-landing__scenario-tab {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 5.5rem;
   }
 }
 

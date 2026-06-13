@@ -77,9 +77,7 @@
   }
 
   function loadMigrationKit() {
-    loadScriptSiblingThen("pwa-migration-modal.js", function () {
-      loadScriptSibling("pwa-migration-banner.js");
-    });
+    loadScriptSibling("pwa-migration-banner.js");
   }
 
   injectManifest();

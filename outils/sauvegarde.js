@@ -904,6 +904,17 @@
     });
   }
 
+  function syncShowQrError(message) {
+    if (!syncQrEl) return;
+    syncQrEl.innerHTML = "";
+    syncQrEl.hidden = false;
+    var p = document.createElement("p");
+    p.className = "hint backup-sync-qr-error";
+    p.textContent = message || "Synchronisation indisponible.";
+    syncQrEl.appendChild(p);
+    if (btnSyncScan) btnSyncScan.disabled = true;
+  }
+
   function syncPayloadFromRow(row, key) {
     var payload = row && row[key];
     if (typeof payload === "string") {
@@ -1115,12 +1126,24 @@
         syncSession = session;
         syncCountdown(session.expiresAt);
         syncRenderQr(OutilsEPS.BackupSync.buildPairingText(session));
-        return syncUploadLocal();
+        return syncUploadLocal().catch(function (uploadErr) {
+          syncSetStatus(
+            "QR prêt. Envoi local en attente : " + ((uploadErr && uploadErr.message) || "erreur inconnue")
+          );
+          return null;
+        });
       })
       .then(function () {
         if (runId !== syncRunId || !syncPanelEl || syncPanelEl.hidden) return;
         syncPoll();
         syncPollTimer = setInterval(syncPoll, 2500);
+      })
+      .catch(function (e) {
+        if (runId !== syncRunId) return;
+        var msg = (e && e.message) || "Création de session impossible.";
+        syncShowQrError(msg);
+        syncSetStatus(msg);
+        montrerErreur(msg);
       });
   }
 
@@ -1154,7 +1177,14 @@
   function syncOpen() {
     if (!syncPanelEl) return;
     if (!window.OutilsEPS || !OutilsEPS.BackupSync) {
-      montrerErreur("Synchronisation indisponible : Supabase n’est pas chargé.");
+      montrerErreur(
+        "Synchronisation indisponible : le module backup-sync-ovh.js n’est pas chargé. Uploadez shared/backup-sync-ovh.js sur outilseps.fr."
+      );
+      syncPanelEl.hidden = false;
+      syncShowQrError(
+        "Module de synchronisation absent. Vérifiez que shared/backup-sync-ovh.js est bien en ligne sur outilseps.fr."
+      );
+      syncSetStatus("Module de synchronisation non chargé.");
       return;
     }
     montrerErreur("");
@@ -1182,10 +1212,7 @@
     syncPanelEl.scrollIntoView({ behavior: "smooth", block: "start" });
     setSauvegardeQuickActive("sync");
     syncSetProgress(0);
-    syncStartCreatedSession(runId).catch(function (e) {
-      if (runId !== syncRunId) return;
-      syncSetStatus(e.message || "Création impossible.");
-    });
+    syncStartCreatedSession(runId);
   }
 
   function syncClose() {
