@@ -133,10 +133,10 @@
           aria-labelledby="legacy-tab-donnees"
           hidden
         >
-          <h3>Transférer vos données (export → import)</h3>
+          <h3>Transférer vos données</h3>
           <p class="hint">
-            Faites cette manipulation une fois. Vous pouvez encore exporter depuis l’ancienne version en cliquant
-            « Continuer sur l’ancienne version » en haut de page.
+            Faites cette manipulation une fois : exportez ici vos données de l’ancienne adresse, puis sur
+            <strong>outilseps.fr</strong> installez d’abord l’application web, puis importez votre copie.
           </p>
 
           <figure class="migration-figure migration-figure--wide">
@@ -153,24 +153,47 @@
             <section class="migration-dual-steps__block migration-dual-steps__block--legacy">
               <h4>Sur l’ancienne adresse</h4>
               <p class="migration-dual-steps__url">clemp-app.github.io/outilsEPS</p>
-              <ol class="info-dialog__list migration-steps">
-                <li>Ouvrir le <strong>menu</strong> (☰)</li>
-                <li>Toucher <strong>Sauvegarde</strong></li>
-                <li>Toucher <strong>Exporter une sauvegarde</strong></li>
-              </ol>
-              <p class="hint">Un fichier JSON est enregistré sur votre appareil.</p>
-              <button type="button" class="btn btn--ghost btn--small" id="btn-open-legacy-sauvegarde">
-                Ouvrir Sauvegarde (ancienne version)
+              <p class="hint">
+                Téléchargez une <strong>copie de vos données</strong> (classes, élèves, réglages…) sur votre appareil.
+              </p>
+              <button type="button" class="btn btn--primary btn--labeled btn--small" id="btn-legacy-export">
+                <span class="btn__icon" aria-hidden="true">💾</span>
+                <span class="btn__text">Exporter ma sauvegarde</span>
               </button>
+              <p id="legacy-export-msg" class="hint legacy-landing__export-msg" hidden role="status" aria-live="polite"></p>
             </section>
             <section class="migration-dual-steps__block migration-dual-steps__block--new">
               <h4>Sur outilseps.fr</h4>
               <p class="migration-dual-steps__url">outilseps.fr</p>
+
+              <p class="legacy-landing__phase-title">1. Installer l’application web</p>
+              <p class="hint">
+                Ajoutez Outils EPS à votre écran d’accueil depuis <strong>outilseps.fr</strong>. L’icône est
+                <strong>verte</strong> — c’est le repère pour savoir que vous êtes sur la bonne version.
+              </p>
+              <details class="legacy-landing__install-hint">
+                <summary>iPhone / iPad</summary>
+                <ol class="info-dialog__list migration-steps">
+                  <li>Ouvrir <strong>Safari</strong> → <strong>outilseps.fr</strong></li>
+                  <li><strong>Partager</strong> → <strong>Sur l’écran d’accueil</strong></li>
+                </ol>
+              </details>
+              <details class="legacy-landing__install-hint">
+                <summary>Android</summary>
+                <ol class="info-dialog__list migration-steps">
+                  <li>Ouvrir <strong>Chrome</strong> → <strong>outilseps.fr</strong></li>
+                  <li>Menu (⋮) → <strong>Installer l’application</strong></li>
+                </ol>
+              </details>
+              <a href="https://outilseps.fr/" class="btn btn--ghost btn--small">Ouvrir outilseps.fr</a>
+
+              <p class="legacy-landing__phase-title">2. Importer vos données</p>
+              <p class="hint">Une fois l’application installée, importez le fichier exporté à l’étape de gauche.</p>
               <ol class="info-dialog__list migration-steps">
-                <li>Ouvrir <strong>outilseps.fr</strong></li>
+                <li>Ouvrir l’<strong>icône verte</strong> Outils EPS (ou outilseps.fr)</li>
                 <li>Menu (☰) → <strong>Sauvegarde</strong></li>
                 <li><strong>Importer une sauvegarde</strong></li>
-                <li>Choisir le fichier exporté à l’étape précédente</li>
+                <li>Choisir le fichier que vous venez d’exporter</li>
               </ol>
               <a href="https://outilseps.fr/outils/sauvegarde.html" class="btn btn--primary btn--small">
                 Ouvrir Sauvegarde sur outilseps.fr
@@ -258,6 +281,7 @@
       </footer>
     </main>
 
+    <script src="data-manager.js"></script>
     <script>
       (function () {
         "use strict";
@@ -275,16 +299,49 @@
 
         var btnContinue = document.getElementById("btn-continue-legacy");
         var btnContinueFooter = document.getElementById("btn-continue-legacy-footer");
-        var btnLegacySauvegarde = document.getElementById("btn-open-legacy-sauvegarde");
+        var btnLegacyExport = document.getElementById("btn-legacy-export");
+        var legacyExportMsg = document.getElementById("legacy-export-msg");
+
+        if (btnLegacyExport) {
+          btnLegacyExport.addEventListener("click", function () {
+            if (typeof DataManager === "undefined" || !DataManager.exportBackupFile) {
+              if (legacyExportMsg) {
+                legacyExportMsg.hidden = false;
+                legacyExportMsg.className = "hint legacy-landing__export-msg legacy-landing__export-msg--error";
+                legacyExportMsg.textContent = "Export indisponible. Rechargez la page ou utilisez l’ancienne version.";
+              }
+              return;
+            }
+            btnLegacyExport.disabled = true;
+            if (legacyExportMsg) legacyExportMsg.hidden = true;
+            DataManager.exportBackupFile()
+              .then(function () {
+                if (legacyExportMsg) {
+                  legacyExportMsg.hidden = false;
+                  legacyExportMsg.className = "hint legacy-landing__export-msg legacy-landing__export-msg--ok";
+                  legacyExportMsg.textContent =
+                    "Copie téléchargée sur votre appareil. Conservez ce fichier, puis importez-le sur outilseps.fr.";
+                }
+              })
+              .catch(function (e) {
+                if (legacyExportMsg) {
+                  legacyExportMsg.hidden = false;
+                  legacyExportMsg.className = "hint legacy-landing__export-msg legacy-landing__export-msg--error";
+                  legacyExportMsg.textContent =
+                    (e && e.message) || "Export impossible. Réessayez ou ouvrez l’ancienne version.";
+                }
+              })
+              .then(function () {
+                btnLegacyExport.disabled = false;
+              });
+          });
+        }
 
         if (btnContinue) btnContinue.addEventListener("click", function () {
           continueLegacy("index.html");
         });
         if (btnContinueFooter) btnContinueFooter.addEventListener("click", function () {
           continueLegacy("index.html");
-        });
-        if (btnLegacySauvegarde) btnLegacySauvegarde.addEventListener("click", function () {
-          continueLegacy("outils/sauvegarde.html");
         });
 
         var tabs = document.querySelectorAll(".legacy-landing__scenario-tab");

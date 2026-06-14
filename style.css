@@ -14142,6 +14142,57 @@ body.install-banner-open {
   padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
 
+/* --- Modal installation application web (accueil outilseps.fr) --- */
+.install-app-dialog {
+  max-width: min(26rem, calc(100vw - 1.25rem));
+  padding: 0;
+}
+
+.install-app-dialog__form {
+  padding: 1.15rem 1.2rem 1.2rem;
+}
+
+.install-app-dialog__lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.install-app-dialog__visual {
+  margin: 0 0 0.75rem;
+  text-align: center;
+}
+
+.install-app-dialog__visual img {
+  width: 100%;
+  max-height: 14rem;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.install-app-dialog__logo {
+  width: 5.5rem !important;
+  height: 5.5rem;
+  max-height: none;
+  border-radius: 1rem;
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.25);
+}
+
+.install-app-dialog__steps {
+  margin: 0 0 1rem;
+}
+
+.install-app-dialog__actions {
+  margin: 0;
+}
+
+.install-app-dialog__actions .btn {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
 /* --- Rappel mode navigateur / app installée --- */
 .pwa-context-banner {
   position: fixed;
@@ -14678,6 +14729,50 @@ body.migration-banner-open.pwa-context-hint-open {
 .legacy-landing__footer h2 {
   margin: 0 0 0.45rem;
   font-size: 0.95rem;
+}
+
+.legacy-landing__export-msg {
+  margin: 0.55rem 0 0;
+  line-height: 1.45;
+}
+
+.legacy-landing__export-msg--ok {
+  color: #166534;
+  font-weight: 600;
+}
+
+.legacy-landing__export-msg--error {
+  color: #9a3412;
+  font-weight: 600;
+}
+
+.legacy-landing__phase-title {
+  margin: 0.85rem 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #14532d;
+}
+
+.legacy-landing__phase-title:first-of-type {
+  margin-top: 0.35rem;
+}
+
+.legacy-landing__install-hint {
+  margin: 0.35rem 0;
+  font-size: 0.88rem;
+}
+
+.legacy-landing__install-hint summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent-deep);
+  padding: 0.25rem 0;
+}
+
+.legacy-landing__install-hint .migration-steps {
+  margin-top: 0.35rem;
 }
 
 @media (min-width: 640px) {

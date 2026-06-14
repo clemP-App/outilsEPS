@@ -1,6 +1,5 @@
 /**
- * Rappel du mode d’ouverture (navigateur vs app installée).
- * Safari et PWA iOS ont des stockages séparés — évite la confusion de données.
+ * Rappel du mode d’ouverture (navigateur vs application installée).
  */
 (function () {
   "use strict";
@@ -30,6 +29,53 @@
       /iPad|iPhone|iPod/.test(ua) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
     );
+  }
+
+  function isOfficialHost() {
+    return (
+      window.OutilsEPS &&
+      window.OutilsEPS.site &&
+      typeof window.OutilsEPS.site.isOfficialHost === "function" &&
+      window.OutilsEPS.site.isOfficialHost()
+    );
+  }
+
+  function isIndexPage() {
+    var path = location.pathname || "";
+    if (/(^|\/)index\.html$/i.test(path)) return true;
+    if (/\/$/.test(path) && path.indexOf("/outils/") < 0) return true;
+    return false;
+  }
+
+  function useContextModal() {
+    return isOfficialHost() && isIndexPage();
+  }
+
+  function assetUrl(path) {
+    var script = document.querySelector("script[data-sw]");
+    var sw = script && script.getAttribute("data-sw");
+    if (sw && sw.indexOf("../") === 0) return "../" + path;
+    return path;
+  }
+
+  function getPlatform() {
+    var ua = navigator.userAgent || "";
+    if (/Android/i.test(ua)) return "android";
+    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+      return "ios";
+    }
+    return "desktop";
+  }
+
+  function contextVisual() {
+    var platform = getPlatform();
+    if (platform === "ios") {
+      return { src: "assets/migration/install-iphone.png", alt: "Ouvrir l’application sur iPhone" };
+    }
+    if (platform === "android") {
+      return { src: "assets/migration/install-android.png", alt: "Ouvrir l’application sur Android" };
+    }
+    return { src: "assets/migration/logo-vert.png", alt: "Icône verte Outils EPS", compact: true };
   }
 
   function faqHref() {
@@ -74,7 +120,6 @@
       });
   }
 
-  /** Détection heuristique : pas fiable à 100 % sur iOS Safari. */
   function likelyHasInstalledApp() {
     if (userDeclinedHavingApp()) return Promise.resolve(false);
     if (readInstalledMark()) return Promise.resolve(true);
@@ -120,12 +165,14 @@
     }
   }
 
-  function dismissInstallBanner() {
+  function dismissInstallPrompt() {
     document.body.classList.remove("install-banner-open");
     var installBanner = document.querySelector(".install-banner");
     if (installBanner && installBanner.parentNode) {
       installBanner.parentNode.removeChild(installBanner);
     }
+    var installDialog = document.getElementById("dialog-install-app");
+    if (installDialog && installDialog.close) installDialog.close();
   }
 
   function hideBanner() {
@@ -138,9 +185,95 @@
     }, 280);
   }
 
+  function showBrowserModal(dataPrefix) {
+    if (isDismissed() || document.getElementById("dialog-context-app")) return;
+    dismissInstallPrompt();
+
+    var visual = contextVisual();
+    var dlg = document.createElement("dialog");
+    dlg.className = "info-dialog card install-app-dialog";
+    dlg.id = "dialog-context-app";
+    dlg.setAttribute("aria-labelledby", "context-app-dialog-title");
+
+    var form = document.createElement("form");
+    form.method = "dialog";
+    form.className = "info-dialog__form install-app-dialog__form";
+
+    var title = document.createElement("h2");
+    title.id = "context-app-dialog-title";
+    title.className = "info-dialog__title";
+    title.textContent = "Passez par l’application";
+
+    var lead = document.createElement("p");
+    lead.className = "install-app-dialog__lead";
+    var msg = isMobile()
+      ? "Vous êtes dans le navigateur. Ouvrez l’icône verte Outils EPS : vos données y sont, pas ici."
+      : "Vous êtes dans le navigateur. Lancez Outils EPS depuis son icône installée pour retrouver vos données.";
+    if (dataPrefix) msg = dataPrefix + " " + msg;
+    lead.textContent = msg;
+
+    var visualWrap = document.createElement("div");
+    visualWrap.className = "install-app-dialog__visual";
+    var img = document.createElement("img");
+    img.src = assetUrl(visual.src);
+    img.alt = visual.alt;
+    img.loading = "lazy";
+    if (visual.compact) img.className = "install-app-dialog__logo";
+    visualWrap.appendChild(img);
+
+    var steps = document.createElement("ol");
+    steps.className = "info-dialog__list install-app-dialog__steps";
+    var li = document.createElement("li");
+    li.textContent = isMobile()
+      ? "Sur l’écran d’accueil, touchez l’icône verte Outils EPS"
+      : "Ouvrez Outils EPS depuis le menu Démarrer ou le bureau";
+    steps.appendChild(li);
+
+    var actions = document.createElement("div");
+    actions.className = "field-row install-app-dialog__actions";
+
+    var btnOk = document.createElement("button");
+    btnOk.type = "submit";
+    btnOk.className = "btn btn--primary";
+    btnOk.textContent = "J’ai compris";
+    btnOk.addEventListener("click", function () {
+      setDismissed(true);
+    });
+
+    var btnLater = document.createElement("button");
+    btnLater.type = "submit";
+    btnLater.className = "btn btn--ghost";
+    btnLater.textContent = "Plus tard";
+    btnLater.addEventListener("click", function () {
+      setDismissed(false);
+    });
+
+    var btnNoApp = document.createElement("button");
+    btnNoApp.type = "button";
+    btnNoApp.className = "btn btn--ghost";
+    btnNoApp.textContent = "Pas d’application installée";
+    btnNoApp.addEventListener("click", function () {
+      markNoInstalledApp();
+      dlg.close();
+    });
+
+    actions.appendChild(btnOk);
+    actions.appendChild(btnLater);
+    actions.appendChild(btnNoApp);
+
+    form.appendChild(title);
+    form.appendChild(lead);
+    form.appendChild(visualWrap);
+    form.appendChild(steps);
+    form.appendChild(actions);
+    dlg.appendChild(form);
+    document.body.appendChild(dlg);
+    if (dlg.showModal) dlg.showModal();
+  }
+
   function showBrowserBanner(dataPrefix) {
     if (isDismissed() || document.getElementById("pwa-context-banner")) return;
-    dismissInstallBanner();
+    dismissInstallPrompt();
 
     var banner = document.createElement("div");
     banner.id = "pwa-context-banner";
@@ -156,16 +289,14 @@
 
     var title = document.createElement("p");
     title.className = "pwa-context-banner__title";
-    title.textContent = isMobile() ? "Ouvrez l’app installée" : "L’application est installée";
+    title.textContent = isMobile() ? "Ouvrez l’application installée" : "L’application est installée";
 
     var text = document.createElement("p");
     text.className = "pwa-context-banner__text";
     var msg = isMobile()
       ? "Vous êtes dans le navigateur. Ouvrez l’icône Outils EPS sur l’écran d’accueil : vos classes, imports QR et sauvegardes y sont, pas ici."
       : "Vous êtes dans le navigateur. Ouvrez Outils EPS depuis son icône installée pour retrouver vos données.";
-    if (dataPrefix) {
-      msg = dataPrefix + " " + msg;
-    }
+    if (dataPrefix) msg = dataPrefix + " " + msg;
     text.textContent = msg;
 
     body.appendChild(title);
@@ -182,7 +313,7 @@
     var btnNoApp = document.createElement("button");
     btnNoApp.type = "button";
     btnNoApp.className = "btn btn--ghost btn--small";
-    btnNoApp.textContent = "Pas d’app installée";
+    btnNoApp.textContent = "Pas d’application installée";
     btnNoApp.addEventListener("click", function () {
       markNoInstalledApp();
       hideBanner();
@@ -235,6 +366,11 @@
     });
   }
 
+  function showContextHint(dataPrefix) {
+    if (useContextModal()) showBrowserModal(dataPrefix);
+    else showBrowserBanner(dataPrefix);
+  }
+
   function dataPrefixLine() {
     if (!DATA_PATH_RE.test(location.pathname || "")) return Promise.resolve(null);
     if (typeof DataManager === "undefined" || !DataManager.ready) return Promise.resolve(null);
@@ -265,9 +401,9 @@
       var prefix = res[1];
       setTimeout(
         function () {
-          showBrowserBanner(prefix);
+          showContextHint(prefix);
         },
-        isMobile() ? 500 : 900
+        useContextModal() ? 400 : isMobile() ? 500 : 900
       );
     });
   }

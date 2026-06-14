@@ -1,5 +1,5 @@
 /**
- * Bannière d’installation PWA en bas de page (Android, iPhone, ordinateur).
+ * Invitation à utiliser l’application web installée (modal sur l’accueil outilseps.fr).
  */
 (function () {
   "use strict";
@@ -7,6 +7,10 @@
   var DISMISS_KEY = "outils_eps_install_banner_v1";
   var PWA_INSTALLED_MARK_KEY = "outils_eps_pwa_marked_installed_v1";
   var DISMISS_DAYS = 14;
+
+  var deferredPrompt = null;
+  var promptEl = null;
+  var shown = false;
 
   function markPwaInstalled() {
     try {
@@ -44,12 +48,8 @@
     });
   }
 
-  var deferredPrompt = null;
-  var bannerEl = null;
-  var shown = false;
-
   function assetUrl(path) {
-    var script = document.querySelector('script[data-sw]');
+    var script = document.querySelector("script[data-sw]");
     var sw = script && script.getAttribute("data-sw");
     if (sw && sw.indexOf("../") === 0) return "../" + path;
     return path;
@@ -60,6 +60,35 @@
     if (window.navigator.standalone === true) return true;
     if (document.referrer && document.referrer.indexOf("android-app://") === 0) return true;
     return false;
+  }
+
+  function isOfficialHost() {
+    return (
+      window.OutilsEPS &&
+      window.OutilsEPS.site &&
+      typeof window.OutilsEPS.site.isOfficialHost === "function" &&
+      window.OutilsEPS.site.isOfficialHost()
+    );
+  }
+
+  function isLegacyMigrationHost() {
+    return (
+      window.OutilsEPS &&
+      window.OutilsEPS.site &&
+      typeof window.OutilsEPS.site.isLegacyHost === "function" &&
+      window.OutilsEPS.site.isLegacyHost()
+    );
+  }
+
+  function isIndexPage() {
+    var path = location.pathname || "";
+    if (/(^|\/)index\.html$/i.test(path)) return true;
+    if (/\/$/.test(path) && path.indexOf("/outils/") < 0) return true;
+    return false;
+  }
+
+  function useInstallModal() {
+    return isOfficialHost() && isIndexPage();
   }
 
   function getPlatform() {
@@ -109,80 +138,192 @@
     }
   }
 
-  function hideBanner() {
-    if (!bannerEl) return;
-    bannerEl.classList.remove("install-banner--visible");
-    document.body.classList.remove("install-banner-open");
-    setTimeout(function () {
-      if (bannerEl && bannerEl.parentNode) bannerEl.parentNode.removeChild(bannerEl);
-      bannerEl = null;
-    }, 320);
+  function hidePrompt() {
+    if (!promptEl) return;
+    if (promptEl.tagName === "DIALOG" && promptEl.close) {
+      promptEl.close();
+    } else {
+      promptEl.classList.remove("install-banner--visible");
+      document.body.classList.remove("install-banner-open");
+      setTimeout(function () {
+        if (promptEl && promptEl.parentNode) promptEl.parentNode.removeChild(promptEl);
+      }, 320);
+    }
+    promptEl = null;
   }
 
-  var CONTENT = {
-    chromium: {
-      title: "Installer Outils EPS",
-      text: "Ajoutez l’application sur votre appareil pour y accéder en un clic. Utilisez ensuite toujours l’icône installée : les données du navigateur et de l’app sont séparées.",
-      primary: "Installer",
-      showInstall: true,
-    },
-    "ios-safari": {
-      title: "Ajouter à l’écran d’accueil",
-      text: "Sur iPhone : Partager → « Sur l’écran d’accueil ». Ensuite ouvrez toujours l’icône Outils EPS (pas Safari) : classes et imports QR ne sont pas partagés entre les deux.",
-      primary: "J’ai compris",
-      showInstall: false,
-    },
-    "ios-other": {
-      title: "Installer sur iPhone",
-      text: "Pour installer l’application, ouvrez cette page dans Safari (copiez le lien dans Safari).",
-      primary: "J’ai compris",
-      showInstall: false,
-    },
-    "android-manual": {
-      title: "Installer Outils EPS",
-      text: "Menu (⋮) → « Installer l’application ». Puis utilisez toujours l’icône installée : les données ne sont pas les mêmes que dans Chrome.",
-      primary: "J’ai compris",
-      showInstall: false,
-    },
-    desktop: {
-      title: "Installer Outils EPS",
-      text: "Installez l’app puis ouvrez-la depuis son icône. Navigateur et app installée stockent des données séparées.",
-      primary: "Installer",
-      showInstall: true,
-    },
-  };
+  function panelForMode(mode) {
+    var platform = getPlatform();
+    if (mode === "ios-other") {
+      return {
+        title: "Installer sur iPhone",
+        lead: "Ouvrez cette page dans Safari pour ajouter Outils EPS à votre écran d’accueil.",
+        image: "assets/migration/install-iphone.png",
+        imageAlt: "Installer l’application sur iPhone",
+        steps: ["Copier l’adresse outilseps.fr", "Coller dans Safari", "Partager → Sur l’écran d’accueil"],
+        primary: "J’ai compris",
+        showInstall: false,
+        markInstalledOnClose: false,
+      };
+    }
+    if (mode === "ios-safari" || platform === "ios") {
+      return {
+        title: "Ajoutez Outils EPS à votre écran d’accueil",
+        lead: "Vos données sont enregistrées dans l’application installée, pas dans Safari.",
+        image: "assets/migration/install-iphone.png",
+        imageAlt: "Étapes sur iPhone : Partager, Sur l’écran d’accueil",
+        steps: ["Partager", "Sur l’écran d’accueil", "Ouvrir l’icône verte"],
+        primary: "J’ai compris",
+        showInstall: false,
+        markInstalledOnClose: true,
+      };
+    }
+    if (mode === "android-manual" || platform === "android") {
+      return {
+        title: "Installez l’application Outils EPS",
+        lead: "Utilisez ensuite toujours l’icône installée : le navigateur et l’application ne partagent pas les mêmes données.",
+        image: "assets/migration/install-android.png",
+        imageAlt: "Étapes sur Android : Menu, Installer l’application",
+        steps: ["Menu Chrome (⋮)", "Installer l’application", "Ouvrir l’icône verte"],
+        primary: mode === "chromium" && deferredPrompt ? "Installer" : "J’ai compris",
+        showInstall: mode === "chromium" && !!deferredPrompt,
+        markInstalledOnClose: mode !== "chromium",
+      };
+    }
+    return {
+      title: "Installez l’application sur votre ordinateur",
+      lead: "Ouvrez ensuite Outils EPS depuis son icône : navigateur et application stockent des données séparées.",
+      image: "assets/migration/logo-vert.png",
+      imageAlt: "Icône verte Outils EPS",
+      imageCompact: true,
+      steps: ["Dans Chrome ou Edge : icône Installer", "Lancer Outils EPS depuis le menu ou le bureau"],
+      primary: mode === "chromium" && deferredPrompt ? "Installer" : "J’ai compris",
+      showInstall: mode === "chromium" && !!deferredPrompt,
+      markInstalledOnClose: mode !== "chromium",
+    };
+  }
 
-  function showBanner(mode) {
+  function showInstallModal(mode) {
     if (shown || isInstalled() || isDismissed() || readInstalledMark()) return;
-    var cfg = CONTENT[mode];
-    if (!cfg) return;
+    var panel = panelForMode(mode);
+    if (!panel) return;
 
     shown = true;
-    bannerEl = document.createElement("div");
-    bannerEl.className = "install-banner";
-    bannerEl.setAttribute("role", "region");
-    bannerEl.setAttribute("aria-label", "Proposer l’installation de l’application");
+    var dlg = document.createElement("dialog");
+    dlg.className = "info-dialog card install-app-dialog";
+    dlg.id = "dialog-install-app";
+    dlg.setAttribute("aria-labelledby", "install-app-dialog-title");
+
+    var form = document.createElement("form");
+    form.method = "dialog";
+    form.className = "info-dialog__form install-app-dialog__form";
+
+    var title = document.createElement("h2");
+    title.id = "install-app-dialog-title";
+    title.className = "info-dialog__title";
+    title.textContent = panel.title;
+
+    var lead = document.createElement("p");
+    lead.className = "install-app-dialog__lead";
+    lead.textContent = panel.lead;
+
+    var visual = document.createElement("div");
+    visual.className = "install-app-dialog__visual";
+    if (panel.image) {
+      var img = document.createElement("img");
+      img.src = assetUrl(panel.image);
+      img.alt = panel.imageAlt || "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      if (panel.imageCompact) img.className = "install-app-dialog__logo";
+      visual.appendChild(img);
+    }
+
+    var steps = document.createElement("ol");
+    steps.className = "info-dialog__list install-app-dialog__steps";
+    panel.steps.forEach(function (step) {
+      var li = document.createElement("li");
+      li.textContent = step;
+      steps.appendChild(li);
+    });
+
+    var actions = document.createElement("div");
+    actions.className = "field-row install-app-dialog__actions";
+
+    var btnPrimary = document.createElement("button");
+    btnPrimary.type = "button";
+    btnPrimary.className = "btn btn--primary";
+    btnPrimary.textContent = panel.primary;
+
+    var btnLater = document.createElement("button");
+    btnLater.type = "submit";
+    btnLater.className = "btn btn--ghost";
+    btnLater.textContent = "Plus tard";
+    btnLater.value = "later";
+
+    btnPrimary.addEventListener("click", function () {
+      if (panel.showInstall && deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function (choice) {
+          if (choice && choice.outcome === "accepted") markPwaInstalled();
+          deferredPrompt = null;
+          setDismissed(true);
+          dlg.close();
+        });
+        return;
+      }
+      if (panel.markInstalledOnClose) markPwaInstalled();
+      setDismissed(true);
+      dlg.close();
+    });
+
+    btnLater.addEventListener("click", function () {
+      setDismissed(false);
+    });
+
+    actions.appendChild(btnPrimary);
+    actions.appendChild(btnLater);
+
+    form.appendChild(title);
+    form.appendChild(lead);
+    form.appendChild(visual);
+    form.appendChild(steps);
+    form.appendChild(actions);
+    dlg.appendChild(form);
+    dlg.addEventListener("close", function () {
+      promptEl = null;
+      shown = false;
+    });
+
+    document.body.appendChild(dlg);
+    promptEl = dlg;
+    if (dlg.showModal) dlg.showModal();
+  }
+
+  function showInstallBanner(mode) {
+    if (shown || isInstalled() || isDismissed() || readInstalledMark()) return;
+    var panel = panelForMode(mode);
+    if (!panel) return;
+
+    shown = true;
+    var banner = document.createElement("div");
+    banner.className = "install-banner";
+    banner.setAttribute("role", "region");
+    banner.setAttribute("aria-label", "Installer l’application");
 
     var inner = document.createElement("div");
     inner.className = "install-banner__inner";
-
-    var icon = document.createElement("img");
-    icon.className = "install-banner__icon";
-    icon.src = assetUrl("assets/icon-192.png");
-    icon.alt = "";
-    icon.width = 48;
-    icon.height = 48;
 
     var body = document.createElement("div");
     body.className = "install-banner__body";
 
     var title = document.createElement("p");
     title.className = "install-banner__title";
-    title.textContent = cfg.title;
+    title.textContent = panel.title;
 
     var text = document.createElement("p");
     text.className = "install-banner__text";
-    text.textContent = cfg.text;
+    text.textContent = panel.lead;
 
     body.appendChild(title);
     body.appendChild(text);
@@ -192,73 +333,52 @@
 
     var btnPrimary = document.createElement("button");
     btnPrimary.type = "button";
-    btnPrimary.className = "btn btn--primary btn--small install-banner__btn-install";
-    btnPrimary.textContent = cfg.primary;
+    btnPrimary.className = "btn btn--primary btn--small";
+    btnPrimary.textContent = panel.primary;
 
     btnPrimary.addEventListener("click", function () {
-      if (cfg.showInstall && deferredPrompt) {
+      if (panel.showInstall && deferredPrompt) {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then(function (choice) {
-          if (choice && choice.outcome === "accepted") {
-            markPwaInstalled();
-          }
+          if (choice && choice.outcome === "accepted") markPwaInstalled();
           deferredPrompt = null;
-          hideBanner();
+          hidePrompt();
         });
       } else {
-        hideBanner();
+        hidePrompt();
         setDismissed(true);
-        if (mode === "ios-safari" || mode === "ios-other" || mode === "android-manual") {
-          markPwaInstalled();
-        }
+        if (panel.markInstalledOnClose) markPwaInstalled();
       }
     });
 
     var btnLater = document.createElement("button");
     btnLater.type = "button";
-    btnLater.className = "btn btn--ghost btn--small install-banner__btn-later";
+    btnLater.className = "btn btn--ghost btn--small";
     btnLater.textContent = "Plus tard";
-
     btnLater.addEventListener("click", function () {
       setDismissed(false);
-      hideBanner();
+      hidePrompt();
     });
 
     actions.appendChild(btnPrimary);
     actions.appendChild(btnLater);
 
-    var btnClose = document.createElement("button");
-    btnClose.type = "button";
-    btnClose.className = "install-banner__close";
-    btnClose.setAttribute("aria-label", "Fermer");
-    btnClose.textContent = "×";
-    btnClose.addEventListener("click", function () {
-      setDismissed(false);
-      hideBanner();
-    });
-
-    inner.appendChild(icon);
     inner.appendChild(body);
     inner.appendChild(actions);
-    inner.appendChild(btnClose);
-    bannerEl.appendChild(inner);
-    document.body.appendChild(bannerEl);
+    banner.appendChild(inner);
+    document.body.appendChild(banner);
+    promptEl = banner;
     document.body.classList.add("install-banner-open");
-
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
-        if (bannerEl) bannerEl.classList.add("install-banner--visible");
+        if (banner) banner.classList.add("install-banner--visible");
       });
     });
   }
 
-  function isLegacyMigrationHost() {
-    return (
-      window.OutilsEPS &&
-      window.OutilsEPS.site &&
-      typeof window.OutilsEPS.site.isLegacyHost === "function" &&
-      window.OutilsEPS.site.isLegacyHost()
-    );
+  function showPrompt(mode) {
+    if (useInstallModal()) showInstallModal(mode);
+    else showInstallBanner(mode);
   }
 
   function tryShowForPlatform() {
@@ -270,32 +390,26 @@
       var platform = getPlatform();
 
       if (platform === "ios") {
-        if (isIOSSafari()) {
-          setTimeout(function () {
-            if (!deferredPrompt) showBanner("ios-safari");
-          }, 1200);
-        } else {
-          setTimeout(function () {
-            showBanner("ios-other");
-          }, 1200);
-        }
+        setTimeout(function () {
+          if (!deferredPrompt) showPrompt(isIOSSafari() ? "ios-safari" : "ios-other");
+        }, useInstallModal() ? 600 : 1200);
         return;
       }
 
       if (platform === "android") {
         setTimeout(function () {
           if (!deferredPrompt && !isInstalled() && !isDismissed() && !readInstalledMark()) {
-            showBanner("android-manual");
+            showPrompt("android-manual");
           }
-        }, 3500);
+        }, useInstallModal() ? 800 : 3500);
         return;
       }
 
       setTimeout(function () {
         if (!deferredPrompt && !isInstalled() && !isDismissed() && !readInstalledMark()) {
-          showBanner("desktop");
+          showPrompt("desktop");
         }
-      }, 2500);
+      }, useInstallModal() ? 800 : 2500);
     });
   }
 
@@ -305,13 +419,13 @@
     likelyHasInstalledApp().then(function (hasInstalled) {
       if (hasInstalled) return;
       deferredPrompt = e;
-      showBanner("chromium");
+      showPrompt("chromium");
     });
   });
 
   window.addEventListener("appinstalled", function () {
     deferredPrompt = null;
-    hideBanner();
+    hidePrompt();
     markPwaInstalled();
     try {
       localStorage.setItem(DISMISS_KEY, JSON.stringify({ permanent: true }));
