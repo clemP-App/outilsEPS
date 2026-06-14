@@ -417,8 +417,8 @@
     var reasons = [];
     if (
       !window.OutilsEPS ||
-      !window.OutilsEPS.isSupabaseConfigured ||
-      !window.OutilsEPS.isSupabaseConfigured()
+      !window.OutilsEPS.isOnlineCatalogConfigured ||
+      !window.OutilsEPS.isOnlineCatalogConfigured()
     ) {
       reasons.push("Le catalogue en ligne n'est pas configuré sur ce site.");
     } else if (
@@ -462,7 +462,7 @@
       !window.OutilsEPS.catalog ||
       !window.OutilsEPS.catalog.submitGridToCatalog
     ) {
-      setStatus("warn", "Catalogue en ligne non configuré (Supabase).");
+      setStatus("warn", "Catalogue en ligne indisponible.");
       return Promise.resolve({ submitted: false });
     }
     return window.OutilsEPS.catalog

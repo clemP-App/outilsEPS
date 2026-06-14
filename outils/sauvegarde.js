@@ -51,7 +51,10 @@
   var syncApplying = false;
   var syncCompleted = false;
   var syncRunId = 0;
-  var LAST_BACKUP_KEY = "outils_eps_last_backup_export_v1";
+  var LAST_BACKUP_KEY =
+    window.BackupReminder && BackupReminder.LAST_BACKUP_KEY
+      ? BackupReminder.LAST_BACKUP_KEY
+      : "outils_eps_last_backup_export_v1";
   var lastBackupStatusCardEl = document.getElementById("sauvegarde-status-card");
   var lastBackupBadgeEl = document.getElementById("last-backup-status-badge");
   var lastBackupDateEl = document.getElementById("last-backup-date");
@@ -66,6 +69,7 @@
   };
 
   function loadLastBackupStatus() {
+    if (window.BackupReminder) return BackupReminder.loadLastBackupExportAt();
     try {
       return localStorage.getItem(LAST_BACKUP_KEY) || null;
     } catch (e) {
@@ -74,6 +78,7 @@
   }
 
   function saveLastBackupStatus(exportedAt) {
+    if (window.BackupReminder) return BackupReminder.saveLastBackupExportAt(exportedAt);
     var value = exportedAt || new Date().toISOString();
     try {
       localStorage.setItem(LAST_BACKUP_KEY, value);
@@ -96,14 +101,27 @@
     return "old";
   }
 
-  function renderLastBackupStatus() {
+  function renderLastBackupStatus(hasContent) {
     if (!lastBackupStatusCardEl || !lastBackupBadgeEl || !lastBackupDateEl) return;
     var exportedAt = loadLastBackupStatus();
     var freshness = getBackupFreshness(exportedAt);
+    var label = BACKUP_FRESHNESS_LABELS[freshness] || BACKUP_FRESHNESS_LABELS.never;
+    var showReminder = freshness === "never" && !!hasContent;
 
     lastBackupStatusCardEl.className =
       "card sauvegarde-status-card sauvegarde-status-card--" + freshness;
-    lastBackupBadgeEl.textContent = BACKUP_FRESHNESS_LABELS[freshness] || BACKUP_FRESHNESS_LABELS.never;
+    lastBackupBadgeEl.className = "sauvegarde-status-card__badge";
+    if (showReminder) {
+      lastBackupBadgeEl.classList.add("has-backup-reminder");
+    }
+    lastBackupBadgeEl.textContent = label;
+    if (showReminder) {
+      var reminderBadge = document.createElement("span");
+      reminderBadge.className = "backup-reminder-badge backup-reminder-badge--inline";
+      reminderBadge.setAttribute("aria-hidden", "true");
+      reminderBadge.textContent = "!";
+      lastBackupBadgeEl.appendChild(reminderBadge);
+    }
 
     if (!exportedAt) {
       lastBackupDateEl.textContent = "Dernière exportation : aucune pour le moment";
@@ -1321,8 +1339,10 @@
       .then(function (data) {
         var exportedAt = data && data.metadata && data.metadata.exportedAt;
         saveLastBackupStatus(exportedAt || new Date().toISOString());
-        renderLastBackupStatus();
-        montrerOk("Sauvegarde exportée : " + DataManager.BACKUP_FILENAME);
+        return DataManager.hasAnyData().then(function (hasContent) {
+          renderLastBackupStatus(hasContent);
+          montrerOk("Sauvegarde exportée : " + DataManager.BACKUP_FILENAME);
+        });
       })
       .catch(function (e) {
         montrerErreur(e.message || "Export impossible.");
@@ -1330,12 +1350,19 @@
   }
 
   function init() {
-    renderLastBackupStatus();
     return DataManager.ready
       .then(function () {
-        return renderStockage();
+        var hasContentPromise =
+          typeof DataManager.hasAnyData === "function"
+            ? DataManager.hasAnyData()
+            : Promise.resolve(false);
+        return hasContentPromise.then(function (hasContent) {
+          renderLastBackupStatus(hasContent);
+          return renderStockage();
+        });
       })
       .catch(function (e) {
+        renderLastBackupStatus(false);
         montrerErreur(e.message || "Base de données indisponible.");
       });
   }

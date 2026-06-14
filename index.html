@@ -11,7 +11,7 @@
       content="Outils EPS regroupe des applications et outils numériques pour les professeurs d’EPS : gestion de classe, évaluation, suivi des élèves, statistiques et outils de séance."
     />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://clemp-app.github.io/outilsEPS/" />
+    <link rel="canonical" href="https://www.outilseps.fr/" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="sitemap.xml" />
     <meta property="og:title" content="Outils EPS – Applications et outils numériques pour professeurs d’EPS" />
     <meta
@@ -80,7 +80,7 @@
               <h3 class="site-menu__group-title">Données &amp; partage</h3>
               <ul class="site-menu__list">
                 <li>
-                  <a class="site-menu__link" href="outils/sauvegarde.html">
+                  <a class="site-menu__link" href="outils/sauvegarde.html" id="site-menu-sauvegarde-link">
                     <span class="site-menu__link-icon" aria-hidden="true">💾</span>
                     <span class="site-menu__link-text">
                       <strong>Sauvegarde</strong>
@@ -633,7 +633,7 @@
             Aucun profil élève nominatif n’est envoyé à un service tiers par défaut.
           </p>
           <p>
-            Détail complet (stockage, Supabase, Qr Code, suppression) :
+            Détail complet (stockage, serveur outilseps.fr, Qr Code, suppression) :
             <a href="confidentialite.html" class="info-dialog__link">page Confidentialité &amp; RGPD</a>.
           </p>
         </section>
@@ -792,16 +792,88 @@
           <button type="button" class="btn btn--ghost btn--sm" id="btn-copy-share-link-eleves">
             Copier ce lien
           </button>
+          <button type="button" class="btn btn--primary btn--sm" id="btn-native-share-eleves">
+            Partager Outils EPS Élèves
+          </button>
         </section>
 
         <p class="msg-ok share-dialog__msg" id="share-msg" hidden aria-live="polite"></p>
+
+        <section class="share-dialog__social" aria-labelledby="share-social-heading">
+          <h3 id="share-social-heading" class="share-dialog__social-title">Partager sur les réseaux</h3>
+          <p class="share-dialog__hint share-dialog__hint--social">
+            Texte + visuel prêts à publier sur Facebook, X ou Instagram.
+          </p>
+          <div id="share-dialog-social" class="social-share social-share--dialog"></div>
+        </section>
+
         <div class="share-dialog__actions share-dialog__actions--bottom">
-          <button type="button" class="btn btn--primary" id="btn-native-share-eleves">
-            Partager Outils EPS Élèves
-          </button>
           <button type="submit" class="btn btn--ghost">Fermer</button>
         </div>
         </div>
+      </form>
+    </dialog>
+
+    <dialog
+      class="support-dialog card"
+      id="dialog-support-project"
+      aria-labelledby="support-dialog-title"
+    >
+      <form method="dialog" class="support-dialog__form">
+        <header class="support-dialog__header">
+          <div class="support-dialog__headline">
+            <span class="support-dialog__badge" id="support-milestone-badge" hidden></span>
+            <h2 id="support-dialog-title" class="support-dialog__title">
+              Outils EPS est gratuit — et ça a un coût
+            </h2>
+          </div>
+          <button type="button" class="support-dialog__dismiss" aria-label="Fermer">×</button>
+        </header>
+
+        <div class="support-dialog__body">
+          <p class="support-dialog__lead">
+            Tous ces outils sont <strong>100&nbsp;% gratuits</strong>, sans publicité ni abonnement.
+            Mais le projet a des frais réels&nbsp;: <strong>serveur français</strong>, nom de domaine,
+            maintenance et évolutions régulières.
+          </p>
+          <p class="support-dialog__hint">
+            Si Outils EPS vous fait gagner du temps en cours ou en préparation, vous pouvez aider le
+            projet à continuer&nbsp;:
+          </p>
+
+          <div class="support-dialog__primary">
+            <a
+              href="https://fr.tipeee.com/clemp/"
+              class="btn btn--primary support-dialog__tipeee"
+              id="btn-support-tipeee"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span aria-hidden="true">☕</span>
+              Soutenir sur Tipeee
+            </a>
+            <p class="support-dialog__tipeee-hint">Même un petit geste aide à faire vivre le projet.</p>
+          </div>
+
+          <div class="support-dialog__sep" role="separator" aria-hidden="true">
+            <span>ou partager autour de vous</span>
+          </div>
+
+          <p class="support-dialog__share-intro">
+            Parlez-en à vos collègues EPS sur Facebook, X ou Instagram&nbsp;: le texte et l’image sont prêts.
+          </p>
+          <div id="support-social-share" class="social-share social-share--support"></div>
+          <p class="msg-ok support-dialog__msg" id="support-share-msg" hidden aria-live="polite"></p>
+
+          <label class="support-dialog__hide">
+            <input type="checkbox" id="support-never-again" />
+            <span>Ne plus afficher ce message</span>
+          </label>
+        </div>
+
+        <footer class="support-dialog__footer">
+          <button type="submit" class="btn btn--ghost">Plus tard</button>
+        </footer>
       </form>
     </dialog>
 
@@ -905,11 +977,14 @@
     <script src="goatcounter.js"></script>
     <script src="dom-utils.js"></script>
     <script src="data-manager.js"></script>
+    <script src="shared/backup-reminder.js"></script>
     <script src="shared/outils-catalog.js"></script>
     <script src="shared/home-parcours.js"></script>
     <script src="shared/tool-accueil.js"></script>
     <script src="vendor/qrcode.min.js"></script>
+    <script src="shared/social-share.js"></script>
     <script src="script.js"></script>
+    <script src="support-prompt.js"></script>
     <script src="pwa-register.js" data-sw="sw.js"></script>
   </body>
 </html>

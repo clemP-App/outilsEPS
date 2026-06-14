@@ -24,7 +24,7 @@ Les données principales sont stockées dans **IndexedDB** (`outilsEPSDB`) via `
 
 **Limites :**
 
-- Données **locales à l’appareil** : pas de serveur, pas de synchronisation automatique entre téléphones ou ordinateurs.
+- Données **locales à l’appareil** : pas de synchronisation automatique entre appareils. Une **synchronisation ponctuelle** (QR, deux appareils) est disponible via **outilseps.fr** (voir `docs/DEPLOIEMENT-SYNC-OVH.md`).
 - Pensez à **exporter** régulièrement une sauvegarde JSON depuis l’écran **Sauvegarde et restauration** (icône 💾 sur l’accueil). Cette page affiche aussi le **quota navigateur estimé** et une alerte si l’espace se remplit (≥ 50 %, 75 %, 90 %).
 - Le fichier `outilsEPS-backup.json` contient **tous** les stores ci-dessus (y compris les raccourcis personnalisés du timer HIIT / Tabata).
 - L’**import** remplace **toutes** les données de l’appareil après confirmation (transaction atomique : en cas d’échec, les anciennes données sont conservées).
@@ -142,30 +142,23 @@ npm test
 - **Date de fin** : dernier jour **inclus** d’une période de *N* jours à partir de la date de début (fin = début + *N* − 1 jour).
 - **Couleurs** : rouge = dispense **en cours** ; vert = **terminée** ; neutre = **à venir**.
 
-## Catalogue collaboratif de grilles (Supabase)
+## Catalogue collaboratif de grilles (outilseps.fr)
 
-Les grilles peuvent être proposées au **catalogue enseignant** sans compte utilisateur. Le stockage, les votes et l’archivage passent par **Supabase** (API REST + RLS). Seules l’**URL du projet** et la **clé anon publique** sont utilisées côté client — **jamais** la clé *service role*.
-
-### Configuration
-
-1. Créez un projet sur [supabase.com](https://supabase.com).
-2. Exécutez le script SQL `supabase/catalog-grids-schema.sql` dans l’éditeur SQL du projet.
-3. **Grilles prêtes** : exécutez `supabase/catalog-grids-seed.sql` dans l’éditeur SQL (10 modèles APSA), ou régénérez-le avec `node scripts/generate-catalog-grids-seed.mjs` puis collez le SQL. Alternative : `node scripts/push-catalog-grids-seed.mjs` (envoi via l’API REST avec la clé anon). Après import, remettez les votes à zéro avec `supabase/catalog-grids-reset-votes.sql` (l’API anon ne peut pas modifier les lignes existantes).
-4. Collez vos identifiants dans `shared/supabase-config.js` :
-   - `SUPABASE_URL` — Project URL (Settings → API)
-   - `SUPABASE_ANON_KEY` — clé **anon** « public »
-
-Alternative sans modifier le fichier : avant les scripts, définir `window.OUTILS_EPS_SUPABASE_URL` et `window.OUTILS_EPS_SUPABASE_ANON_KEY`.
+Les grilles peuvent être proposées au **catalogue enseignant** sans compte utilisateur. Le stockage, les votes et l’archivage passent par le **serveur outilseps.fr** (hébergement OVH). Aucune donnée nominative d’élève n’est publiée.
 
 ### Comportement
 
 - Case **« Visible sur le catalogue en ligne »** à l’enregistrement (`grilles-evaluation`) : publication si cochée et critères remplis.
-- Validation côté navigateur puis contraintes SQL + RLS à l’insertion.
-- Votes 👍 / 👎 via la fonction RPC `vote_catalog_grid` (un vote par navigateur et par grille ; recliquer sur le même bouton annule le vote). Si besoin, exécutez `supabase/catalog-grids-vote-toggle.sql` pour mettre à jour la fonction sur un projet déjà créé.
-- À **10 pouces bas**, la grille passe en `archived` et disparaît du catalogue public.
-- Fichiers partagés : `shared/catalog-grid-validation.js`, `shared/catalog-grids.js`, `shared/supabaseClient.js`.
+- Validation côté navigateur avant envoi.
+- Votes 👍 / 👎 (un vote par navigateur et par grille).
+- À **10 pouces bas**, la grille est archivée et disparaît du catalogue public.
+- Fichiers partagés : `shared/catalog-grid-validation.js`, `shared/catalog-grids.js`.
 
-Le JSON `shared/evaluation-rubrics-catalog.json` sert au **seed SQL** et au repli **uniquement** si Supabase n’est pas configuré (sinon le catalogue affiche seulement les grilles Supabase, sans doublon).
+Le JSON `shared/evaluation-rubrics-catalog.json` sert au repli **uniquement** si le catalogue en ligne est indisponible.
+
+## Synchronisation entre appareils (OVH)
+
+La synchronisation de sauvegarde (QR code, deux appareils) passe par l’API PHP `api/sync/` sur **outilseps.fr**. Voir `docs/DEPLOIEMENT-SYNC-OVH.md` pour le déploiement serveur.
 
 ## Technologies
 
@@ -175,7 +168,7 @@ Le JSON `shared/evaluation-rubrics-catalog.json` sert au **seed SQL** et au repl
 
 ## Statistiques de visites
 
-Les pages chargent [GoatCounter](https://www.goatcounter.com/) (`clempapp.goatcounter.com`) **uniquement sur GitHub Pages** (`*.github.io`) — pas en local (`file://`, `localhost`) pour éviter les lenteurs en développement. Consultez le tableau de bord GoatCounter pour voir visiteurs et pages vues ; aucune donnée nominative des utilisateurs.
+Les pages chargent [GoatCounter](https://www.goatcounter.com/) (`clempapp.goatcounter.com`) **uniquement sur le site officiel** (`outilseps.fr`, `www.outilseps.fr`) — pas en local (`file://`, `localhost`, `127.0.0.1`) ni sur l’ancienne adresse GitHub Pages (`clemp-app.github.io`). Le chargement est conditionnel via `goatcounter.js` (asynchrone, sans bloquer l’application). Consultez le tableau de bord GoatCounter pour voir visiteurs et pages vues ; aucune donnée nominative des utilisateurs.
 
 ## Licence
 

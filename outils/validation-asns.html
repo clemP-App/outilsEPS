@@ -2,6 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <link rel="canonical" href="https://www.outilseps.fr/outils/validation-asns.html" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
@@ -264,7 +265,7 @@
         <section class="card" aria-labelledby="lbl-signature">
           <h2 id="lbl-signature">Signature numérique</h2>
           <p class="hint">
-            Dessinez votre signature au doigt ou au stylet. Elle sera insérée sur l'attestation (verso).
+            Dessinez votre signature au doigt ou au stylet. Elle sera insérée sur l'attestation PDF.
           </p>
           <canvas id="asns-signature-canvas" width="400" height="120" aria-label="Zone de signature"></canvas>
           <div class="field-row field-row--actions">
@@ -283,7 +284,7 @@
         <section class="card" aria-labelledby="lbl-attest">
           <h2 id="lbl-attest">Attestations</h2>
           <p class="hint">
-            Générez les attestations officielles pour les élèves au statut « Validé » (recto + verso PDF).
+            Générez les attestations officielles pour les élèves au statut « Validé » (1 page A4 paysage).
             Renseignez d'abord les informations d'établissement dans Paramètres.
           </p>
           <div class="field-row field-row--actions asns-attest-actions">
@@ -405,6 +406,7 @@
     <script src="../class-import.js"></script>
     <script src="../shared/validation-asns-core.js"></script>
     <script src="../vendor/jspdf.umd.min.js"></script>
+    <script src="../shared/validation-asns-header.js"></script>
     <script src="../shared/validation-asns-pdf.js"></script>
     <script src="validation-asns.js"></script>
     <script src="../tool-info.js"></script>

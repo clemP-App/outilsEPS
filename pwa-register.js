@@ -33,8 +33,10 @@
     document.head.appendChild(link);
   }
 
-  function loadScriptSibling(filename) {
-    if (!canUsePwa() || !script || !script.src) return;
+  function loadScriptSibling(filename, options) {
+    options = options || {};
+    if (!options.skipPwaGate && !canUsePwa()) return;
+    if (!script || !script.src) return;
     var src = script.src.replace(/pwa-register\.js(\?.*)?$/i, filename + "$1");
     if (src === script.src) return;
     var el = document.createElement("script");
@@ -55,8 +57,13 @@
     loadScriptSibling("pwa-force-update.js");
   }
 
-  function loadScriptSiblingThen(filename, onLoad) {
-    if (!canUsePwa() || !script || !script.src) {
+  function loadScriptSiblingThen(filename, onLoad, options) {
+    options = options || {};
+    if (!options.skipPwaGate && !canUsePwa()) {
+      if (onLoad) onLoad();
+      return;
+    }
+    if (!script || !script.src) {
       if (onLoad) onLoad();
       return;
     }
@@ -77,7 +84,7 @@
   }
 
   function loadMigrationKit() {
-    loadScriptSibling("pwa-migration-banner.js");
+    loadScriptSibling("pwa-migration-banner.js", { skipPwaGate: true });
   }
 
   injectManifest();
@@ -91,12 +98,18 @@
     });
   }
 
+  function isLegacyHostFallback() {
+    var host = (location.hostname || "").toLowerCase();
+    if (host === "clemp-app.github.io") return true;
+    return host.endsWith(".github.io") && (location.pathname || "").indexOf("/outilsEPS") >= 0;
+  }
+
   function ensureSiteConfig(onReady) {
     if (window.OutilsEPS && window.OutilsEPS.site) {
       onReady();
       return;
     }
-    loadScriptSiblingThen("site-config.js", onReady);
+    loadScriptSiblingThen("site-config.js", onReady, { skipPwaGate: true });
   }
 
   function loadPwaUi() {
@@ -106,7 +119,9 @@
         window.OutilsEPS.site &&
         typeof window.OutilsEPS.site.isLegacyHost === "function" &&
         window.OutilsEPS.site.isLegacyHost();
+      if (!legacy) legacy = isLegacyHostFallback();
       if (legacy) loadMigrationKit();
+      if (!canUsePwa()) return;
       loadInstallBanner();
       loadContextHint();
       loadForceUpdate();

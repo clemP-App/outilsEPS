@@ -2,11 +2,12 @@
  * Fichier généré — ne pas éditer à la main.
  * Régénérer : node scripts/generate-precache.js
  */
-var APP_CACHE_VERSION = "136";
+var APP_CACHE_VERSION = "137";
 var CACHE_BUNDLE_NAME = "outils-eps-v" + APP_CACHE_VERSION;
 var PRECACHE = [
   "./",
   "./app-version.js",
+  "./assets/asns/entete-asns.jpg",
   "./assets/apple-touch-icon.png",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
@@ -17,6 +18,10 @@ var PRECACHE = [
   "./assets/relais/coureur-1.png",
   "./assets/relais/coureur-2.png",
   "./assets/relais/transmission.png",
+  "./assets/share/facebook.png",
+  "./assets/share/instagram-post.png",
+  "./assets/share/instagram-story.png",
+  "./assets/share/x.png",
   "./class-import.js",
   "./confidentialite.html",
   "./data-manager.js",
@@ -129,11 +134,13 @@ var PRECACHE = [
   "./pwa-register.js",
   "./pwa-splash.js",
   "./script.js",
+  "./support-prompt.js",
   "./session-manager.js",
   "./site-config.js",
   "./shared/backup-sync-core.js",
   "./shared/backup-sync-ovh.js",
   "./shared/backup-sync.js",
+  "./shared/backup-reminder.js",
   "./shared/catalog-grid-validation.js",
   "./shared/catalog-grids.js",
   "./shared/championnat-standings.js",
@@ -162,6 +169,7 @@ var PRECACHE = [
   "./shared/questions-debrief-core.js",
   "./shared/rm-formulas.js",
   "./shared/sessions-core.js",
+  "./shared/social-share.js",
   "./shared/supabase-config.js",
   "./shared/supabaseClient.js",
   "./shared/sync-classe-tableaux.js",
@@ -173,6 +181,7 @@ var PRECACHE = [
   "./shared/tool-accueil.js",
   "./shared/tool-results-history.js",
   "./shared/validation-asns-core.js",
+  "./shared/validation-asns-header.js",
   "./shared/validation-asns-pdf.js",
   "./style.css",
   "./tool-info.js",

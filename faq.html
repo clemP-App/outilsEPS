@@ -2,6 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <link rel="canonical" href="https://www.outilseps.fr/faq.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1a2744" />
     <title>FAQ Outils EPS</title>
@@ -19,7 +20,7 @@
       <section class="card">
         <p class="hint">
           Réponses par thème pour débuter, sauvegarder, utiliser les QR élèves et dépanner un blocage.
-          Détail RGPD (stockage, Supabase, suppression) :
+          Détail RGPD (stockage, serveur outilseps.fr, suppression) :
           <a href="confidentialite.html">page Confidentialité &amp; RGPD</a>.
         </p>
         <div class="field-group">
@@ -157,12 +158,12 @@
             id: "rgpd-donnees-eleves",
             cat: "general",
             filters: ["donnees"],
-            tags: ["rgpd", "confidentialite", "donnees eleves", "eleves", "supabase"],
+            tags: ["rgpd", "confidentialite", "donnees eleves", "eleves", "ovh", "outilseps"],
             q: "RGPD : où vont les données élèves ?",
             a: "Par défaut, les données pédagogiques restent sur votre appareil (IndexedDB). Il n’y a pas de synchronisation cloud imposée ni de base élèves centralisée obligatoire.",
             detailsLabel: "Détail complet (services tiers, QR, suppression)",
             details:
-              "Vous gardez la maîtrise de vos exports et sauvegardes. Des statistiques de fréquentation anonymes peuvent être utilisées (GoatCounter). La synchronisation Sauvegarde et certains QR peuvent passer par Supabase le temps du transfert.\n\nConsultez la page Confidentialité pour le détail des traitements et la procédure de suppression.",
+              "Vous gardez la maîtrise de vos exports et sauvegardes. Des statistiques de fréquentation anonymes peuvent être utilisées (GoatCounter). La synchronisation Sauvegarde passe par le serveur sécurisé outilseps.fr (OVH) le temps du transfert.\n\nConsultez la page Confidentialité pour le détail des traitements et la procédure de suppression.",
             links: [{ label: "Voir Confidentialité & RGPD", href: "confidentialite.html" }],
           },
           {
@@ -1152,5 +1153,6 @@
         render();
       })();
     </script>
+    <script src="goatcounter.js"></script>
   </body>
 </html>

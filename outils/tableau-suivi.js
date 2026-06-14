@@ -936,8 +936,8 @@
     var reasons = [];
     if (
       !window.OutilsEPS ||
-      !window.OutilsEPS.isSupabaseConfigured ||
-      !window.OutilsEPS.isSupabaseConfigured()
+      !window.OutilsEPS.isOnlineCatalogConfigured ||
+      !window.OutilsEPS.isOnlineCatalogConfigured()
     ) {
       reasons.push("Le catalogue en ligne n'est pas configuré sur ce site.");
     } else if (
@@ -4713,7 +4713,7 @@
           montrerMsg(err && err.message ? err.message : "Publication impossible.");
         });
     }
-    montrerMsg("Catalogue en ligne non configuré (Supabase).");
+    montrerMsg("Catalogue en ligne indisponible.");
     return Promise.resolve({ submitted: false });
   }
 

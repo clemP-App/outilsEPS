@@ -2825,5 +2825,6 @@ var DataManager = (function () {
     clearImportedRecords: clearImportedRecords,
     hasImportedRecord: hasImportedRecord,
     exportImportsElevesJson: exportImportsElevesJson,
+    hasAnyData: hasAnyData,
   };
 })();

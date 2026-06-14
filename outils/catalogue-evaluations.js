@@ -37,7 +37,7 @@
     return cycle || "";
   }
 
-  function isSupabaseGridId(id) {
+  function isOnlineCatalogGridId(id) {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
       String(id || "")
     );
@@ -78,7 +78,7 @@
       downvotes: Number(r.downvotes != null ? r.downvotes : 0),
       status: r.status || "published",
       catalogSource: r.catalogSource || "",
-      canVote: isSupabaseGridId(gridId),
+      canVote: isOnlineCatalogGridId(gridId),
       catalogLegacyFallback: !!r.catalogLegacyFallback,
       catalogBuiltin: !!r.catalogBuiltin,
       grid_data: r.grid_data,
@@ -146,7 +146,7 @@
     ) {
       setStatus(
         "warn",
-        "Vote impossible : connexion requise et grille publiée sur le catalogue en ligne (Supabase)."
+        "Vote impossible : connexion requise et grille publiée sur le catalogue en ligne."
       );
       return;
     }

@@ -1,5 +1,5 @@
 /**
- * Validation et empreinte des grilles avant envoi au catalogue Supabase.
+ * Validation et empreinte des grilles avant envoi au catalogue en ligne.
  */
 (function (global) {
   "use strict";

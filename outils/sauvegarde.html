@@ -2,6 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <link rel="canonical" href="https://www.outilseps.fr/outils/sauvegarde.html" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
@@ -18,11 +19,22 @@
   </head>
   <body class="app app--tool">
     <div class="page-outil page-outil--sauvegarde">
-      <header class="page-outil__header">
+      <header class="page-outil__header page-outil__header--has-tuto">
         <a class="tool-back" href="../index.html"
           ><span class="tool-back__chev" aria-hidden="true">‹</span> Accueil</a
         >
         <h1>Sauvegarde et restauration</h1>
+        <a
+          class="tool-tuto-btn"
+          href="https://www.youtube.com/watch?v=-6rcA94zfCU"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Tutoriel vidéo : sauvegarde, transfert et synchronisation"
+          aria-label="Tutoriel vidéo : sauvegarde, transfert et synchronisation"
+        >
+          <span class="tool-tuto-btn__icon" aria-hidden="true">▶</span>
+          <span class="tool-tuto-btn__text">Tuto vidéo</span>
+        </a>
       </header>
 
       <p id="sauvegarde-msg" class="msg-error sauvegarde-msg" role="alert" hidden></p>
@@ -369,6 +381,7 @@
               "Exporter → télécharge un fichier à garder en lieu sûr (action recommandée).",
               "Importer → restaure ou fusionne un fichier (si vous en avez déjà un).",
               "Synchroniser → aligne deux appareils via QR code (avancé, internet requis).",
+              "Tuto vidéo → bouton en haut à droite : sauvegarde, transfert et synchronisation pas à pas.",
             ],
           },
           {

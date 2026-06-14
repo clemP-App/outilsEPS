@@ -34,4 +34,7 @@
   ns.isSupabaseConfigured = function () {
     return !!(ns.SUPABASE_URL && ns.SUPABASE_ANON_KEY);
   };
+
+  /** Alias public — préférer ce libellé dans l’interface (catalogue en ligne). */
+  ns.isOnlineCatalogConfigured = ns.isSupabaseConfigured;
 })(typeof window !== "undefined" ? window : global);

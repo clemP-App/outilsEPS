@@ -8,8 +8,8 @@
   var ns = global.OutilsEPS || (global.OutilsEPS = {});
 
   function requireConfig() {
-    if (!ns.isSupabaseConfigured || !ns.isSupabaseConfigured()) {
-      throw new Error("Supabase non configuré. Renseignez SUPABASE_URL et SUPABASE_ANON_KEY dans shared/supabase-config.js");
+    if (!ns.isOnlineCatalogConfigured || !ns.isOnlineCatalogConfigured()) {
+      throw new Error("Catalogue en ligne indisponible.");
     }
   }
 
@@ -53,7 +53,7 @@
           var err = new Error(
             (data && data.message) ||
               (data && data.error) ||
-              "Erreur Supabase (" + res.status + ")"
+              "Erreur catalogue en ligne (" + res.status + ")"
           );
           err.status = res.status;
           err.data = data;

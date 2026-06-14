@@ -10,9 +10,16 @@
     return (window.OutilsEPS && window.OutilsEPS.site) || null;
   }
 
+  function isLegacyHostFallback() {
+    var host = (location.hostname || "").toLowerCase();
+    if (host === "clemp-app.github.io") return true;
+    return host.endsWith(".github.io") && (location.pathname || "").indexOf("/outilsEPS") >= 0;
+  }
+
   function isLegacy() {
     var s = site();
-    return s ? s.isLegacyHost() : false;
+    if (s && typeof s.isLegacyHost === "function") return s.isLegacyHost();
+    return isLegacyHostFallback();
   }
 
   function newSiteUrl() {
@@ -87,14 +94,23 @@
     });
   }
 
-  function init() {
+  function init(attempt) {
+    attempt = attempt || 0;
+    if (!site() && attempt < 40) {
+      setTimeout(function () {
+        init(attempt + 1);
+      }, 50);
+      return;
+    }
     if (!isLegacy()) return;
     showPermanentBanner();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", function () {
+      init(0);
+    });
   } else {
-    init();
+    init(0);
   }
 })();

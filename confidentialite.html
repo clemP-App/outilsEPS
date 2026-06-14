@@ -2,11 +2,12 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <link rel="canonical" href="https://www.outilseps.fr/confidentialite.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#1a2744" />
     <meta
       name="description"
-      content="Politique de confidentialité et RGPD — Outils EPS : stockage local, services tiers, Supabase, GoatCounter, QR code."
+      content="Politique de confidentialité et RGPD — Outils EPS : stockage local, serveur outilseps.fr (OVH), GoatCounter, QR code."
     />
     <title>Confidentialité &amp; RGPD — Outils EPS</title>
     <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
@@ -37,12 +38,12 @@
           </li>
           <li>
             <strong>GoatCounter</strong> : statistiques de visite anonymes, uniquement sur le site publié
-            (GitHub Pages).
+            (<strong>outilseps.fr</strong>).
           </li>
           <li>
-            <strong>Supabase</strong> (optionnel) : pour la synchronisation entre deux appareils, vos données ne
-            transitent que <strong>le temps de la synchro</strong> (session temporaire, puis suppression). À part :
-            catalogue collaboratif de grilles si vous choisissez de publier une grille.
+            <strong>Serveur outilseps.fr (OVH)</strong> (optionnel) : synchronisation entre deux appareils ou
+            publication d’une grille au catalogue — vos données ne transitent que <strong>le temps nécessaire</strong>
+            (session temporaire, puis suppression).
           </li>
           <li>
             <strong>Qr Code</strong> : transferts ponctuels entre appareils (élève → professeur), générés localement
@@ -109,7 +110,7 @@
         <p class="hint">
           Les grilles d’évaluation que vous créez restent d’abord sur votre appareil. Elles ne sont envoyées en ligne
           que si vous cochez explicitement « Visible sur le catalogue en ligne » et que la publication est acceptée
-          (voir Supabase ci-dessous).
+          (voir serveur outilseps.fr ci-dessous).
         </p>
       </section>
 
@@ -159,8 +160,8 @@
           </li>
         </ul>
         <p class="hint">
-          La synchronisation entre appareils via Supabase ne conserve pas volontairement votre sauvegarde après la
-          fusion : la session temporaire est supprimée à la fin du transfert.
+          La synchronisation entre appareils via le serveur outilseps.fr (OVH) ne conserve pas volontairement votre
+          sauvegarde après la fusion : la session temporaire est supprimée à la fin du transfert.
         </p>
       </section>
 
@@ -171,7 +172,7 @@
           <h3 class="legal-section__subtitle">GoatCounter (statistiques de visite)</h3>
           <ul class="legal-list">
             <li><strong>Quoi</strong> — pages vues, volume de trafic agrégé.</li>
-            <li><strong>Quand</strong> — uniquement sur le site publié (<code>*.github.io</code>), pas en local.</li>
+            <li><strong>Quand</strong> — uniquement sur le site publié (<strong>outilseps.fr</strong>), pas en local.</li>
             <li><strong>Données élèves</strong> — aucune donnée nominative d’élève n’est transmise.</li>
             <li>
               <strong>Hébergeur</strong> —
@@ -182,25 +183,26 @@
         </article>
 
         <article class="legal-block">
-          <h3 class="legal-section__subtitle">Supabase — synchronisation de sauvegarde (optionnelle)</h3>
+          <h3 class="legal-section__subtitle">outilseps.fr (OVH) — synchronisation de sauvegarde (optionnelle)</h3>
           <ul class="legal-list">
             <li>
               <strong>Quoi</strong> — lorsque vous lancez « Synchroniser deux appareils », une copie temporaire de
-              votre sauvegarde est déposée sur Supabase le temps de comparer et fusionner.
+              votre sauvegarde transite par le serveur sécurisé <strong>outilseps.fr</strong> (hébergement OVH) le
+              temps de comparer et fusionner.
             </li>
             <li>
-              <strong>Protection</strong> — jeton affiché dans le Qr Code ; session limitée dans le temps ; suppression
-              après validation ou expiration.
+              <strong>Protection</strong> — jeton affiché dans le Qr Code ; session limitée dans le temps (environ
+              dix minutes) ; suppression après validation ou expiration.
             </li>
             <li>
-              <strong>Clé API</strong> — seule la clé <em>anon</em> publique est présente côté client (non secrète) ;
-              l’accès est limité par les règles RLS du projet Supabase.
+              <strong>Accès</strong> — le jeton de session est nécessaire pour associer les deux appareils ; aucune
+              conservation volontaire de la sauvegarde après fusion.
             </li>
           </ul>
         </article>
 
         <article class="legal-block">
-          <h3 class="legal-section__subtitle">Supabase — catalogue collaboratif de grilles (optionnel)</h3>
+          <h3 class="legal-section__subtitle">outilseps.fr (OVH) — catalogue collaboratif de grilles (optionnel)</h3>
           <ul class="legal-list">
             <li>
               <strong>Quoi</strong> — si vous publiez une grille au catalogue en ligne : structure de la grille, titre,
@@ -211,8 +213,8 @@
               catalogue.
             </li>
             <li>
-              <strong>Contrôles</strong> — validation côté navigateur, filtres de contenu, taille maximale, règles
-              SQL et RLS ; archivage automatique après seuil de votes négatifs.
+              <strong>Contrôles</strong> — validation côté navigateur, filtres de contenu, taille maximale ;
+              archivage automatique après seuil de votes négatifs.
             </li>
             <li>
               <strong>Vote</strong> — identifiant anonyme généré dans votre navigateur (localStorage), pas de compte
@@ -220,8 +222,7 @@
             </li>
           </ul>
           <p class="hint">
-            Si Supabase n’est pas configuré, le catalogue en ligne est indisponible et les grilles restent uniquement
-            sur votre appareil.
+            Si le catalogue en ligne est indisponible, les grilles restent uniquement sur votre appareil.
           </p>
         </article>
       </section>
@@ -276,5 +277,6 @@
         </p>
       </section>
     </div>
+    <script src="goatcounter.js"></script>
   </body>
 </html>

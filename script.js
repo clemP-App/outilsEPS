@@ -1153,6 +1153,7 @@
   var btnNativeShareApp = document.getElementById("btn-native-share-app");
   var btnNativeShareEleves = document.getElementById("btn-native-share-eleves");
   var shareMsg = document.getElementById("share-msg");
+  var socialMount = document.getElementById("share-dialog-social");
   var shareDual = !!(shareLinkEleves && shareQrEleves);
 
   function normalizeBasePath(pathname) {
@@ -1224,6 +1225,17 @@
     if (btnNativeShareApp) btnNativeShareApp.hidden = !canShare;
     if (btnNativeShareEleves) btnNativeShareEleves.hidden = !canShare;
     setShareMsg("");
+    try {
+      if (socialMount && window.OutilsEPSSocialShare && !socialMount.childElementCount) {
+        OutilsEPSSocialShare.mount(socialMount, {
+          onFeedback: function (text) {
+            setShareMsg(text);
+          },
+        });
+      }
+    } catch (e) {
+      console.warn("Outils EPS : partage social indisponible.", e);
+    }
   }
 
   function ouvrirPartagePageEleves() {

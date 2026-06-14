@@ -1,5 +1,5 @@
 /**
- * Catalogue collaboratif : envoi, chargement et votes via Supabase.
+ * Catalogue collaboratif : envoi, chargement et votes via le serveur outilseps.fr.
  */
 (function (global) {
   "use strict";
@@ -129,10 +129,10 @@
         message: "La grille exemple ne peut pas être publiée au catalogue.",
       });
     }
-    if (!ns.isSupabaseConfigured || !ns.isSupabaseConfigured()) {
+    if (!ns.isOnlineCatalogConfigured || !ns.isOnlineCatalogConfigured()) {
       return Promise.resolve({
         submitted: false,
-        message: "Catalogue en ligne non configuré (Supabase).",
+        message: "Catalogue en ligne indisponible.",
       });
     }
 
@@ -196,9 +196,9 @@
     });
   };
 
-  /** Grilles publiées depuis Supabase. */
+  /** Grilles publiées sur le catalogue en ligne. */
   catalog.loadPublishedCatalogGrids = function () {
-    if (!ns.isSupabaseConfigured || !ns.isSupabaseConfigured()) {
+    if (!ns.isOnlineCatalogConfigured || !ns.isOnlineCatalogConfigured()) {
       return Promise.resolve([]);
     }
     var query =
@@ -211,12 +211,12 @@
   };
 
   /**
-   * @param {string} gridId - uuid Supabase
+   * @param {string} gridId - identifiant catalogue en ligne
    * @param {'up'|'down'} voteType
    */
   catalog.voteCatalogGrid = function (gridId, voteType) {
-    if (!ns.isSupabaseConfigured || !ns.isSupabaseConfigured()) {
-      return Promise.reject(new Error("Supabase non configuré."));
+    if (!ns.isOnlineCatalogConfigured || !ns.isOnlineCatalogConfigured()) {
+      return Promise.reject(new Error("Catalogue en ligne indisponible."));
     }
     var fingerprint = catalog.getVoterFingerprint();
     return ns
@@ -290,11 +290,11 @@
   }
 
   /**
-   * Catalogue en ligne : uniquement Supabase si configuré.
-   * Le JSON local n'est utilisé qu'en repli lorsque Supabase n'est pas configuré.
+   * Catalogue en ligne : serveur outilseps.fr si configuré.
+   * Le JSON local n'est utilisé qu'en repli lorsque le catalogue en ligne est indisponible.
    */
   catalog.loadCatalogWithLegacyFallback = function (legacyUrl) {
-    var configured = ns.isSupabaseConfigured && ns.isSupabaseConfigured();
+    var configured = ns.isOnlineCatalogConfigured && ns.isOnlineCatalogConfigured();
     if (configured) {
       return catalog.loadPublishedCatalogGrids();
     }
